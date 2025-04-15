@@ -622,57 +622,204 @@ function drawSpaceship() {
     ctx.rotate(spaceship.rotationAngle);
 
     // Spaceship body (draw using pixels)
-    const pixelSize = 4;
-
-    // Define spaceship shape in a pixel grid (relative to center)
+    const pixelSize = 3; // Larger pixels for more prominent appearance
+    
+    // Define spaceship shape in a pixel grid (relative to center) - more rocket-like design
     const shipPixels = [
-        // Nose (now at the top/up direction)
-        { x: 0, y: -3, color: "#3498db" },
-        { x: -1, y: -2, color: "#3498db" },
-        { x: 0, y: -2, color: "#3498db" },
-        { x: 1, y: -2, color: "#3498db" },
+        // Rocket nose cone - more pointed
+        { x: 0, y: -11, color: "#95a5a6" }, // Tip
+        { x: -1, y: -10, color: "#95a5a6" },
+        { x: 0, y: -10, color: "#bdc3c7" },
+        { x: 1, y: -10, color: "#95a5a6" },
+        
+        // Front section - narrower for rocket shape
+        { x: -2, y: -9, color: "#7f8c8d" },
+        { x: -1, y: -9, color: "#95a5a6" },
+        { x: 0, y: -9, color: "#bdc3c7" },
+        { x: 1, y: -9, color: "#95a5a6" },
+        { x: 2, y: -9, color: "#7f8c8d" },
+        
+        { x: -2, y: -8, color: "#7f8c8d" },
+        { x: -1, y: -8, color: "#95a5a6" },
+        { x: 0, y: -8, color: "#bdc3c7" },
+        { x: 1, y: -8, color: "#95a5a6" },
+        { x: 2, y: -8, color: "#7f8c8d" },
 
-        // Middle section
-        { x: -2, y: -1, color: "#3498db" },
-        { x: -1, y: -1, color: "#3498db" },
-        { x: 0, y: -1, color: "#3498db" },
-        { x: 1, y: -1, color: "#3498db" },
-        { x: 2, y: -1, color: "#3498db" },
+        // Command module with windows
+        { x: -3, y: -7, color: "#2c3e50" },
+        { x: -2, y: -7, color: "#34495e" },
+        { x: -1, y: -7, color: "#5dade2" }, // Window
+        { x: 0, y: -7, color: "#5dade2" }, // Window
+        { x: 1, y: -7, color: "#5dade2" }, // Window
+        { x: 2, y: -7, color: "#34495e" },
+        { x: 3, y: -7, color: "#2c3e50" },
 
-        { x: -3, y: 0, color: "#3498db" },
-        { x: -2, y: 0, color: "#3498db" },
-        { x: -1, y: 0, color: "#3498db" },
-        { x: 0, y: 0, color: "#ffffff" }, // Cockpit
-        { x: 1, y: 0, color: "#3498db" },
-        { x: 2, y: 0, color: "#3498db" },
-        { x: 3, y: 0, color: "#3498db" },
+        { x: -3, y: -6, color: "#2c3e50" },
+        { x: -2, y: -6, color: "#34495e" },
+        { x: -1, y: -6, color: "#ffffff" }, // Bright window
+        { x: 0, y: -6, color: "#ffffff" }, // Bright window
+        { x: 1, y: -6, color: "#ffffff" }, // Bright window
+        { x: 2, y: -6, color: "#34495e" },
+        { x: 3, y: -6, color: "#2c3e50" },
 
-        // Wings
-        { x: -4, y: 1, color: "#3498db" },
-        { x: -3, y: 1, color: "#3498db" },
-        { x: -2, y: 1, color: "#3498db" },
-        { x: -1, y: 1, color: "#3498db" },
-        { x: 0, y: 1, color: "#3498db" },
-        { x: 1, y: 1, color: "#3498db" },
-        { x: 2, y: 1, color: "#3498db" },
-        { x: 3, y: 1, color: "#3498db" },
-        { x: 4, y: 1, color: "#3498db" },
+        // Upper fuselage - more cylindrical
+        { x: -4, y: -5, color: "#7f8c8d" },
+        { x: -3, y: -5, color: "#95a5a6" },
+        { x: -2, y: -5, color: "#bdc3c7" },
+        { x: -1, y: -5, color: "#bdc3c7" },
+        { x: 0, y: -5, color: "#bdc3c7" },
+        { x: 1, y: -5, color: "#bdc3c7" },
+        { x: 2, y: -5, color: "#bdc3c7" },
+        { x: 3, y: -5, color: "#95a5a6" },
+        { x: 4, y: -5, color: "#7f8c8d" },
 
-        // Rear section
-        { x: -3, y: 2, color: "#3498db" },
-        { x: -2, y: 2, color: "#3498db" },
-        { x: -1, y: 2, color: "#3498db" },
-        { x: 0, y: 2, color: "#3498db" },
-        { x: 1, y: 2, color: "#3498db" },
-        { x: 2, y: 2, color: "#3498db" },
-        { x: 3, y: 2, color: "#3498db" },
+        { x: -4, y: -4, color: "#7f8c8d" },
+        { x: -3, y: -4, color: "#95a5a6" },
+        { x: -2, y: -4, color: "#bdc3c7" },
+        { x: -1, y: -4, color: "#bdc3c7" },
+        { x: 0, y: -4, color: "#bdc3c7" },
+        { x: 1, y: -4, color: "#bdc3c7" },
+        { x: 2, y: -4, color: "#bdc3c7" },
+        { x: 3, y: -4, color: "#95a5a6" },
+        { x: 4, y: -4, color: "#7f8c8d" },
 
-        // Engines (at the bottom/down direction)
-        { x: -2, y: 3, color: "#e74c3c" },
-        { x: -1, y: 3, color: "#e74c3c" },
-        { x: 0, y: 3, color: "#e74c3c" },
-        { x: 1, y: 3, color: "#e74c3c" },
-        { x: 2, y: 3, color: "#e74c3c" },
+        // Mid-fuselage with stripes
+        { x: -5, y: -3, color: "#7f8c8d" },
+        { x: -4, y: -3, color: "#95a5a6" },
+        { x: -3, y: -3, color: "#e74c3c" }, // Red stripe
+        { x: -2, y: -3, color: "#bdc3c7" },
+        { x: -1, y: -3, color: "#bdc3c7" },
+        { x: 0, y: -3, color: "#bdc3c7" },
+        { x: 1, y: -3, color: "#bdc3c7" },
+        { x: 2, y: -3, color: "#bdc3c7" },
+        { x: 3, y: -3, color: "#e74c3c" }, // Red stripe
+        { x: 4, y: -3, color: "#95a5a6" },
+        { x: 5, y: -3, color: "#7f8c8d" },
+
+        { x: -5, y: -2, color: "#7f8c8d" },
+        { x: -4, y: -2, color: "#95a5a6" },
+        { x: -3, y: -2, color: "#bdc3c7" },
+        { x: -2, y: -2, color: "#bdc3c7" },
+        { x: -1, y: -2, color: "#bdc3c7" },
+        { x: 0, y: -2, color: "#bdc3c7" },
+        { x: 1, y: -2, color: "#bdc3c7" },
+        { x: 2, y: -2, color: "#bdc3c7" },
+        { x: 3, y: -2, color: "#bdc3c7" },
+        { x: 4, y: -2, color: "#95a5a6" },
+        { x: 5, y: -2, color: "#7f8c8d" },
+
+        // Lower fuselage with fuel tanks
+        { x: -5, y: -1, color: "#7f8c8d" },
+        { x: -4, y: -1, color: "#95a5a6" },
+        { x: -3, y: -1, color: "#e74c3c" }, // Red stripe
+        { x: -2, y: -1, color: "#bdc3c7" },
+        { x: -1, y: -1, color: "#bdc3c7" },
+        { x: 0, y: -1, color: "#bdc3c7" },
+        { x: 1, y: -1, color: "#bdc3c7" },
+        { x: 2, y: -1, color: "#bdc3c7" },
+        { x: 3, y: -1, color: "#e74c3c" }, // Red stripe
+        { x: 4, y: -1, color: "#95a5a6" },
+        { x: 5, y: -1, color: "#7f8c8d" },
+
+        { x: -5, y: 0, color: "#7f8c8d" },
+        { x: -4, y: 0, color: "#95a5a6" },
+        { x: -3, y: 0, color: "#bdc3c7" },
+        { x: -2, y: 0, color: "#bdc3c7" },
+        { x: -1, y: 0, color: "#bdc3c7" },
+        { x: 0, y: 0, color: "#bdc3c7" },
+        { x: 1, y: 0, color: "#bdc3c7" },
+        { x: 2, y: 0, color: "#bdc3c7" },
+        { x: 3, y: 0, color: "#bdc3c7" },
+        { x: 4, y: 0, color: "#95a5a6" },
+        { x: 5, y: 0, color: "#7f8c8d" },
+
+        // Rocket body widening for fuel tanks/engines
+        { x: -6, y: 1, color: "#7f8c8d" },
+        { x: -5, y: 1, color: "#95a5a6" },
+        { x: -4, y: 1, color: "#bdc3c7" },
+        { x: -3, y: 1, color: "#e74c3c" }, // Red stripe
+        { x: -2, y: 1, color: "#bdc3c7" },
+        { x: -1, y: 1, color: "#bdc3c7" },
+        { x: 0, y: 1, color: "#bdc3c7" },
+        { x: 1, y: 1, color: "#bdc3c7" },
+        { x: 2, y: 1, color: "#bdc3c7" },
+        { x: 3, y: 1, color: "#e74c3c" }, // Red stripe
+        { x: 4, y: 1, color: "#bdc3c7" },
+        { x: 5, y: 1, color: "#95a5a6" },
+        { x: 6, y: 1, color: "#7f8c8d" },
+
+        // Rocket side boosters
+        { x: -7, y: 2, color: "#7f8c8d" },
+        { x: -6, y: 2, color: "#95a5a6" },
+        { x: -5, y: 2, color: "#95a5a6" },
+        { x: -4, y: 2, color: "#bdc3c7" },
+        { x: -3, y: 2, color: "#bdc3c7" },
+        { x: -2, y: 2, color: "#bdc3c7" },
+        { x: -1, y: 2, color: "#bdc3c7" },
+        { x: 0, y: 2, color: "#bdc3c7" },
+        { x: 1, y: 2, color: "#bdc3c7" },
+        { x: 2, y: 2, color: "#bdc3c7" },
+        { x: 3, y: 2, color: "#bdc3c7" },
+        { x: 4, y: 2, color: "#bdc3c7" },
+        { x: 5, y: 2, color: "#95a5a6" },
+        { x: 6, y: 2, color: "#95a5a6" },
+        { x: 7, y: 2, color: "#7f8c8d" },
+
+        // Booster/engine housing
+        { x: -7, y: 3, color: "#7f8c8d" },
+        { x: -6, y: 3, color: "#7f8c8d" },
+        { x: -5, y: 3, color: "#e67e22" }, // Engine housing
+        { x: -4, y: 3, color: "#d35400" }, // Engine housing
+        { x: -3, y: 3, color: "#d35400" }, // Engine housing
+        { x: -2, y: 3, color: "#bdc3c7" },
+        { x: -1, y: 3, color: "#bdc3c7" },
+        { x: 0, y: 3, color: "#bdc3c7" },
+        { x: 1, y: 3, color: "#bdc3c7" },
+        { x: 2, y: 3, color: "#bdc3c7" },
+        { x: 3, y: 3, color: "#d35400" }, // Engine housing
+        { x: 4, y: 3, color: "#d35400" }, // Engine housing
+        { x: 5, y: 3, color: "#e67e22" }, // Engine housing
+        { x: 6, y: 3, color: "#7f8c8d" },
+        { x: 7, y: 3, color: "#7f8c8d" },
+
+        // Engine bell section
+        { x: -6, y: 4, color: "#7f8c8d" },
+        { x: -5, y: 4, color: "#34495e" }, // Main engine
+        { x: -4, y: 4, color: "#2c3e50" }, // Main engine
+        { x: -3, y: 4, color: "#2c3e50" }, // Main engine
+        { x: -2, y: 4, color: "#2c3e50" }, // Engine bell
+        { x: -1, y: 4, color: "#2c3e50" }, // Engine bell
+        { x: 0, y: 4, color: "#2c3e50" }, // Central engine
+        { x: 1, y: 4, color: "#2c3e50" }, // Engine bell
+        { x: 2, y: 4, color: "#2c3e50" }, // Engine bell
+        { x: 3, y: 4, color: "#2c3e50" }, // Main engine
+        { x: 4, y: 4, color: "#2c3e50" }, // Main engine
+        { x: 5, y: 4, color: "#34495e" }, // Main engine
+        { x: 6, y: 4, color: "#7f8c8d" },
+
+        // Engine nozzles
+        { x: -5, y: 5, color: "#34495e" }, // Left nozzle
+        { x: -4, y: 5, color: "#2c3e50" }, // Left nozzle
+        { x: -3, y: 5, color: "#34495e" }, // Left nozzle
+        { x: -0.5, y: 5, color: "#34495e" }, // Center nozzle
+        { x: 0, y: 5, color: "#2c3e50" }, // Center nozzle
+        { x: 0.5, y: 5, color: "#34495e" }, // Center nozzle
+        { x: 3, y: 5, color: "#34495e" }, // Right nozzle
+        { x: 4, y: 5, color: "#2c3e50" }, // Right nozzle
+        { x: 5, y: 5, color: "#34495e" }, // Right nozzle
+
+        // Fins - more rocket-like
+        { x: -8, y: 0, color: "#7f8c8d" }, // Left fin
+        { x: -8, y: 1, color: "#7f8c8d" }, // Left fin
+        { x: -8, y: 2, color: "#7f8c8d" }, // Left fin
+        { x: -9, y: 3, color: "#7f8c8d" }, // Left fin
+        { x: -8, y: 3, color: "#95a5a6" }, // Left fin
+
+        { x: 8, y: 0, color: "#7f8c8d" }, // Right fin
+        { x: 8, y: 1, color: "#7f8c8d" }, // Right fin
+        { x: 8, y: 2, color: "#7f8c8d" }, // Right fin
+        { x: 9, y: 3, color: "#7f8c8d" }, // Right fin
+        { x: 8, y: 3, color: "#95a5a6" }, // Right fin
     ];
 
     // Draw ship pixels
@@ -686,46 +833,231 @@ function drawSpaceship() {
         );
     });
 
-    // Draw thrust if engine is on
+    // Draw rocket exhaust if thrusting - more realistic looking
     if (spaceship.thrusting) {
-        // Base thruster pixels
-        const thrustPixels = [
-            { x: -2, y: 4, color: "#f39c12" },
-            { x: -1, y: 4, color: "#f1c40f" },
-            { x: 0, y: 4, color: "#f1c40f" },
-            { x: 1, y: 4, color: "#f39c12" },
-            { x: 2, y: 4, color: "#f39c12" },
-            { x: -1, y: 5, color: "#f39c12" },
-            { x: 0, y: 5, color: "#f39c12" },
-            { x: 1, y: 5, color: "#f39c12" },
+        // Main engine exhaust - focused beam rather than flames
+        const mainExhaustPixels = [
+            // Left engine exhaust beam
+            { x: -4, y: 6, color: "#3498db" },  // Blue exhaust core
+            { x: -4, y: 7, color: "#2980b9" },
+            { x: -4, y: 8, color: "#2980b9" },
+            { x: -4, y: 9, color: "#2980b9", opacity: 0.9 },
+            { x: -4, y: 10, color: "#2980b9", opacity: 0.7 },
+            { x: -4, y: 11, color: "#2980b9", opacity: 0.5 },
+
+            // Center engine exhaust beam
+            { x: 0, y: 6, color: "#3498db" },   // Blue exhaust core
+            { x: 0, y: 7, color: "#2980b9" },
+            { x: 0, y: 8, color: "#2980b9" },
+            { x: 0, y: 9, color: "#2980b9", opacity: 0.9 },
+            { x: 0, y: 10, color: "#2980b9", opacity: 0.7 },
+            { x: 0, y: 11, color: "#2980b9", opacity: 0.5 },
+            
+            // Right engine exhaust beam
+            { x: 4, y: 6, color: "#3498db" },   // Blue exhaust core
+            { x: 4, y: 7, color: "#2980b9" },
+            { x: 4, y: 8, color: "#2980b9" },
+            { x: 4, y: 9, color: "#2980b9", opacity: 0.9 },
+            { x: 4, y: 10, color: "#2980b9", opacity: 0.7 },
+            { x: 4, y: 11, color: "#2980b9", opacity: 0.5 },
+            
+            // Exhaust glow around beams - left engine
+            { x: -5, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: -3, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: -5, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: -3, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: -5, y: 8, color: "#5dade2", opacity: 0.3 },
+            { x: -3, y: 8, color: "#5dade2", opacity: 0.3 },
+            
+            // Exhaust glow around beams - center engine
+            { x: -1, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: 1, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: -1, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: 1, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: -1, y: 8, color: "#5dade2", opacity: 0.3 },
+            { x: 1, y: 8, color: "#5dade2", opacity: 0.3 },
+            
+            // Exhaust glow around beams - right engine
+            { x: 3, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: 5, y: 6, color: "#5dade2", opacity: 0.7 },
+            { x: 3, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: 5, y: 7, color: "#5dade2", opacity: 0.5 },
+            { x: 3, y: 8, color: "#5dade2", opacity: 0.3 },
+            { x: 5, y: 8, color: "#5dade2", opacity: 0.3 },
+            
+            // Hot spots at nozzle exits
+            { x: -4, y: 5.5, color: "#ecf0f1" }, // White hot at nozzle
+            { x: 0, y: 5.5, color: "#ecf0f1" },  // White hot at nozzle
+            { x: 4, y: 5.5, color: "#ecf0f1" },  // White hot at nozzle
         ];
-
-        // Add extra flame length for boost
-        if (spaceship.boostActive) {
-            thrustPixels.push(
-                { x: -2, y: 6, color: "#e74c3c" },
-                { x: -1, y: 6, color: "#f39c12" },
-                { x: 0, y: 6, color: "#f1c40f" },
-                { x: 1, y: 6, color: "#f39c12" },
-                { x: 2, y: 6, color: "#e74c3c" },
-                { x: -1, y: 7, color: "#e74c3c" },
-                { x: 0, y: 7, color: "#e74c3c" },
-                { x: 1, y: 7, color: "#e74c3c" }
+        
+        // Create dynamic exhaust effect based on time
+        const exhaustVariation = Date.now() % 4; // 0, 1, 2, or 3
+        
+        // Draw main exhaust
+        mainExhaustPixels.forEach((pixel) => {
+            // Calculate animation effects
+            const yOffset = Math.sin(Date.now() / 200 + pixel.x) * 0.3;
+            const xOffset = Math.cos(Date.now() / 300 + pixel.y) * 0.15;
+            
+            // Set opacity if defined
+            ctx.globalAlpha = pixel.opacity !== undefined ? pixel.opacity : 1;
+            
+            ctx.fillStyle = pixel.color;
+            ctx.fillRect(
+                (pixel.x + xOffset) * pixelSize,
+                (pixel.y + yOffset + exhaustVariation * 0.2) * pixelSize,
+                pixelSize,
+                pixel.y > 8 ? pixelSize * 1.2 : pixelSize // Slightly expand distant exhaust
             );
-        }
+        });
+        
+        // Reset opacity
+        ctx.globalAlpha = 1;
 
-        // Animate thrust with more frequent flicker during boost
-        if (Math.random() > (spaceship.boostActive ? 0.1 : 0.3)) {
-            thrustPixels.forEach((pixel) => {
+        // Add boost exhaust if active - longer, more powerful beams
+        if (spaceship.boostActive) {
+            const boostExhaustPixels = [
+                // Extended left engine beam
+                { x: -4, y: 12, color: "#2980b9", opacity: 0.4 },
+                { x: -4, y: 13, color: "#2980b9", opacity: 0.3 },
+                { x: -4, y: 14, color: "#2980b9", opacity: 0.2 },
+                { x: -4, y: 15, color: "#2980b9", opacity: 0.1 },
+                
+                // Extended center engine beam
+                { x: 0, y: 12, color: "#2980b9", opacity: 0.4 },
+                { x: 0, y: 13, color: "#2980b9", opacity: 0.3 },
+                { x: 0, y: 14, color: "#2980b9", opacity: 0.2 },
+                { x: 0, y: 15, color: "#2980b9", opacity: 0.1 },
+                
+                // Extended right engine beam
+                { x: 4, y: 12, color: "#2980b9", opacity: 0.4 },
+                { x: 4, y: 13, color: "#2980b9", opacity: 0.3 },
+                { x: 4, y: 14, color: "#2980b9", opacity: 0.2 },
+                { x: 4, y: 15, color: "#2980b9", opacity: 0.1 },
+                
+                // Additional glow for boost mode
+                { x: -5, y: 9, color: "#5dade2", opacity: 0.2 },
+                { x: -3, y: 9, color: "#5dade2", opacity: 0.2 },
+                { x: -1, y: 9, color: "#5dade2", opacity: 0.2 },
+                { x: 1, y: 9, color: "#5dade2", opacity: 0.2 },
+                { x: 3, y: 9, color: "#5dade2", opacity: 0.2 },
+                { x: 5, y: 9, color: "#5dade2", opacity: 0.2 },
+                
+                // Shock diamonds in exhaust (characteristic of rocket engines)
+                { x: -4, y: 9, color: "#ecf0f1", opacity: 0.7 },
+                { x: 0, y: 9, color: "#ecf0f1", opacity: 0.7 },
+                { x: 4, y: 9, color: "#ecf0f1", opacity: 0.7 },
+                { x: -4, y: 13, color: "#ecf0f1", opacity: 0.4 },
+                { x: 0, y: 13, color: "#ecf0f1", opacity: 0.4 },
+                { x: 4, y: 13, color: "#ecf0f1", opacity: 0.4 },
+            ];
+            
+            boostExhaustPixels.forEach((pixel) => {
+                // More dramatic animation for boost
+                const yOffset = Math.sin(Date.now() / 150 + pixel.x * 2) * 0.6;
+                const xOffset = Math.cos(Date.now() / 250 + pixel.y) * 0.25;
+                
+                ctx.globalAlpha = pixel.opacity || 0.5;
                 ctx.fillStyle = pixel.color;
+                
+                // Calculate size variation based on position
+                const sizeVariation = pixel.y > 12 ? 1.5 : 1.2;
+                
                 ctx.fillRect(
-                    pixel.x * pixelSize,
-                    pixel.y * pixelSize,
-                    pixelSize,
-                    pixelSize
+                    (pixel.x + xOffset) * pixelSize,
+                    (pixel.y + yOffset + exhaustVariation * 0.3) * pixelSize,
+                    pixelSize * sizeVariation,
+                    pixelSize * sizeVariation
                 );
             });
+            
+            // Add ionization particles for boost - small blue/white particles
+            for (let i = 0; i < 8; i++) {
+                const ionOffset = [-4, 0, 4]; // Align with engine positions
+                const engineIdx = Math.floor(Math.random() * 3);
+                const particleX = (ionOffset[engineIdx] + (Math.random() * 2 - 1)) * pixelSize;
+                const particleY = (Math.random() * 6 + 10) * pixelSize;
+                const particleSize = Math.random() * 1.2 + 0.5;
+                
+                ctx.globalAlpha = Math.random() * 0.5 + 0.3;
+                const colors = ["#3498db", "#2980b9", "#ecf0f1", "#5dade2"];
+                ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                
+                ctx.fillRect(
+                    particleX,
+                    particleY,
+                    particleSize,
+                    particleSize
+                );
+            }
+            
+            // Reset opacity
+            ctx.globalAlpha = 1;
         }
+        
+        // Engine glow effect - blue for rocket engines rather than orange flame
+        const glowRadius = spaceship.boostActive ? 22 : 16; 
+        
+        // Draw left engine glow
+        let gradient = ctx.createRadialGradient(
+            -4 * pixelSize, 5 * pixelSize, 0,
+            -4 * pixelSize, 5 * pixelSize, glowRadius
+        );
+        
+        if (spaceship.boostActive) {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.9)'); // Bright blue
+            gradient.addColorStop(0.4, 'rgba(41, 128, 185, 0.5)'); // Medium blue
+        } else {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.7)'); // Blue
+            gradient.addColorStop(0.5, 'rgba(41, 128, 185, 0.3)'); // Darker blue
+        }
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(-4 * pixelSize, 5 * pixelSize, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw center engine glow
+        gradient = ctx.createRadialGradient(
+            0, 5 * pixelSize, 0,
+            0, 5 * pixelSize, glowRadius
+        );
+        
+        if (spaceship.boostActive) {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.9)');
+            gradient.addColorStop(0.4, 'rgba(41, 128, 185, 0.5)');
+        } else {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.7)');
+            gradient.addColorStop(0.5, 'rgba(41, 128, 185, 0.3)');
+        }
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 5 * pixelSize, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw right engine glow
+        gradient = ctx.createRadialGradient(
+            4 * pixelSize, 5 * pixelSize, 0,
+            4 * pixelSize, 5 * pixelSize, glowRadius
+        );
+        
+        if (spaceship.boostActive) {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.9)');
+            gradient.addColorStop(0.4, 'rgba(41, 128, 185, 0.5)');
+        } else {
+            gradient.addColorStop(0, 'rgba(52, 152, 219, 0.7)');
+            gradient.addColorStop(0.5, 'rgba(41, 128, 185, 0.3)');
+        }
+        gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(4 * pixelSize, 5 * pixelSize, glowRadius, 0, Math.PI * 2);
+        ctx.fill();
     }
 
     ctx.restore();
