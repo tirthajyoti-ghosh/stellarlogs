@@ -11,9 +11,11 @@
                 background-color: #000;
                 font-family: "Courier New", monospace;
             }
+
             canvas {
                 display: block;
             }
+
             #info {
                 position: absolute;
                 top: 10px;
@@ -24,28 +26,42 @@
                 border-radius: 5px;
                 display: none;
             }
+
+            /* Dashboard styling */
             #dashboard {
                 position: absolute;
                 bottom: 0;
-                left: 0;
-                right: 0;
-                height: 120px;
-                background-color: rgba(10, 20, 30, 0.9);
+                left: 50%;
+                transform: translateX(-50%);
+                width: 90%;
+                max-width: 1200px;
+                height: 140px;
+                background-color: rgba(10, 20, 30, 0.85);
                 color: #0ff;
                 border-top: 2px solid #0ff;
+                border-left: 2px solid #0ff;
+                border-right: 2px solid #0ff;
+                border-top-left-radius: 140px;
+                border-top-right-radius: 140px;
                 display: flex;
-                padding: 10px;
+                padding: 15px 30px;
+                box-shadow: 0 -5px 15px rgba(0, 255, 255, 0.2);
+                justify-content: space-between;
+                align-items: flex-start;
             }
+
             #radar-container {
-                width: 200px;
-                height: 100px;
+                width: 350px;
+                height: 175px;
                 border: 2px solid #0ff;
-                border-radius: 5px;
+                border-radius: 50%;
                 position: relative;
-                margin-right: 15px;
+                margin: 0 auto;
                 overflow: hidden;
                 background-color: rgba(0, 40, 60, 0.5);
+                box-shadow: 0 0 15px rgba(0, 255, 255, 0.4) inset;
             }
+
             #radar-sweep {
                 position: absolute;
                 width: 100%;
@@ -53,6 +69,7 @@
                 top: 0;
                 left: 0;
             }
+
             #radar-ship {
                 position: absolute;
                 width: 8px;
@@ -63,7 +80,9 @@
                 left: 50%;
                 transform: translate(-50%, -50%);
                 z-index: 10;
+                box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
             }
+
             #radar-grid {
                 position: absolute;
                 width: 100%;
@@ -72,29 +91,204 @@
                 left: 0;
                 opacity: 0.3;
             }
+
             .radar-circle {
                 position: absolute;
-                border: 1px solid #0ff;
+                border: 1px solid rgba(0, 255, 255, 0.5);
                 border-radius: 50%;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
+                box-shadow: 0 0 4px rgba(0, 255, 255, 0.2);
             }
+
             #radar-title {
                 position: absolute;
-                top: -20px;
+                top: 5px;
                 left: 0;
                 width: 100%;
                 text-align: center;
                 font-size: 12px;
                 color: #0ff;
+                text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
             }
+
+            /* Side panel styling */
+            #side-panel {
+                position: absolute;
+                top: 20px;
+                right: 20px;
+                width: 300px;
+                max-height: calc(100vh - 180px);
+                background-color: rgba(10, 20, 30, 0.85);
+                border: 1px solid #0ff;
+                border-radius: 10px;
+                color: #0ff;
+                padding: 0;
+                box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+                display: flex;
+                flex-direction: column;
+            }
+
+            .panel-header {
+                padding: 10px;
+                font-size: 14px;
+                text-align: center;
+                border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+                background-color: rgba(0, 60, 80, 0.5);
+                border-top-left-radius: 10px;
+                border-top-right-radius: 10px;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+
             #planet-data {
                 flex: 1;
                 display: flex;
                 flex-direction: column;
                 overflow-y: auto;
+                max-height: calc(100vh - 230px);
+                padding: 10px;
             }
+
+            /* Dashboard sections */
+            .dashboard-section {
+                width: 25%;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .left-panel {
+                padding-top: 25px;
+                margin-right: 20px;
+            }
+
+            .right-panel {
+                padding-top: 25px;
+                margin-left: 20px;
+            }
+
+            .control-panel {
+                background-color: rgba(0, 0, 0, 0.3);
+                border: 1px solid rgba(0, 255, 255, 0.3);
+                border-radius: 10px;
+                padding: 8px;
+                margin-bottom: 10px;
+            }
+
+            .panel-title {
+                font-size: 10px;
+                text-transform: uppercase;
+                color: rgba(0, 255, 255, 0.6);
+                margin-bottom: 5px;
+                text-align: center;
+                letter-spacing: 1px;
+            }
+
+            /* Control rows */
+            .control-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 5px;
+            }
+
+            .control-label {
+                font-size: 12px;
+                color: rgba(0, 255, 255, 0.7);
+                text-shadow: 0 0 3px rgba(0, 255, 255, 0.5);
+            }
+
+            .control-value {
+                font-size: 12px;
+                font-weight: bold;
+                color: #fff;
+                text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+            }
+
+            /* Indicators */
+            .thruster-indicator {
+                width: 40px;
+                height: 10px;
+                background-color: #111;
+                border: 1px solid #0ff;
+                display: inline-block;
+                vertical-align: middle;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+
+            .thruster-active {
+                background: linear-gradient(90deg, #f39c12, #e74c3c);
+                box-shadow: 0 0 10px rgba(243, 156, 18, 0.6);
+            }
+
+            .boost-meter {
+                width: 100%;
+                height: 6px;
+                background-color: #111;
+                border: 1px solid #0ff;
+                position: relative;
+                overflow: hidden;
+                border-radius: 3px;
+            }
+
+            .boost-fill {
+                height: 100%;
+                background-color: #0ff;
+                width: 100%;
+                transition: width 0.3s;
+            }
+
+            .boost-active {
+                background: linear-gradient(90deg, #f39c12, #e74c3c);
+                animation: pulse 0.5s infinite;
+            }
+
+            /* Decorative elements */
+            .decorative-lights {
+                position: absolute;
+                top: 10px;
+                width: 80%;
+                height: 10px;
+                left: 10%;
+                display: flex;
+                justify-content: center;
+            }
+
+            .light {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                margin: 0 15px;
+                animation: blink 3s infinite;
+            }
+
+            .light:nth-child(1) {
+                background-color: #f39c12;
+                animation-delay: 0s;
+            }
+
+            .light:nth-child(2) {
+                background-color: #0ff;
+                animation-delay: 0.5s;
+            }
+
+            .light:nth-child(3) {
+                background-color: #0f0;
+                animation-delay: 1s;
+            }
+
+            .light:nth-child(4) {
+                background-color: #f39c12;
+                animation-delay: 1.5s;
+            }
+
+            .light:nth-child(5) {
+                background-color: #0ff;
+                animation-delay: 2s;
+            }
+
+            /* Planet list styling */
             .planet-row {
                 display: flex;
                 align-items: center;
@@ -102,82 +296,37 @@
                 padding: 3px;
                 border-radius: 3px;
             }
+
             .planet-row:hover {
                 background-color: rgba(0, 255, 255, 0.1);
             }
+
             .planet-indicator {
                 width: 12px;
                 height: 12px;
                 border-radius: 50%;
                 margin-right: 10px;
+                box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
             }
+
             .planet-name {
                 width: 120px;
                 font-size: 12px;
             }
+
             .planet-distance {
                 width: 80px;
                 font-size: 12px;
                 text-align: right;
             }
+
             .planet-direction {
                 width: 80px;
                 font-size: 12px;
                 text-align: center;
             }
-            #ship-controls {
-                width: 200px;
-                margin-left: 15px;
-                display: flex;
-                flex-direction: column;
-                justify-content: space-between;
-                border-left: 1px solid rgba(0, 255, 255, 0.3);
-                padding-left: 15px;
-            }
-            .control-row {
-                display: flex;
-                justify-content: space-between;
-            }
-            .control-label {
-                font-size: 12px;
-                color: rgba(0, 255, 255, 0.7);
-            }
-            .control-value {
-                font-size: 12px;
-                font-weight: bold;
-            }
-            .blinking {
-                animation: blink 1s infinite;
-            }
-            .thruster-indicator {
-                width: 40px;
-                height: 10px;
-                background-color: #333;
-                border: 1px solid #0ff;
-                display: inline-block;
-                vertical-align: middle;
-            }
-            .thruster-active {
-                background-color: #f39c12;
-            }
-            .boost-meter {
-                width: 100%;
-                height: 6px;
-                background-color: #333;
-                border: 1px solid #0ff;
-                position: relative;
-                overflow: hidden;
-            }
-            .boost-fill {
-                height: 100%;
-                background-color: #0ff;
-                width: 100%;
-                transition: width 0.3s;
-            }
-            .boost-active {
-                background-color: #f39c12;
-                animation: pulse 0.5s infinite;
-            }
+
+            /* Animations */
             @keyframes pulse {
                 0% {
                     opacity: 0.7;
@@ -189,11 +338,19 @@
                     opacity: 0.7;
                 }
             }
+
             @keyframes blink {
+                0% {
+                    opacity: 1;
+                }
                 50% {
                     opacity: 0.5;
                 }
+                100% {
+                    opacity: 1;
+                }
             }
+
             @keyframes sweep {
                 from {
                     transform: translate(-50%, -50%) rotate(0deg);
@@ -207,60 +364,80 @@
     <body>
         <canvas id="gameCanvas"></canvas>
         <div id="info"></div>
+        <!-- Dashboard HTML -->
         <div id="dashboard">
+            <div class="dashboard-section left-panel">
+                <div class="control-panel">
+                    <div class="panel-title">Navigation</div>
+                    <div class="control-row">
+                        <span class="control-label">HEADING:</span>
+                        <span class="control-value" id="current-heading"
+                            >0°</span
+                        >
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">LOCATION:</span>
+                        <span class="control-value" id="current-location"
+                            >X:0 Y:0</span
+                        >
+                    </div>
+                </div>
+            </div>
+
             <div id="radar-container">
                 <div id="radar-title">NAVIGATION RADAR</div>
                 <div id="radar-grid">
                     <div
                         class="radar-circle"
-                        style="width: 40px; height: 40px"
+                        style="width: 70px; height: 70px"
                     ></div>
                     <div
                         class="radar-circle"
-                        style="width: 80px; height: 80px"
+                        style="width: 140px; height: 140px"
                     ></div>
                     <div
                         class="radar-circle"
-                        style="width: 120px; height: 120px"
+                        style="width: 210px; height: 210px"
                     ></div>
                     <div
                         class="radar-circle"
-                        style="width: 160px; height: 160px"
+                        style="width: 280px; height: 280px"
                     ></div>
                 </div>
                 <div id="radar-ship"></div>
-                <canvas id="radar-sweep" width="200" height="100"></canvas>
+                <canvas id="radar-sweep" width="350" height="175"></canvas>
             </div>
-            <div id="planet-data"></div>
-            <div id="ship-controls">
-                <div class="control-row">
-                    <span class="control-label">VELOCITY:</span>
-                    <span class="control-value" id="current-speed">0.00</span>
-                </div>
-                <div class="control-row">
-                    <span class="control-label">HEADING:</span>
-                    <span class="control-value" id="current-heading">0°</span>
-                </div>
-                <div class="control-row">
-                    <span class="control-label">THRUSTERS:</span>
-                    <div
-                        class="thruster-indicator"
-                        id="thruster-indicator"
-                    ></div>
-                </div>
-                <div class="control-row">
-                    <span class="control-label">BOOST:</span>
-                    <div class="boost-meter" id="boost-meter">
-                        <div class="boost-fill" id="boost-fill"></div>
+
+            <div class="dashboard-section right-panel">
+                <div class="control-panel">
+                    <div class="panel-title">Propulsion</div>
+                    <div class="control-row">
+                        <span class="control-label">VELOCITY:</span>
+                        <span class="control-value" id="current-speed"
+                            >0.00</span
+                        >
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">THRUSTERS:</span>
+                        <div
+                            class="thruster-indicator"
+                            id="thruster-indicator"
+                        ></div>
+                    </div>
+                    <div class="control-row">
+                        <span class="control-label">BOOST:</span>
+                        <div class="boost-meter" id="boost-meter">
+                            <div class="boost-fill" id="boost-fill"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="control-row">
-                    <span class="control-label">LOCATION:</span>
-                    <span class="control-value" id="current-location"
-                        >X:0 Y:0</span
-                    >
-                </div>
             </div>
+        </div>
+
+        <!-- Side panel for star systems -->
+        <div id="side-panel">
+            <div class="panel-header">STAR SYSTEMS</div>
+            <div id="planet-data"></div>
         </div>
 
         <script>
@@ -291,22 +468,22 @@
 
             // Game variables
             const spaceship = {
-                x: canvas.width / 2, // Start in the middle of the viewport
+                x: canvas.width / 2,
                 y: canvas.height / 2,
                 width: 32,
                 height: 32,
                 velocityX: 0,
                 velocityY: 0,
-                acceleration: 0.1,
-                maxSpeed: 8,
+                acceleration: 0.15, // Increased from 0.1
+                maxSpeed: 12, // Increased from 8
                 friction: 0.97,
-                rotationAngle: -Math.PI / 2, // Start pointing upward (-90 degrees)
+                rotationAngle: -Math.PI / 2,
                 rotationSpeed: 0.1,
                 thrusting: false,
                 // Boost properties
-                boostFactor: 10,
+                boostFactor: 2, // Reduced from 10 to be more reasonable with higher base speed
                 boostDuration: 1000, // milliseconds
-                boostCooldown: 5000, // milliseconds
+                boostCooldown: 0, // Set to 0 to remove cooldown
                 boostAvailable: true,
                 boostActive: false,
                 boostStartTime: 0,
@@ -335,7 +512,8 @@
                             orbitRadius: 400,
                             orbitSpeed: 0.0004,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Lead developer at XYZ Corp (2020-Present)..."
+                            content:
+                                "Lead developer at XYZ Corp (2020-Present)...",
                         },
                         {
                             name: "Backend Engineer",
@@ -344,7 +522,8 @@
                             orbitRadius: 600,
                             orbitSpeed: 0.0003,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Backend specialist at ABC Inc (2018-2020)..."
+                            content:
+                                "Backend specialist at ABC Inc (2018-2020)...",
                         },
                         {
                             name: "Junior Developer",
@@ -353,9 +532,10 @@
                             orbitRadius: 800,
                             orbitSpeed: 0.0002,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Started my career at StartupXYZ (2016-2018)..."
-                        }
-                    ]
+                            content:
+                                "Started my career at StartupXYZ (2016-2018)...",
+                        },
+                    ],
                 },
                 {
                     id: "projects",
@@ -373,7 +553,8 @@
                             orbitRadius: 350,
                             orbitSpeed: 0.0005,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "This interactive space-themed portfolio..."
+                            content:
+                                "This interactive space-themed portfolio...",
                         },
                         {
                             name: "AI Chat App",
@@ -382,7 +563,8 @@
                             orbitRadius: 550,
                             orbitSpeed: 0.0004,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Real-time chat application with AI suggestions..."
+                            content:
+                                "Real-time chat application with AI suggestions...",
                         },
                         {
                             name: "Recipe Finder",
@@ -391,7 +573,8 @@
                             orbitRadius: 750,
                             orbitSpeed: 0.0003,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Web app that helps find recipes based on available ingredients..."
+                            content:
+                                "Web app that helps find recipes based on available ingredients...",
                         },
                         {
                             name: "Budget Tracker",
@@ -400,9 +583,9 @@
                             orbitRadius: 900,
                             orbitSpeed: 0.0002,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Personal finance tracking application..."
-                        }
-                    ]
+                            content: "Personal finance tracking application...",
+                        },
+                    ],
                 },
                 {
                     id: "blog",
@@ -420,7 +603,8 @@
                             orbitRadius: 300,
                             orbitSpeed: 0.0006,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Latest trends in web development for 2025..."
+                            content:
+                                "Latest trends in web development for 2025...",
                         },
                         {
                             name: "AI Revolution",
@@ -429,7 +613,8 @@
                             orbitRadius: 500,
                             orbitSpeed: 0.0004,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "How AI is changing the software industry..."
+                            content:
+                                "How AI is changing the software industry...",
                         },
                         {
                             name: "Clean Code",
@@ -438,9 +623,10 @@
                             orbitRadius: 700,
                             orbitSpeed: 0.0003,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Principles of writing maintainable code..."
-                        }
-                    ]
+                            content:
+                                "Principles of writing maintainable code...",
+                        },
+                    ],
                 },
                 {
                     id: "recommendations",
@@ -458,7 +644,8 @@
                             orbitRadius: 250,
                             orbitSpeed: 0.0007,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "\"An exceptional developer who always delivers...\" - Jane Doe, CEO"
+                            content:
+                                '"An exceptional developer who always delivers..." - Jane Doe, CEO',
                         },
                         {
                             name: "Team Lead Review",
@@ -467,9 +654,10 @@
                             orbitRadius: 450,
                             orbitSpeed: 0.0005,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "\"Great team player with excellent problem-solving skills...\" - John Smith, Lead Developer"
-                        }
-                    ]
+                            content:
+                                '"Great team player with excellent problem-solving skills..." - John Smith, Lead Developer',
+                        },
+                    ],
                 },
                 {
                     id: "current-reads",
@@ -487,7 +675,8 @@
                             orbitRadius: 200,
                             orbitSpeed: 0.0008,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Clean Architecture by Robert C. Martin - My notes and takeaways..."
+                            content:
+                                "Clean Architecture by Robert C. Martin - My notes and takeaways...",
                         },
                         {
                             name: "Deep Work",
@@ -496,9 +685,10 @@
                             orbitRadius: 350,
                             orbitSpeed: 0.0006,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Deep Work by Cal Newport - Strategies I'm implementing..."
-                        }
-                    ]
+                            content:
+                                "Deep Work by Cal Newport - Strategies I'm implementing...",
+                        },
+                    ],
                 },
                 {
                     id: "shows",
@@ -516,7 +706,7 @@
                             orbitRadius: 300,
                             orbitSpeed: 0.0006,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "My thoughts on the latest season of..."
+                            content: "My thoughts on the latest season of...",
                         },
                         {
                             name: "Tech Documentaries",
@@ -525,9 +715,10 @@
                             orbitRadius: 500,
                             orbitSpeed: 0.0004,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Fascinating tech documentaries I've watched..."
-                        }
-                    ]
+                            content:
+                                "Fascinating tech documentaries I've watched...",
+                        },
+                    ],
                 },
                 {
                     id: "travel",
@@ -545,7 +736,8 @@
                             orbitRadius: 400,
                             orbitSpeed: 0.0005,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "My adventures through various European countries..."
+                            content:
+                                "My adventures through various European countries...",
                         },
                         {
                             name: "Asia",
@@ -554,7 +746,7 @@
                             orbitRadius: 650,
                             orbitSpeed: 0.0003,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Exploring cultures across Asia..."
+                            content: "Exploring cultures across Asia...",
                         },
                         {
                             name: "Americas",
@@ -563,15 +755,16 @@
                             orbitRadius: 900,
                             orbitSpeed: 0.0002,
                             orbitAngle: Math.random() * Math.PI * 2,
-                            content: "Road trips and city explorations in North and South America..."
-                        }
-                    ]
-                }
+                            content:
+                                "Road trips and city explorations in North and South America...",
+                        },
+                    ],
+                },
             ];
 
             // Create a flat list of all planets for radar and detection purposes
             const allPlanets = [];
-            starSystems.forEach(system => {
+            starSystems.forEach((system) => {
                 // Add the star
                 allPlanets.push({
                     x: system.x,
@@ -581,15 +774,19 @@
                     name: system.name + " System",
                     content: system.content,
                     isStar: true,
-                    systemId: system.id
+                    systemId: system.id,
                 });
-                
+
                 // Add each planet
-                system.planets.forEach(planet => {
+                system.planets.forEach((planet) => {
                     // Calculate position based on orbit
-                    const planetX = system.x + Math.cos(planet.orbitAngle) * planet.orbitRadius;
-                    const planetY = system.y + Math.sin(planet.orbitAngle) * planet.orbitRadius;
-                    
+                    const planetX =
+                        system.x +
+                        Math.cos(planet.orbitAngle) * planet.orbitRadius;
+                    const planetY =
+                        system.y +
+                        Math.sin(planet.orbitAngle) * planet.orbitRadius;
+
                     allPlanets.push({
                         x: planetX,
                         y: planetY,
@@ -604,7 +801,7 @@
                         orbitAngle: planet.orbitAngle,
                         systemName: system.name,
                         systemId: system.id,
-                        isPlanet: true
+                        isPlanet: true,
                     });
                 });
             });
@@ -642,10 +839,14 @@
                         if (obj.orbitAngle > Math.PI * 2) {
                             obj.orbitAngle -= Math.PI * 2;
                         }
-                        
+
                         // Update position based on orbit
-                        obj.x = obj.baseX + Math.cos(obj.orbitAngle) * obj.orbitRadius;
-                        obj.y = obj.baseY + Math.sin(obj.orbitAngle) * obj.orbitRadius;
+                        obj.x =
+                            obj.baseX +
+                            Math.cos(obj.orbitAngle) * obj.orbitRadius;
+                        obj.y =
+                            obj.baseY +
+                            Math.sin(obj.orbitAngle) * obj.orbitRadius;
                     }
                 }
             }
@@ -653,19 +854,20 @@
             // Check if spaceship is near a celestial object
             function checkPlanetProximity() {
                 let foundNearby = false;
-                
+
                 for (const obj of allPlanets) {
                     const dx = spaceship.x - obj.x;
                     const dy = spaceship.y - obj.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    
+
                     // Adjust proximity distance based on whether it's a star or planet
-                    const proximityThreshold = obj.radius + (obj.isStar ? 200 : 50);
+                    const proximityThreshold =
+                        obj.radius + (obj.isStar ? 200 : 50);
 
                     if (distance < proximityThreshold) {
                         // Prepare info panel content based on object type
                         let infoContent;
-                        
+
                         if (obj.isStar) {
                             infoContent = `<h2>${obj.name}</h2>
                                           <p>${obj.content}</p>
@@ -677,24 +879,28 @@
                                           <p>${obj.content}</p>
                                           <p>Press 'E' to explore this item</p>`;
                         }
-                        
+
                         infoPanel.innerHTML = infoContent;
                         infoPanel.style.display = "block";
-                        
+
                         // Logic for "entering" a section when pressing E
                         if (keys["e"] || keys["E"]) {
                             if (obj.isStar) {
-                                console.log(`Viewing overview of system: ${obj.name}`);
+                                console.log(
+                                    `Viewing overview of system: ${obj.name}`
+                                );
                             } else {
-                                console.log(`Exploring item: ${obj.name} in ${obj.systemName}`);
+                                console.log(
+                                    `Exploring item: ${obj.name} in ${obj.systemName}`
+                                );
                             }
                         }
-                        
+
                         foundNearby = true;
                         break;
                     }
                 }
-                
+
                 if (!foundNearby) {
                     infoPanel.style.display = "none";
                 }
@@ -712,8 +918,7 @@
                         spaceship.boostDuration
                     ) {
                         spaceship.boostActive = false;
-                        spaceship.boostAvailable = false;
-                        spaceship.boostCooldownStartTime = Date.now();
+                        spaceship.boostAvailable = true; // Immediately available again
                     }
                 }
 
@@ -730,11 +935,10 @@
                 // Activate boost with Shift key
                 if (
                     keys["Shift"] &&
-                    spaceship.boostAvailable &&
-                    !spaceship.boostActive
+                    !spaceship.boostActive &&
+                    spaceship.boostAvailable
                 ) {
                     spaceship.boostActive = true;
-                    spaceship.boostAvailable = false;
                     spaceship.boostStartTime = Date.now();
                 }
 
@@ -906,7 +1110,7 @@
                         { x: 0, y: 5, color: "#f39c12" },
                         { x: 1, y: 5, color: "#f39c12" },
                     ];
-                    
+
                     // Add extra flame length for boost
                     if (spaceship.boostActive) {
                         thrustPixels.push(
@@ -974,7 +1178,7 @@
             function drawStar(x, y, radius, color) {
                 const screenX = x - camera.x;
                 const screenY = y - camera.y;
-                
+
                 // Only draw if the star is visible (or close to visible)
                 if (
                     screenX + radius + 200 < 0 ||
@@ -984,32 +1188,38 @@
                 ) {
                     return;
                 }
-                
+
                 // Draw star glow
                 const gradient = ctx.createRadialGradient(
-                    screenX, screenY, radius * 0.5,
-                    screenX, screenY, radius * 2
+                    screenX,
+                    screenY,
+                    radius * 0.5,
+                    screenX,
+                    screenY,
+                    radius * 2
                 );
                 gradient.addColorStop(0, color);
                 gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-                
+
                 ctx.fillStyle = gradient;
                 ctx.beginPath();
                 ctx.arc(screenX, screenY, radius * 2, 0, Math.PI * 2);
                 ctx.fill();
-                
+
                 // Draw star core
                 ctx.fillStyle = color;
                 ctx.beginPath();
                 ctx.arc(screenX, screenY, radius, 0, Math.PI * 2);
                 ctx.fill();
-                
+
                 // Add some random bright spots to make the star look more dynamic
                 ctx.fillStyle = "#FFFFFF";
                 const spots = Math.floor(radius / 10);
                 for (let i = 0; i < spots; i++) {
-                    const spotX = screenX + (Math.random() - 0.5) * radius * 1.8;
-                    const spotY = screenY + (Math.random() - 0.5) * radius * 1.8;
+                    const spotX =
+                        screenX + (Math.random() - 0.5) * radius * 1.8;
+                    const spotY =
+                        screenY + (Math.random() - 0.5) * radius * 1.8;
                     const spotSize = Math.random() * 3 + 1;
                     ctx.beginPath();
                     ctx.arc(spotX, spotY, spotSize, 0, Math.PI * 2);
@@ -1019,10 +1229,10 @@
 
             // Draw orbit rings
             function drawOrbitRings() {
-                starSystems.forEach(system => {
+                starSystems.forEach((system) => {
                     const screenX = system.x - camera.x;
                     const screenY = system.y - camera.y;
-                    
+
                     // Only draw if the star system is visible (or close to visible)
                     if (
                         screenX + 1000 < 0 ||
@@ -1032,18 +1242,18 @@
                     ) {
                         return;
                     }
-                    
+
                     // Draw orbit paths
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
                     ctx.lineWidth = 1;
-                    
-                    system.planets.forEach(planet => {
+
+                    system.planets.forEach((planet) => {
                         ctx.beginPath();
                         ctx.arc(
-                            screenX, 
-                            screenY, 
-                            planet.orbitRadius, 
-                            0, 
+                            screenX,
+                            screenY,
+                            planet.orbitRadius,
+                            0,
                             Math.PI * 2
                         );
                         ctx.stroke();
@@ -1142,13 +1352,6 @@
                             spaceship.boostDuration;
                     boostFill.style.width = `${remainingBoost * 100}%`;
                     boostFill.classList.add("boost-active");
-                } else if (!spaceship.boostAvailable) {
-                    // Show cooldown progress
-                    const cooldownProgress =
-                        (Date.now() - spaceship.boostCooldownStartTime) /
-                        spaceship.boostCooldown;
-                    boostFill.style.width = `${cooldownProgress * 100}%`;
-                    boostFill.classList.remove("boost-active");
                 } else {
                     // Boost is available
                     boostFill.style.width = "100%";
@@ -1179,7 +1382,7 @@
 
                 // Calculate radar scale (how much universe space fits in radar)
                 const radarRange = 5000; // Increased range to see more star systems
-                const radarScale = 80 / radarRange; // 80px is the largest radar circle radius
+                const radarScale = 100 / radarRange; // Increased from 80px to 100px for the largest radar circle radius
 
                 // Draw radar sweep line
                 radarCtx.save();
@@ -1189,21 +1392,21 @@
                 // Draw sweep line
                 radarCtx.beginPath();
                 radarCtx.moveTo(0, 0);
-                radarCtx.lineTo(100, 0);
+                radarCtx.lineTo(140, 0); // Increased line length
                 radarCtx.strokeStyle = "rgba(0, 255, 255, 0.7)";
                 radarCtx.lineWidth = 2;
                 radarCtx.stroke();
 
-                // Add sweep "glow"
+                // Add wider sweep "glow" - increase the angle from 0.2 to 0.4
                 radarCtx.beginPath();
                 radarCtx.moveTo(0, 0);
-                radarCtx.arc(0, 0, 100, -0.2, 0.2);
+                radarCtx.arc(0, 0, 140, -0.4, 0.4); // Wider sweep angle and larger radius
                 radarCtx.fillStyle = "rgba(0, 255, 255, 0.15)";
                 radarCtx.fill();
                 radarCtx.restore();
 
                 // Draw only stars on radar (for cleaner display)
-                allPlanets.forEach(obj => {
+                allPlanets.forEach((obj) => {
                     if (obj.isStar) {
                         // Calculate relative position to ship
                         const dx = obj.x - spaceship.x;
@@ -1251,12 +1454,16 @@
                             radarCtx.beginPath();
                             radarCtx.arc(radarX, radarY, 5, 0, Math.PI * 2);
                             radarCtx.fill();
-                            
+
                             // Draw star name if it's very close
                             if (distance < radarRange * 0.4) {
                                 radarCtx.fillStyle = "rgba(255, 255, 255, 0.7)";
                                 radarCtx.font = "7px Arial";
-                                radarCtx.fillText(obj.name.split(" ")[0], radarX + 7, radarY + 3);
+                                radarCtx.fillText(
+                                    obj.name.split(" ")[0],
+                                    radarX + 7,
+                                    radarY + 3
+                                );
                             }
                         }
                     }
@@ -1276,7 +1483,7 @@
 
                 // Extract only stars for main list
                 const starsWithDistance = starSystems
-                    .map(system => {
+                    .map((system) => {
                         const dx = system.x - spaceship.x;
                         const dy = system.y - spaceship.y;
                         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -1299,7 +1506,7 @@
                             distance,
                             bearing,
                             relativeBearing,
-                            planetCount: system.planets.length
+                            planetCount: system.planets.length,
                         };
                     })
                     .sort((a, b) => a.distance - b.distance);
@@ -1337,7 +1544,7 @@
                 planetData.appendChild(headerRow);
 
                 // Add star systems to the list
-                starsWithDistance.forEach(system => {
+                starsWithDistance.forEach((system) => {
                     const systemRow = document.createElement("div");
                     systemRow.className = "planet-row";
 
@@ -1377,9 +1584,12 @@
                     systemRow.appendChild(directionEl);
 
                     planetData.appendChild(systemRow);
-                    
+
                     // Find the nearest star system
-                    if (system === starsWithDistance[0] && system.distance < 3000) {
+                    if (
+                        system === starsWithDistance[0] &&
+                        system.distance < 3000
+                    ) {
                         // Add a divider
                         const divider = document.createElement("div");
                         divider.style.padding = "3px";
@@ -1388,20 +1598,30 @@
                         divider.style.textAlign = "center";
                         divider.textContent = "PLANETS IN THIS SYSTEM";
                         planetData.appendChild(divider);
-                        
+
                         // Find the actual star system data
-                        const currentSystem = starSystems.find(s => s.id === system.id);
+                        const currentSystem = starSystems.find(
+                            (s) => s.id === system.id
+                        );
                         if (currentSystem) {
                             // Add planets of the nearest system
                             const planetsWithDistance = currentSystem.planets
-                                .map(planet => {
+                                .map((planet) => {
                                     // Calculate current position
-                                    const planetX = currentSystem.x + Math.cos(planet.orbitAngle) * planet.orbitRadius;
-                                    const planetY = currentSystem.y + Math.sin(planet.orbitAngle) * planet.orbitRadius;
-                                    
+                                    const planetX =
+                                        currentSystem.x +
+                                        Math.cos(planet.orbitAngle) *
+                                            planet.orbitRadius;
+                                    const planetY =
+                                        currentSystem.y +
+                                        Math.sin(planet.orbitAngle) *
+                                            planet.orbitRadius;
+
                                     const dx = planetX - spaceship.x;
                                     const dy = planetY - spaceship.y;
-                                    const distance = Math.sqrt(dx * dx + dy * dy);
+                                    const distance = Math.sqrt(
+                                        dx * dx + dy * dy
+                                    );
                                     const bearing = calculateBearing(
                                         spaceship.x,
                                         spaceship.y,
@@ -1410,21 +1630,24 @@
                                     );
 
                                     // Calculate relative bearing
-                                    const shipHeading = radToDeg(spaceship.rotationAngle);
+                                    const shipHeading = radToDeg(
+                                        spaceship.rotationAngle
+                                    );
                                     let relativeBearing = bearing - shipHeading;
-                                    if (relativeBearing < 0) relativeBearing += 360;
+                                    if (relativeBearing < 0)
+                                        relativeBearing += 360;
 
                                     return {
                                         name: planet.name,
                                         color: planet.color,
                                         distance,
                                         bearing,
-                                        relativeBearing
+                                        relativeBearing,
                                     };
                                 })
                                 .sort((a, b) => a.distance - b.distance);
 
-                            planetsWithDistance.forEach(planet => {
+                            planetsWithDistance.forEach((planet) => {
                                 const planetRow = document.createElement("div");
                                 planetRow.className = "planet-row";
                                 planetRow.style.paddingLeft = "15px"; // Indent planets
@@ -1439,11 +1662,15 @@
                                 nameEl.className = "planet-name";
                                 nameEl.textContent = planet.name;
 
-                                const distanceEl = document.createElement("div");
+                                const distanceEl =
+                                    document.createElement("div");
                                 distanceEl.className = "planet-distance";
-                                distanceEl.textContent = `${Math.round(planet.distance)}u`;
+                                distanceEl.textContent = `${Math.round(
+                                    planet.distance
+                                )}u`;
 
-                                const directionEl = document.createElement("div");
+                                const directionEl =
+                                    document.createElement("div");
                                 directionEl.className = "planet-direction";
 
                                 // Direction arrow
@@ -1451,12 +1678,18 @@
                                 const rb = planet.relativeBearing;
 
                                 if (rb > 345 || rb <= 15) directionArrow = "↑";
-                                else if (rb > 15 && rb <= 75) directionArrow = "↗";
-                                else if (rb > 75 && rb <= 105) directionArrow = "→";
-                                else if (rb > 105 && rb <= 165) directionArrow = "↘";
-                                else if (rb > 165 && rb <= 195) directionArrow = "↓";
-                                else if (rb > 195 && rb <= 255) directionArrow = "↙";
-                                else if (rb > 255 && rb <= 285) directionArrow = "←";
+                                else if (rb > 15 && rb <= 75)
+                                    directionArrow = "↗";
+                                else if (rb > 75 && rb <= 105)
+                                    directionArrow = "→";
+                                else if (rb > 105 && rb <= 165)
+                                    directionArrow = "↘";
+                                else if (rb > 165 && rb <= 195)
+                                    directionArrow = "↓";
+                                else if (rb > 195 && rb <= 255)
+                                    directionArrow = "↙";
+                                else if (rb > 255 && rb <= 285)
+                                    directionArrow = "←";
                                 else directionArrow = "↖";
 
                                 directionEl.textContent = `${directionArrow} ${planet.bearing}°`;
@@ -1479,12 +1712,12 @@
 
                 // Draw background stars
                 drawStars();
-                
+
                 // Draw orbit rings
                 drawOrbitRings();
 
                 // Draw planets and stars from the allPlanets list
-                allPlanets.forEach(obj => {
+                allPlanets.forEach((obj) => {
                     if (obj.isStar) {
                         drawStar(obj.x, obj.y, obj.radius, obj.color);
                     } else {
