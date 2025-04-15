@@ -10,7 +10,6 @@ const thrusterIndicator = document.getElementById("thruster-indicator");
 const locationIndicator = document.getElementById("current-location");
 const radarCanvas = document.getElementById("radar-sweep");
 const radarCtx = radarCanvas.getContext("2d");
-const targetReticle = document.getElementById("target-reticle");
 const navPanelToggle = document.getElementById("nav-panel-toggle");
 
 canvas.width = window.innerWidth;
@@ -426,8 +425,7 @@ function checkPlanetProximity() {
         }
 
         // Adjust proximity threshold based on whether it's a star or planet
-        const proximityThreshold =
-            obj.radius + (obj.isStar ? 200 : 50);
+        const proximityThreshold = obj.radius + (obj.isStar ? 200 : 50);
 
         if (distance < proximityThreshold) {
             // Prepare info panel content based on object type
@@ -446,18 +444,28 @@ function checkPlanetProximity() {
             }
 
             infoPanel.innerHTML = infoContent;
+            
+            // Position the info panel relative to the ship instead of over it
+            const screenX = spaceship.x - camera.x;
+            const screenY = spaceship.y - camera.y;
+            
+            // Position info panel above and to the right of the ship
+            infoPanel.style.left = `${screenX + 40}px`;
+            infoPanel.style.top = `${screenY - 20}px`;
             infoPanel.style.display = "block";
+            
+            // Add a connecting line from ship to panel
+            infoPanel.style.borderLeft = `2px solid ${obj.color}`;
+            infoPanel.style.boxShadow = `0 0 15px 5px rgba(${parseInt(obj.color.slice(1, 3), 16)}, 
+                                                          ${parseInt(obj.color.slice(3, 5), 16)}, 
+                                                          ${parseInt(obj.color.slice(5, 7), 16)}, 0.3)`;
 
             // Logic for "entering" a section when pressing E
             if (keys["e"] || keys["E"]) {
                 if (obj.isStar) {
-                    console.log(
-                        `Viewing overview of system: ${obj.name}`
-                    );
+                    console.log(`Viewing overview of system: ${obj.name}`);
                 } else {
-                    console.log(
-                        `Exploring item: ${obj.name} in ${obj.systemName}`
-                    );
+                    console.log(`Exploring item: ${obj.name} in ${obj.systemName}`);
                 }
             }
 
@@ -468,21 +476,6 @@ function checkPlanetProximity() {
 
     if (!foundNearby) {
         infoPanel.style.display = "none";
-    }
-
-    // Update targeting reticle based on nearest object
-    if (nearestObject && nearestDistance < 1000) {
-        const reticleOpacity = Math.max(0, 1 - nearestDistance / 1000);
-        targetReticle.style.opacity = reticleOpacity;
-        
-        // If very close, highlight the reticle
-        if (nearestDistance < 200) {
-            targetReticle.querySelector('.reticle-circle').style.borderColor = nearestObject.color;
-        } else {
-            targetReticle.querySelector('.reticle-circle').style.borderColor = 'rgba(0, 255, 255, 0.5)';
-        }
-    } else {
-        targetReticle.style.opacity = 0;
     }
 
     // Update current system indicator
