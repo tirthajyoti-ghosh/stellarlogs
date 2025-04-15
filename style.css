@@ -19,47 +19,6 @@ canvas {
     pointer-events: none; /* Allows clicking through to canvas */
 }
 
-/* Central targeting reticle */
-#target-reticle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 40px;
-    height: 40px;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-#target-reticle .reticle-circle {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 1px solid rgba(0, 255, 255, 0.5);
-    border-radius: 50%;
-}
-
-#target-reticle .reticle-line {
-    position: absolute;
-    background-color: rgba(0, 255, 255, 0.7);
-}
-
-#target-reticle .horizontal {
-    width: 100%;
-    height: 1px;
-    top: 50%;
-    left: 0;
-}
-
-#target-reticle .vertical {
-    width: 1px;
-    height: 100%;
-    top: 0;
-    left: 50%;
-}
-
 /* Top info bar */
 #top-info-bar {
     position: absolute;
@@ -379,18 +338,28 @@ canvas {
 /* Info panel for objects */
 #info {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -200px);
-    color: white;
-    background-color: rgba(4, 12, 24, 0.7);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #00ffff;
     padding: 15px;
-    border-radius: 10px;
-    border: 1px solid rgba(0, 255, 255, 0.5);
-    display: none;
+    border-radius: 5px;
     max-width: 300px;
+    font-size: 14px;
     backdrop-filter: blur(5px);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+    border: 1px solid #00ffff;
+    z-index: 100;
+    transform: translate(0, -100%); /* Move up by its height */
+    pointer-events: none; /* Let clicks go through to objects beneath */
+    transition: opacity 0.3s ease;
+}
+
+#info:before {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 2px;
+    height: 10px;
+    background-color: inherit;
 }
 
 #info h2 {
