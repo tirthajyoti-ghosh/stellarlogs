@@ -1,0 +1,1053 @@
+.html
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Pixelated Space Portfolio</title>
+        <style>
+            body {
+                margin: 0;
+                overflow: hidden;
+                background-color: #000;
+                font-family: "Courier New", monospace;
+            }
+            canvas {
+                display: block;
+            }
+            #info {
+                position: absolute;
+                top: 10px;
+                left: 10px;
+                color: white;
+                background-color: rgba(0, 0, 0, 0.7);
+                padding: 10px;
+                border-radius: 5px;
+                display: none;
+            }
+            #dashboard {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 120px;
+                background-color: rgba(10, 20, 30, 0.9);
+                color: #0ff;
+                border-top: 2px solid #0ff;
+                display: flex;
+                padding: 10px;
+            }
+            #radar-container {
+                width: 200px;
+                height: 100px;
+                border: 2px solid #0ff;
+                border-radius: 5px;
+                position: relative;
+                margin-right: 15px;
+                overflow: hidden;
+                background-color: rgba(0, 40, 60, 0.5);
+            }
+            #radar-sweep {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+            }
+            #radar-ship {
+                position: absolute;
+                width: 8px;
+                height: 8px;
+                background-color: white;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                z-index: 10;
+            }
+            #radar-grid {
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                opacity: 0.3;
+            }
+            .radar-circle {
+                position: absolute;
+                border: 1px solid #0ff;
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+            #radar-title {
+                position: absolute;
+                top: -20px;
+                left: 0;
+                width: 100%;
+                text-align: center;
+                font-size: 12px;
+                color: #0ff;
+            }
+            #planet-data {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow-y: auto;
+            }
+            .planet-row {
+                display: flex;
+                align-items: center;
+                margin-bottom: 5px;
+                padding: 3px;
+                border-radius: 3px;
+            }
+            .planet-row:hover {
+                background-color: rgba(0, 255, 255, 0.1);
+            }
+            .planet-indicator {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                margin-right: 10px;
+            }
+            .planet-name {
+                width: 120px;
+                font-size: 12px;
+            }
+            .planet-distance {
+                width: 80px;
+                font-size: 12px;
+                text-align: right;
+            }
+            .planet-direction {
+                width: 80px;
+                font-size: 12px;
+                text-align: center;
+            }
+            #ship-controls {
+                width: 200px;
+                margin-left: 15px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+                border-left: 1px solid rgba(0, 255, 255, 0.3);
+                padding-left: 15px;
+            }
+            .control-row {
+                display: flex;
+                justify-content: space-between;
+            }
+            .control-label {
+                font-size: 12px;
+                color: rgba(0, 255, 255, 0.7);
+            }
+            .control-value {
+                font-size: 12px;
+                font-weight: bold;
+            }
+            .blinking {
+                animation: blink 1s infinite;
+            }
+            .thruster-indicator {
+                width: 40px;
+                height: 10px;
+                background-color: #333;
+                border: 1px solid #0ff;
+                display: inline-block;
+                vertical-align: middle;
+            }
+            .thruster-active {
+                background-color: #f39c12;
+            }
+            .boost-meter {
+                width: 100%;
+                height: 6px;
+                background-color: #333;
+                border: 1px solid #0ff;
+                position: relative;
+                overflow: hidden;
+            }
+            .boost-fill {
+                height: 100%;
+                background-color: #0ff;
+                width: 100%;
+                transition: width 0.3s;
+            }
+            .boost-active {
+                background-color: #f39c12;
+                animation: pulse 0.5s infinite;
+            }
+            @keyframes pulse {
+                0% {
+                    opacity: 0.7;
+                }
+                50% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0.7;
+                }
+            }
+            @keyframes blink {
+                50% {
+                    opacity: 0.5;
+                }
+            }
+            @keyframes sweep {
+                from {
+                    transform: translate(-50%, -50%) rotate(0deg);
+                }
+                to {
+                    transform: translate(-50%, -50%) rotate(360deg);
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="gameCanvas"></canvas>
+        <div id="info"></div>
+        <div id="dashboard">
+            <div id="radar-container">
+                <div id="radar-title">NAVIGATION RADAR</div>
+                <div id="radar-grid">
+                    <div
+                        class="radar-circle"
+                        style="width: 40px; height: 40px"
+                    ></div>
+                    <div
+                        class="radar-circle"
+                        style="width: 80px; height: 80px"
+                    ></div>
+                    <div
+                        class="radar-circle"
+                        style="width: 120px; height: 120px"
+                    ></div>
+                    <div
+                        class="radar-circle"
+                        style="width: 160px; height: 160px"
+                    ></div>
+                </div>
+                <div id="radar-ship"></div>
+                <canvas id="radar-sweep" width="200" height="100"></canvas>
+            </div>
+            <div id="planet-data"></div>
+            <div id="ship-controls">
+                <div class="control-row">
+                    <span class="control-label">VELOCITY:</span>
+                    <span class="control-value" id="current-speed">0.00</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">HEADING:</span>
+                    <span class="control-value" id="current-heading">0°</span>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">THRUSTERS:</span>
+                    <div
+                        class="thruster-indicator"
+                        id="thruster-indicator"
+                    ></div>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">BOOST:</span>
+                    <div class="boost-meter" id="boost-meter">
+                        <div class="boost-fill" id="boost-fill"></div>
+                    </div>
+                </div>
+                <div class="control-row">
+                    <span class="control-label">LOCATION:</span>
+                    <span class="control-value" id="current-location"
+                        >X:0 Y:0</span
+                    >
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Canvas setup
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+            const infoPanel = document.getElementById("info");
+            const planetData = document.getElementById("planet-data");
+            const speedIndicator = document.getElementById("current-speed");
+            const headingIndicator = document.getElementById("current-heading");
+            const thrusterIndicator =
+                document.getElementById("thruster-indicator");
+            const locationIndicator =
+                document.getElementById("current-location");
+            const radarCanvas = document.getElementById("radar-sweep");
+            const radarCtx = radarCanvas.getContext("2d");
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 120; // Account for dashboard
+
+            // Camera for viewport
+            const camera = {
+                x: 0,
+                y: 0,
+                width: canvas.width,
+                height: canvas.height,
+            };
+
+            // Game variables
+            const spaceship = {
+                x: canvas.width / 2, // Start in the middle of the viewport
+                y: canvas.height / 2,
+                width: 32,
+                height: 32,
+                velocityX: 0,
+                velocityY: 0,
+                acceleration: 0.1,
+                maxSpeed: 8,
+                friction: 0.97,
+                rotationAngle: -Math.PI / 2, // Start pointing upward (-90 degrees)
+                rotationSpeed: 0.1,
+                thrusting: false,
+                // Boost properties - changed from 100 to 10 for better control
+                boostFactor: 10,
+                boostDuration: 1000, // milliseconds
+                boostCooldown: 5000, // milliseconds
+                boostAvailable: true,
+                boostActive: false,
+                boostStartTime: 0,
+                boostCooldownStartTime: 0,
+            };
+
+            // Set universe size (much larger than viewport)
+            const universeWidth = 10000;
+            const universeHeight = 10000;
+
+            // Portfolio sections as planets - spread far apart
+            const planets = [
+                {
+                    x: 500,
+                    y: 500,
+                    radius: 80,
+                    color: "#FF5733",
+                    name: "Work Experience",
+                    content: "Details about your work experience...",
+                },
+                {
+                    x: 2500,
+                    y: 1500,
+                    radius: 100,
+                    color: "#33FF57",
+                    name: "Projects",
+                    content: "Your projects details...",
+                },
+                {
+                    x: 4000,
+                    y: 1000,
+                    radius: 90,
+                    color: "#3357FF",
+                    name: "Blog",
+                    content: "Your blog posts...",
+                },
+                {
+                    x: 1500,
+                    y: 3000,
+                    radius: 70,
+                    color: "#F3FF33",
+                    name: "Recommendations",
+                    content: "LinkedIn recommendations...",
+                },
+                {
+                    x: 3500,
+                    y: 4000,
+                    radius: 60,
+                    color: "#FF33F6",
+                    name: "Current Book",
+                    content: "Book you are currently reading...",
+                },
+                {
+                    x: 6000,
+                    y: 2500,
+                    radius: 110,
+                    color: "#33FFF3",
+                    name: "TV Shows",
+                    content: "Shows you are binging...",
+                },
+                {
+                    x: 1000,
+                    y: 5000,
+                    radius: 120,
+                    color: "#C433FF",
+                    name: "Travel Map",
+                    content: "Places you have visited...",
+                },
+            ];
+
+            // Stars background - more stars for larger universe
+            const stars = [];
+            for (let i = 0; i < 2000; i++) {
+                stars.push({
+                    x: Math.random() * universeWidth,
+                    y: Math.random() * universeHeight,
+                    size: Math.random() * 3,
+                    twinkleSpeed: Math.random() * 0.05,
+                });
+            }
+
+            // Input handling
+            const keys = {};
+
+            document.addEventListener("keydown", (e) => {
+                keys[e.key] = true;
+            });
+
+            document.addEventListener("keyup", (e) => {
+                keys[e.key] = false;
+            });
+
+            // Check if spaceship is near a planet
+            function checkPlanetProximity() {
+                for (const planet of planets) {
+                    const dx = spaceship.x - planet.x;
+                    const dy = spaceship.y - planet.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < planet.radius + 50) {
+                        infoPanel.innerHTML = `<h2>${planet.name}</h2><p>${planet.content}</p><p>Press 'E' to explore this section</p>`;
+                        infoPanel.style.display = "block";
+
+                        // Logic for "entering" a section when pressing E
+                        if (keys["e"] || keys["E"]) {
+                            // Here you would add code to transition to the specific section
+                            console.log(`Entering section: ${planet.name}`);
+                        }
+
+                        return;
+                    }
+                }
+                infoPanel.style.display = "none";
+            }
+
+            // Update spaceship position with physics
+            function updateSpaceship() {
+                // Apply thrust based on input - now always in the direction the ship is facing
+                spaceship.thrusting = false;
+
+                // Check if boost is active and if it should be deactivated
+                if (spaceship.boostActive) {
+                    if (
+                        Date.now() - spaceship.boostStartTime >
+                        spaceship.boostDuration
+                    ) {
+                        spaceship.boostActive = false;
+                        spaceship.boostAvailable = false;
+                        spaceship.boostCooldownStartTime = Date.now();
+                    }
+                }
+
+                // Check if boost cooldown is complete
+                if (!spaceship.boostAvailable && !spaceship.boostActive) {
+                    if (
+                        Date.now() - spaceship.boostCooldownStartTime >
+                        spaceship.boostCooldown
+                    ) {
+                        spaceship.boostAvailable = true;
+                    }
+                }
+
+                // Activate boost with Shift key
+                if (
+                    keys["Shift"] &&
+                    spaceship.boostAvailable &&
+                    !spaceship.boostActive
+                ) {
+                    spaceship.boostActive = true;
+                    spaceship.boostAvailable = false;
+                    spaceship.boostStartTime = Date.now();
+                }
+
+                // Apply regular thrust
+                if (keys["ArrowUp"] || keys["w"]) {
+                    // Calculate acceleration based on boost status
+                    const currentAcceleration = spaceship.boostActive
+                        ? spaceship.acceleration * spaceship.boostFactor
+                        : spaceship.acceleration;
+
+                    spaceship.velocityX +=
+                        Math.cos(spaceship.rotationAngle - Math.PI / 2) *
+                        currentAcceleration;
+
+                    spaceship.velocityY +=
+                        Math.sin(spaceship.rotationAngle - Math.PI / 2) *
+                        currentAcceleration;
+
+                    spaceship.thrusting = true;
+                }
+
+                // Rotation
+                if (keys["ArrowLeft"] || keys["a"]) {
+                    spaceship.rotationAngle -= spaceship.rotationSpeed;
+                }
+                if (keys["ArrowRight"] || keys["d"]) {
+                    spaceship.rotationAngle += spaceship.rotationSpeed;
+                }
+
+                // Update max speed based on boost
+                const currentMaxSpeed = spaceship.boostActive
+                    ? spaceship.maxSpeed * spaceship.boostFactor
+                    : spaceship.maxSpeed;
+
+                // Limit maximum speed
+                const currentSpeed = Math.sqrt(
+                    spaceship.velocityX * spaceship.velocityX +
+                        spaceship.velocityY * spaceship.velocityY
+                );
+                if (currentSpeed > currentMaxSpeed) {
+                    const ratio = currentMaxSpeed / currentSpeed;
+                    spaceship.velocityX *= ratio;
+                    spaceship.velocityY *= ratio;
+                }
+
+                // Apply different friction based on boost status
+                // Less friction during boost for more acceleration/deceleration time
+                const currentFriction = spaceship.boostActive
+                    ? 0.99 // Higher value means less friction
+                    : spaceship.friction;
+
+                spaceship.velocityX *= currentFriction;
+                spaceship.velocityY *= currentFriction;
+
+                // Update position
+                spaceship.x += spaceship.velocityX;
+                spaceship.y += spaceship.velocityY;
+
+                // Wrap around universe edges
+                if (spaceship.x > universeWidth) spaceship.x = 0;
+                if (spaceship.x < 0) spaceship.x = universeWidth;
+                if (spaceship.y > universeHeight) spaceship.y = 0;
+                if (spaceship.y < 0) spaceship.y = universeHeight;
+
+                // Update camera to follow spaceship
+                camera.x = spaceship.x - canvas.width / 2;
+                camera.y = spaceship.y - canvas.height / 2;
+
+                // Keep camera within universe bounds
+                camera.x = Math.max(
+                    0,
+                    Math.min(camera.x, universeWidth - camera.width)
+                );
+                camera.y = Math.max(
+                    0,
+                    Math.min(camera.y, universeHeight - camera.height)
+                );
+
+                // Update dashboard
+                updateDashboard();
+
+                checkPlanetProximity();
+            }
+
+            // Draw pixelated spaceship
+            function drawSpaceship() {
+                const screenX = spaceship.x - camera.x;
+                const screenY = spaceship.y - camera.y;
+
+                ctx.save();
+                ctx.translate(screenX, screenY);
+                ctx.rotate(spaceship.rotationAngle);
+
+                // Spaceship body (draw using pixels)
+                const pixelSize = 4;
+
+                // Define spaceship shape in a pixel grid (relative to center)
+                const shipPixels = [
+                    // Nose (now at the top/up direction)
+                    { x: 0, y: -3, color: "#3498db" },
+                    { x: -1, y: -2, color: "#3498db" },
+                    { x: 0, y: -2, color: "#3498db" },
+                    { x: 1, y: -2, color: "#3498db" },
+
+                    // Middle section
+                    { x: -2, y: -1, color: "#3498db" },
+                    { x: -1, y: -1, color: "#3498db" },
+                    { x: 0, y: -1, color: "#3498db" },
+                    { x: 1, y: -1, color: "#3498db" },
+                    { x: 2, y: -1, color: "#3498db" },
+
+                    { x: -3, y: 0, color: "#3498db" },
+                    { x: -2, y: 0, color: "#3498db" },
+                    { x: -1, y: 0, color: "#3498db" },
+                    { x: 0, y: 0, color: "#ffffff" }, // Cockpit
+                    { x: 1, y: 0, color: "#3498db" },
+                    { x: 2, y: 0, color: "#3498db" },
+                    { x: 3, y: 0, color: "#3498db" },
+
+                    // Wings
+                    { x: -4, y: 1, color: "#3498db" },
+                    { x: -3, y: 1, color: "#3498db" },
+                    { x: -2, y: 1, color: "#3498db" },
+                    { x: -1, y: 1, color: "#3498db" },
+                    { x: 0, y: 1, color: "#3498db" },
+                    { x: 1, y: 1, color: "#3498db" },
+                    { x: 2, y: 1, color: "#3498db" },
+                    { x: 3, y: 1, color: "#3498db" },
+                    { x: 4, y: 1, color: "#3498db" },
+
+                    // Rear section
+                    { x: -3, y: 2, color: "#3498db" },
+                    { x: -2, y: 2, color: "#3498db" },
+                    { x: -1, y: 2, color: "#3498db" },
+                    { x: 0, y: 2, color: "#3498db" },
+                    { x: 1, y: 2, color: "#3498db" },
+                    { x: 2, y: 2, color: "#3498db" },
+                    { x: 3, y: 2, color: "#3498db" },
+
+                    // Engines (at the bottom/down direction)
+                    { x: -2, y: 3, color: "#e74c3c" },
+                    { x: -1, y: 3, color: "#e74c3c" },
+                    { x: 0, y: 3, color: "#e74c3c" },
+                    { x: 1, y: 3, color: "#e74c3c" },
+                    { x: 2, y: 3, color: "#e74c3c" },
+                ];
+
+                // Draw ship pixels
+                shipPixels.forEach((pixel) => {
+                    ctx.fillStyle = pixel.color;
+                    ctx.fillRect(
+                        pixel.x * pixelSize,
+                        pixel.y * pixelSize,
+                        pixelSize,
+                        pixelSize
+                    );
+                });
+
+                // Draw thrust if engine is on
+                if (spaceship.thrusting) {
+                    // Base thruster pixels
+                    const thrustPixels = [
+                        { x: -2, y: 4, color: "#f39c12" },
+                        { x: -1, y: 4, color: "#f1c40f" },
+                        { x: 0, y: 4, color: "#f1c40f" },
+                        { x: 1, y: 4, color: "#f39c12" },
+                        { x: 2, y: 4, color: "#f39c12" },
+                        { x: -1, y: 5, color: "#f39c12" },
+                        { x: 0, y: 5, color: "#f39c12" },
+                        { x: 1, y: 5, color: "#f39c12" },
+                    ];
+                    
+                    // Add extra flame length for boost
+                    if (spaceship.boostActive) {
+                        thrustPixels.push(
+                            { x: -2, y: 6, color: "#e74c3c" },
+                            { x: -1, y: 6, color: "#f39c12" },
+                            { x: 0, y: 6, color: "#f1c40f" },
+                            { x: 1, y: 6, color: "#f39c12" },
+                            { x: 2, y: 6, color: "#e74c3c" },
+                            { x: -1, y: 7, color: "#e74c3c" },
+                            { x: 0, y: 7, color: "#e74c3c" },
+                            { x: 1, y: 7, color: "#e74c3c" }
+                        );
+                    }
+
+                    // Animate thrust with more frequent flicker during boost
+                    if (Math.random() > (spaceship.boostActive ? 0.1 : 0.3)) {
+                        thrustPixels.forEach((pixel) => {
+                            ctx.fillStyle = pixel.color;
+                            ctx.fillRect(
+                                pixel.x * pixelSize,
+                                pixel.y * pixelSize,
+                                pixelSize,
+                                pixelSize
+                            );
+                        });
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            // Draw pixelated circle
+            function drawPixelCircle(x, y, radius, color) {
+                const pixelSize = 4;
+                ctx.fillStyle = color;
+
+                const screenX = x - camera.x;
+                const screenY = y - camera.y;
+
+                // Only draw if the planet is visible on screen (with some margin)
+                if (
+                    screenX + radius + 100 < 0 ||
+                    screenX - radius - 100 > canvas.width ||
+                    screenY + radius + 100 < 0 ||
+                    screenY - radius - 100 > canvas.height
+                ) {
+                    return;
+                }
+
+                for (let i = -radius; i < radius; i += pixelSize) {
+                    for (let j = -radius; j < radius; j += pixelSize) {
+                        if (i * i + j * j < radius * radius) {
+                            ctx.fillRect(
+                                screenX + i,
+                                screenY + j,
+                                pixelSize,
+                                pixelSize
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Draw stars with parallax effect
+            function drawStars() {
+                ctx.fillStyle = "white";
+                stars.forEach((star, index) => {
+                    // Parallax effect - closer stars move faster
+                    const parallaxFactor = ((index % 3) + 1) * 0.2;
+
+                    const screenX = star.x - camera.x * parallaxFactor;
+                    const screenY = star.y - camera.y * parallaxFactor;
+
+                    // Wrap stars within viewport
+                    const wrappedX =
+                        ((screenX % canvas.width) + canvas.width) %
+                        canvas.width;
+                    const wrappedY =
+                        ((screenY % canvas.height) + canvas.height) %
+                        canvas.height;
+
+                    // Twinkle effect
+                    const twinkleSize =
+                        star.size *
+                        (0.7 + 0.3 * Math.sin(Date.now() * star.twinkleSpeed));
+
+                    ctx.fillRect(wrappedX, wrappedY, twinkleSize, twinkleSize);
+                });
+            }
+
+            // Calculate bearing between two points (in degrees)
+            function calculateBearing(x1, y1, x2, y2) {
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+
+                // Calculate angle in radians
+                let angle = Math.atan2(dy, dx);
+
+                // Convert to degrees
+                let degrees = angle * (180 / Math.PI);
+
+                // Normalize to 0-360 degrees
+                if (degrees < 0) {
+                    degrees += 360;
+                }
+
+                return Math.round(degrees);
+            }
+
+            // Convert radians to degrees
+            function radToDeg(rad) {
+                return rad * (180 / Math.PI);
+            }
+
+            // Convert degrees to compass direction
+            function degToCompass(deg) {
+                const directions = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+                return directions[Math.round(deg / 45) % 8];
+            }
+
+            // Update dashboard with planet distances and direction
+            function updateDashboard() {
+                // Update ship control indicators
+                const currentSpeed = Math.sqrt(
+                    spaceship.velocityX * spaceship.velocityX +
+                        spaceship.velocityY * spaceship.velocityY
+                );
+                speedIndicator.textContent = currentSpeed.toFixed(2);
+
+                // Calculate heading in degrees (0-360)
+                const headingDeg =
+                    ((radToDeg(spaceship.rotationAngle) % 360) + 360) % 360;
+                headingIndicator.textContent = `${Math.round(
+                    headingDeg
+                )}° ${degToCompass(headingDeg)}`;
+
+                // Update thrust indicator
+                if (spaceship.thrusting) {
+                    thrusterIndicator.classList.add("thruster-active");
+                } else {
+                    thrusterIndicator.classList.remove("thruster-active");
+                }
+
+                // Update boost meter
+                const boostFill = document.getElementById("boost-fill");
+
+                if (spaceship.boostActive) {
+                    // Show remaining boost time
+                    const remainingBoost =
+                        1 -
+                        (Date.now() - spaceship.boostStartTime) /
+                            spaceship.boostDuration;
+                    boostFill.style.width = `${remainingBoost * 100}%`;
+                    boostFill.classList.add("boost-active");
+                } else if (!spaceship.boostAvailable) {
+                    // Show cooldown progress
+                    const cooldownProgress =
+                        (Date.now() - spaceship.boostCooldownStartTime) /
+                        spaceship.boostCooldown;
+                    boostFill.style.width = `${cooldownProgress * 100}%`;
+                    boostFill.classList.remove("boost-active");
+                } else {
+                    // Boost is available
+                    boostFill.style.width = "100%";
+                    boostFill.classList.remove("boost-active");
+                }
+
+                // Update location
+                locationIndicator.textContent = `X:${Math.round(
+                    spaceship.x
+                )} Y:${Math.round(spaceship.y)}`;
+
+                // Update radar display
+                updateRadar();
+
+                // Update planet data list
+                updatePlanetList();
+            }
+
+            // Update radar display
+            let radarAngle = 0;
+            function updateRadar() {
+                // Clear radar
+                radarCtx.clearRect(0, 0, radarCanvas.width, radarCanvas.height);
+
+                // Set radar center point
+                const centerX = radarCanvas.width / 2;
+                const centerY = radarCanvas.height / 2;
+
+                // Calculate radar scale (how much universe space fits in radar)
+                const radarRange = 2000; // Units visible on radar
+                const radarScale = 80 / radarRange; // 80px is the largest radar circle radius
+
+                // Draw radar sweep line
+                radarCtx.save();
+                radarCtx.translate(centerX, centerY);
+                radarCtx.rotate(radarAngle);
+
+                // Draw sweep line instead of using conical gradient
+                radarCtx.beginPath();
+                radarCtx.moveTo(0, 0);
+                radarCtx.lineTo(100, 0);
+                radarCtx.strokeStyle = "rgba(0, 255, 255, 0.7)";
+                radarCtx.lineWidth = 2;
+                radarCtx.stroke();
+
+                // Add sweep "glow"
+                radarCtx.beginPath();
+                radarCtx.moveTo(0, 0);
+                radarCtx.arc(0, 0, 100, -0.2, 0.2);
+                radarCtx.fillStyle = "rgba(0, 255, 255, 0.15)";
+                radarCtx.fill();
+                radarCtx.restore();
+
+                // Draw planets on radar
+                planets.forEach((planet) => {
+                    // Calculate relative position to ship
+                    const dx = planet.x - spaceship.x;
+                    const dy = planet.y - spaceship.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    // Only show planets within radar range
+                    if (distance <= radarRange) {
+                        // Calculate radar position (ship is at center)
+                        const radarX = centerX + dx * radarScale;
+                        const radarY = centerY + dy * radarScale;
+
+                        // Calculate brightness based on sweep line
+                        const planetAngle = Math.atan2(dy, dx);
+                        const normalizedShipAngle =
+                            ((radarAngle % (2 * Math.PI)) + 2 * Math.PI) %
+                            (2 * Math.PI);
+                        const normalizedPlanetAngle =
+                            ((planetAngle % (2 * Math.PI)) + 2 * Math.PI) %
+                            (2 * Math.PI);
+
+                        let angleDifference = Math.abs(
+                            normalizedShipAngle - normalizedPlanetAngle
+                        );
+                        if (angleDifference > Math.PI) {
+                            angleDifference = 2 * Math.PI - angleDifference;
+                        }
+
+                        const brightness = Math.max(
+                            0.2,
+                            1 - angleDifference / 0.5
+                        );
+
+                        // Draw planet blip
+                        radarCtx.fillStyle = `rgba(${parseInt(
+                            planet.color.slice(1, 3),
+                            16
+                        )}, ${parseInt(
+                            planet.color.slice(3, 5),
+                            16
+                        )}, ${parseInt(
+                            planet.color.slice(5, 7),
+                            16
+                        )}, ${brightness})`;
+                        radarCtx.beginPath();
+                        radarCtx.arc(radarX, radarY, 3, 0, Math.PI * 2);
+                        radarCtx.fill();
+                    }
+                });
+
+                // Update radar angle
+                radarAngle += 0.03;
+                if (radarAngle > Math.PI * 2) {
+                    radarAngle = 0;
+                }
+            }
+
+            // Update planet list
+            function updatePlanetList() {
+                // Clear previous list
+                planetData.innerHTML = "";
+
+                // Calculate distances to all planets and sort by distance
+                const planetsWithDistance = planets
+                    .map((planet) => {
+                        const dx = planet.x - spaceship.x;
+                        const dy = planet.y - spaceship.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const bearing = calculateBearing(
+                            spaceship.x,
+                            spaceship.y,
+                            planet.x,
+                            planet.y
+                        );
+
+                        // Calculate relative bearing (difference between ship heading and planet bearing)
+                        const shipHeading = radToDeg(spaceship.rotationAngle);
+                        let relativeBearing = bearing - shipHeading;
+                        if (relativeBearing < 0) relativeBearing += 360;
+
+                        return {
+                            ...planet,
+                            distance,
+                            bearing,
+                            relativeBearing,
+                        };
+                    })
+                    .sort((a, b) => a.distance - b.distance);
+
+                // Create header row
+                const headerRow = document.createElement("div");
+                headerRow.className = "planet-row";
+                headerRow.style.borderBottom = "1px solid rgba(0,255,255,0.3)";
+                headerRow.style.marginBottom = "8px";
+                headerRow.style.paddingBottom = "5px";
+
+                const headerIndicator = document.createElement("div");
+                headerIndicator.style.width = "12px";
+
+                const headerName = document.createElement("div");
+                headerName.className = "planet-name";
+                headerName.textContent = "SECTION";
+                headerName.style.fontWeight = "bold";
+
+                const headerDistance = document.createElement("div");
+                headerDistance.className = "planet-distance";
+                headerDistance.textContent = "DIST";
+                headerDistance.style.fontWeight = "bold";
+
+                const headerDirection = document.createElement("div");
+                headerDirection.className = "planet-direction";
+                headerDirection.textContent = "BEARING";
+                headerDirection.style.fontWeight = "bold";
+
+                headerRow.appendChild(headerIndicator);
+                headerRow.appendChild(headerName);
+                headerRow.appendChild(headerDistance);
+                headerRow.appendChild(headerDirection);
+
+                planetData.appendChild(headerRow);
+
+                // Add planets to the list
+                planetsWithDistance.forEach((planet) => {
+                    const planetRow = document.createElement("div");
+                    planetRow.className = "planet-row";
+
+                    const indicator = document.createElement("div");
+                    indicator.className = "planet-indicator";
+                    indicator.style.backgroundColor = planet.color;
+
+                    const nameEl = document.createElement("div");
+                    nameEl.className = "planet-name";
+                    nameEl.textContent = planet.name;
+
+                    const distanceEl = document.createElement("div");
+                    distanceEl.className = "planet-distance";
+                    distanceEl.textContent = `${Math.round(planet.distance)}u`;
+
+                    const directionEl = document.createElement("div");
+                    directionEl.className = "planet-direction";
+
+                    // Determine direction arrow based on relative bearing
+                    let directionArrow;
+                    const rb = planet.relativeBearing;
+
+                    if (rb > 345 || rb <= 15) directionArrow = "↑";
+                    else if (rb > 15 && rb <= 75) directionArrow = "↗";
+                    else if (rb > 75 && rb <= 105) directionArrow = "→";
+                    else if (rb > 105 && rb <= 165) directionArrow = "↘";
+                    else if (rb > 165 && rb <= 195) directionArrow = "↓";
+                    else if (rb > 195 && rb <= 255) directionArrow = "↙";
+                    else if (rb > 255 && rb <= 285) directionArrow = "←";
+                    else directionArrow = "↖";
+
+                    directionEl.textContent = `${directionArrow} ${planet.bearing}°`;
+
+                    planetRow.appendChild(indicator);
+                    planetRow.appendChild(nameEl);
+                    planetRow.appendChild(distanceEl);
+                    planetRow.appendChild(directionEl);
+
+                    planetData.appendChild(planetRow);
+                });
+            }
+
+            // Draw game
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw stars
+                drawStars();
+
+                // Draw planets
+                planets.forEach((planet) => {
+                    drawPixelCircle(
+                        planet.x,
+                        planet.y,
+                        planet.radius,
+                        planet.color
+                    );
+                });
+
+                // Draw spaceship last (so it appears on top)
+                drawSpaceship();
+            }
+
+            // Game loop
+            function gameLoop() {
+                updateSpaceship();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+
+            // Handle window resizing
+            window.addEventListener("resize", () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight - 120; // Account for dashboard
+                camera.width = canvas.width;
+                camera.height = canvas.height;
+            });
+
+            // Start the game
+            gameLoop();
+        </script>
+    </body>
+</html>
