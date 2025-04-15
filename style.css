@@ -1,0 +1,471 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #000;
+    font-family: "Courier New", monospace;
+}
+
+canvas {
+    display: block;
+}
+
+/* HUD Container - wraps around the entire viewport */
+#hud-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allows clicking through to canvas */
+}
+
+/* Central targeting reticle */
+#target-reticle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+#target-reticle .reticle-circle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    border-radius: 50%;
+}
+
+#target-reticle .reticle-line {
+    position: absolute;
+    background-color: rgba(0, 255, 255, 0.7);
+}
+
+#target-reticle .horizontal {
+    width: 100%;
+    height: 1px;
+    top: 50%;
+    left: 0;
+}
+
+#target-reticle .vertical {
+    width: 1px;
+    height: 100%;
+    top: 0;
+    left: 50%;
+}
+
+/* Top info bar */
+#top-info-bar {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    background-color: rgba(4, 12, 24, 0.4);
+    padding: 5px 20px;
+    border-radius: 20px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+    backdrop-filter: blur(3px);
+}
+
+.info-section {
+    margin: 0 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.info-label {
+    font-size: 8px;
+    color: rgba(0, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.info-value {
+    font-size: 14px;
+    color: #0ff;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+/* Side nav panel */
+#nav-panel {
+    position: absolute;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 250px;
+    background-color: rgba(4, 12, 24, 0.5);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    overflow: hidden;
+    pointer-events: auto; /* Make the panel clickable */
+    backdrop-filter: blur(3px);
+}
+
+#nav-panel-header {
+    padding: 10px;
+    background-color: rgba(0, 60, 80, 0.4);
+    border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#nav-panel-title {
+    color: #0ff;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+#nav-panel-toggle {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #0ff;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    background-color: rgba(0, 60, 80, 0.5);
+}
+
+#planet-data {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 10px;
+    transition: max-height 0.3s;
+}
+
+/* Bottom status bar */
+#bottom-status-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    padding: 10px 20px;
+    background-color: rgba(4, 12, 24, 0.4);
+    border-radius: 20px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    display: flex;
+    justify-content: space-between;
+    backdrop-filter: blur(3px);
+}
+
+.status-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.status-label {
+    font-size: 8px;
+    color: rgba(0, 255, 255, 0.7);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+    letter-spacing: 1px;
+}
+
+/* Radar styling */
+#radar-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 120px;
+    height: 120px;
+    border: 2px solid rgba(0, 255, 255, 0.5);
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: rgba(0, 40, 60, 0.3);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.2) inset;
+    backdrop-filter: blur(3px);
+}
+
+#radar-sweep {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+#radar-ship {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background-color: white;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+}
+
+#radar-grid {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    opacity: 0.3;
+}
+
+.radar-circle {
+    position: absolute;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Ship status indicators */
+.thruster-indicator {
+    width: 50px;
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.thruster-active {
+    background: linear-gradient(90deg, #f39c12, #e74c3c);
+    box-shadow: 0 0 10px rgba(243, 156, 18, 0.6);
+    animation: pulse 0.5s infinite;
+}
+
+.boost-meter {
+    width: 50px;
+    height: 6px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    position: relative;
+    overflow: hidden;
+    border-radius: 3px;
+}
+
+.boost-fill {
+    height: 100%;
+    background-color: #0ff;
+    width: 100%;
+    transition: width 0.3s;
+}
+
+.boost-active {
+    background: linear-gradient(90deg, #f39c12, #e74c3c);
+    animation: pulse 0.5s infinite;
+}
+
+/* Planet list styling */
+.planet-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    padding: 3px;
+    border-radius: 3px;
+}
+
+.planet-row:hover {
+    background-color: rgba(0, 255, 255, 0.1);
+    cursor: pointer;
+}
+
+.planet-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 10px;
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.planet-name {
+    width: 110px;
+    font-size: 11px;
+    color: #0ff;
+}
+
+.planet-distance {
+    width: 50px;
+    font-size: 11px;
+    text-align: right;
+    color: rgba(0, 255, 255, 0.8);
+}
+
+.planet-direction {
+    width: 50px;
+    font-size: 11px;
+    text-align: center;
+    color: rgba(0, 255, 255, 0.8);
+}
+
+/* Frame effect (border around screen) */
+.hud-frame {
+    position: absolute;
+    pointer-events: none;
+}
+
+.frame-corner {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    border-color: rgba(0, 255, 255, 0.3);
+    border-style: solid;
+}
+
+#corner-tl {
+    top: 20px;
+    left: 20px;
+    border-width: 2px 0 0 2px;
+    border-top-left-radius: 10px;
+}
+
+#corner-tr {
+    top: 20px;
+    right: 20px;
+    border-width: 2px 2px 0 0;
+    border-top-right-radius: 10px;
+}
+
+#corner-bl {
+    bottom: 20px;
+    left: 20px;
+    border-width: 0 0 2px 2px;
+    border-bottom-left-radius: 10px;
+}
+
+#corner-br {
+    bottom: 20px;
+    right: 20px;
+    border-width: 0 2px 2px 0;
+    border-bottom-right-radius: 10px;
+}
+
+/* Direction indicators that appear at edges of screen */
+.direction-indicator {
+    position: absolute;
+    color: rgba(0, 255, 255, 0.7);
+    font-size: 14px;
+    display: none;
+    align-items: center;
+    padding: 3px 5px;
+    background-color: rgba(4, 12, 24, 0.4);
+    border-radius: 5px;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    pointer-events: none;
+}
+
+.direction-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+/* Info panel for objects */
+#info {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -200px);
+    color: white;
+    background-color: rgba(4, 12, 24, 0.7);
+    padding: 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    display: none;
+    max-width: 300px;
+    backdrop-filter: blur(5px);
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+}
+
+#info h2 {
+    margin-top: 0;
+    color: #0ff;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.5);
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes blink {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes sweep {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+/* Adding a geometric scan line effect across the screen */
+.scan-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        to bottom,
+        rgba(0, 255, 255, 0.03) 50%,
+        rgba(0, 0, 0, 0) 50%
+    );
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0.2;
+}
+
+/* Control hints that appear at bottom */
+#control-hints {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(0, 255, 255, 0.4);
+    font-size: 10px;
+    text-align: center;
+}
+
+.key-hint {
+    display: inline-block;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 3px;
+    padding: 0 3px;
+    margin: 0 3px;
+}
