@@ -2,260 +2,161 @@
 
 import { camera, universeWidth, universeHeight } from './canvas.js';
 import { openModal } from './modal.js';
+import { portfolioContent } from './content.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
 const systemIndicator = document.getElementById("current-system");
 
 // Star systems - each representing a section of the portfolio
+
 const starSystems = [
     {
-        id: "work-experience",
-        name: "Work Experience",
+        id: portfolioContent.workExperience.id,
+        name: portfolioContent.workExperience.name,
         x: 3000,
         y: 3000,
         starRadius: 120,
-        starColor: "#FF9D00", // Orange star
-        content: "My professional work history and experiences...",
-        planets: [
-            {
-                name: "Senior Developer",
-                radius: 50,
-                color: "#FF5733",
-                orbitRadius: 400,
-                orbitSpeed: 0.0004,
+        starColor: portfolioContent.workExperience.starColor,
+        content: portfolioContent.workExperience.overview,
+        planets: portfolioContent.workExperience.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 50 - index * 5, // Decreasing sizes
+                color: planet.color,
+                orbitRadius: 400 + index * 200, // Increasing orbit radii
+                orbitSpeed: 0.0005 - index * 0.0001, // Decreasing speeds
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "Lead developer at XYZ Corp (2020-Present)...",
-            },
-            {
-                name: "Backend Engineer",
-                radius: 35,
-                color: "#C70039",
-                orbitRadius: 600,
-                orbitSpeed: 0.0003,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Backend specialist at ABC Inc (2018-2020)...",
-            },
-            {
-                name: "Junior Developer",
-                radius: 25,
-                color: "#900C3F",
-                orbitRadius: 800,
-                orbitSpeed: 0.0002,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Started my career at StartupXYZ (2016-2018)...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "projects",
-        name: "Projects",
+        id: portfolioContent.projects.id,
+        name: portfolioContent.projects.name,
         x: 12000,
         y: 5000,
         starRadius: 140,
-        starColor: "#5CAFFB", // Blue star
-        content: "My coding projects and applications...",
-        planets: [
-            {
-                name: "Space Portfolio",
-                radius: 60,
-                color: "#33FF57",
-                orbitRadius: 350,
-                orbitSpeed: 0.0005,
+        starColor: portfolioContent.projects.starColor,
+        content: portfolioContent.projects.overview,
+        planets: portfolioContent.projects.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 60 - index * 5,
+                color: planet.color,
+                orbitRadius: 350 + index * 200,
+                orbitSpeed: 0.0005 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "This interactive space-themed portfolio...",
-            },
-            {
-                name: "AI Chat App",
-                radius: 45,
-                color: "#00A86B",
-                orbitRadius: 550,
-                orbitSpeed: 0.0004,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Real-time chat application with AI suggestions...",
-            },
-            {
-                name: "Recipe Finder",
-                radius: 50,
-                color: "#4B7F52",
-                orbitRadius: 750,
-                orbitSpeed: 0.0003,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Web app that helps find recipes based on available ingredients...",
-            },
-            {
-                name: "Budget Tracker",
-                radius: 30,
-                color: "#98FB98",
-                orbitRadius: 900,
-                orbitSpeed: 0.0002,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Personal finance tracking application...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "blog",
-        name: "Blog",
+        id: portfolioContent.blog.id,
+        name: portfolioContent.blog.name,
         x: 20000,
         y: 8000,
         starRadius: 110,
-        starColor: "#F6F0A3", // Yellow star
-        content: "My tech blog and articles...",
-        planets: [
-            {
-                name: "Web Dev Trends",
-                radius: 55,
-                color: "#3357FF",
-                orbitRadius: 300,
-                orbitSpeed: 0.0006,
+        starColor: portfolioContent.blog.starColor,
+        content: portfolioContent.blog.overview,
+        planets: portfolioContent.blog.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 55 - index * 5,
+                color: planet.color,
+                orbitRadius: 300 + index * 200,
+                orbitSpeed: 0.0006 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "Latest trends in web development for 2025...",
-            },
-            {
-                name: "AI Revolution",
-                radius: 40,
-                color: "#6A5ACD",
-                orbitRadius: 500,
-                orbitSpeed: 0.0004,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "How AI is changing the software industry...",
-            },
-            {
-                name: "Clean Code",
-                radius: 35,
-                color: "#7B68EE",
-                orbitRadius: 700,
-                orbitSpeed: 0.0003,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Principles of writing maintainable code...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "recommendations",
-        name: "Recommendations",
+        id: portfolioContent.recommendations.id,
+        name: portfolioContent.recommendations.name,
         x: 4000,
         y: 15000,
         starRadius: 90,
-        starColor: "#FF5376", // Pink star
-        content: "Professional recommendations and testimonials...",
-        planets: [
-            {
-                name: "CEO Testimonial",
-                radius: 45,
-                color: "#F3FF33",
-                orbitRadius: 250,
-                orbitSpeed: 0.0007,
+        starColor: portfolioContent.recommendations.starColor,
+        content: portfolioContent.recommendations.overview,
+        planets: portfolioContent.recommendations.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 45 - index * 5,
+                color: planet.color,
+                orbitRadius: 250 + index * 200,
+                orbitSpeed: 0.0007 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: '"An exceptional developer who always delivers..." - Jane Doe, CEO',
-            },
-            {
-                name: "Team Lead Review",
-                radius: 40,
-                color: "#FFCC33",
-                orbitRadius: 450,
-                orbitSpeed: 0.0005,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: '"Great team player with excellent problem-solving skills..." - John Smith, Lead Developer',
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "current-reads",
-        name: "Current Reading",
+        id: portfolioContent.reading.id,
+        name: portfolioContent.reading.name,
         x: 18000,
         y: 18000,
         starRadius: 80,
-        starColor: "#FF33F6", // Purple star
-        content: "Books I'm currently reading...",
-        planets: [
-            {
-                name: "Clean Architecture",
-                radius: 30,
-                color: "#FF33F6",
-                orbitRadius: 200,
-                orbitSpeed: 0.0008,
+        starColor: portfolioContent.reading.starColor,
+        content: portfolioContent.reading.overview,
+        planets: portfolioContent.reading.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 30 - index * 5,
+                color: planet.color,
+                orbitRadius: 200 + index * 150,
+                orbitSpeed: 0.0008 - index * 0.0002,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "Clean Architecture by Robert C. Martin - My notes and takeaways...",
-            },
-            {
-                name: "Deep Work",
-                radius: 25,
-                color: "#DA70D6",
-                orbitRadius: 350,
-                orbitSpeed: 0.0006,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Deep Work by Cal Newport - Strategies I'm implementing...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "shows",
-        name: "TV Shows",
+        id: portfolioContent.shows.id,
+        name: portfolioContent.shows.name,
         x: 25000,
         y: 12000,
         starRadius: 100,
-        starColor: "#33FFF3", // Cyan star
-        content: "TV Shows I'm currently watching...",
-        planets: [
-            {
-                name: "Sci-Fi Series",
-                radius: 50,
-                color: "#33FFF3",
-                orbitRadius: 300,
-                orbitSpeed: 0.0006,
+        starColor: portfolioContent.shows.starColor,
+        content: portfolioContent.shows.overview,
+        planets: portfolioContent.shows.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 50 - index * 5,
+                color: planet.color,
+                orbitRadius: 300 + index * 200,
+                orbitSpeed: 0.0006 - index * 0.0002,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "My thoughts on the latest season of...",
-            },
-            {
-                name: "Tech Documentaries",
-                radius: 45,
-                color: "#40E0D0",
-                orbitRadius: 500,
-                orbitSpeed: 0.0004,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Fascinating tech documentaries I've watched...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
     {
-        id: "travel",
-        name: "Travel Map",
+        id: portfolioContent.travel.id,
+        name: portfolioContent.travel.name,
         x: 8000,
         y: 22000,
         starRadius: 120,
-        starColor: "#C433FF", // Violet star
-        content: "Places I've visited around the world...",
-        planets: [
-            {
-                name: "Europe",
-                radius: 60,
-                color: "#C433FF",
-                orbitRadius: 400,
-                orbitSpeed: 0.0005,
+        starColor: portfolioContent.travel.starColor,
+        content: portfolioContent.travel.overview,
+        planets: portfolioContent.travel.planets.map((planet, index) => {
+            return {
+                name: planet.name,
+                radius: 60 - index * 5,
+                color: planet.color,
+                orbitRadius: 400 + index * 250,
+                orbitSpeed: 0.0005 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
-                content: "My adventures through various European countries...",
-            },
-            {
-                name: "Asia",
-                radius: 55,
-                color: "#9370DB",
-                orbitRadius: 650,
-                orbitSpeed: 0.0003,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Exploring cultures across Asia...",
-            },
-            {
-                name: "Americas",
-                radius: 50,
-                color: "#8A2BE2",
-                orbitRadius: 900,
-                orbitSpeed: 0.0002,
-                orbitAngle: Math.random() * Math.PI * 2,
-                content: "Road trips and city explorations in North and South America...",
-            },
-        ],
+                content: planet.overview,
+                details: planet.details
+            };
+        })
     },
 ];
 
@@ -295,6 +196,7 @@ starSystems.forEach((system) => {
             systemName: system.name,
             systemId: system.id,
             isPlanet: true,
+            details: planet.details,
         });
     });
 });
@@ -476,39 +378,34 @@ function openStarSystemModal(starSystem) {
 }
 
 // Function to open planet modal
+
 function openPlanetModal(planet) {
-    // Generate placeholder content based on the planet data
+    console.log('====================================');
+    console.log(planet);
+    console.log('====================================');
+    // Generate content based on the planet data
     let content = `
         <div class="planet-header">
             <span class="planet-system">Part of the ${planet.systemName} system</span>
         </div>
         
         <p>${planet.content}</p>
-        
-        <h3>Details</h3>
-        <p>This section would contain detailed information about ${planet.name}.</p>
-        
-        <div class="placeholder-content">
-            <h3>Placeholder Content</h3>
-            <p>This is where the specific details about this item would appear.</p>
-            <p>For a work experience item, this could include:</p>
-            <ul>
-                <li>Role description and responsibilities</li>
-                <li>Technologies and skills used</li>
-                <li>Key achievements and projects</li>
-                <li>Time period and location</li>
-            </ul>
-            
-            <p>For a project item, this could include:</p>
-            <ul>
-                <li>Project description and purpose</li>
-                <li>Technologies used</li>
-                <li>My role and responsibilities</li>
-                <li>Challenges and solutions</li>
-                <li>Links to live demos or code</li>
-            </ul>
-        </div>
-        
+    `;
+    
+    // Add detailed content if available
+    if (planet.details) {
+        content += planet.details;
+    } else {
+        // Fallback to placeholder content
+        content += `
+            <div class="placeholder-content">
+                <h3>Content Coming Soon</h3>
+                <p>Detailed information for this item is still being prepared.</p>
+            </div>
+        `;
+    }
+    
+    content += `
         <div class="navigation-tip">
             <p>Press <span class="key-hint">ESC</span> to close this view and continue exploring.</p>
         </div>
