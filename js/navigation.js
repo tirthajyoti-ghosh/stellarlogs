@@ -291,8 +291,8 @@ function updateDirectionIndicators() {
         const dy = system.y - spaceship.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Only show indicators for systems not visible on screen but within range
-        if (distance > 1000 && distance < 15000) {
+        // Only show indicators for systems not visible on screen
+        if (distance > 1000) {
             const screenX = camera.width / 2 + dx;
             const screenY = camera.height / 2 + dy;
             
@@ -307,7 +307,10 @@ function updateDirectionIndicators() {
                 
                 // Set the indicator color and text
                 indicator.querySelector('.direction-dot').style.backgroundColor = system.starColor;
-                indicator.querySelector('.direction-system-name').textContent = system.name;
+                
+                // Replace space with non-breaking space to prevent text wrapping
+                const systemName = system.name.replace(/ /g, '\u00A0');
+                indicator.querySelector('.direction-system-name').textContent = systemName;
                 
                 // Calculate position at screen edge
                 let indicatorX, indicatorY;
@@ -332,9 +335,45 @@ function updateDirectionIndicators() {
                     indicatorY = halfHeight + Math.tan(angle) * (indicatorX - halfWidth);
                 }
                 
-                // Position the indicator
-                indicator.style.left = `${indicatorX}px`;
-                indicator.style.top = `${indicatorY}px`;
+                // Position the indicator differently based on which edge it's on
+                // This ensures consistent display regardless of which side it appears
+                
+                // Determine which edge the indicator is on
+                let edge;
+                const buffer = 60; // Buffer from corners
+                
+                if (indicatorY <= screenPadding + buffer) edge = "top";
+                else if (indicatorY >= camera.height - screenPadding - buffer) edge = "bottom";
+                else if (indicatorX <= screenPadding + buffer) edge = "left";
+                else edge = "right";
+                
+                // Apply positioning and alignment based on edge
+                switch (edge) {
+                    case "top":
+                        indicator.style.top = `${screenPadding}px`;
+                        indicator.style.left = `${indicatorX}px`;
+                        indicator.style.transform = "translate(-50%, 0)";
+                        break;
+                    case "bottom":
+                        indicator.style.top = `${camera.height - screenPadding}px`;
+                        indicator.style.left = `${indicatorX}px`;
+                        indicator.style.transform = "translate(-50%, -100%)";
+                        break;
+                    case "left":
+                        indicator.style.left = `${screenPadding}px`;
+                        indicator.style.top = `${indicatorY}px`;
+                        indicator.style.transform = "translate(0, -50%)";
+                        break;
+                    case "right":
+                        indicator.style.left = `${camera.width - screenPadding}px`;
+                        indicator.style.top = `${indicatorY}px`;
+                        indicator.style.transform = "translate(-100%, -50%)";
+                        break;
+                }
+                
+                // Ensure the indicator stays within bounds
+                if (indicator.style.top === "NaNpx") indicator.style.top = "50%";
+                if (indicator.style.left === "NaNpx") indicator.style.left = "50%";
                 
                 // Add to DOM
                 document.getElementById('hud-container').appendChild(indicator);
