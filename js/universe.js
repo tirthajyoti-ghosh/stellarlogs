@@ -1,7 +1,7 @@
 // Universe data - stars, planets, etc.
 
 import { camera, universeWidth, universeHeight } from './canvas.js';
-import { spaceship } from './spaceship.js';
+import { openModal } from './modal.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
@@ -330,7 +330,7 @@ function updateStarSystems() {
 }
 
 // Check if spaceship is near a celestial object
-function checkPlanetProximity() {
+function checkPlanetProximity(spaceship) {
     let foundNearby = false;
     let nearestObject = null;
     let nearestDistance = Infinity;
@@ -384,11 +384,20 @@ function checkPlanetProximity() {
 
             // Logic for "entering" a section when pressing E
             if (keys["e"] || keys["E"]) {
-                if (obj.isStar) {
-                    console.log(`Viewing overview of system: ${obj.name}`);
-                } else {
-                    console.log(`Exploring item: ${obj.name} in ${obj.systemName}`);
+                // Only trigger once per keypress
+                if (!window.eKeyPressed) {
+                    window.eKeyPressed = true;
+                    
+                    if (obj.isStar) {
+                        // Open modal with star system info
+                        openStarSystemModal(obj);
+                    } else {
+                        // Open modal with planet info
+                        openPlanetModal(obj);
+                    }
                 }
+            } else {
+                window.eKeyPressed = false;
             }
 
             foundNearby = true;
@@ -418,10 +427,103 @@ function checkPlanetProximity() {
     }
 }
 
+// Function to open star system modal
+function openStarSystemModal(starSystem) {
+    // Find the full star system data if we're working with a simplified version
+    const fullSystem = starSystems.find(s => 
+        (starSystem.systemId && s.id === starSystem.systemId) || 
+        (s.name === starSystem.name)
+    );
+    
+    if (!fullSystem && !starSystem.content) {
+        console.error("Star system data not found");
+        return;
+    }
+    
+    const system = fullSystem || starSystem;
+    
+    // Create modal content
+    let content = `
+        <p class="system-intro">${system.content}</p>
+        
+        <h3>About this Section</h3>
+        <p>This star system represents my ${system.name.toLowerCase()}. Explore the planets to learn more about specific aspects.</p>
+        
+        <h3>Planets in this System</h3>
+        <ul class="planet-list">
+    `;
+    
+    // Add planets
+    system.planets.forEach(planet => {
+        content += `
+            <li>
+                <h4 style="color: ${planet.color}">${planet.name}</h4>
+                <p>${planet.content}</p>
+            </li>
+        `;
+    });
+    
+    content += `
+        </ul>
+        
+        <div class="navigation-tip">
+            <p>Fly closer to any planet and press <span class="key-hint">E</span> to explore its details.</p>
+        </div>
+    `;
+    
+    // Open the modal with content
+    openModal(system.name + " System", content, system.starColor);
+}
+
+// Function to open planet modal
+function openPlanetModal(planet) {
+    // Generate placeholder content based on the planet data
+    let content = `
+        <div class="planet-header">
+            <span class="planet-system">Part of the ${planet.systemName} system</span>
+        </div>
+        
+        <p>${planet.content}</p>
+        
+        <h3>Details</h3>
+        <p>This section would contain detailed information about ${planet.name}.</p>
+        
+        <div class="placeholder-content">
+            <h3>Placeholder Content</h3>
+            <p>This is where the specific details about this item would appear.</p>
+            <p>For a work experience item, this could include:</p>
+            <ul>
+                <li>Role description and responsibilities</li>
+                <li>Technologies and skills used</li>
+                <li>Key achievements and projects</li>
+                <li>Time period and location</li>
+            </ul>
+            
+            <p>For a project item, this could include:</p>
+            <ul>
+                <li>Project description and purpose</li>
+                <li>Technologies used</li>
+                <li>My role and responsibilities</li>
+                <li>Challenges and solutions</li>
+                <li>Links to live demos or code</li>
+            </ul>
+        </div>
+        
+        <div class="navigation-tip">
+            <p>Press <span class="key-hint">ESC</span> to close this view and continue exploring.</p>
+        </div>
+    `;
+    
+    // Open the modal with content
+    openModal(planet.name, content, planet.color);
+}
+
 export {
     starSystems,
     allPlanets,
     stars,
     updateStarSystems,
-    checkPlanetProximity
+    checkPlanetProximity,
+    openStarSystemModal,
+    openPlanetModal
 };
