@@ -4,6 +4,7 @@ import { canvas, camera } from './canvas.js';
 import { spaceship, updateSpaceship } from './spaceship.js';
 import { updateStarSystems } from './universe.js';
 import { draw } from './rendering.js';
+import { initModal } from './modal.js';
 
 // Create keys object for input handling
 const keys = {};
@@ -12,8 +13,13 @@ window.keys = keys;
 
 // Game loop
 function gameLoop() {
-    updateSpaceship();
-    updateStarSystems(); // Update planet orbits
+    // Skip updates if game is paused (modal is open)
+    if (!window.isPaused) {
+        updateSpaceship();
+        updateStarSystems(); // Update planet orbits
+    }
+    
+    // Always draw (even when paused)
     draw();
     requestAnimationFrame(gameLoop);
 }
@@ -58,6 +64,13 @@ function init() {
     // Center spaceship in the universe
     spaceship.x = canvas.width / 2;
     spaceship.y = canvas.height / 2;
+    
+    // Initialize modal system
+    initModal();
+    
+    // Set initial pause state
+    window.isPaused = false;
+    window.eKeyPressed = false;
     
     // Start the game loop
     gameLoop();

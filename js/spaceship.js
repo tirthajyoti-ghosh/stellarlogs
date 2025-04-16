@@ -124,7 +124,7 @@ function updateSpaceship() {
     updateHUD();
 
     // Check if near planets
-    checkPlanetProximity();
+    checkPlanetProximity(spaceship);
 }
 
 export {
