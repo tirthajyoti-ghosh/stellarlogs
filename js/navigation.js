@@ -60,7 +60,7 @@ function updateHUD() {
     updateDirectionIndicators();
 }
 
-// Update radar display for star systems
+// Update radar display to show planets with ship at center
 let radarAngle = 0;
 function updateRadar() {
     // Clear radar
@@ -70,9 +70,33 @@ function updateRadar() {
     const centerX = radarCanvas.width / 2;
     const centerY = radarCanvas.height / 2;
 
-    // Calculate radar scale (how much universe space fits in radar)
-    const radarRange = 5000; // Increased range to see more star systems
-    const radarScale = 40 / radarRange; // Adjust scale for smaller radar
+    // Find nearest star system to determine what to show on radar
+    let currentSystem = null;
+    let shortestDistance = 5000; // Max range to consider being in a system
+
+    starSystems.forEach(system => {
+        const dx = spaceship.x - system.x;
+        const dy = spaceship.y - system.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < shortestDistance) {
+            shortestDistance = distance;
+            currentSystem = system;
+        }
+    });
+
+    // Draw radar background ring
+    radarCtx.beginPath();
+    radarCtx.arc(centerX, centerY, 40, 0, Math.PI * 2);
+    radarCtx.strokeStyle = "rgba(0, 255, 255, 0.3)";
+    radarCtx.lineWidth = 1;
+    radarCtx.stroke();
+    
+    // Draw smaller inner ring
+    radarCtx.beginPath();
+    radarCtx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+    radarCtx.strokeStyle = "rgba(0, 255, 255, 0.15)";
+    radarCtx.stroke();
 
     // Draw radar sweep line
     radarCtx.save();
@@ -94,47 +118,158 @@ function updateRadar() {
     radarCtx.fillStyle = "rgba(0, 255, 255, 0.15)";
     radarCtx.fill();
     radarCtx.restore();
-
-    // Draw only stars on radar (for cleaner display)
-    allPlanets.forEach((obj) => {
-        if (obj.isStar) {
-            // Calculate relative position to ship
-            const dx = obj.x - spaceship.x;
-            const dy = obj.y - spaceship.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            // Only show objects within radar range
-            if (distance <= radarRange) {
-                // Calculate radar position (ship is at center)
-                const radarX = centerX + dx * radarScale;
-                const radarY = centerY + dy * radarScale;
-
+    
+    // Draw ship at the center (but no direction indicator)
+    radarCtx.fillStyle = "#FFFFFF";
+    radarCtx.beginPath();
+    radarCtx.arc(centerX, centerY, 2, 0, Math.PI * 2);
+    radarCtx.fill();
+    
+    // Draw different objects based on context
+    if (currentSystem && shortestDistance < 3000) {
+        // We're in a star system - show the star and planets relative to ship
+        
+        // Calculate radar scale for system view with zoomed in effect
+        // Use a much smaller range for better zoom when in a system
+        const radarRange = 1500; // Zoomed in system radar range (previously 3000)
+        const radarScale = 40 / radarRange; // This effectively doubles the zoom
+        
+        // Draw the star relative to ship position
+        const starDx = currentSystem.x - spaceship.x;
+        const starDy = currentSystem.y - spaceship.y;
+        
+        // Calculate star position on radar
+        const starRadarX = centerX + starDx * radarScale;
+        const starRadarY = centerY + starDy * radarScale;
+        
+        // Draw the star if it's within radar range
+        if (Math.abs(starDx) < radarRange && Math.abs(starDy) < radarRange) {
+            const starSize = Math.min(4, currentSystem.starRadius / 25);
+            radarCtx.fillStyle = currentSystem.starColor;
+            radarCtx.beginPath();
+            radarCtx.arc(starRadarX, starRadarY, starSize, 0, Math.PI * 2);
+            radarCtx.fill();
+            
+            // Calculate brightness based on sweep line for star
+            const starAngle = Math.atan2(starDy, starDx);
+            const normalizedSweepAngle = ((radarAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            const normalizedStarAngle = ((starAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+            
+            let starAngleDifference = Math.abs(normalizedSweepAngle - normalizedStarAngle);
+            if (starAngleDifference > Math.PI) {
+                starAngleDifference = 2 * Math.PI - starAngleDifference;
+            }
+            
+            // Add a slight glow to the star based on sweep
+            const starBrightness = Math.max(0.2, 1 - starAngleDifference / 0.5);
+            radarCtx.fillStyle = `rgba(${parseInt(currentSystem.starColor.slice(1, 3), 16)}, 
+                                ${parseInt(currentSystem.starColor.slice(3, 5), 16)}, 
+                                ${parseInt(currentSystem.starColor.slice(5, 7), 16)}, 
+                                ${starBrightness * 0.5})`;
+            radarCtx.beginPath();
+            radarCtx.arc(starRadarX, starRadarY, starSize * 1.5, 0, Math.PI * 2);
+            radarCtx.fill();
+        }
+        
+        // Draw each planet relative to ship
+        currentSystem.planets.forEach((planet) => {
+            // Calculate planet's current position in space
+            const planetX = currentSystem.x + Math.cos(planet.orbitAngle) * planet.orbitRadius;
+            const planetY = currentSystem.y + Math.sin(planet.orbitAngle) * planet.orbitRadius;
+            
+            // Calculate position relative to ship
+            const planetDx = planetX - spaceship.x;
+            const planetDy = planetY - spaceship.y;
+            
+            // Only show planets within radar range
+            if (Math.abs(planetDx) < radarRange && Math.abs(planetDy) < radarRange) {
+                // Calculate radar position
+                const planetRadarX = centerX + planetDx * radarScale;
+                const planetRadarY = centerY + planetDy * radarScale;
+                
                 // Calculate brightness based on sweep line
-                const planetAngle = Math.atan2(dy, dx);
-                const normalizedShipAngle = ((radarAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+                const planetAngle = Math.atan2(planetDy, planetDx);
+                const normalizedSweepAngle = ((radarAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
                 const normalizedPlanetAngle = ((planetAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
 
-                let angleDifference = Math.abs(normalizedShipAngle - normalizedPlanetAngle);
+                let angleDifference = Math.abs(normalizedSweepAngle - normalizedPlanetAngle);
                 if (angleDifference > Math.PI) {
                     angleDifference = 2 * Math.PI - angleDifference;
                 }
 
-                const brightness = Math.max(0.2, 1 - angleDifference / 0.5);
-
-                // Draw star blip
-                radarCtx.fillStyle = `rgba(${parseInt(obj.color.slice(1, 3), 16)}, 
-                                          ${parseInt(obj.color.slice(3, 5), 16)}, 
-                                          ${parseInt(obj.color.slice(5, 7), 16)}, 
-                                          ${brightness})`;
+                const brightness = Math.max(0.3, 1 - angleDifference / 0.5);
+                
+                // Draw planet blip with its own color
+                radarCtx.fillStyle = `rgba(${parseInt(planet.color.slice(1, 3), 16)}, 
+                                    ${parseInt(planet.color.slice(3, 5), 16)}, 
+                                    ${parseInt(planet.color.slice(5, 7), 16)}, 
+                                    ${brightness})`;
+                
+                // Increase planet blip size for better visibility
+                const blipSize = Math.max(3, planet.radius / 15);
+                
                 radarCtx.beginPath();
-                radarCtx.arc(radarX, radarY, 3, 0, Math.PI * 2);
+                radarCtx.arc(planetRadarX, planetRadarY, blipSize, 0, Math.PI * 2);
+                radarCtx.fill();
+                
+                // Add a glowing outline to make planets stand out
+                radarCtx.strokeStyle = `rgba(${parseInt(planet.color.slice(1, 3), 16)}, 
+                                        ${parseInt(planet.color.slice(3, 5), 16)}, 
+                                        ${parseInt(planet.color.slice(5, 7), 16)}, 0.6)`;
+                radarCtx.lineWidth = 0.8;
+                radarCtx.stroke();
+            }
+        });
+    } 
+    else {
+        // We're in deep space - show nearby star systems
+        
+        // Calculate radar scale for deep space (seeing star systems)
+        const radarRange = 10000; // Larger range in deep space
+        const radarScale = 40 / radarRange;
+        
+        // Draw all visible star systems
+        starSystems.forEach(system => {
+            // Calculate relative position to ship
+            const dx = system.x - spaceship.x;
+            const dy = system.y - spaceship.y;
+            
+            // Only show stars within radar range
+            if (Math.abs(dx) < radarRange && Math.abs(dy) < radarRange) {
+                // Calculate radar position
+                const radarX = centerX + dx * radarScale;
+                const radarY = centerY + dy * radarScale;
+                
+                // Calculate brightness based on sweep line
+                const starAngle = Math.atan2(dy, dx);
+                const normalizedSweepAngle = ((radarAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+                const normalizedStarAngle = ((starAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+                
+                let angleDifference = Math.abs(normalizedSweepAngle - normalizedStarAngle);
+                if (angleDifference > Math.PI) {
+                    angleDifference = 2 * Math.PI - angleDifference;
+                }
+                
+                const brightness = Math.max(0.2, 1 - angleDifference / 0.5);
+                
+                // Draw star blip
+                radarCtx.fillStyle = `rgba(${parseInt(system.starColor.slice(1, 3), 16)}, 
+                                    ${parseInt(system.starColor.slice(3, 5), 16)}, 
+                                    ${parseInt(system.starColor.slice(5, 7), 16)}, 
+                                    ${brightness})`;
+                
+                // Size based on star size
+                const blipSize = Math.max(2, system.starRadius / 60);
+                
+                radarCtx.beginPath();
+                radarCtx.arc(radarX, radarY, blipSize, 0, Math.PI * 2);
                 radarCtx.fill();
             }
-        }
-    });
+        });
+    }
 
     // Update radar angle
-    radarAngle += 0.04; // Slightly faster sweep
+    radarAngle += 0.04;
     if (radarAngle > Math.PI * 2) {
         radarAngle = 0;
     }
