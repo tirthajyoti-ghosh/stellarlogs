@@ -624,3 +624,72 @@ canvas {
     font-family: 'Courier New', monospace;
 }
 
+/* Book and article styles */
+.book-details, .publication-date, .show-details, .title-company, .travel-date {
+    color: rgba(200, 200, 200, 0.8);
+    font-style: italic;
+    margin-bottom: 15px;
+    font-size: 0.9em;
+}
+
+.testimonial {
+    padding: 15px;
+    border-left: 3px solid rgba(0, 255, 255, 0.4);
+    background-color: rgba(0, 0, 0, 0.2);
+    margin: 15px 0;
+    font-style: italic;
+}
+
+.recommendation-date {
+    text-align: right;
+    color: rgba(200, 200, 200, 0.8);
+    font-size: 0.9em;
+}
+
+.travel-highlight, .documentary-item {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.travel-highlight h4, .documentary-item h4 {
+    color: #00ffff;
+    margin-bottom: 5px;
+}
+
+.article-excerpt {
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.planet-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(0, 255, 255, 0.3);
+}
+
+.planet-system {
+    font-style: italic;
+    color: rgba(200, 200, 200, 0.8);
+}
+
+.navigation-tip {
+    margin-top: 30px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(0, 255, 255, 0.3);
+    font-size: 0.9em;
+    color: rgba(200, 200, 200, 0.9);
+}
+
+/* Links in modals */
+.modal-body a {
+    color: #00ffff;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.modal-body a:hover {
+    color: #ff33cc;
+    text-decoration: underline;
+}
