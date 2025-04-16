@@ -1,0 +1,12 @@
+{
+  "name": "space-based-portfolio",
+  "version": "1.0.0",
+  "description": "Interactive space-themed portfolio",
+  "main": "index.html",
+  "scripts": {
+    "start": "serve"
+  },
+  "dependencies": {
+    "serve": "^14.2.0"
+  }
+}
