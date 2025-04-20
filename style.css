@@ -693,3 +693,44 @@ canvas {
     color: #ff33cc;
     text-decoration: underline;
 }
+
+/* CSS for project media elements */
+.project-media {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.project-image, .project-video {
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.project-image img, .project-video video {
+    width: 100%;
+    display: block;
+    border-radius: 8px 8px 0 0;
+}
+
+.caption {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    margin: 0;
+}
+
+/* For larger screens, show media side by side */
+@media (min-width: 768px) {
+    .project-media {
+        flex-direction: row;
+    }
+    
+    .project-image, .project-video {
+        width: 48%;  /* Allow some gap between them */
+    }
+}
