@@ -118,7 +118,7 @@ const portfolioContent = {
         overview: "A collection of personal and professional projects I've built throughout my career.",
         planets: [
             {
-                name: "Space Portfolio",
+                name: "Expo LLM Mediapipe",
                 color: "#33FF57",
                 overview: "This interactive space-themed portfolio",
                 details: `
@@ -127,6 +127,16 @@ const portfolioContent = {
                     <h4>Project Overview</h4>
                     <p>An interactive, space-themed portfolio website that visualizes different sections of my
                     professional profile as star systems and planets that can be explored in a gamified experience.</p>
+                    
+                    <div class="project-media">
+                        <div class="project-video">
+                            <video controls>
+                                <source src="https://video.twimg.com/amplify_video/1911844223751467008/vid/avc1/720x1178/azC3A2-aCaGPe9cC.mp4?tag=14" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                            <p class="caption">Demo of the navigation through the portfolio universe</p>
+                        </div>
+                    </div>
                     
                     <h4>Technologies</h4>
                     <ul>
@@ -146,111 +156,6 @@ const portfolioContent = {
                     
                     <h4>Links</h4>
                     <p><a href="https://github.com/yourusername/space-portfolio" target="_blank">GitHub Repository</a></p>
-                `
-            },
-            {
-                name: "AI Chat App",
-                color: "#00A86B",
-                overview: "Real-time chat application with AI suggestions",
-                details: `
-                    <h3>AI-Enhanced Chat Application</h3>
-                    
-                    <h4>Project Overview</h4>
-                    <p>A modern chat application that uses AI to provide smart reply suggestions,
-                    message summarization, and language translation features.</p>
-                    
-                    <h4>Technologies</h4>
-                    <ul>
-                        <li>React.js for frontend with styled-components</li>
-                        <li>Firebase for authentication and real-time database</li>
-                        <li>OpenAI API for AI-powered features</li>
-                        <li>WebSocket for real-time communication</li>
-                    </ul>
-                    
-                    <h4>Key Features</h4>
-                    <ul>
-                        <li>Real-time messaging with read receipts</li>
-                        <li>Smart reply suggestions based on conversation context</li>
-                        <li>Conversation summarization for long chats</li>
-                        <li>Multi-language support with automatic translation</li>
-                        <li>User presence indicators and typing notifications</li>
-                    </ul>
-                    
-                    <h4>Links</h4>
-                    <p>
-                        <a href="https://ai-chat-demo.netlify.app" target="_blank">Live Demo</a> |
-                        <a href="https://github.com/yourusername/ai-chat-app" target="_blank">GitHub Repository</a>
-                    </p>
-                `
-            },
-            {
-                name: "Recipe Finder",
-                color: "#4B7F52",
-                overview: "Web app that helps find recipes based on available ingredients",
-                details: `
-                    <h3>Recipe Finder</h3>
-                    
-                    <h4>Project Overview</h4>
-                    <p>A web application that helps users find recipes based on ingredients they already have,
-                    reducing food waste and making meal planning easier.</p>
-                    
-                    <h4>Technologies</h4>
-                    <ul>
-                        <li>Vue.js 3 with Composition API</li>
-                        <li>Tailwind CSS for styling</li>
-                        <li>Express.js backend with MongoDB</li>
-                        <li>Spoonacular API integration for recipe data</li>
-                    </ul>
-                    
-                    <h4>Key Features</h4>
-                    <ul>
-                        <li>Ingredient-based recipe search</li>
-                        <li>Dietary restrictions and preference filters</li>
-                        <li>Personalized recipe recommendations</li>
-                        <li>Shopping list generation for missing ingredients</li>
-                        <li>User accounts to save favorite recipes</li>
-                    </ul>
-                    
-                    <h4>Links</h4>
-                    <p>
-                        <a href="https://recipe-finder.herokuapp.com" target="_blank">Live Demo</a> |
-                        <a href="https://github.com/yourusername/recipe-finder" target="_blank">GitHub Repository</a>
-                    </p>
-                `
-            },
-            {
-                name: "Budget Tracker",
-                color: "#98FB98",
-                overview: "Personal finance tracking application",
-                details: `
-                    <h3>Budget Tracker</h3>
-                    
-                    <h4>Project Overview</h4>
-                    <p>A comprehensive personal finance application that helps users track expenses,
-                    set budgets, and visualize spending patterns.</p>
-                    
-                    <h4>Technologies</h4>
-                    <ul>
-                        <li>React Native for cross-platform mobile development</li>
-                        <li>Redux for state management</li>
-                        <li>Firebase for authentication and data storage</li>
-                        <li>Chart.js for financial data visualization</li>
-                    </ul>
-                    
-                    <h4>Key Features</h4>
-                    <ul>
-                        <li>Expense and income tracking with categories</li>
-                        <li>Monthly budget setting and progress tracking</li>
-                        <li>Interactive charts and reports for spending analysis</li>
-                        <li>Receipt scanning with OCR</li>
-                        <li>Recurring transaction management</li>
-                        <li>Export functionality for financial data</li>
-                    </ul>
-                    
-                    <h4>Links</h4>
-                    <p>
-                        <a href="https://github.com/yourusername/budget-tracker" target="_blank">GitHub Repository</a>
-                    </p>
                 `
             }
         ]
@@ -347,52 +252,76 @@ const portfolioContent = {
         id: "recommendations",
         name: "Recommendations",
         starColor: "#FF5376", // Pink star
-        overview: "Professional recommendations and testimonials from colleagues and clients.",
+        overview: "Professional recommendations and testimonials from colleagues.",
         planets: [
             {
-                name: "CEO Testimonial",
+                name: "Engineering Manager Review",
                 color: "#F3FF33",
-                overview: "From Jane Doe, CEO at XYZ Corp",
+                overview: "From Patrick Thomas, Engineering Manager at CyberFortress",
                 details: `
-                    <h3>Recommendation from Jane Doe</h3>
-                    <p class="title-company">CEO at XYZ Corporation</p>
+                    <h3>Recommendation from Patrick Thomas</h3>
+                    <p class="title-company">Engineering Manager at CyberFortress</p>
                     
                     <div class="testimonial">
-                        <p>"An exceptional developer who consistently goes above and beyond expectations.
-                        Their technical expertise combined with excellent communication skills made complex projects
-                        run smoothly. Their contributions to our cloud migration strategy were invaluable,
-                        and they demonstrated remarkable leadership when guiding the development team through
-                        challenging technical obstacles. I would not hesitate to work with them again on
-                        mission-critical initiatives."</p>
+                        <p>"To say Tirtha exceeded every challenge I gave him would be an understatement. I hired Tirtha as a front end developer, primarily to contribute to our React codebase. Tirtha implemented UI's faithful to designs and designed his own intuitive interfaces. He created rock-solid Typescript code that implemented OAuth, secured sensitive APIs, and built interfaces to other internal systems. As priorities changed, Tirtha volunteered to contribute to a Ruby on Rails app that no one on staff had much experience with, contributed to inherited .Net 4 C# ASP.net MVC solutions, and fully architected a cloud native Python app to assist with customer support functions. Whenever there was code that absolutely HAD to work well, I trusted Tirtha. When there was code that needed to be turned around fast, I trusted Tirtha. Tirtha is the kind of developer that makes a good IT team a GREAT one."</p>
                     </div>
                     
                     <div class="recommendation-date">
-                        <p>January 2025</p>
+                        <p>March 2025</p>
                     </div>
                 `
             },
             {
-                name: "Team Lead Review",
+                name: "Teammate Review",
                 color: "#FFCC33",
-                overview: "From John Smith, Lead Developer",
+                overview: "From Theophile Kango, Software Developer",
                 details: `
-                    <h3>Recommendation from John Smith</h3>
-                    <p class="title-company">Lead Developer at ABC Software</p>
+                    <h3>Recommendation from Theophile Kango</h3>
+                    <p class="title-company">Software Developer at QHARE CRM</p>
                     
                     <div class="testimonial">
-                        <p>"I had the pleasure of working directly with this developer for over two years.
-                        Their problem-solving abilities and attention to detail are truly impressive.
-                        They consistently delivered high-quality code ahead of schedule and became the go-to
-                        person for particularly complex technical challenges. Beyond their technical skills,
-                        they were an excellent mentor to junior developers and contributed significantly to
-                        improving our development processes. Any team would be fortunate to have them on board."</p>
+                        <p>"Ghosh is one of my teammates at microverse, he is always there to help, every time when I am stuck or I need feedback on my project I can't hesitate to reach out to him. he is a talented guy and I confirm his skills."</p>
                     </div>
                     
                     <div class="recommendation-date">
-                        <p>October 2024</p>
+                        <p>August 2020</p>
                     </div>
                 `
-            }
+            },
+            {
+                name: "Mentee Review",
+                color: "#FFCC33",
+                overview: "From Arslan Bisharat, Researcher",
+                details: `
+                    <h3>Recommendation from John Smith</h3>
+                    <p class="title-company">Research Assistant at Loyola University Chicago</p>
+                    
+                    <div class="testimonial">
+                        <p>"Mr. Ghosh is one of the very few amazing personalities I have come across in the software development field. I have had the opportunity to become his mentee where I have always counted on him for an explanation when a complex part of the project confused me. Not only does he goes out of the way to make a project even better, but also he goes out of the way to help a fellow teammate in their assignments. He would be an amazing addition to your team and a great leader too."</p>
+                    </div>
+                    
+                    <div class="recommendation-date">
+                        <p>July 2020</p>
+                    </div>
+                `
+            },
+            {
+                name: "Teammate Review",
+                color: "#FFCC33",
+                overview: "From Javier Oriol Correas Sanchez-Cuesta, Fullstack Engineer",
+                details: `
+                    <h3>Recommendation from John Smith</h3>
+                    <p class="title-company">Fullstack Engineer</p>
+                    
+                    <div class="testimonial">
+                        <p>"I met Ghosh in our journey at Microverse. It was a pleasure working with him, during our work together we were able to improve on what the other failed thanks to a great collaboration. Hard worker, reliable, professional and fun. It is a safe bet for any company"</p>
+                    </div>
+                    
+                    <div class="recommendation-date">
+                        <p>June 2020</p>
+                    </div>
+                `
+            },
         ]
     },
     
@@ -401,69 +330,23 @@ const portfolioContent = {
         id: "current-reads",
         name: "Current Reading",
         starColor: "#FF33F6", // Purple star
-        overview: "Books and articles I'm currently reading or have recently finished.",
+        overview: "Books I'm currently reading or have recently finished.",
         planets: [
             {
-                name: "Clean Architecture",
-                color: "#FF33F6",
-                overview: "Clean Architecture by Robert C. Martin - My notes and takeaways",
-                details: `
-                    <h3>Clean Architecture by Robert C. Martin</h3>
-                    <div class="book-details">
-                        <p><strong>Author:</strong> Robert C. Martin</p>
-                        <p><strong>Status:</strong> Completed in March 2025</p>
-                        <p><strong>Rating:</strong> ★★★★★</p>
-                    </div>
-                    
-                    <h4>Key Takeaways</h4>
-                    <ul>
-                        <li>The importance of separating business logic from delivery mechanisms</li>
-                        <li>How to structure applications around use cases rather than technical frameworks</li>
-                        <li>Practical implementations of the dependency inversion principle</li>
-                        <li>Strategies for creating maintainable and testable architecture</li>
-                        <li>How to make architectural decisions that stand the test of time</li>
-                    </ul>
-                    
-                    <h4>How I've Applied These Concepts</h4>
-                    <p>I've implemented Clean Architecture principles in my recent projects,
-                    particularly focusing on creating clear boundaries between layers and ensuring
-                    business logic remains independent of frameworks. This has resulted in more
-                    testable code and greater flexibility when adapting to changing requirements.</p>
-                    
-                    <p><a href="https://www.goodreads.com/book/show/18043011-clean-architecture" target="_blank">View on Goodreads →</a></p>
-                `
+                name: "We Are Bob (Bobiverse) - Dennis E. Taylor",
+                color: "#ff00f2",
+                overview: "March 2025 - Currently reading",
             },
             {
-                name: "Deep Work",
+                name: "Artemis - Andy Weir",
                 color: "#DA70D6",
-                overview: "Deep Work by Cal Newport - Strategies I'm implementing",
-                details: `
-                    <h3>Deep Work by Cal Newport</h3>
-                    <div class="book-details">
-                        <p><strong>Author:</strong> Cal Newport</p>
-                        <p><strong>Status:</strong> Currently reading</p>
-                        <p><strong>Progress:</strong> 75% complete</p>
-                    </div>
-                    
-                    <h4>What I've Learned So Far</h4>
-                    <ul>
-                        <li>The distinction between deep work and shallow work</li>
-                        <li>How the ability to focus deeply is becoming increasingly valuable</li>
-                        <li>Practical techniques for scheduling and protecting deep work time</li>
-                        <li>Strategies for reducing distraction and building concentration</li>
-                        <li>The importance of deliberate rest in maintaining deep work capacity</li>
-                    </ul>
-                    
-                    <h4>Strategies I'm Implementing</h4>
-                    <p>I've begun scheduling dedicated deep work blocks in my calendar,
-                    implementing a "shutdown ritual" at the end of each workday, and
-                    measuring my deep work hours as a key productivity metric. I've already
-                    noticed improvements in my ability to tackle complex programming challenges
-                    and maintain focus for longer periods.</p>
-                    
-                    <p><a href="https://www.goodreads.com/book/show/25744928-deep-work" target="_blank">View on Goodreads →</a></p>
-                `
-            }
+                overview: "February 2025",
+            },
+            {
+                name: "Project Hail Mary - Andy Weir",
+                color: "#830683",
+                overview: "October 2024",
+            },
         ]
     },
     
@@ -475,72 +358,25 @@ const portfolioContent = {
         overview: "Shows I'm watching and recommend, with thoughts and reviews.",
         planets: [
             {
-                name: "Sci-Fi Series",
-                color: "#33FFF3",
-                overview: "My thoughts on the latest season of [Show Name]",
-                details: `
-                    <h3>The Expanse - Final Season</h3>
-                    <div class="show-details">
-                        <p><strong>Genre:</strong> Science Fiction</p>
-                        <p><strong>Status:</strong> Completed</p>
-                        <p><strong>Rating:</strong> ★★★★★</p>
-                    </div>
-                    
-                    <h4>Why I Love This Show</h4>
-                    <p>As a software developer with an interest in space and physics, The Expanse
-                    stands out for its realistic portrayal of space travel, gravity, and the political
-                    complexities of a solar system-wide civilization. The attention to scientific detail
-                    and realistic technology projections make this series uniquely compelling.</p>
-                    
-                    <h4>Technical Aspects I Appreciate</h4>
-                    <ul>
-                        <li>Realistic orbital mechanics and space travel physics</li>
-                        <li>Thoughtful portrayal of how technology shapes society</li>
-                        <li>Plausible near-future computer interfaces and communication systems</li>
-                        <li>The "slow AI" concept and its realistic development path</li>
-                    </ul>
-                    
-                    <p>This series has influenced some of my UI design thinking and how I consider
-                    the long-term implications of the technologies we develop today.</p>
-                `
+                name: "Modern Family",
+                color: "#5CFFF4",
+                overview: "November 2024",
             },
             {
-                name: "Tech Documentaries",
-                color: "#40E0D0",
-                overview: "Fascinating tech documentaries I've watched",
-                details: `
-                    <h3>Recent Tech Documentaries I Recommend</h3>
-                    
-                    <div class="documentary-item">
-                        <h4>AlphaGo (2017)</h4>
-                        <p>This documentary follows the DeepMind AI team as they develop AlphaGo and
-                        challenge world champion Lee Sedol. As a developer interested in machine learning,
-                        I found the portrayal of both the technical challenges and human elements fascinating.</p>
-                        <p><strong>Key insight:</strong> The moment when AlphaGo makes "Move 37" - a move so
-                        creative that commentators initially thought it was a mistake - represents a turning
-                        point in how we understand AI capabilities.</p>
-                    </div>
-                    
-                    <div class="documentary-item">
-                        <h4>The Social Dilemma (2020)</h4>
-                        <p>This documentary examines the impact of social media on society through interviews
-                        with former executives from major tech companies. As someone who builds digital products,
-                        it provoked important reflection on ethical design principles and unintended consequences.</p>
-                        <p><strong>Key insight:</strong> The discussion of how engagement-based algorithms can
-                        unintentionally promote divisive content has influenced how I approach recommendation
-                        systems in my own work.</p>
-                    </div>
-                    
-                    <div class="documentary-item">
-                        <h4>Coded Bias (2020)</h4>
-                        <p>An exploration of algorithmic bias and the real-world implications of flawed AI systems.
-                        This documentary reinforced the importance of diverse training data and careful testing
-                        in any machine learning project.</p>
-                        <p><strong>Key insight:</strong> The practical examples of bias in facial recognition
-                        systems highlighted how seemingly objective systems can perpetuate and amplify existing biases.</p>
-                    </div>
-                `
-            }
+                name: "F.R.I.E.N.D.S",
+                color: "#00B3A7",
+                overview: "January 2025",
+            },
+            {
+                name: "The Mentalist",
+                color: "#0DECF8",
+                overview: "March 2025",
+            },
+            {
+                name: "The Orville",
+                color: "#33CFFF",
+                overview: "April 2025",
+            },
         ]
     },
     
@@ -552,11 +388,11 @@ const portfolioContent = {
         overview: "Places I've visited around the world and travel experiences.",
         planets: [
             {
-                name: "Europe",
+                name: "Hampi, India",
                 color: "#C433FF",
-                overview: "My adventures through various European countries",
+                overview: "My adventures in Hampi, India",
                 details: `
-                    <h3>European Adventures</h3>
+                    <h3>Hampi Adventures</h3>
                     
                     <div class="travel-highlight">
                         <h4>Remote Work from Lisbon, Portugal</h4>
@@ -588,7 +424,7 @@ const portfolioContent = {
                 `
             },
             {
-                name: "Asia",
+                name: "Goa, India",
                 color: "#9370DB",
                 overview: "Exploring cultures across Asia",
                 details: `
@@ -624,7 +460,7 @@ const portfolioContent = {
                 `
             },
             {
-                name: "Americas",
+                name: "Thailand",
                 color: "#8A2BE2",
                 overview: "Road trips and city explorations in North and South America",
                 details: `
@@ -659,7 +495,81 @@ const portfolioContent = {
                         with power inverters, connectivity solutions, and ergonomic considerations.</p>
                     </div>
                 `
-            }
+            },
+            {
+                name: "Meghalaya, India",
+                color: "#8A2BE2",
+                overview: "Road trips and city explorations in North and South America",
+                details: `
+                    <h3>Explorations Across the Americas</h3>
+                    
+                    <div class="travel-highlight">
+                        <h4>Tech Conference Tour - USA</h4>
+                        <p class="travel-date">Various dates, 2022-2024</p>
+                        <p>Combined professional development with exploration by attending major tech
+                        conferences across the US. From WWDC in California to AWS re:Invent in Las Vegas
+                        and smaller specialized conferences, these trips have been invaluable for networking
+                        and staying at the forefront of technology trends.</p>
+                    </div>
+                    
+                    <div class="travel-highlight">
+                        <h4>Startup Ecosystem Visit - São Paulo, Brazil</h4>
+                        <p class="travel-date">Summer 2023 - 2 weeks</p>
+                        <p>Explored Brazil's largest city with a focus on its growing tech startup scene.
+                        Visited incubators, attended local tech meetups, and connected with Brazilian
+                        developers to learn about the unique challenges and opportunities in Latin
+                        America's largest tech market.</p>
+                    </div>
+                    
+                    <div class="travel-highlight">
+                        <h4>Cross-Country Remote Work Road Trip</h4>
+                        <p class="travel-date">Summer 2022 - 4 weeks</p>
+                        <p>Drove across the United States while working remotely, testing the limits of
+                        digital nomadism. Used a mobile hotspot to join meetings from national parks and
+                        remote locations. This experience taught me valuable lessons about adapting to
+                        different working environments and maintaining productivity while on the move.</p>
+                        <p><strong>Tech setup:</strong> Created a comprehensive mobile workstation in my vehicle
+                        with power inverters, connectivity solutions, and ergonomic considerations.</p>
+                    </div>
+                `
+            },
+            {
+                name: "Himalayas, India",
+                color: "#8A2BE2",
+                overview: "Road trips and city explorations in North and South America",
+                details: `
+                    <h3>Explorations Across the Americas</h3>
+                    
+                    <div class="travel-highlight">
+                        <h4>Tech Conference Tour - USA</h4>
+                        <p class="travel-date">Various dates, 2022-2024</p>
+                        <p>Combined professional development with exploration by attending major tech
+                        conferences across the US. From WWDC in California to AWS re:Invent in Las Vegas
+                        and smaller specialized conferences, these trips have been invaluable for networking
+                        and staying at the forefront of technology trends.</p>
+                    </div>
+                    
+                    <div class="travel-highlight">
+                        <h4>Startup Ecosystem Visit - São Paulo, Brazil</h4>
+                        <p class="travel-date">Summer 2023 - 2 weeks</p>
+                        <p>Explored Brazil's largest city with a focus on its growing tech startup scene.
+                        Visited incubators, attended local tech meetups, and connected with Brazilian
+                        developers to learn about the unique challenges and opportunities in Latin
+                        America's largest tech market.</p>
+                    </div>
+                    
+                    <div class="travel-highlight">
+                        <h4>Cross-Country Remote Work Road Trip</h4>
+                        <p class="travel-date">Summer 2022 - 4 weeks</p>
+                        <p>Drove across the United States while working remotely, testing the limits of
+                        digital nomadism. Used a mobile hotspot to join meetings from national parks and
+                        remote locations. This experience taught me valuable lessons about adapting to
+                        different working environments and maintaining productivity while on the move.</p>
+                        <p><strong>Tech setup:</strong> Created a comprehensive mobile workstation in my vehicle
+                        with power inverters, connectivity solutions, and ergonomic considerations.</p>
+                    </div>
+                `
+            },
         ]
     }
 };

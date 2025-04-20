@@ -264,7 +264,7 @@ function checkPlanetProximity(spaceship) {
                 infoContent = `<h2>${obj.name}</h2>
                               <p><em>Part of the ${obj.systemName} system</em></p>
                               <p>${obj.content}</p>
-                              <p>Press <span class="key-hint">E</span> to explore this item</p>`;
+                              ${obj.details ? `<p>Press <span class="key-hint">E</span> to explore this item</p>` : ''}`;
             }
 
             infoPanel.innerHTML = infoContent;
@@ -293,7 +293,7 @@ function checkPlanetProximity(spaceship) {
                     if (obj.isStar) {
                         // Open modal with star system info
                         openStarSystemModal(obj);
-                    } else {
+                    } else if (obj.details) {
                         // Open modal with planet info
                         openPlanetModal(obj);
                     }
@@ -380,9 +380,6 @@ function openStarSystemModal(starSystem) {
 // Function to open planet modal
 
 function openPlanetModal(planet) {
-    console.log('====================================');
-    console.log(planet);
-    console.log('====================================');
     // Generate content based on the planet data
     let content = `
         <div class="planet-header">
@@ -392,18 +389,7 @@ function openPlanetModal(planet) {
         <p>${planet.content}</p>
     `;
     
-    // Add detailed content if available
-    if (planet.details) {
-        content += planet.details;
-    } else {
-        // Fallback to placeholder content
-        content += `
-            <div class="placeholder-content">
-                <h3>Content Coming Soon</h3>
-                <p>Detailed information for this item is still being prepared.</p>
-            </div>
-        `;
-    }
+    content += planet.details;
     
     content += `
         <div class="navigation-tip">
