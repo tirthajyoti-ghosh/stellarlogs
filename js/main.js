@@ -5,6 +5,7 @@ import { spaceship, updateSpaceship } from './spaceship.js';
 import { updateStarSystems } from './universe.js';
 import { draw } from './rendering.js';
 import { initModal } from './modal.js';
+import { initCarousels } from './carousel.js';
 
 // Create keys object for input handling
 const keys = {};
@@ -67,6 +68,11 @@ function init() {
     
     // Initialize modal system
     initModal();
+    
+    // Add listener for modal open to initialize carousels
+    document.addEventListener('modalOpened', function() {
+        setTimeout(initCarousels, 100);
+    });
     
     // Set initial pause state
     window.isPaused = false;

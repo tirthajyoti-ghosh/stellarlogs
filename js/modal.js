@@ -92,6 +92,9 @@ function openModal(title, content, objectColor) {
     modal.style.display = 'flex';
     setTimeout(() => {
         modal.classList.add('show');
+
+        // Dispatch event for carousel initialization
+        document.dispatchEvent(new CustomEvent('modalOpened'));
     }, 10);
     
     // Pause game or reduce motion here if needed
