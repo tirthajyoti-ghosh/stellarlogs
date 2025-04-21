@@ -12,14 +12,14 @@ const spaceship = {
     height: 32,
     velocityX: 0,
     velocityY: 0,
-    acceleration: 0.15,
-    maxSpeed: 12,
+    acceleration: 0.45,
+    maxSpeed: 15,
     friction: 0.97,
     rotationAngle: -Math.PI / 2,
     rotationSpeed: 0.1,
     thrusting: false,
     // Boost properties
-    boostFactor: 2,
+    boostFactor: 4,
     boostDuration: 1000, // milliseconds
     boostCooldown: 0,
     boostAvailable: true,
