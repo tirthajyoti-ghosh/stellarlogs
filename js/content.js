@@ -1,6 +1,54 @@
-// Content data for the space portfolio
+export const travelImages = {
+  hampi: [
+    { url: "https://i.ibb.co/qYybw2NN/hampi2.jpg", caption: "The famous Stone Chariot at Vittala Temple" },
+    { url: "https://i.ibb.co/8LDb7xJr/hampi1.jpg", caption: "Zostel Hampi's very own rubber duc-uhhh fluffy and moody and purring debugging device" },
+  ],
+  goa: [
+    { url: "https://i.ibb.co/FqLGfyT3/goa1.jpg", caption: "IRL oil painting" },
+    { url: "https://i.ibb.co/4gfNKpz9/goa2.jpg", caption: "On his birthday nonetheless! React India 2024" },
+    { url: "https://i.ibb.co/rRzpmV32/goa3.jpg", caption: "With an equally incredible moon-ey sky" }
+  ],
+  thailand: [
+    { url: "https://i.ibb.co/6R77YnbT/thailand1.jpg", caption: "Economy-class private beach and natural sensory deprivation tank if you know how to float" },
+    { url: "https://i.ibb.co/Xr1NSqLV/thailand2.jpg", caption: "Coffee and chill (coffee not included)" },
+    { url: "https://i.ibb.co/9mT66CVn/thailand3.jpg", caption: "Postcard you can send it to your mom" },
+    { url: "https://i.ibb.co/qLR41xSC/thailand4.jpg", caption: "We knew the best snorkeling spots but they didn't" },
+    { url: "https://i.ibb.co/HpfqbDWQ/thailand5.jpg", caption: "Best margarita after swaying with parrot fishes" },
+  ],
+  meghalaya: [
+    { url: "https://i.ibb.co/B2XyM2QQ/meghalaya2.jpg", caption: "Majestic Seven Sisters Waterfall and some of their close relatives" },
+    { url: "https://i.ibb.co/jPGSs6Gz/meghalaya9.jpg", caption: "Imagine taking a dip in that middle step" },
+    { url: "https://i.ibb.co/fdLMyVJk/meghalaya6.jpg", caption: "Would you dare?" },
+    { url: "https://i.ibb.co/5hJH2KN1/meghalaya11.jpg", caption: "You are looking at Bangladesh" },
+    { url: "https://i.ibb.co/ks9vB31Y/meghalaya20.jpg", caption: "A cool breeze gently caressing your face while you get lost to this" },
+    { url: "https://i.ibb.co/Lzkc1CJ8/meghalaya18.jpg", caption: "I wish I had the talent to draw this" },
+    { url: "https://i.ibb.co/Nny08JGr/meghalaya13.jpg", caption: "Engineer by day, photographer by-uhhhh day I guess" },
+    { url: "https://i.ibb.co/60CchnrD/meghalaya17.jpg", caption: "Zostel Shillong fam" },
+    { url: "https://i.ibb.co/HfyNr69T/meghalaya8.jpg", caption: "Photogenic boats all happily resting in line" },
+    { url: "https://i.ibb.co/BHkkw87P/meghalaya7.jpg", caption: "Not me" },
+    { url: "https://i.ibb.co/JWgjTjt9/meghalaya3.jpg", caption: "Hold your breath for these...." },
+    { url: "https://i.ibb.co/Xr1PzDvf/meghalaya4.jpg", caption: "" },
+    { url: "https://i.ibb.co/0VDW6h9Z/meghalaya5.jpg", caption: "" },
+    { url: "https://i.ibb.co/21C6259h/meghalaya12.jpg", caption: "" },
+    { url: "https://i.ibb.co/3m3VjK5T/meghalaya14.jpg", caption: "" },
+    { url: "https://i.ibb.co/cKvTXPGL/meghalaya15.jpg", caption: "" },
+    { url: "https://i.ibb.co/277F4x43/meghalaya16.jpg", caption: "" },
+    { url: "https://i.ibb.co/ymHtxyHs/meghalaya19.jpg", caption: "" },
+  ],
+  himalayas: [
+    { url: "https://i.ibb.co/fdntDN7T/himalayas1.jpg", caption: "Just look at them - ancient giants in slumber" },
+    { url: "https://i.ibb.co/j9T8zGkb/himalayas2.jpg", caption: "It was worth the view" },
+    { url: "https://i.ibb.co/5WS9fVp4/himalayas3.jpg", caption: "Exclusive on planet Earth" },
+    { url: "https://i.ibb.co/Kpypqdst/himalayas4.jpg", caption: "Really proud of this picture :)" },
+    { url: "https://i.ibb.co/spnYRGj8/himalayas5.jpg", caption: "Typical. Even cliche. I know!" },
+    { url: "https://i.ibb.co/xw0HX8r/himalayas7.jpg", caption: "That's called the Friendship Peak btw." },
+    { url: "https://i.ibb.co/JWCvSsQ3/himalayas8.jpg", caption: "I peed here. Another item checked off my bucket list" },
+    { url: "https://i.ibb.co/JjdqyJy2/himalayas9.jpg", caption: "I was born to witness this" },
+    { url: "https://i.ibb.co/j0Hyh7C/himalayas10.jpg", caption: "Fruits-uhhh butter-chicken-and-rice of my labour" },
+  ]
+};
 
-const portfolioContent = {
+export const portfolioContent = {
     // Work Experience Star System
     workExperience: {
         id: "work-experience",
@@ -391,188 +439,52 @@ const portfolioContent = {
                 name: "Hampi, India",
                 color: "#C433FF",
                 overview: "My adventures in Hampi, India",
+                location: "hampi",
                 details: `
                     <h3>Hampi Adventures</h3>
-                    
-                    <div class="travel-highlight">
-                        <h4>Remote Work from Lisbon, Portugal</h4>
-                        <p class="travel-date">Summer 2024 - 6 weeks</p>
-                        <p>Worked remotely while exploring this tech hub. Attended local developer meetups
-                        and co-working spaces, connecting with the vibrant startup scene while enjoying
-                        the city's incredible food and coastal scenery.</p>
-                        <p><strong>Tech connection:</strong> Participated in Web Summit and collaborated
-                        with local developers on an open-source project.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Technology Museum Tour - Germany</h4>
-                        <p class="travel-date">Spring 2023 - 2 weeks</p>
-                        <p>Visited Berlin, Munich, and Hamburg with a focus on technology museums and
-                        computer history exhibitions. The Deutsches Museum's computing section and
-                        the Computerspielemuseum were particular highlights that connected me to the
-                        rich history of our field.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Nordic Code Retreat - Sweden & Finland</h4>
-                        <p class="travel-date">Winter 2023 - 10 days</p>
-                        <p>Combined winter activities with coding sessions at a remote cabin retreat
-                        in the Swedish countryside, followed by visits to tech companies in Stockholm
-                        and Helsinki. Experiencing the Nordic approach to work-life balance was
-                        enlightening and influenced my own productivity habits.</p>
-                    </div>
+                    <div id="travel-carousel" data-location="hampi"></div>
                 `
             },
             {
                 name: "Goa, India",
                 color: "#9370DB",
-                overview: "Exploring cultures across Asia",
+                overview: "React India 2024 and beach vibes",
+                location: "goa",
                 details: `
-                    <h3>Asian Explorations</h3>
-                    
-                    <div class="travel-highlight">
-                        <h4>Tokyo, Japan - Tech Innovation Tour</h4>
-                        <p class="travel-date">Fall 2024 - 3 weeks</p>
-                        <p>Immersed myself in Tokyo's unique technology culture, from robotics exhibitions
-                        to retro gaming arcades and electronics districts. Visited major tech companies and
-                        attended a developer conference focused on AI applications.</p>
-                        <p><strong>Highlight:</strong> Experiencing the remarkable blend of tradition and
-                        cutting-edge technology that defines Japanese innovation culture.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Digital Nomad Experience - Bali, Indonesia</h4>
-                        <p class="travel-date">Winter 2022 - 2 months</p>
-                        <p>Joined a community of remote workers in Canggu, Bali. Balanced coding and
-                        project work with surfing and exploring the island. The experience of maintaining
-                        productivity while embracing a completely different lifestyle was transformative.</p>
-                        <p><strong>Work insight:</strong> Discovered that my problem-solving capabilities
-                        improved significantly when alternating focused work with nature experiences.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Seoul, South Korea - Gaming Culture</h4>
-                        <p class="travel-date">Spring 2023 - 10 days</p>
-                        <p>Explored Seoul's vibrant gaming and technology scene, from esports arenas to
-                        gaming cafes and the Samsung Innovation Museum. Gained valuable insights into
-                        Korean UI/UX design approaches and mobile technology trends.</p>
-                    </div>
+                    <h3>Goa Adventures</h3>
+                    <div id="travel-carousel" data-location="goa"></div>
                 `
             },
             {
                 name: "Thailand",
                 color: "#8A2BE2",
-                overview: "Road trips and city explorations in North and South America",
+                overview: "Snorkeling and Green Thai Curries",
+                location: "thailand",
                 details: `
-                    <h3>Explorations Across the Americas</h3>
-                    
-                    <div class="travel-highlight">
-                        <h4>Tech Conference Tour - USA</h4>
-                        <p class="travel-date">Various dates, 2022-2024</p>
-                        <p>Combined professional development with exploration by attending major tech
-                        conferences across the US. From WWDC in California to AWS re:Invent in Las Vegas
-                        and smaller specialized conferences, these trips have been invaluable for networking
-                        and staying at the forefront of technology trends.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Startup Ecosystem Visit - São Paulo, Brazil</h4>
-                        <p class="travel-date">Summer 2023 - 2 weeks</p>
-                        <p>Explored Brazil's largest city with a focus on its growing tech startup scene.
-                        Visited incubators, attended local tech meetups, and connected with Brazilian
-                        developers to learn about the unique challenges and opportunities in Latin
-                        America's largest tech market.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Cross-Country Remote Work Road Trip</h4>
-                        <p class="travel-date">Summer 2022 - 4 weeks</p>
-                        <p>Drove across the United States while working remotely, testing the limits of
-                        digital nomadism. Used a mobile hotspot to join meetings from national parks and
-                        remote locations. This experience taught me valuable lessons about adapting to
-                        different working environments and maintaining productivity while on the move.</p>
-                        <p><strong>Tech setup:</strong> Created a comprehensive mobile workstation in my vehicle
-                        with power inverters, connectivity solutions, and ergonomic considerations.</p>
-                    </div>
+                    <h3>Thailand Adventures</h3>
+                    <div id="travel-carousel" data-location="thailand"></div>
                 `
             },
             {
                 name: "Meghalaya, India",
                 color: "#8A2BE2",
-                overview: "Road trips and city explorations in North and South America",
+                overview: "A place close to my heart",
+                location: "meghalaya",
                 details: `
-                    <h3>Explorations Across the Americas</h3>
-                    
-                    <div class="travel-highlight">
-                        <h4>Tech Conference Tour - USA</h4>
-                        <p class="travel-date">Various dates, 2022-2024</p>
-                        <p>Combined professional development with exploration by attending major tech
-                        conferences across the US. From WWDC in California to AWS re:Invent in Las Vegas
-                        and smaller specialized conferences, these trips have been invaluable for networking
-                        and staying at the forefront of technology trends.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Startup Ecosystem Visit - São Paulo, Brazil</h4>
-                        <p class="travel-date">Summer 2023 - 2 weeks</p>
-                        <p>Explored Brazil's largest city with a focus on its growing tech startup scene.
-                        Visited incubators, attended local tech meetups, and connected with Brazilian
-                        developers to learn about the unique challenges and opportunities in Latin
-                        America's largest tech market.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Cross-Country Remote Work Road Trip</h4>
-                        <p class="travel-date">Summer 2022 - 4 weeks</p>
-                        <p>Drove across the United States while working remotely, testing the limits of
-                        digital nomadism. Used a mobile hotspot to join meetings from national parks and
-                        remote locations. This experience taught me valuable lessons about adapting to
-                        different working environments and maintaining productivity while on the move.</p>
-                        <p><strong>Tech setup:</strong> Created a comprehensive mobile workstation in my vehicle
-                        with power inverters, connectivity solutions, and ergonomic considerations.</p>
-                    </div>
+                    <h3>Meghalaya Adventures</h3>
+                    <div id="travel-carousel" data-location="meghalaya"></div>
                 `
             },
             {
                 name: "Himalayas, India",
                 color: "#8A2BE2",
-                overview: "Road trips and city explorations in North and South America",
+                overview: "My Fortress of Solitude",
+                location: "himalayas",
                 details: `
-                    <h3>Explorations Across the Americas</h3>
-                    
-                    <div class="travel-highlight">
-                        <h4>Tech Conference Tour - USA</h4>
-                        <p class="travel-date">Various dates, 2022-2024</p>
-                        <p>Combined professional development with exploration by attending major tech
-                        conferences across the US. From WWDC in California to AWS re:Invent in Las Vegas
-                        and smaller specialized conferences, these trips have been invaluable for networking
-                        and staying at the forefront of technology trends.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Startup Ecosystem Visit - São Paulo, Brazil</h4>
-                        <p class="travel-date">Summer 2023 - 2 weeks</p>
-                        <p>Explored Brazil's largest city with a focus on its growing tech startup scene.
-                        Visited incubators, attended local tech meetups, and connected with Brazilian
-                        developers to learn about the unique challenges and opportunities in Latin
-                        America's largest tech market.</p>
-                    </div>
-                    
-                    <div class="travel-highlight">
-                        <h4>Cross-Country Remote Work Road Trip</h4>
-                        <p class="travel-date">Summer 2022 - 4 weeks</p>
-                        <p>Drove across the United States while working remotely, testing the limits of
-                        digital nomadism. Used a mobile hotspot to join meetings from national parks and
-                        remote locations. This experience taught me valuable lessons about adapting to
-                        different working environments and maintaining productivity while on the move.</p>
-                        <p><strong>Tech setup:</strong> Created a comprehensive mobile workstation in my vehicle
-                        with power inverters, connectivity solutions, and ergonomic considerations.</p>
-                    </div>
+                    <h3>Himalayas Adventures</h3>
+                    <div id="travel-carousel" data-location="himalayas"></div>
                 `
             },
         ]
     }
 };
-
-// Export the content object
-export { portfolioContent };
