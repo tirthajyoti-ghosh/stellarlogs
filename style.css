@@ -710,6 +710,10 @@ canvas {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+.project-video {
+    width: 48%;
+}
+
 .project-image img, .project-video video {
     width: 100%;
     display: block;
@@ -722,17 +726,6 @@ canvas {
     color: rgba(255, 255, 255, 0.8);
     text-align: center;
     margin: 0;
-}
-
-/* For larger screens, show media side by side */
-@media (min-width: 768px) {
-    .project-media {
-        flex-direction: row;
-    }
-    
-    .project-image, .project-video {
-        width: 48%;  /* Allow some gap between them */
-    }
 }
 
 /* Image Carousel Styles */

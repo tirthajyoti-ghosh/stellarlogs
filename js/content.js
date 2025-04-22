@@ -78,7 +78,7 @@ export const portfolioContent = {
             },
             {
                 name: "Co-founder & CTO",
-                color: "#C70039",
+                color: "#c7007e",
                 overview: "Building cool stuff at Amigo (2023-2024)",
                 details: `
                     <h3>Co-founder & CTO at Amigo</h3>
@@ -98,7 +98,7 @@ export const portfolioContent = {
             },
             {
                 name: "Software Engineer",
-                color: "#900C3F",
+                color: "#900c0c",
                 overview: "Built mobile and web backbone at Appleute (2022-2023)",
                 details: `
                     <h3>Software Engineer at Appleute</h3>
@@ -139,7 +139,7 @@ export const portfolioContent = {
             },
             {
                 name: "Code Reviewer",
-                color: "#900C3F",
+                color: "#bc1952",
                 overview: "Mentoring juniors started at Microverse (2020-2020)",
                 details: `
                     <h3>Code Reviewer at Microverse</h3>
@@ -166,15 +166,14 @@ export const portfolioContent = {
         overview: "A collection of personal and professional projects I've built throughout my career.",
         planets: [
             {
-                name: "Expo LLM Mediapipe",
-                color: "#33FF57",
-                overview: "This interactive space-themed portfolio",
+                name: "Expo LLM Mediapipe npm package",
+                color: "#338fff",
+                overview: "A powerful and efficient library for running on-device LLM (Large Language Model) inference in Expo applications using Google's MediaPipe LLM Task API.",
                 details: `
-                    <h3>Space Portfolio</h3>
+                    <h3>2025</h3>
                     
-                    <h4>Project Overview</h4>
-                    <p>An interactive, space-themed portfolio website that visualizes different sections of my
-                    professional profile as star systems and planets that can be explored in a gamified experience.</p>
+                    <h4>Technologies</h4>
+                    <p>expo-modules, typescript, kotlin, swift</p>
                     
                     <div class="project-media">
                         <div class="project-video">
@@ -182,30 +181,95 @@ export const portfolioContent = {
                                 <source src="https://video.twimg.com/amplify_video/1911844223751467008/vid/avc1/720x1178/azC3A2-aCaGPe9cC.mp4?tag=14" type="video/mp4">
                                 Your browser does not support the video tag.
                             </video>
-                            <p class="caption">Demo of the navigation through the portfolio universe</p>
                         </div>
                     </div>
                     
-                    <h4>Technologies</h4>
-                    <ul>
-                        <li>HTML5 Canvas for the interactive space simulation</li>
-                        <li>Vanilla JavaScript with module structure</li>
-                        <li>CSS3 for UI elements and animations</li>
-                        <li>Deployed on Vercel for high performance</li>
-                    </ul>
+                    <h4>Links</h4>
+                    <p><a href="https://www.npmjs.com/package/expo-llm-mediapipe" target="_blank">npm package</a></p>
+                    <p><a href="https://github.com/tirthajyoti-ghosh/expo-llm-mediapipe" target="_blank">GitHub repository</a></p>
+                `
+            },
+            {
+                name: "Bücherbüchse",
+                color: "#334bff",
+                overview: "An Instagram-like social media app for book nerds. Built for the German market with React Native, React Query and Typescript.",
+                details: `
+                    <h3>2022-2023</h3>
                     
-                    <h4>Key Features</h4>
-                    <ul>
-                        <li>Interactive spaceship controls to explore the universe</li>
-                        <li>Procedurally generated star systems representing portfolio sections</li>
-                        <li>Radar and navigation HUD elements for enhanced immersion</li>
-                        <li>Modal system for detailed content display</li>
-                    </ul>
+                    <h4>Technologies</h4>
+                    <p>react native, expo, react query, typescript, rest api, android, ios</p>
+                    
+                    <div class="project-media">
+                        <div class="project-image">
+                            <img src="https://i.ibb.co/27y46nbq/bookbox.png" alt="Bücherbüchse" />
+                        </div>
+                    </div>
                     
                     <h4>Links</h4>
-                    <p><a href="https://github.com/yourusername/space-portfolio" target="_blank">GitHub Repository</a></p>
+                    <p><a href="https://play.google.com/store/apps/details?id=app.buecherbuechse.bookbox" target="_blank">Live on PlayStore</a></p>
                 `
-            }
+            },
+            {
+                name: "PUMA's Employee App CATch Up",
+                color: "#5833ff",
+                overview: "A mobile app for PUMA employees to stay up to date with the latest news and events. Built with React Native, Expo and Typescript.",
+                details: `
+                    <h3>2022</h3>
+                    
+                    <h4>Technologies</h4>
+                    <p>react native, expo, typescript, rest api, android, ios</p>
+                    
+                    <div class="project-media">
+                        <div class="project-image">
+                            <img src="https://i.ibb.co/Y4cZmpWB/puma.png" alt="PUMA's Employee App CATch Up" />
+                        </div>
+                    </div>
+                    
+                    <h4>Links</h4>
+                    <p><a href="https://play.google.com/store/apps/details?id=com.pumacatchup.appV2" target="_blank">Live on PlayStore</a></p>
+                `
+            },
+            {
+                name: "Amigo",
+                color: "#33c2ff",
+                overview: "Next-generation group expense management app for travelers. Built with React Native, Expo and Typescript.",
+                details: `
+                    <h3>2023-2024</h3>
+                    
+                    <h4>Technologies</h4>
+                    <p>react native, expo, typescript, react query, firebase</p>
+                    
+                    <div class="project-media">
+                        <div class="project-image">
+                            <img src="https://i.ibb.co/s892qKp/amigo.png" alt="Amigo" />
+                        </div>
+                    </div>
+                    
+                    <h4>Links</h4>
+                    <p><a href="https://github.com/get-amigo/Amigo" target="_blank">GitHub repository</a></p>
+                `
+            },
+            {
+                name: "Animex",
+                color: "#33FF57",
+                overview: "This is a single page application which allows users to browse and view a catalog of anime series and movies. Built with React/Redux.",
+                details: `
+                    <h3>2020</h3>
+                    
+                    <h4>Technologies</h4>
+                    <p>react/redux, sass, rest api, react router, netlify</p>
+                    
+                    <div class="project-media">
+                        <div class="project-image">
+                            <img src="https://i.ibb.co/VydFW8v/animex.png" alt="Animex" />
+                        </div>
+                    </div>
+                    
+                    <h4>Links</h4>
+                    <p><a href="https://ghosh-animex.netlify.app/" target="_blank">Live on Netlify</a></p>
+                    <p><a href="https://github.com/tirthajyoti-ghosh/Animex" target="_blank">GitHub repository</a></p>
+                `
+            },
         ]
     },
     
@@ -214,84 +278,53 @@ export const portfolioContent = {
         id: "blog",
         name: "Blog",
         starColor: "#F6F0A3", // Yellow star
-        overview: "Articles and thoughts I've published about technology, development, and career growth.",
+        overview: "Articles and thoughts I've published about technology.",
         planets: [
             {
-                name: "Web Dev Trends",
-                color: "#3357FF",
-                overview: "Latest trends in web development for 2025",
-                details: `
-                    <h3>Web Development Trends for 2025</h3>
-                    <p class="publication-date">Published: February 15, 2025</p>
-                    
-                    <div class="article-excerpt">
-                        <p>As we progress through 2025, several key trends are reshaping how we build for the web.
-                        From AI-integrated development to new browser capabilities, here's what's defining modern web development.</p>
-                        
-                        <h4>Key Trends Covered</h4>
-                        <ul>
-                            <li>AI-assisted coding and its impact on developer workflows</li>
-                            <li>The rise of WebAssembly and edge computing</li>
-                            <li>Next-gen CSS features transforming web design</li>
-                            <li>Accessibility as a primary development concern</li>
-                            <li>Privacy-first development practices</li>
-                        </ul>
-                        
-                        <p><a href="https://myblog.com/web-dev-trends-2025" target="_blank">Read the full article →</a></p>
-                    </div>
-                `
-            },
-            {
-                name: "AI Revolution",
-                color: "#6A5ACD",
-                overview: "How AI is changing the software industry",
-                details: `
-                    <h3>The AI Revolution in Software Development</h3>
-                    <p class="publication-date">Published: November 8, 2024</p>
-                    
-                    <div class="article-excerpt">
-                        <p>Artificial intelligence is fundamentally changing how software is built, tested, and maintained.
-                        This article explores the practical applications of AI in today's development landscape.</p>
-                        
-                        <h4>Key Points</h4>
-                        <ul>
-                            <li>How AI pair programmers are boosting developer productivity</li>
-                            <li>Automated testing and bug detection with machine learning</li>
-                            <li>AI-driven code refactoring and optimization</li>
-                            <li>The ethical considerations of AI-assisted development</li>
-                            <li>Preparing development teams for the AI transition</li>
-                        </ul>
-                        
-                        <p><a href="https://myblog.com/ai-revolution-software-dev" target="_blank">Read the full article →</a></p>
-                    </div>
-                `
-            },
-            {
-                name: "Clean Code",
+                name: "An in-depth look at closures in React",
                 color: "#7B68EE",
-                overview: "Principles of writing maintainable code",
+                overview: "Under-the-hood look at closures in React.",
                 details: `
-                    <h3>Clean Code Principles for Modern Development</h3>
-                    <p class="publication-date">Published: August 23, 2024</p>
+                    <h3>An in-depth look at closures in React</h3>
+                    <p class="publication-date">Published: January 18, 2024</p>
                     
                     <div class="article-excerpt">
-                        <p>Writing clean, maintainable code remains one of the most valuable skills for any developer.
-                        This article revisits timeless principles and adapts them for today's development environments.</p>
+                        <p>In JavaScript, a closure is created when a function retains access to its lexical scope, even when executed outside of that scope. In React, closures often appear in event handlers, effects, and asynchronous operations. However, due to React's rendering behavior, these closures can sometimes capture stale state or props, leading to bugs.</p>
                         
-                        <h4>Topics Covered</h4>
-                        <ul>
-                            <li>Naming conventions that enhance code readability</li>
-                            <li>Function composition and the single responsibility principle</li>
-                            <li>State management techniques for cleaner code</li>
-                            <li>Comment strategies that actually help future developers</li>
-                            <li>Balancing clean code with performance considerations</li>
-                            <li>Refactoring strategies for legacy codebases</li>
-                        </ul>
-                        
-                        <p><a href="https://myblog.com/clean-code-modern-dev" target="_blank">Read the full article →</a></p>
+                        <p><a href="https://tghosh.hashnode.dev/an-in-depth-look-at-closures-in-react" target="_blank">Read the full article →</a></p>
                     </div>
                 `
-            }
+            },
+            {
+                name: "Rendering Large Lists in Vanilla JS: List Virtualization",
+                color: "#6A5ACD",
+                overview: "An in-depth look at list virtualization and its benefits.",
+                details: `
+                    <h3>Rendering Large Lists in Vanilla JS: List Virtualization</h3>
+                    <p class="publication-date">Published: January 25, 2024</p>
+                    
+                    <div class="article-excerpt">
+                        <p>Rendering extensive lists (e.g., 10,000 items) by creating a DOM node for each item can severely impact performance. Even dynamically adding and removing nodes during scrolling can lead to lag due to the heavy nature of DOM operations and unpredictable user scroll behavior. Enter list virtualization</p>
+                        
+                        <p><a href="https://tghosh.hashnode.dev/rendering-large-lists-in-vanilla-js-list-virtualization" target="_blank">Read the full article →</a></p>
+                    </div>
+                `
+            },
+            {
+                name: "How To Use CSS Sprites: An Ingenious Way of Reducing Page Loading time",
+                color: "#3357FF",
+                overview: "An in-depth guide on using CSS sprites to optimize web performance.",
+                details: `
+                    <h3>How To Use CSS Sprites: An Ingenious Way of Reducing Page Loading time</h3>
+                    <p class="publication-date">Published: February 20th, 2020</p>
+                    
+                    <div class="article-excerpt">
+                        <p>Imagine you have six images on your home page. You might proceed with loading the images separately. After all, they are six different images and to be used in six different places. And you might be right ... from your perspective. You also know that loading six different images will force the browser to make six different HTTP requests to the server. And each time it makes a request, a few milliseconds gets added to your page loading time. That's bad news if you have fifty images.</p>
+                        
+                        <p><a href="https://hackernoon.com/how-to-use-css-sprites-an-ingenious-way-of-reducing-page-loading-time-c72u37yk" target="_blank">Read the full article →</a></p>
+                    </div>
+                `
+            },
         ]
     },
     
@@ -338,7 +371,7 @@ export const portfolioContent = {
             },
             {
                 name: "Mentee Review",
-                color: "#FFCC33",
+                color: "#f7cf59",
                 overview: "From Arslan Bisharat, Researcher",
                 details: `
                     <h3>Recommendation from John Smith</h3>
@@ -355,7 +388,7 @@ export const portfolioContent = {
             },
             {
                 name: "Teammate Review",
-                color: "#FFCC33",
+                color: "#ff9900",
                 overview: "From Javier Oriol Correas Sanchez-Cuesta, Fullstack Engineer",
                 details: `
                     <h3>Recommendation from John Smith</h3>
@@ -467,7 +500,7 @@ export const portfolioContent = {
             },
             {
                 name: "Meghalaya, India",
-                color: "#8A2BE2",
+                color: "#691fe9",
                 overview: "A place close to my heart",
                 location: "meghalaya",
                 details: `
@@ -477,7 +510,7 @@ export const portfolioContent = {
             },
             {
                 name: "Himalayas, India",
-                color: "#8A2BE2",
+                color: "#3011cd",
                 overview: "My Fortress of Solitude",
                 location: "himalayas",
                 details: `
