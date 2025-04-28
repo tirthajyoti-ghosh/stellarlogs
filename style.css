@@ -861,3 +861,81 @@ canvas {
         height: 250px; /* Shorter on mobile */
     }
 }
+
+/* Welcome popup that follows the spaceship */
+.spaceship-popup {
+    position: absolute;
+    width: 450px;
+    background-color: rgba(0, 10, 20, 0.8);
+    border: 2px solid #30bfff;
+    border-radius: 10px;
+    padding: 15px;
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    z-index: 1000;
+    box-shadow: 0 0 30px rgba(48, 191, 255, 0.4);
+    backdrop-filter: blur(5px);
+    animation: pulseGlow 3s infinite alternate;
+    display: none; /* Initially hidden */
+    pointer-events: none; /* Allow clicking through */
+    transform: translateY(-20px); /* Position above the ship */
+}
+
+.spaceship-popup.visible {
+    display: block;
+}
+
+.spaceship-popup h2 {
+    margin: 0 0 10px 0;
+    color: #30bfff;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.spaceship-popup .popup-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.controls-guide {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 15px 0;
+    border-left: 3px solid #30bfff;
+}
+
+.controls-guide h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #30bfff;
+    font-size: 16px;
+}
+
+.key-hint {
+    display: inline-block;
+    background-color: rgba(48, 191, 255, 0.2);
+    border: 1px solid rgba(48, 191, 255, 0.5);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: bold;
+    margin: 0 2px;
+}
+
+.dismiss-hint {
+    text-align: center;
+    margin-top: 15px;
+    color: #30bfff;
+    font-weight: bold;
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 15px rgba(48, 191, 255, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 30px rgba(48, 191, 255, 0.6);
+    }
+}

@@ -3,6 +3,7 @@
 import { camera, universeWidth, universeHeight } from './canvas.js';
 import { openModal } from './modal.js';
 import { portfolioContent } from './content.js';
+import { hasPopupBeenDismissed } from './welcome.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
@@ -287,7 +288,7 @@ function checkPlanetProximity(spaceship) {
             // Logic for "entering" a section when pressing E
             if (keys["e"] || keys["E"]) {
                 // Only trigger once per keypress
-                if (!window.eKeyPressed) {
+                if (!window.eKeyPressed && hasPopupBeenDismissed()) {
                     window.eKeyPressed = true;
                     
                     if (obj.isStar) {
