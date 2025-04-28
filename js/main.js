@@ -6,6 +6,8 @@ import { updateStarSystems } from './universe.js';
 import { draw } from './rendering.js';
 import { initModal } from './modal.js';
 import { initCarousels } from './carousel.js';
+import { initWelcomePopup, updateWelcomePopupPosition } from './welcome.js';
+
 
 // Create keys object for input handling
 const keys = {};
@@ -18,6 +20,9 @@ function gameLoop() {
     if (!window.isPaused) {
         updateSpaceship();
         updateStarSystems(); // Update planet orbits
+        
+        // Update welcome popup position
+        updateWelcomePopupPosition();
     }
     
     // Always draw (even when paused)
@@ -63,11 +68,13 @@ function init() {
     setupInputHandlers();
     
     // Center spaceship in the universe
-    spaceship.x = canvas.width / 2;
+    spaceship.x = canvas.width / 3;
     spaceship.y = canvas.height / 2;
     
     // Initialize modal system
     initModal();
+
+    initWelcomePopup();
     
     // Add listener for modal open to initialize carousels
     document.addEventListener('modalOpened', function() {
