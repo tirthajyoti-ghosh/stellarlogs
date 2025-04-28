@@ -4,13 +4,12 @@ import { camera } from './canvas.js';
 let isPopupVisible = false;
 let dismissedWithEKey = false;
 
+export const hasVisitedBefore = () => localStorage.getItem('hasVisitedBefore') === 'true';
+
 export function initWelcomePopup() {
     const welcomePopup = document.getElementById('welcome-popup');
     
-    // Check if this is the first visit
-    const hasVisited = localStorage.getItem('hasVisitedBefore');
-    
-    if (!hasVisited) {        
+    if (!hasVisitedBefore()) {      
         isPopupVisible = true;
         welcomePopup.classList.add('visible');
         updatePopupPosition();

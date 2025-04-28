@@ -6,7 +6,7 @@ import { updateStarSystems } from './universe.js';
 import { draw } from './rendering.js';
 import { initModal } from './modal.js';
 import { initCarousels } from './carousel.js';
-import { initWelcomePopup, updateWelcomePopupPosition } from './welcome.js';
+import { initWelcomePopup, updateWelcomePopupPosition, hasVisitedBefore } from './welcome.js';
 
 
 // Create keys object for input handling
@@ -68,7 +68,7 @@ function init() {
     setupInputHandlers();
     
     // Center spaceship in the universe
-    spaceship.x = canvas.width / 3;
+    spaceship.x = hasVisitedBefore() ? canvas.width / 2 : canvas.width / 3;
     spaceship.y = canvas.height / 2;
     
     // Initialize modal system
