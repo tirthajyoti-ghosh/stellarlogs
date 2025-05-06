@@ -1,5 +1,7 @@
 # Stellarlogs
 
+![Stellarlogs](./assets/preview.png)
+
 Welcome to my interactive portfolio site! 🚀
 
 I’m a big space nerd, inspired by creations like *The Expanse*, *For All Mankind*, *The Three-Body Problem*, and *Project Hail Mary*. Currently, I’m reading the *Bobiverse* series, where Bob, a software engineer, explores the universe as a spaceship. This sparked an idea: while I was born too early to explore the stars, I can create a universe of my own.
