@@ -3,6 +3,7 @@
 import { camera, universeWidth, universeHeight } from './canvas.js';
 import { openModal } from './modal.js';
 import { portfolioContent } from './content.js';
+import { setInteractButtonVisibility } from './touch-controls.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
@@ -254,52 +255,79 @@ function checkPlanetProximity(spaceship) {
         if (distance < proximityThreshold) {
             // Prepare info panel content based on object type
             let infoContent;
+            const interactHint = window.isTouchDevice ? "Tap here" : "Press <span class=\"key-hint\">E</span>";
 
             if (obj.isStar) {
                 infoContent = `<h2>${obj.name}</h2>
                               <p>${obj.content}</p>
                               <p>This star system contains multiple planets to explore.</p>
-                              <p>Press <span class="key-hint">E</span> to view an overview of this section</p>`;
+                              <p>${interactHint} to view an overview of this section</p>`;
             } else {
                 infoContent = `<h2>${obj.name}</h2>
                               <p><em>Part of the ${obj.systemName} system</em></p>
                               <p>${obj.content}</p>
-                              ${obj.details ? `<p>Press <span class="key-hint">E</span> to explore this item</p>` : ''}`;
+                              ${obj.details ? `<p>${interactHint} to explore this item</p>` : ''}`;
             }
 
             infoPanel.innerHTML = infoContent;
             
-            // Position the info panel relative to the ship instead of over it
+            // Position the info panel relative to the ship and screen boundaries
             const screenX = spaceship.x - camera.x;
             const screenY = spaceship.y - camera.y;
-            
-            // Position info panel above and to the right of the ship
-            infoPanel.style.left = `${screenX + 40}px`;
-            infoPanel.style.top = `${screenY - 20}px`;
-            infoPanel.style.display = "block";
-            
-            // Add a connecting line from ship to panel
-            infoPanel.style.borderLeft = `2px solid ${obj.color}`;
-            infoPanel.style.boxShadow = `0 0 15px 5px rgba(${parseInt(obj.color.slice(1, 3), 16)}, 
-                                                          ${parseInt(obj.color.slice(3, 5), 16)}, 
-                                                          ${parseInt(obj.color.slice(5, 7), 16)}, 0.3)`;
+            const panelWidth = infoPanel.offsetWidth;
+            const panelHeight = infoPanel.offsetHeight;
+            const margin = 20; // Margin from ship and screen edges
 
-            // Logic for "entering" a section when pressing E
-            if (keys["e"] || keys["E"]) {
-                // Only trigger once per keypress
-                if (!window.eKeyPressed) {
-                    window.eKeyPressed = true;
+            let panelLeft = screenX + 40; // Default: to the right of the ship
+            let panelTop = screenY - panelHeight - margin; // Default: above the ship
+
+            // Adjust if panel goes off-screen horizontally
+            if (panelLeft + panelWidth + margin > window.innerWidth) {
+                panelLeft = screenX - panelWidth - 40; // Move to the left of the ship
+            }
+            if (panelLeft < margin) {
+                panelLeft = margin; // Prevent going off left edge
+            }
+
+            // Adjust if panel goes off-screen vertically
+            if (panelTop < margin) {
+                panelTop = screenY + margin + 20; // Move below the ship (20 is approx ship height)
+            }
+            if (panelTop + panelHeight + margin > window.innerHeight) {
+                panelTop = window.innerHeight - panelHeight - margin; // Prevent going off bottom edge
+            }
+
+            infoPanel.style.left = `${panelLeft}px`;
+            infoPanel.style.top = `${panelTop}px`;
+            infoPanel.style.display = "block";
+            infoPanel.style.opacity = "1"; // Ensure it's visible
+            
+            // Update visual connection/styling based on object
+            infoPanel.style.borderLeft = `3px solid ${obj.color || '#00ffff'}`;
+            infoPanel.style.boxShadow = `0 0 15px 5px rgba(${parseInt((obj.color || '#00ffff').slice(1, 3), 16)}, 
+                                                          ${parseInt((obj.color || '#00ffff').slice(3, 5), 16)}, 
+                                                          ${parseInt((obj.color || '#00ffff').slice(5, 7), 16)}, 0.3)`;
+
+            if (window.isTouchDevice) {
+                setInteractButtonVisibility(!!(obj.isStar || obj.details)); // Show if interactable
+            }
+
+            // Logic for "entering" a section when pressing E or interact button
+            if (keys["e"] || keys["E"] || window.eKeyPressed) { // window.eKeyPressed for touch
+                // Only trigger once per keypress/tap
+                if (!window.actionTakenThisFrame) { // Use a frame-based flag to prevent multiple triggers
+                    window.actionTakenThisFrame = true;
                     
                     if (obj.isStar) {
-                        // Open modal with star system info
                         openStarSystemModal(obj);
                     } else if (obj.details) {
-                        // Open modal with planet info
                         openPlanetModal(obj);
                     }
+                    // Reset eKeyPressed if it was set by touch, to allow next touch interaction
+                    if(window.eKeyPressed) window.eKeyPressed = false; 
                 }
             } else {
-                window.eKeyPressed = false;
+                window.actionTakenThisFrame = false; // Reset flag if key is not pressed
             }
 
             foundNearby = true;
@@ -309,6 +337,11 @@ function checkPlanetProximity(spaceship) {
 
     if (!foundNearby) {
         infoPanel.style.display = "none";
+        infoPanel.style.opacity = "0";
+        if (window.isTouchDevice) {
+            setInteractButtonVisibility(false);
+        }
+        window.actionTakenThisFrame = false; // Ensure flag is reset when no object is nearby
     }
 
     // Update current system indicator
@@ -343,23 +376,24 @@ function openStarSystemModal(starSystem) {
     }
     
     const system = fullSystem || starSystem;
+    const exploreHint = window.isTouchDevice ? "Tap on a planet's entry or fly closer and tap the interact button" : "Fly closer to any planet and press <span class=\"key-hint\">E</span>";
     
     // Create modal content
     let content = `
-        <p class="system-intro">${system.content}</p>
+        <p class=\"system-intro\">${system.content}</p>
         
         <h3>About this Section</h3>
         <p>This star system represents my ${system.name.toLowerCase()}. Explore the planets to learn more about specific aspects.</p>
         
         <h3>Planets in this System</h3>
-        <ul class="planet-list">
+        <ul class=\"planet-list\">
     `;
     
     // Add planets
     system.planets.forEach(planet => {
         content += `
             <li>
-                <h4 style="color: ${planet.color}">${planet.name}</h4>
+                <h4 style=\"color: ${planet.color}\">${planet.name}</h4>
                 <p>${planet.content}</p>
             </li>
         `;
@@ -368,8 +402,8 @@ function openStarSystemModal(starSystem) {
     content += `
         </ul>
         
-        <div class="navigation-tip">
-            <p>Fly closer to any planet and press <span class="key-hint">E</span> to explore its details.</p>
+        <div class=\"navigation-tip\">
+            <p>${exploreHint} to explore its details.</p>
         </div>
     `;
     
@@ -381,9 +415,10 @@ function openStarSystemModal(starSystem) {
 
 function openPlanetModal(planet) {
     // Generate content based on the planet data
+    const closeHint = window.isTouchDevice ? "Tap outside or use the close button" : "Press <span class=\"key-hint\">ESC</span>";
     let content = `
-        <div class="planet-header">
-            <span class="planet-system">Part of the ${planet.systemName} system</span>
+        <div class=\"planet-header\">
+            <span class=\"planet-system\">Part of the ${planet.systemName} system</span>
         </div>
         
         <p>${planet.content}</p>
@@ -392,8 +427,8 @@ function openPlanetModal(planet) {
     content += planet.details;
     
     content += `
-        <div class="navigation-tip">
-            <p>Press <span class="key-hint">ESC</span> to close this view and continue exploring.</p>
+        <div class=\"navigation-tip\">
+            <p>${closeHint} to close this view and continue exploring.</p>
         </div>
     `;
     

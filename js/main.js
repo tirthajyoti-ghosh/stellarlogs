@@ -7,7 +7,7 @@ import { draw } from './rendering.js';
 import { initModal } from './modal.js';
 import { initCarousels } from './carousel.js';
 import { initWelcomePopup, updateWelcomePopupPosition, hasVisitedBefore } from './welcome.js';
-
+import { initTouchControls, updateTouchControls } from './touch-controls.js';
 
 // Create keys object for input handling
 const keys = {};
@@ -18,6 +18,9 @@ window.keys = keys;
 function gameLoop() {
     // Skip updates if game is paused (modal is open)
     if (!window.isPaused) {
+        if (window.isTouchDevice) {
+            updateTouchControls();
+        }
         updateSpaceship();
         updateStarSystems(); // Update planet orbits
         
@@ -70,6 +73,20 @@ function init() {
     // Center spaceship in the universe
     spaceship.x = hasVisitedBefore() ? canvas.width / 2 : canvas.width / 3;
     spaceship.y = canvas.height / 2;
+
+    // Detect if it's a touch device
+    window.isTouchDevice = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));
+
+    if (window.isTouchDevice) {
+        initTouchControls(spaceship, keys, document.getElementById('interact-button'));
+        // Hide desktop nav toggle if touch controls are active, as mobile has its own
+        const desktopNavToggle = document.getElementById("nav-panel-toggle");
+        if(desktopNavToggle) desktopNavToggle.style.display = 'none';
+
+        const navPanelTitle = document.getElementById("nav-panel-title");
+        if(navPanelTitle) navPanelTitle.style.textAlign = 'center'; // Center title if toggle is gone
+
+    }
     
     // Initialize modal system
     initModal();

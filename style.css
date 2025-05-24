@@ -59,11 +59,11 @@ canvas {
 /* Side nav panel */
 #nav-panel {
     position: absolute;
-    top: 50%;
-    right: 20px;
-    transform: translateY(-50%);
-    width: 250px;
-    background-color: rgba(4, 12, 24, 0.5);
+    top: 70px; /* Adjusted from 50% transform for more predictable mobile placement */
+    right: 10px;
+    /* transform: translateY(-50%); */ /* Removed for simpler top positioning */
+    width: 200px; /* Slightly reduced width for mobile */
+    background-color: rgba(4, 12, 24, 0.7); /* Increased opacity slightly */
     border-radius: 10px;
     border: 1px solid rgba(0, 255, 255, 0.3);
     overflow: hidden;
@@ -102,7 +102,7 @@ canvas {
 }
 
 #planet-data {
-    max-height: 400px;
+    max-height: 300px; /* Reduced max-height for mobile */
     overflow-y: auto;
     padding: 10px;
     transition: max-height 0.3s;
@@ -298,6 +298,7 @@ canvas {
     right: 20px;
     border-width: 2px 2px 0 0;
     border-top-right-radius: 10px;
+    display: none; /* Hide decorative corners on mobile to save space */
 }
 
 #corner-bl {
@@ -305,6 +306,7 @@ canvas {
     left: 20px;
     border-width: 0 0 2px 2px;
     border-bottom-left-radius: 10px;
+    display: none; /* Hide decorative corners on mobile to save space */
 }
 
 #corner-br {
@@ -312,6 +314,7 @@ canvas {
     right: 20px;
     border-width: 0 2px 2px 0;
     border-bottom-right-radius: 10px;
+    display: none; /* Hide decorative corners on mobile to save space */
 }
 
 /* Direction indicators that appear at edges of screen */
@@ -338,28 +341,27 @@ canvas {
 /* Info panel for objects */
 #info {
     position: absolute;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.85); /* Slightly more opaque */
     color: #00ffff;
-    padding: 15px;
-    border-radius: 5px;
-    max-width: 300px;
-    font-size: 14px;
+    padding: 10px 15px; /* Adjusted padding */
+    border-radius: 8px; /* Softer radius */
+    width: 80vw; /* Use viewport width for responsiveness */
+    max-width: 320px; /* Max width to prevent it from becoming too large */
+    font-size: 13px; /* Adjusted font size */
     backdrop-filter: blur(5px);
     border: 1px solid #00ffff;
     z-index: 100;
-    transform: translate(0, -100%); /* Move up by its height */
-    pointer-events: none; /* Let clicks go through to objects beneath */
-    transition: opacity 0.3s ease;
+    /* transform: translate(0, -100%); */ /* Remove fixed transform, position dynamically */
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease; /* Added transform transition */
+    box-shadow: 0 2px 10px rgba(0, 255, 255, 0.2); /* Softer shadow */
 }
 
 #info:before {
     content: '';
     position: absolute;
-    bottom: -10px;
-    left: 0;
-    width: 2px;
-    height: 10px;
-    background-color: inherit;
+    /* Dynamic positioning for the connector will be handled by JS if needed, or removed if too complex for pure CSS */
+    display: none; /* Hide the CSS connector for now, can be re-added if a simple solution is found */
 }
 
 #info h2 {
@@ -584,6 +586,7 @@ canvas {
     padding: 10px 15px;
     color: #fff;
     font-size: 0.8em;
+    display: none; /* Hide keyboard controls by default, will be shown via media query for desktop */
 }
 
 #controls-info h3 {
@@ -865,7 +868,8 @@ canvas {
 /* Welcome popup that follows the spaceship */
 .spaceship-popup {
     position: absolute;
-    width: 450px;
+    width: 90vw; /* Make width responsive */
+    max-width: 400px; /* Keep a max-width for larger mobile screens */
     background-color: rgba(0, 10, 20, 0.8);
     border: 2px solid #30bfff;
     border-radius: 10px;
@@ -937,5 +941,498 @@ canvas {
     }
     100% {
         box-shadow: 0 0 30px rgba(48, 191, 255, 0.6);
+    }
+}
+
+/* Touch Controls Styling */
+#touch-controls {
+    display: none; /* Hidden by default, shown by media query */
+    position: fixed;
+    bottom: 0;
+    left: 0; /* Ensure it spans the width for child positioning */
+    width: 100%;
+    height: 180px; /* Define a touch area height */
+    pointer-events: none; /* Container doesn't block, children will have pointer-events: auto */
+    z-index: 1001;
+}
+
+#joystick-area {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(50, 70, 90, 0.4); /* Darker, less obtrusive */
+    border-radius: 50%;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#joystick-handle {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 255, 255, 0.4);
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+#action-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center buttons if their text makes them uneven */
+    gap: 15px;
+    pointer-events: auto;
+}
+
+#action-buttons button {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    color: white;
+    border: 2px solid rgba(0, 255, 255, 0.5);
+    font-size: 12px; /* Slightly smaller font */
+    background-color: rgba(30, 50, 70, 0.5); /* Consistent button bg */
+    transition: background-color 0.2s, box-shadow 0.2s;
+    pointer-events: auto; /* Ensure buttons are interactive */
+}
+
+#action-buttons button:hover { /* Basic hover for desktop testing, touch has :active */
+    background-color: rgba(40, 70, 100, 0.7);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+}
+
+#action-buttons button:active { /* Style for when button is pressed */
+    background-color: rgba(50, 90, 130, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
+/* Welcome popup that follows the spaceship */
+.spaceship-popup {
+    position: absolute;
+    width: 90vw; /* Make width responsive */
+    max-width: 400px; /* Keep a max-width for larger mobile screens */
+    background-color: rgba(0, 10, 20, 0.8);
+    border: 2px solid #30bfff;
+    border-radius: 10px;
+    padding: 15px;
+    color: #fff;
+    font-family: 'Space Mono', monospace;
+    z-index: 1000;
+    box-shadow: 0 0 30px rgba(48, 191, 255, 0.4);
+    backdrop-filter: blur(5px);
+    animation: pulseGlow 3s infinite alternate;
+    display: none; /* Initially hidden */
+    pointer-events: none; /* Allow clicking through */
+    transform: translateY(-20px); /* Position above the ship */
+}
+
+.spaceship-popup.visible {
+    display: block;
+}
+
+.spaceship-popup h2 {
+    margin: 0 0 10px 0;
+    color: #30bfff;
+    font-size: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.spaceship-popup .popup-content {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.controls-guide {
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 15px 0;
+    border-left: 3px solid #30bfff;
+}
+
+.controls-guide h3 {
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #30bfff;
+    font-size: 16px;
+}
+
+.key-hint {
+    display: inline-block;
+    background-color: rgba(48, 191, 255, 0.2);
+    border: 1px solid rgba(48, 191, 255, 0.5);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: bold;
+    margin: 0 2px;
+}
+
+.dismiss-hint {
+    text-align: center;
+    margin-top: 15px;
+    color: #30bfff;
+    font-weight: bold;
+}
+
+@keyframes pulseGlow {
+    0% {
+        box-shadow: 0 0 15px rgba(48, 191, 255, 0.3);
+    }
+    100% {
+        box-shadow: 0 0 30px rgba(48, 191, 255, 0.6);
+    }
+}
+
+/* Touch Controls Styling */
+#touch-controls {
+    display: none; /* Hidden by default, shown by media query */
+    position: fixed;
+    bottom: 0;
+    left: 0; /* Ensure it spans the width for child positioning */
+    width: 100%;
+    height: 180px; /* Define a touch area height */
+    pointer-events: none; /* Container doesn't block, children will have pointer-events: auto */
+    z-index: 1001;
+}
+
+#joystick-area {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 120px;
+    height: 120px;
+    background: rgba(50, 70, 90, 0.4); /* Darker, less obtrusive */
+    border-radius: 50%;
+    border: 2px solid rgba(0, 255, 255, 0.3);
+    pointer-events: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#joystick-handle {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 255, 255, 0.4);
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+}
+
+#action-buttons {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center buttons if their text makes them uneven */
+    gap: 15px;
+    pointer-events: auto;
+}
+
+#action-buttons button {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    color: white;
+    border: 2px solid rgba(0, 255, 255, 0.5);
+    font-size: 12px; /* Slightly smaller font */
+    background-color: rgba(30, 50, 70, 0.5); /* Consistent button bg */
+    transition: background-color 0.2s, box-shadow 0.2s;
+    pointer-events: auto; /* Ensure buttons are interactive */
+}
+
+#action-buttons button:hover { /* Basic hover for desktop testing, touch has :active */
+    background-color: rgba(40, 70, 100, 0.7);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+}
+
+#action-buttons button:active { /* Style for when button is pressed */
+    background-color: rgba(50, 90, 130, 0.8);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+}
+
+/* Mobile specific adjustments */
+@media (max-width: 767px) {
+    #top-info-bar {
+        padding: 3px 10px;
+        border-radius: 15px;
+    }
+
+    .info-label {
+        font-size: 7px;
+    }
+
+    .info-value {
+        font-size: 12px;
+    }
+
+    .info-section {
+        margin: 0 8px;
+    }
+
+    #radar-container {
+        top: 10px;
+        right: 10px;
+        width: 80px;
+        height: 80px;
+    }
+    #radar-sweep { /* Ensure canvas inside radar scales if its parent does */
+        width: 80px;
+        height: 80px;
+    }
+
+
+    #nav-panel {
+        width: 180px; /* Further reduce nav panel width */
+        top: 60px; /* Adjust top position */
+        display: none !important; /* Hide the star system chart/nav panel on mobile */
+    }
+
+    #nav-panel-title {
+        font-size: 10px;
+    }
+
+    #planet-data {
+        max-height: 250px; /* Adjust height */
+        font-size: 10px; /* Adjust font size in planet list */
+    }
+    .planet-name, .planet-distance, .planet-direction {
+        font-size: 10px;
+    }
+
+
+    #bottom-status-bar {
+        width: 90%;
+        max-width: 300px; /* Max width for bottom bar */
+        padding: 8px 15px;
+        bottom: 10px;
+    }
+
+    .status-label {
+        font-size: 7px;
+    }
+    
+    .thruster-indicator, .boost-meter {
+        width: 40px;
+    }
+
+    .frame-corner { /* Hide all decorative corners on mobile */
+        display: none;
+    }
+    
+    #corner-tl { /* Explicitly hide this one too if not covered by .frame-corner */
+        display: none;
+    }
+
+    .modal-content {
+        width: 90vw;
+        max-width: 90vw; /* Ensure it uses viewport width */
+    }
+
+    .modal-title {
+        font-size: 1.2rem;
+    }
+
+    .modal-body {
+        padding: 15px;
+        font-size: 0.9rem;
+    }
+    
+    .spaceship-popup {
+        font-size: 13px; /* Adjust font size in welcome popup */
+    }
+    .spaceship-popup h2 {
+        font-size: 18px;
+    }
+    .spaceship-popup .popup-content {
+        font-size: 13px;
+    }
+    .controls-guide h3 {
+        font-size: 15px;
+    }
+    .dismiss-hint .key-hint { /* Hide keyboard E hint */
+        display: none;
+    }
+    .dismiss-hint .touch-hint { /* Show touch hint */
+        display: inline-block !important; /* Override inline style if necessary */
+         background-color: rgba(0, 255, 255, 0.2);
+        border: 1px solid #00ffff;
+        padding: 1px 5px;
+        color: #00ffff;
+        font-family: 'Courier New', monospace;
+    }
+
+    #touch-controls {
+        display: block; /* Show touch controls on mobile */
+    }
+
+    #controls-info {
+        display: none !important; /* Ensure keyboard controls are hidden */
+    }
+
+}
+
+/* Desktop specific adjustments - show keyboard controls */
+@media (min-width: 768px) {
+    #controls-info {
+        display: block; /* Show keyboard controls on larger screens */
+    }
+
+    /* Restore nav-panel to original for desktop if changed for mobile */
+    #nav-panel {
+        position: absolute;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        width: 250px; /* Original width */
+        background-color: rgba(4, 12, 24, 0.5);
+    }
+    #nav-panel-header {
+        padding: 10px;
+        background-color: rgba(0, 60, 80, 0.4);
+    }
+    #nav-panel-title {
+        font-size: 12px; /* Original font size */
+    }
+    #planet-data {
+        max-height: 400px; /* Original max-height */
+        font-size: inherit; /* Reset font size */
+    }
+     .planet-name, .planet-distance, .planet-direction {
+        font-size: 11px; /* Original font size */
+    }
+
+    /* Restore decorative corners for desktop */
+    .frame-corner {
+        display: block;
+    }
+    #corner-tl {
+        display: block;
+    }
+    #corner-tr { /* This was hidden individually, restore it */
+        display: block;
+    }
+    #corner-bl {
+        display: block;
+    }
+    #corner-br {
+        display: block;
+    }
+}
+
+@media (max-width: 768px) {
+    /* ... existing media queries ... */
+
+    #info {
+        /* Adjustments for smaller screens if needed, though vw units should handle most cases */
+        font-size: 12px;
+        padding: 8px 12px;
+    }
+
+    #nav-panel {
+        width: 180px; /* Slightly narrower on mobile */
+        top: 60px; /* Adjust if top bar height changes */
+        display: none !important; /* Hide the star system chart/nav panel on mobile */
+    }
+
+    #planet-data {
+        max-height: 250px; /* Adjust for smaller screens */
+    }
+
+    .modal-content {
+        width: 90%; /* Wider modals on mobile */
+        max-height: 85vh;
+    }
+
+    .modal-title {
+        font-size: 1.5rem;
+    }
+
+    .spaceship-popup {
+        width: 85vw; /* Ensure it\'s not too wide */
+        font-size: 13px;
+    }
+    .spaceship-popup h2 {
+        font-size: 18px;
+    }
+    .controls-guide {
+        padding: 10px;
+    }
+    .controls-guide h3 {
+        font-size: 15px;
+    }
+
+    /* Touch Controls Adjustments for smaller screens */
+    #touch-controls {
+        height: 160px; /* Slightly reduce area height */
+    }
+    #joystick-area {
+        width: 100px;
+        height: 100px;
+        left: 15px;
+        bottom: 15px;
+    }
+    #joystick-handle {
+        width: 50px;
+        height: 50px;
+    }
+    #action-buttons {
+        right: 15px;
+        bottom: 15px;
+        gap: 10px;
+    }
+    #action-buttons button {
+        width: 60px;
+        height: 60px;
+        font-size: 11px;
+    }
+
+    #mobile-nav-toggle {
+        display: none !important; /* Hide the mobile NAV button */
+    }
+}
+
+@media (max-width: 480px) {
+    /* ... existing media queries ... */
+
+    #top-info-bar {
+        padding: 3px 10px; /* Compact top bar */
+    }
+    .info-label {
+        font-size: 7px;
+    }
+    .info-value {
+        font-size: 12px;
+    }
+
+    #info {
+        /* Further fine-tuning for very small screens */
+        max-width: 280px; /* Even smaller max-width */
+        font-size: 11px;
+    }
+
+    .modal-title {
+        font-size: 1.3rem;
+    }
+    .modal-body {
+        padding: 15px;
+    }
+
+    .spaceship-popup {
+        padding: 10px;
+        font-size: 12px;
+    }
+    .spaceship-popup h2 {
+        font-size: 16px;
     }
 }
