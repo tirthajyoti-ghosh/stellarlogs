@@ -91,6 +91,18 @@
                 </div>
                 <div id="planet-data"></div>
             </div>
+
+            <!-- Touch Controls Placeholder - Hidden by default, shown via CSS for touch devices -->
+            <div id="touch-controls">
+                <div id="joystick-area">
+                    <div id="joystick-handle"></div>
+                </div>
+                <div id="action-buttons">
+                    <button id="boost-button">Boost</button>
+                    <button id="interact-button" style="display: none;">Interact</button> <!-- Keep style="display: none;" as it's controlled by JS -->
+                    <button id="mobile-nav-toggle">Nav</button>
+                </div>
+            </div>
             
             <!-- Bottom status indicators -->
             <div id="bottom-status-bar">
@@ -157,7 +169,7 @@
                 </div>
                 
                 <p>Fly near any star or planet to learn more about my work experience, projects, and interests.</p>
-                <p class="dismiss-hint">Press <span class="key-hint">E</span> to begin exploration</p>
+                <p class="dismiss-hint">Press <span class="key-hint">E</span> or <span class="touch-hint" style="display:none;">Tap</span> to begin exploration</p>
             </div>
         </div>
     </body>

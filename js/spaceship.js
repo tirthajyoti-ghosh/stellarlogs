@@ -57,9 +57,22 @@ function updateSpaceship() {
         spaceship.boostStartTime = Date.now();
     }
 
-    // Apply regular thrust
-    if (keys["ArrowUp"] || keys["w"]) {
-        // Calculate acceleration based on boost status
+    // Apply regular thrust or joystick control
+    if (window.isTouchDevice && keys._joystickActive) {
+        // Touch controls: Move in joystick direction
+        const joystickAngle = keys._joystickAngle; // Angle from touch-controls
+        spaceship.rotationAngle = joystickAngle + Math.PI / 2; // Point ship in joystick direction
+
+        const currentAcceleration = spaceship.boostActive
+            ? spaceship.acceleration * spaceship.boostFactor
+            : spaceship.acceleration;
+
+        spaceship.velocityX += Math.cos(joystickAngle) * currentAcceleration;
+        spaceship.velocityY += Math.sin(joystickAngle) * currentAcceleration;
+        spaceship.thrusting = true;
+
+    } else if (keys["ArrowUp"] || keys["w"]) {
+        // Keyboard controls: Thrust forward
         const currentAcceleration = spaceship.boostActive
             ? spaceship.acceleration * spaceship.boostFactor
             : spaceship.acceleration;
@@ -69,12 +82,14 @@ function updateSpaceship() {
         spaceship.thrusting = true;
     }
 
-    // Rotation
-    if (keys["ArrowLeft"] || keys["a"]) {
-        spaceship.rotationAngle -= spaceship.rotationSpeed;
-    }
-    if (keys["ArrowRight"] || keys["d"]) {
-        spaceship.rotationAngle += spaceship.rotationSpeed;
+    // Rotation (only for keyboard)
+    if (!window.isTouchDevice || !keys._joystickActive) { // Allow keyboard rotation if joystick not active or not touch device
+        if (keys["ArrowLeft"] || keys["a"]) {
+            spaceship.rotationAngle -= spaceship.rotationSpeed;
+        }
+        if (keys["ArrowRight"] || keys["d"]) {
+            spaceship.rotationAngle += spaceship.rotationSpeed;
+        }
     }
 
     // Update max speed based on boost
