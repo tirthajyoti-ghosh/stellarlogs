@@ -4,13 +4,70 @@ import { camera, universeWidth, universeHeight } from './canvas.js';
 import { openModal } from './modal.js';
 import { portfolioContent } from './content.js';
 import { setInteractButtonVisibility } from './touch-controls.js';
+import spriteManager from './sprite-manager.js';
+import { StarSpriteRenderer } from './star-sprites.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
 const systemIndicator = document.getElementById("current-system");
 
-// Star systems - each representing a section of the portfolio
+// Initialize star sprite renderer
+const starRenderer = new StarSpriteRenderer(spriteManager);
 
+// Star configuration mapping for sprites
+const STAR_SYSTEM_CONFIG = {
+    'workExperience': {
+        spriteIndex: 0, // Use first star sprite (Y: 0-199px)
+        color: portfolioContent.workExperience.starColor
+    },
+    'projects': {
+        spriteIndex: 1, // Second star sprite (Y: 200-399px)  
+        color: portfolioContent.projects.starColor
+    },
+    'blog': {
+        spriteIndex: 2, // Third star sprite (Y: 400-599px)
+        color: portfolioContent.blog.starColor
+    },
+    'recommendations': {
+        spriteIndex: 3, // Fourth star sprite (Y: 600-799px)
+        color: portfolioContent.recommendations.starColor
+    },
+    'reading': {
+        spriteIndex: 4, // Fifth star sprite (Y: 800-999px)
+        color: portfolioContent.reading.starColor
+    },
+    'shows': {
+        spriteIndex: 5, // Sixth star sprite (Y: 1000-1199px)
+        color: portfolioContent.shows.starColor
+    },
+    'travel': {
+        spriteIndex: 6, // Seventh star sprite (Y: 1200-1399px)
+        color: portfolioContent.travel.starColor
+    }
+};
+
+// Function to get star configuration
+function getStarConfig(systemKey) {
+    return STAR_SYSTEM_CONFIG[systemKey] || {
+        spriteIndex: 0,
+        color: '#ffffff'
+    };
+}
+
+// Function to draw star with sprite support
+function drawStarSprite(ctx, star, camera) {
+    const screenX = star.x - camera.x;
+    const screenY = star.y - camera.y;
+    
+    // Use sprite renderer if available and sprite is loaded
+    if (starRenderer && spriteManager.isLoaded() && star.spriteIndex !== undefined) {
+        return starRenderer.drawStar(ctx, star, screenX, screenY, star.radius);
+    }
+    
+    return false; // Fallback to procedural rendering
+}
+
+// Star systems - each representing a section of the portfolio
 const starSystems = [
     {
         id: portfolioContent.workExperience.id,
@@ -19,6 +76,9 @@ const starSystems = [
         y: 3000,
         starRadius: 120,
         starColor: portfolioContent.workExperience.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('workExperience').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.workExperience.overview,
         planets: portfolioContent.workExperience.planets.map((planet, index) => {
             return {
@@ -40,6 +100,9 @@ const starSystems = [
         y: 5000,
         starRadius: 140,
         starColor: portfolioContent.projects.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('projects').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.projects.overview,
         planets: portfolioContent.projects.planets.map((planet, index) => {
             return {
@@ -61,6 +124,9 @@ const starSystems = [
         y: 8000,
         starRadius: 110,
         starColor: portfolioContent.blog.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('blog').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.blog.overview,
         planets: portfolioContent.blog.planets.map((planet, index) => {
             return {
@@ -82,6 +148,9 @@ const starSystems = [
         y: 15000,
         starRadius: 90,
         starColor: portfolioContent.recommendations.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('recommendations').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.recommendations.overview,
         planets: portfolioContent.recommendations.planets.map((planet, index) => {
             return {
@@ -103,6 +172,9 @@ const starSystems = [
         y: 18000,
         starRadius: 80,
         starColor: portfolioContent.reading.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('reading').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.reading.overview,
         planets: portfolioContent.reading.planets.map((planet, index) => {
             return {
@@ -124,6 +196,9 @@ const starSystems = [
         y: 12000,
         starRadius: 100,
         starColor: portfolioContent.shows.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('shows').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.shows.overview,
         planets: portfolioContent.shows.planets.map((planet, index) => {
             return {
@@ -145,6 +220,9 @@ const starSystems = [
         y: 22000,
         starRadius: 120,
         starColor: portfolioContent.travel.starColor,
+        // Add star sprite configuration
+        spriteIndex: getStarConfig('travel').spriteIndex,
+        animationTime: Math.random() * 100,
         content: portfolioContent.travel.overview,
         planets: portfolioContent.travel.planets.map((planet, index) => {
             return {
@@ -164,7 +242,7 @@ const starSystems = [
 // Create a flat list of all planets for radar and detection purposes
 const allPlanets = [];
 starSystems.forEach((system) => {
-    // Add the star
+    // Add the star with sprite configuration
     allPlanets.push({
         x: system.x,
         y: system.y,
@@ -174,6 +252,9 @@ starSystems.forEach((system) => {
         content: system.content,
         isStar: true,
         systemId: system.id,
+        // Add sprite properties for stars
+        spriteIndex: system.spriteIndex,
+        animationTime: system.animationTime
     });
 
     // Add each planet
@@ -213,7 +294,7 @@ for (let i = 0; i < 4000; i++) {
     });
 }
 
-// Update function to update planet positions in their orbits
+// Update function to update planet positions in their orbits and star animations
 function updateStarSystems() {
     // Find planets in the allPlanets array and update their positions
     for (let i = 0; i < allPlanets.length; i++) {
@@ -228,8 +309,24 @@ function updateStarSystems() {
             // Update position based on orbit
             obj.x = obj.baseX + Math.cos(obj.orbitAngle) * obj.orbitRadius;
             obj.y = obj.baseY + Math.sin(obj.orbitAngle) * obj.orbitRadius;
+        } else if (obj.isStar && obj.spriteIndex !== undefined) {
+            // Update star animation time
+            obj.animationTime += 0.036;
+            if (obj.animationTime > 1000) {
+                obj.animationTime -= 1000; // Keep in reasonable bounds
+            }
         }
     }
+    
+    // Also update the star systems array for consistency
+    starSystems.forEach(system => {
+        if (system.spriteIndex !== undefined) {
+            system.animationTime += 0.016;
+            if (system.animationTime > 1000) {
+                system.animationTime -= 1000;
+            }
+        }
+    });
 }
 
 // Check if spaceship is near a celestial object
@@ -412,7 +509,6 @@ function openStarSystemModal(starSystem) {
 }
 
 // Function to open planet modal
-
 function openPlanetModal(planet) {
     // Generate content based on the planet data
     const closeHint = window.isTouchDevice ? "Tap outside or use the close button" : "Press <span class=\"key-hint\">ESC</span>";
@@ -443,5 +539,7 @@ export {
     updateStarSystems,
     checkPlanetProximity,
     openStarSystemModal,
-    openPlanetModal
+    openPlanetModal,
+    getStarConfig,
+    drawStarSprite
 };
