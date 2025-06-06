@@ -3,6 +3,11 @@
 import { canvas, ctx, camera } from './canvas.js';
 import { spaceship } from './spaceship.js';
 import { allPlanets, stars, starSystems, drawStarSprite, drawPlanetSprite } from './universe.js';
+import { SpaceshipSpriteRenderer } from './spaceship-sprites.js';
+import spriteManager from './sprite-manager.js';
+
+// Initialize spaceship sprite renderer
+const spaceshipRenderer = new SpaceshipSpriteRenderer(spriteManager);
 
 // Draw game
 function draw() {
@@ -90,11 +95,22 @@ function drawOrbitRings() {
     });
 }
 
-// Draw pixelated spaceship - cylindrical with flatter nose and darker sleek colors
+// Draw spaceship - now with sprite support
 function drawSpaceship() {
     const screenX = spaceship.x - camera.x;
     const screenY = spaceship.y - camera.y;
-
+    
+    // Use sprite renderer if available and sprite is loaded
+    if (spaceshipRenderer && spriteManager.isLoaded()) {
+        const phase = spaceshipRenderer.getSpaceshipPhase(spaceship);
+        const success = spaceshipRenderer.drawSpaceship(ctx, spaceship, screenX, screenY, spaceship.rotationAngle, phase);
+        
+        if (success) {
+            return; // Successfully drew sprite, exit
+        }
+    }
+    
+    // Fallback to procedural rendering if sprite not available
     ctx.save();
     ctx.translate(screenX, screenY);
     ctx.rotate(spaceship.rotationAngle);
