@@ -352,7 +352,7 @@ function updateStarSystems() {
             }
         } else if (obj.isStar && obj.spriteIndex !== undefined) {
             // Update star animation time - increased speed
-            obj.animationTime += 0.025; // Increased from 0.016 to 0.025
+            obj.animationTime += 0.035;
             if (obj.animationTime > 1000) {
                 obj.animationTime -= 1000;
             }
