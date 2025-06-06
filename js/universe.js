@@ -6,13 +6,15 @@ import { portfolioContent } from './content.js';
 import { setInteractButtonVisibility } from './touch-controls.js';
 import spriteManager from './sprite-manager.js';
 import { StarSpriteRenderer } from './star-sprites.js';
+import { PlanetSpriteRenderer } from './planet-sprites.js';
 
 // DOM elements
 const infoPanel = document.getElementById("info");
 const systemIndicator = document.getElementById("current-system");
 
-// Initialize star sprite renderer
+// Initialize sprite renderers
 const starRenderer = new StarSpriteRenderer(spriteManager);
+const planetRenderer = new PlanetSpriteRenderer(spriteManager);
 
 // Star configuration mapping for sprites
 const STAR_SYSTEM_CONFIG = {
@@ -67,6 +69,19 @@ function drawStarSprite(ctx, star, camera) {
     return false; // Fallback to procedural rendering
 }
 
+// Function to draw planet with sprite support
+function drawPlanetSprite(ctx, planet, camera) {
+    const screenX = planet.x - camera.x;
+    const screenY = planet.y - camera.y;
+    
+    // Use sprite renderer if available and sprite is loaded
+    if (planetRenderer && spriteManager.isLoaded()) {
+        return planetRenderer.drawPlanet(ctx, planet, screenX, screenY, planet.radius);
+    }
+    
+    return false; // Fallback to procedural rendering
+}
+
 // Star systems - each representing a section of the portfolio
 const starSystems = [
     {
@@ -85,7 +100,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 50 - index * 5, // Decreasing sizes
                 color: planet.color,
-                orbitRadius: 400 + index * 200, // Increasing orbit radii
+                orbitRadius: 500 + index * 250, // Increased from 400 + index * 200
                 orbitSpeed: 0.0005 - index * 0.0001, // Decreasing speeds
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -109,7 +124,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 60 - index * 5,
                 color: planet.color,
-                orbitRadius: 350 + index * 200,
+                orbitRadius: 450 + index * 250, // Increased from 350 + index * 200
                 orbitSpeed: 0.0005 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -133,7 +148,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 55 - index * 5,
                 color: planet.color,
-                orbitRadius: 300 + index * 200,
+                orbitRadius: 400 + index * 250, // Increased from 300 + index * 200
                 orbitSpeed: 0.0006 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -157,7 +172,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 45 - index * 5,
                 color: planet.color,
-                orbitRadius: 250 + index * 200,
+                orbitRadius: 350 + index * 250, // Increased from 250 + index * 200
                 orbitSpeed: 0.0007 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -181,7 +196,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 30 - index * 5,
                 color: planet.color,
-                orbitRadius: 200 + index * 150,
+                orbitRadius: 300 + index * 180, // Increased from 200 + index * 150
                 orbitSpeed: 0.0008 - index * 0.0002,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -205,7 +220,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 50 - index * 5,
                 color: planet.color,
-                orbitRadius: 300 + index * 200,
+                orbitRadius: 400 + index * 250, // Increased from 300 + index * 200
                 orbitSpeed: 0.0006 - index * 0.0002,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -229,7 +244,7 @@ const starSystems = [
                 name: planet.name,
                 radius: 60 - index * 5,
                 color: planet.color,
-                orbitRadius: 400 + index * 250,
+                orbitRadius: 500 + index * 300, // Increased from 400 + index * 250
                 orbitSpeed: 0.0005 - index * 0.0001,
                 orbitAngle: Math.random() * Math.PI * 2,
                 content: planet.overview,
@@ -309,23 +324,78 @@ function updateStarSystems() {
             // Update position based on orbit
             obj.x = obj.baseX + Math.cos(obj.orbitAngle) * obj.orbitRadius;
             obj.y = obj.baseY + Math.sin(obj.orbitAngle) * obj.orbitRadius;
+            
+            // Initialize animation time if not set
+            if (obj.animationTime === undefined) {
+                obj.animationTime = Math.random() * 100;
+            }
+            
+            // Initialize orbit index if not set
+            if (obj.orbitIndex === undefined) {
+                // Find this planet's orbit index by looking at the star system
+                const system = starSystems.find(s => s.id === obj.systemId);
+                if (system) {
+                    const planetIndex = system.planets.findIndex(p => p.name === obj.name);
+                    obj.orbitIndex = planetIndex >= 0 ? planetIndex : 0;
+                }
+            }
+            
+            // Update planet animation - ensure planetRenderer is available
+            if (planetRenderer) {
+                planetRenderer.updatePlanetAnimation(obj, 0.016); // ~60fps delta time
+            } else {
+                // Manual animation update if renderer not available
+                obj.animationTime += 0.016 * 0.008; // Default rotation speed
+                if (obj.animationTime > 1000) {
+                    obj.animationTime -= 1000;
+                }
+            }
         } else if (obj.isStar && obj.spriteIndex !== undefined) {
-            // Update star animation time
-            obj.animationTime += 0.036;
+            // Update star animation time - increased speed
+            obj.animationTime += 0.025; // Increased from 0.016 to 0.025
             if (obj.animationTime > 1000) {
-                obj.animationTime -= 1000; // Keep in reasonable bounds
+                obj.animationTime -= 1000;
             }
         }
     }
     
     // Also update the star systems array for consistency
-    starSystems.forEach(system => {
+    starSystems.forEach((system, systemIndex) => {
         if (system.spriteIndex !== undefined) {
-            system.animationTime += 0.016;
+            system.animationTime += 0.055; // Increased from 0.036 to 0.055
             if (system.animationTime > 1000) {
                 system.animationTime -= 1000;
             }
         }
+        
+        // Sync planet data between starSystems and allPlanets arrays
+        system.planets.forEach((planet, planetIndex) => {
+            if (planet.orbitIndex === undefined) {
+                planet.orbitIndex = planetIndex;
+            }
+            // Initialize animation time if not set
+            if (planet.animationTime === undefined) {
+                planet.animationTime = Math.random() * 100;
+            }
+            
+            // Find corresponding planet in allPlanets and sync animation data
+            const allPlanet = allPlanets.find(p => 
+                p.isPlanet && 
+                p.systemId === system.id && 
+                p.name === planet.name
+            );
+            
+            if (allPlanet) {
+                // Sync animation properties
+                allPlanet.orbitIndex = planetIndex;
+                if (allPlanet.animationTime === undefined) {
+                    allPlanet.animationTime = planet.animationTime;
+                }
+                // Sync planet type and variant if already determined
+                if (planet.planetType) allPlanet.planetType = planet.planetType;
+                if (planet.planetVariant !== undefined) allPlanet.planetVariant = planet.planetVariant;
+            }
+        });
     });
 }
 
@@ -541,5 +611,6 @@ export {
     openStarSystemModal,
     openPlanetModal,
     getStarConfig,
-    drawStarSprite
+    drawStarSprite,
+    drawPlanetSprite
 };
