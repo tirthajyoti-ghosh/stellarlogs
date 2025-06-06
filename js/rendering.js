@@ -2,7 +2,7 @@
 
 import { canvas, ctx, camera } from './canvas.js';
 import { spaceship } from './spaceship.js';
-import { allPlanets, stars, starSystems } from './universe.js';
+import { allPlanets, stars, starSystems, drawStarSprite } from './universe.js';
 
 // Draw game
 function draw() {
@@ -17,7 +17,11 @@ function draw() {
     // Draw planets and stars from the allPlanets list
     allPlanets.forEach((obj) => {
         if (obj.isStar) {
-            drawStar(obj.x, obj.y, obj.radius, obj.color);
+            // Try to draw with sprite first, fallback to procedural if needed
+            const spriteDrawn = drawStarSprite(ctx, obj, camera);
+            if (!spriteDrawn) {
+                drawStar(obj.x, obj.y, obj.radius, obj.color);
+            }
         } else {
             drawPixelCircle(obj.x, obj.y, obj.radius, obj.color);
         }
@@ -481,7 +485,7 @@ function drawPixelCircle(x, y, radius, color) {
     }
 }
 
-// Draw a star (with glow effect)
+// Draw a star (with glow effect) - kept as fallback for procedural rendering
 function drawStar(x, y, radius, color) {
     const screenX = x - camera.x;
     const screenY = y - camera.y;
