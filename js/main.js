@@ -8,14 +8,23 @@ import { initModal } from './modal.js';
 import { initCarousels } from './carousel.js';
 import { initWelcomePopup, updateWelcomePopupPosition, hasVisitedBefore } from './welcome.js';
 import { initTouchControls, updateTouchControls } from './touch-controls.js';
+import spriteManager from './sprite-manager.js';
 
 // Create keys object for input handling
 const keys = {};
 // Also make it available on window for easy access across modules
 window.keys = keys;
 
+let gameInitialized = false;
+
 // Game loop
 function gameLoop() {
+    // Only run game loop if sprites are loaded
+    if (!gameInitialized || !spriteManager.isLoaded()) {
+        requestAnimationFrame(gameLoop);
+        return;
+    }
+
     // Skip updates if game is paused (modal is open)
     if (!window.isPaused) {
         if (window.isTouchDevice) {
@@ -66,8 +75,109 @@ function setupInputHandlers() {
     });
 }
 
+// Sprite loading and initialization
+async function initGame() {
+    try {
+        // Show loading screen
+        showLoadingScreen();
+        
+        // Load all sprites
+        await spriteManager.loadAllSprites();
+        
+        // Hide loading screen
+        hideLoadingScreen();
+        
+        // Mark game as initialized
+        gameInitialized = true;
+        
+        console.log('All sprites loaded successfully!');
+        
+    } catch (error) {
+        console.error('Failed to load sprites:', error);
+        showErrorScreen(error);
+    }
+}
+
+function showLoadingScreen() {
+    // Create loading overlay
+    const loadingDiv = document.createElement('div');
+    loadingDiv.id = 'loading-screen';
+    loadingDiv.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        color: #00ffff;
+        font-family: 'Courier New', monospace;
+    `;
+    
+    loadingDiv.innerHTML = `
+        <div style="text-align: center;">
+            <h2 style="margin-bottom: 20px;">INITIALIZING...</h2>
+            <div style="width: 300px; height: 20px; border: 2px solid #00ffff; background: transparent;">
+                <div id="loading-bar" style="height: 100%; background: #00ffff; width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <p style="margin-top: 15px;">Loading universe assets...</p>
+        </div>
+    `;
+    
+    document.body.appendChild(loadingDiv);
+    
+    // Update loading bar periodically
+    const updateLoadingBar = () => {
+        const progress = spriteManager.getLoadProgress();
+        const loadingBar = document.getElementById('loading-bar');
+        if (loadingBar) {
+            loadingBar.style.width = (progress * 100) + '%';
+        }
+        
+        if (!spriteManager.isLoaded()) {
+            requestAnimationFrame(updateLoadingBar);
+        }
+    };
+    updateLoadingBar();
+}
+
+function hideLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    if (loadingScreen) {
+        loadingScreen.remove();
+    }
+}
+
+function showErrorScreen(error) {
+    hideLoadingScreen();
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(255, 0, 0, 0.1);
+        border: 2px solid #ff0000;
+        color: #ff0000;
+        padding: 20px;
+        font-family: 'Courier New', monospace;
+        text-align: center;
+        z-index: 10001;
+    `;
+    errorDiv.innerHTML = `
+        <h3>SYSTEM ERROR</h3>
+        <p>Failed to initialize stellar navigation system</p>
+        <p style="font-size: 12px; margin-top: 10px;">${error.message}</p>
+        <button onclick="location.reload()" style="margin-top: 15px; background: transparent; border: 1px solid #ff0000; color: #ff0000; padding: 5px 15px; cursor: pointer;">RETRY</button>
+    `;
+    document.body.appendChild(errorDiv);
+}
+
 // Initialize the game
-function init() {
+async function init() {
     setupInputHandlers();
     
     // Center spaceship in the universe
@@ -85,7 +195,6 @@ function init() {
 
         const navPanelTitle = document.getElementById("nav-panel-title");
         if(navPanelTitle) navPanelTitle.style.textAlign = 'center'; // Center title if toggle is gone
-
     }
     
     // Initialize modal system
@@ -101,6 +210,9 @@ function init() {
     // Set initial pause state
     window.isPaused = false;
     window.eKeyPressed = false;
+    
+    // Initialize sprite loading and start game
+    await initGame();
     
     // Start the game loop
     gameLoop();
