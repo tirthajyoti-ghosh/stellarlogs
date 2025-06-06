@@ -3,7 +3,7 @@ export class StarSpriteRenderer {
         this.spriteManager = spriteManager;
         this.FRAME_WIDTH = 200; // Each frame is 200px wide (10000px ÷ 50 frames)
         this.FRAME_HEIGHT = 200; // Each star is 200px tall (1400px ÷ 7 stars)
-        this.TOTAL_FRAMES = 50; // 50 animation frames per star
+        this.TOTAL_FRAMES = 80; // 80 animation frames per star
         this.TOTAL_STARS = 7; // 7 different star types
     }
 
@@ -22,9 +22,9 @@ export class StarSpriteRenderer {
         const sourceY = star.spriteIndex * this.FRAME_HEIGHT; // Which star (0-6)
         
         // Destination size - scale to desired radius (make stars bigger)
-        const destSize = radius * 4;
-        const destX = screenX - radius * 2; // Center properly with larger size
-        const destY = screenY - radius * 2; // Center properly with larger size
+        const destSize = radius * 5;
+        const destX = screenX - radius * 2.5; // Center properly with larger size
+        const destY = screenY - radius * 2.5; // Center properly with larger size
 
         ctx.save();
         
