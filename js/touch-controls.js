@@ -1,7 +1,7 @@
 // js/touchcontrols.js
 
 let joystickArea, joystickHandle;
-let boostButton, interactButton, mobileNavToggle;
+let boostButton, interactButton;
 let touchState = {
     joystickActive: false,
     joystickStartX: 0,
@@ -22,12 +22,11 @@ export function initTouchControls(spaceship, keys, interactBtnElement) {
     joystickHandle = document.getElementById('joystick-handle');
     boostButton = document.getElementById('boost-button');
     interactButton = document.getElementById('interact-button');
-    mobileNavToggle = document.getElementById('mobile-nav-toggle');
     
     gameKeysRef = keys;
     interactButtonRef = interactBtnElement;
 
-    if (!joystickArea || !joystickHandle || !boostButton || !interactButton || !mobileNavToggle) {
+    if (!joystickArea || !joystickHandle || !boostButton || !interactButton) {
         console.error("Touch control elements not found!");
         return;
     }
@@ -56,20 +55,6 @@ export function initTouchControls(spaceship, keys, interactBtnElement) {
             window.eKeyPressed = false;
         }, 100);
     }, { passive: false });
-    
-    mobileNavToggle.addEventListener('click', () => { // Using click for simplicity
-        const planetData = document.getElementById("planet-data");
-        const navPanel = document.getElementById("nav-panel");
-        if (planetData && navPanel) {
-            if (planetData.style.display === "none" || planetData.offsetHeight === 0) {
-                planetData.style.display = "block";
-                navPanel.style.height = 'auto'; // Or a specific expanded height
-            } else {
-                planetData.style.display = "none";
-                navPanel.style.height = document.getElementById('nav-panel-header').offsetHeight + 'px'; // Collapse to header height
-            }
-        }
-    });
 }
 
 function handleJoystickStart(event) {

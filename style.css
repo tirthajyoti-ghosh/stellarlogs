@@ -1380,7 +1380,7 @@ canvas {
         width: 100px;
         height: 100px;
         left: 15px;
-        bottom: 15px;
+        bottom: 70px;
     }
     #joystick-handle {
         width: 50px;
@@ -1388,7 +1388,7 @@ canvas {
     }
     #action-buttons {
         right: 15px;
-        bottom: 15px;
+        bottom: 70px;
         gap: 10px;
     }
     #action-buttons button {

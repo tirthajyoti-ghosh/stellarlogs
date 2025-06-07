@@ -300,7 +300,7 @@ starSystems.forEach((system) => {
 
 // Stars background - more stars for larger universe
 const stars = [];
-for (let i = 0; i < 4000; i++) {
+for (let i = 0; i < 2500; i++) {
     stars.push({
         x: Math.random() * universeWidth,
         y: Math.random() * universeHeight,
