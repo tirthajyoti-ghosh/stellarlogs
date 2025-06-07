@@ -157,7 +157,10 @@
 
         <!-- Welcome popup that follows the spaceship -->
         <div id="welcome-popup" class="info-popup spaceship-popup">
-            <h2>Welcome to my Universe</h2>
+            <div class="popup-header">
+                <h2>Welcome to my Universe</h2>
+                <button id="welcome-close-btn" class="close-btn" aria-label="Close welcome message">×</button>
+            </div>
             <div class="popup-content">
                 <p>👋 I'm <strong>Tirtha</strong>, ex-tech cofounder & fullstack engineer with 5+ years of experience.</p>
                 <p>You're currently piloting a spaceship in my interactive portfolio universe.</p>
@@ -169,7 +172,7 @@
                 </div>
                 
                 <p>Fly near any star or planet to learn more about my work experience, projects, and interests.</p>
-                <p class="dismiss-hint">Press <span class="key-hint">E</span> or <span class="touch-hint" style="display:none;">Tap</span> to begin exploration</p>
+                <p class="dismiss-hint">Press <span class="key-hint">E</span> to begin exploration</p>
             </div>
         </div>
     </body>

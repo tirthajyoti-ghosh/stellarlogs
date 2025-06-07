@@ -1,7 +1,7 @@
 // Entry point and game loop
 
 import { canvas, camera } from './canvas.js';
-import { spaceship, updateSpaceship } from './spaceship.js';
+import { spaceship, updateSpaceship, initSpaceshipPosition } from './spaceship.js';
 import { updateStarSystems } from './universe.js';
 import { draw } from './rendering.js';
 import { initModal } from './modal.js';
@@ -179,10 +179,9 @@ function showErrorScreen(error) {
 // Initialize the game
 async function init() {
     setupInputHandlers();
-    
-    // Center spaceship in the universe
-    spaceship.x = hasVisitedBefore() ? canvas.width / 2 : canvas.width / 3;
-    spaceship.y = canvas.height / 2;
+
+    // Initialize spaceship position properly
+    initSpaceshipPosition();
 
     // Detect if it's a touch device
     window.isTouchDevice = (('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0));

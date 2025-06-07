@@ -881,8 +881,6 @@ canvas {
     backdrop-filter: blur(5px);
     animation: pulseGlow 3s infinite alternate;
     display: none; /* Initially hidden */
-    pointer-events: none; /* Allow clicking through */
-    transform: translateY(-20px); /* Position above the ship */
 }
 
 .spaceship-popup.visible {
@@ -1434,5 +1432,94 @@ canvas {
     }
     .spaceship-popup h2 {
         font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .spaceship-popup {
+        width: 85vw; /* Slightly smaller on mobile to ensure padding */
+        max-width: 350px;
+        padding: 12px; /* Slightly reduced padding */
+        font-size: 13px;
+    }
+    
+    .spaceship-popup h2 {
+        font-size: 18px;
+    }
+    
+    .spaceship-popup .popup-content {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 480px) {
+    .spaceship-popup {
+        width: 90vw;
+        max-width: 320px;
+        padding: 10px;
+        font-size: 12px;
+    }
+    
+    .spaceship-popup h2 {
+        font-size: 16px;
+    }
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.popup-header h2 {
+    margin: 0;
+    flex: 1;
+}
+
+.close-btn {
+    background: rgba(48, 191, 255, 0.2);
+    border: 2px solid #30bfff;
+    color: #30bfff;
+    font-size: 20px;
+    font-weight: bold;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    margin-left: 15px;
+    flex-shrink: 0;
+    pointer-events: auto !important;
+    z-index: 9999;
+    position: relative;
+    -webkit-tap-highlight-color: rgba(48, 191, 255, 0.3);
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    background-color: #30bfff;
+    color: #020814;
+    transform: scale(1.1);
+}
+
+.close-btn:active {
+    background-color: #30bfff;
+    color: #020814;
+    transform: scale(0.95);
+}
+
+/* Make sure the popup allows pointer events */
+.spaceship-popup {
+    pointer-events: auto !important;
+}
+
+/* Hide close button on desktop */
+@media (min-width: 768px) {
+    .close-btn {
+        display: none;
     }
 }

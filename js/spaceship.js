@@ -3,11 +3,12 @@
 import { canvas, camera, universeWidth, universeHeight } from './canvas.js';
 import { updateHUD } from './navigation.js';
 import { checkPlanetProximity } from './universe.js';
+import { hasVisitedBefore } from './welcome.js';
 
-// Spaceship object
+// Spaceship object - initialize with temporary values
 const spaceship = {
-    x: canvas.width / 2,
-    y: canvas.height / 2,
+    x: 0, // Will be set properly during initialization
+    y: 0, // Will be set properly during initialization
     width: 32,
     height: 32,
     velocityX: 0,
@@ -30,6 +31,27 @@ const spaceship = {
     nearestSystem: null,
     nearestPlanet: null,
 };
+
+// Initialize spaceship position
+function initSpaceshipPosition() {
+    // Center spaceship in the universe
+    spaceship.x = hasVisitedBefore() ? canvas.width / 2 : canvas.width / 3;
+    
+    // Adjust Y position based on device and visit status
+    const isMobile = window.innerWidth <= 768;
+    
+    if (isMobile && !hasVisitedBefore()) {
+        // On mobile, position spaceship much lower to make room for welcome message above
+        spaceship.y = canvas.height * 0.85; // 85% down the screen - very noticeable
+    } else {
+        // Default center position for desktop or returning visitors
+        spaceship.y = canvas.height / 2;
+    }
+    
+    console.log('Spaceship initialized at:', spaceship.x, spaceship.y);
+    console.log('Canvas height:', canvas.height);
+    console.log('Is mobile:', isMobile, 'Has visited before:', hasVisitedBefore());
+}
 
 // Update spaceship position and rotation based on input
 function updateSpaceship() {
@@ -129,7 +151,18 @@ function updateSpaceship() {
 
     // Update camera to follow spaceship
     camera.x = spaceship.x - canvas.width / 2;
-    camera.y = spaceship.y - canvas.height / 2;
+    
+    // Check if we should use custom mobile positioning
+    const isMobile = window.innerWidth <= 768;
+    const welcomePopupVisible = document.getElementById('welcome-popup')?.classList.contains('visible');
+    
+    if (isMobile && welcomePopupVisible) {
+        // Position camera to show spaceship at 70% down the screen while welcome popup is visible
+        camera.y = spaceship.y - canvas.height * 0.7;
+    } else {
+        // Default behavior: center camera on spaceship
+        camera.y = spaceship.y - canvas.height / 2;
+    }
 
     // Keep camera within universe bounds
     camera.x = Math.max(0, Math.min(camera.x, universeWidth - camera.width));
@@ -144,5 +177,6 @@ function updateSpaceship() {
 
 export {
     spaceship,
-    updateSpaceship
+    updateSpaceship,
+    initSpaceshipPosition,
 };
