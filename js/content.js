@@ -57,22 +57,44 @@ export const portfolioContent = {
         overview: "My professional journey and career highlights across various roles and companies.",
         planets: [
             {
+                name: "Senior AI Engineer",
+                color: "#00D4FF",
+                overview: "Primary architect of an AI platform powering 30+ enterprise agents at Suzega (2025-2026)",
+                details: `
+                    <h3>Senior AI Engineer at Suzega</h3>
+                    <p class="time-period">June 2025 - May 2026</p>
+
+                    <h4>Technologies</h4>
+                    <p>Python, FastAPI, PostgreSQL, TypeScript, React, Claude (Anthropic), OpenAI, Vertex AI, Azure, Pydantic, Alembic, Langfuse</p>
+
+                    <h4>Achievements</h4>
+                    <ul>
+                        <li>Contributed to $1.47M+ in revenue by solely designing and shipping an enterprise insurance underwriting vertical — productising agents, prompts, and workflows into a sales-ready solution spanning 15 autonomous agents across 6 workflows.</li>
+                        <li>Built an autonomous cash reconciliation system for an enterprise B2B distributor, correlating 7 heterogeneous sources (ERP API, scanned PDFs, bank statements, payment processor) across 5 branches daily — achieving a 93% automated match rate with a deterministic matching engine.</li>
+                        <li>Reduced underwriting research turnaround from 2–3 days to under 1 hour by architecting a production AI Research Agent that autonomously aggregates and correlates data from bureau sources, public records, loss runs, and internal systems.</li>
+                        <li>Built a production observability platform as part of the Ithara platform team — capturing token usage, latency, tool-call success rates, and cost-per-request across 30+ enterprise agentic applications.</li>
+                        <li>Engineered the Ithara platform's core agent loop engine powering 30+ production agents across enterprise clients — prompt chaining, tool-use loops, orchestrator-worker patterns, self-correcting retry logic, and a self-healing sweeper.</li>
+                        <li>Turned a fully manual daily reconciliation process — an estimated 10–15 hours/week of spreadsheet work — into a one-click autonomous pipeline triggered from Outlook, eliminating manual data gathering and freeing the accounting team for higher-value work.</li>
+                    </ul>
+                `
+            },
+            {
                 name: "Senior Software Engineer",
                 color: "#FF5733",
-                overview: "Go-to person for bug hunting at CyberFortress (2024-2025)",
+                overview: "Cloud-native Python apps and integration platforms at CyberFortress (2024-2025)",
                 details: `
                     <h3>Senior Software Engineer at CyberFortress</h3>
                     <p class="time-period">March 2024 - March 2025</p>
 
                     <h4>Technologies</h4>
-                    <p>React, Node.js, TypeScript, AWS (Lambda, S3, DynamoDB), Docker, Kubernetes</p>
-                    
+                    <p>Python, TypeScript, Next.js, PostgreSQL, GCP (Cloud Run, GCS, Cloud SQL), Docker</p>
+
                     <h4>Achievements</h4>
                     <ul>
-                        <li>Engineered a self-service invoice portal consolidating 25+ products using TypeScript, Next.js, and SQL; slashed manual processing by 200+ hours monthly.</li>
-                        <li>Architected a cloud-native Python application on GCP end-to-end to automate a legacy script for repairing corrupted data—eliminating manual intervention, saving an estimated 150+ hours/month, and enhancing team GCP expertise through detailed documentation.</li>
-                        <li>Pioneered an internal usage analytics platform (Next.js, TypeScript, Postgres, Python, GCP) to aggregate customer usage data across 25+ products—projected to reduce manual reporting by a significant margin and drive data-informed decisions.</li>
-                        <li>Dove headfirst into maintaining multiple decade-old legacy systems with zero documentation—rapidly acquiring expertise and eliminating critical bugs to stabilize platform operations.</li>
+                        <li>Automated a legacy data repair process that consumed 150+ hours/month of manual work by architecting a cloud-native Python application on GCP end-to-end.</li>
+                        <li>Built an integration platform (Python, TypeScript, Next.js, PostgreSQL, GCP) unifying customer usage data across 25+ disparate products — replacing manual reporting with automated dashboards.</li>
+                        <li>Consolidated invoice processing across 25+ products into a self-service portal (TypeScript, Next.js, SQL); slashed manual processing by 200+ hours monthly.</li>
+                        <li>Stabilized multiple legacy systems with zero documentation — reverse-engineering codebases, diagnosing cross-system bugs, and restoring platform reliability.</li>
                     </ul>
                 `
             },
@@ -105,11 +127,11 @@ export const portfolioContent = {
                     <p class="time-period">February 2022 - August 2023</p>
                     
                     <h4>Technologies</h4>
-                    <p>HTML/CSS, JavaScript, PHP, MySQL, WordPress, Google Analytics</p>
-                    
+                    <p>React Native, TypeScript, Nest.js, Node.js, MongoDB, REST APIs</p>
+
                     <h4>Achievements</h4>
                     <ul>
-                        <li>Architected and developed the front-end of PUMA's Employee App CATch Up (Android, iOS), utilizing React Native and TypeScript; improved user experience for 20,000+ employees worldwide.</li>
+                        <li>Architected and developed the front-end of PUMA's Employee App CATch Up (Android, iOS), utilizing React Native and TypeScript; serving 50,000+ employees worldwide.</li>
                         <li>Transformed the company's engineering culture by establishing a robust frontend engineering core and introducing best practices adopted by 6 engineers and 5+ projects, enhancing UI consistency, cutting development time, and minimizing UI bugs.</li>
                         <li>Guided 4 interns through intensive software engineering projects, fostering skill growth; 2 secured full-time positions and spearheaded critical projects, demonstrating mentorship effectiveness and team contribution.</li>
                         <li>Single-handedly built the entire v1 pixel-perfect front end of Bücherbüchse (React Native and TypeScript) - an Instagram-like social media app for book readers (Android, iOS).</li>
@@ -125,9 +147,9 @@ export const portfolioContent = {
                 details: `
                     <h3>Fullstack Engineer at Down For Coffee</h3>
                     <p class="time-period">January 2021 - July 2021</p>
-                    
+
                     <h4>Technologies</h4>
-                    <p>HTML/CSS, JavaScript, PHP, MySQL, WordPress, Google Analytics</p>
+                    <p>React, Redux, LESS, Node.js, AWS Serverless, Slack API</p>
                     
                     <h4>Achievements</h4>
                     <ul>
@@ -144,9 +166,9 @@ export const portfolioContent = {
                 details: `
                     <h3>Code Reviewer at Microverse</h3>
                     <p class="time-period">June 2020 - December 2020</p>
-                    
+
                     <h4>Technologies</h4>
-                    <p>HTML/CSS, JavaScript, PHP, MySQL, WordPress, Google Analytics</p>
+                    <p>JavaScript, React, Ruby, Ruby on Rails, HTML/CSS</p>
                     
                     <h4>Achievements</h4>
                     <ul>
@@ -165,6 +187,23 @@ export const portfolioContent = {
         starColor: "#5CAFFB", // Blue star
         overview: "A collection of personal and professional projects I've built throughout my career.",
         planets: [
+            {
+                name: "The Feed — AI Learning App",
+                color: "#00FF88",
+                overview: "An AI-native learning app where Claude acts as an adaptive educator with persistent memory, a knowledge graph, and spaced repetition.",
+                details: `
+                    <h3>2026</h3>
+
+                    <h4>Technologies</h4>
+                    <p>Python, FastAPI, SQLite, networkx, Claude API (Opus), React, TypeScript, Vite</p>
+
+                    <h4>What it does</h4>
+                    <p>A personal learning feed for agentic AI engineering. The educator agent reads its own state between runs, traverses a knowledge graph to find concept gaps, generates content using spaced repetition intervals (modified SM-2), evaluates answers, and writes back what it learned about the learner for the next session. Not a stateless LLM call — an agent with memory and tools.</p>
+
+                    <h4>Links</h4>
+                    <p><a href="https://github.com/tirthajyoti-ghosh/the-feed" target="_blank">GitHub repository</a></p>
+                `
+            },
             {
                 name: "Expo LLM Mediapipe npm package",
                 color: "#338fff",
