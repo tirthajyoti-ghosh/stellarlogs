@@ -31,19 +31,28 @@ export interface SystemConfig {
   planets: PlanetConfig[]
 }
 
-/** Phase 2 showcase — becomes the Projects system in Phase 3. */
+/**
+ * Phase 2 showcase — becomes the Projects system in Phase 3.
+ * Planet ordering follows planetary-formation science: scorched rocky worlds
+ * near the star, habitable terrestrials in the temperate zone, then the gas
+ * giant near the frost line, ice world beyond it. Orbit speeds fall off
+ * Kepler-style (v ∝ r^-1.5, scaled for gameplay).
+ */
+const keplerSpeed = (orbitRadius: number, innermost = 1250, base = 0.018) =>
+  base * Math.pow(innermost / orbitRadius, 1.5)
+
 export const PROJECTS_SYSTEM: SystemConfig = {
   id: 'projects',
   name: 'Projects',
   starColor: '#5CAFFB',
-  starRadius: 300,
-  position: [0, 0, -3200],
+  starRadius: 340,
+  position: [0, 0, -5400],
   planets: [
-    { type: 'gasGiant', radius: 110, orbitRadius: 750, orbitSpeed: 0.02, phase: 0.6, seed: 1, rings: true, inclination: 0.14 },
-    { type: 'terrestrialWet', radius: 72, orbitRadius: 1100, orbitSpeed: 0.015, phase: 2.4, seed: 2, inclination: -0.07 },
-    { type: 'lava', radius: 55, orbitRadius: 1420, orbitSpeed: 0.012, phase: 4.1, seed: 3, inclination: 0.1 },
-    { type: 'ice', radius: 66, orbitRadius: 1760, orbitSpeed: 0.01, phase: 5.3, seed: 4, inclination: -0.12 },
-    { type: 'terrestrialDry', radius: 60, orbitRadius: 2080, orbitSpeed: 0.008, phase: 1.5, seed: 5, inclination: 0.06 },
-    { type: 'barren', radius: 45, orbitRadius: 2380, orbitSpeed: 0.007, phase: 3.2, seed: 6, inclination: -0.09 },
+    { type: 'lava', radius: 48, orbitRadius: 1250, orbitSpeed: keplerSpeed(1250), phase: 4.1, seed: 3, inclination: 0.05 },
+    { type: 'barren', radius: 42, orbitRadius: 1780, orbitSpeed: keplerSpeed(1780), phase: 3.2, seed: 6, inclination: -0.08 },
+    { type: 'terrestrialWet', radius: 70, orbitRadius: 2450, orbitSpeed: keplerSpeed(2450), phase: 2.4, seed: 2, inclination: -0.04 },
+    { type: 'terrestrialDry', radius: 58, orbitRadius: 3080, orbitSpeed: keplerSpeed(3080), phase: 1.5, seed: 5, inclination: 0.07 },
+    { type: 'gasGiant', radius: 118, orbitRadius: 3850, orbitSpeed: keplerSpeed(3850), phase: 0.6, seed: 1, rings: true, inclination: 0.11 },
+    { type: 'ice', radius: 60, orbitRadius: 4550, orbitSpeed: keplerSpeed(4550), phase: 5.3, seed: 4, inclination: -0.1 },
   ],
 }
