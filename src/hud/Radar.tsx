@@ -5,7 +5,7 @@ import { STATION_POSITION } from '../config/universe'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
 
-const SIZE = 148
+const SIZE = 132
 const R = SIZE / 2 - 8
 const _rel = new Vector3()
 
@@ -120,7 +120,7 @@ export function Radar() {
   }, [])
 
   return (
-    <div className="hud-radar" data-ui>
+    <div className="hud-mfd-radar">
       <canvas ref={canvasRef} width={SIZE} height={SIZE} />
     </div>
   )
