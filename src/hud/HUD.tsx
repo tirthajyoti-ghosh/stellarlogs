@@ -4,6 +4,7 @@ import { HeadingTape } from './HeadingTape'
 import { WarpPanel } from './WarpPanel'
 import { Welcome } from './Welcome'
 import { TouchControls } from './TouchControls'
+import { MuteButton } from './MuteButton'
 
 /** DOM overlay: the pilot-seat cockpit HUD over the 3D canvas. */
 export function HUD() {
@@ -17,6 +18,7 @@ export function HUD() {
       <Cockpit />
       <WarpPanel />
       <TouchControls />
+      <MuteButton />
       <Welcome />
     </div>
   )

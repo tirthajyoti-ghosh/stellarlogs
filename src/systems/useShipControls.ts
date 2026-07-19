@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { shipInput } from '../physics/shipInput'
 import { cameraLook } from '../state/cameraLook'
+import { startAudio } from '../audio/engine'
 
 const DRAG_SENSITIVITY = 0.0075 // rad per px
 const PITCH_CLAMP = 1.2
@@ -27,6 +28,7 @@ export function useShipControls(): void {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return
+      startAudio() // browsers require a gesture before audio can play
       keys.add(e.code)
       applyKeys()
     }
@@ -55,6 +57,7 @@ export function useShipControls(): void {
     let lastY = 0
 
     const onPointerDown = (e: PointerEvent) => {
+      startAudio()
       if (dragId !== null) return
       if ((e.target as HTMLElement).closest('button, a, [data-ui]')) return
       dragId = e.pointerId

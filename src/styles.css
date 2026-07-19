@@ -603,3 +603,32 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
   .hud-welcome-card { padding: 22px 24px; max-height: 86vh; overflow-y: auto; }
   .hud-welcome-card p { font-size: 13px; margin-top: 8px; }
 }
+
+/* Mute toggle */
+.hud-mute {
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  width: 40px;
+  height: 34px;
+  background: rgba(10, 20, 36, 0.55);
+  border: 1px solid rgba(111, 211, 232, 0.3);
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  line-height: 1;
+}
+.hud-mute:hover { border-color: rgba(111, 211, 232, 0.7); }
+@media (max-width: 900px), (max-height: 560px) {
+  .hud-mute { top: auto; bottom: 178px; right: 22px; }
+}
+
+/* Crawler/screen-reader mirror — visually hidden, fully present in the DOM */
+.seo-mirror {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
