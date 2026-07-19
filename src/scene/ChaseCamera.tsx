@@ -8,6 +8,7 @@ const OFFSET = new Vector3(0, 3.6, 13) // behind and above, in ship space
 const LOOK_AHEAD = new Vector3(0, 1.2, -14)
 const BASE_FOV = 62
 const BOOST_FOV = 76
+const WARP_FOV = 98
 // Extra camera pull-back per unit of ship speed (sense of velocity)
 const SPEED_PULLBACK = 0.012
 
@@ -75,7 +76,7 @@ export function ChaseCamera() {
     cam.up.set(0, 1, 0)
     cam.lookAt(_look)
 
-    const targetFov = shipRig.boosting ? BOOST_FOV : BASE_FOV
+    const targetFov = shipRig.warping ? WARP_FOV : shipRig.boosting ? BOOST_FOV : BASE_FOV
     if (Math.abs(cam.fov - targetFov) > 0.05) {
       cam.fov = MathUtils.lerp(cam.fov, targetFov, 1 - Math.exp(-4 * dt))
       cam.updateProjectionMatrix()

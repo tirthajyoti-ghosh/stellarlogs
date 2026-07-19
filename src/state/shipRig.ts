@@ -12,6 +12,7 @@ export const shipRig: {
   boosting: boolean
   thrusting: boolean
   boostCharge: number
+  warping: boolean
   yaw: number
 } = {
   position: new Vector3(),
@@ -20,6 +21,7 @@ export const shipRig: {
   boosting: false,
   thrusting: false,
   boostCharge: 1,
+  warping: false,
   yaw: 0,
 }
 

@@ -1,10 +1,8 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Billboard as DreiBillboard, Text } from '@react-three/drei'
 import { Group, MathUtils, Vector3 } from 'three'
 import { Billboard } from './boards/Billboard'
 import { buildBoards } from './boards/boardSpecs'
-import { FONT_BOLD } from './boards/font'
 import { CONTACT } from '../content/contact'
 import { STATION_POSITION } from '../config/universe'
 import { shipRig } from '../state/shipRig'
@@ -109,21 +107,6 @@ export function ContactStation() {
           <meshBasicMaterial color={[4, 2.2, 1.2]} toneMapped={false} />
         </mesh>
       </group>
-      {/* Station name */}
-      <DreiBillboard position={[0, 78, 0]}>
-        <Text
-          font={FONT_BOLD}
-          fontSize={13}
-          color={ACCENT}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={0.5}
-          outlineColor="#000000"
-          letterSpacing={0.1}
-        >
-          COMMS STATION
-        </Text>
-      </DreiBillboard>
       {/* Local floodlight so the station reads against space */}
       <pointLight position={[40, 60, 60]} color="#dde8ff" intensity={5} distance={260} decay={1.6} />
       {/* Contact boards */}

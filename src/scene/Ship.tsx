@@ -12,6 +12,7 @@ import {
   Vector3,
 } from 'three'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
+import { warp, stepWarp } from '../physics/warp'
 import { shipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
@@ -98,7 +99,13 @@ export function Ship() {
   const bell = useMemo(() => makeEngineBell(), [])
 
   useFrame((_, dt) => {
-    const alpha = stepShip(state, shipInput, dt)
+    let alpha: number
+    if (warp.phase === 'idle') {
+      alpha = stepShip(state, shipInput, dt)
+    } else {
+      stepWarp(state, Math.min(dt, 0.05))
+      alpha = 1
+    }
     const rig = rigRef.current
     if (!rig) return
 
@@ -172,6 +179,7 @@ export function Ship() {
     shipRig.boosting = state.boosting
     shipRig.thrusting = state.thrusting
     shipRig.boostCharge = state.boostCharge
+    shipRig.warping = warp.phase !== 'idle'
     shipRig.yaw = yaw
   }, -2)
 

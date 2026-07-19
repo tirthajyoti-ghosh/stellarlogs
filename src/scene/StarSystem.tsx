@@ -1,13 +1,12 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Billboard as DreiBillboard, Text } from '@react-three/drei'
-import { AdditiveBlending, BufferGeometry, Euler, Group, MathUtils, Quaternion, Vector3 } from 'three'
+import { AdditiveBlending, BufferGeometry, Euler, Group, Quaternion, Vector3 } from 'three'
 import { Star } from './Star'
 import { Planet } from './Planet'
 import { PlanetBoards } from './boards/PlanetBoards'
-import { FONT_BOLD, FONT } from './boards/font'
 import { registerGravityBody } from '../physics/gravity'
-import { shipRig } from '../state/shipRig'
+import { registerHudLabel } from '../hud/hudState'
+import { labelsChanged } from '../hud/LabelLayer'
 import type { SystemConfig } from '../config/systems'
 
 function orbitLineGeometry(radius: number): BufferGeometry {
@@ -47,6 +46,23 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor }: Or
     [config.radius, worldPos],
   )
 
+  useEffect(() => {
+    const unregister = registerHudLabel({
+      id: `planet-${config.seed}-${config.item.title}`,
+      name: config.item.title.toUpperCase(),
+      color: accentColor,
+      kind: 'planet',
+      position: worldPos,
+      yOffset: config.radius * 1.6,
+      el: null,
+    })
+    labelsChanged()
+    return () => {
+      unregister()
+      labelsChanged()
+    }
+  }, [accentColor, config.item.title, config.radius, config.seed, worldPos])
+
   useFrame(({ clock }) => {
     const angle = config.phase + clock.elapsedTime * config.orbitSpeed
     localPos
@@ -65,69 +81,6 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor }: Or
         worldPos={worldPos}
         accentColor={accentColor}
       />
-      {/* Planet name tag, always readable on approach */}
-      <DreiBillboard position={[0, config.radius * 1.45, 0]}>
-        <Text
-          font={FONT_BOLD}
-          fontSize={config.radius * 0.16}
-          color={accentColor}
-          anchorX="center"
-          anchorY="middle"
-          outlineWidth={config.radius * 0.008}
-          outlineColor="#000000"
-        >
-          {config.item.title.toUpperCase()}
-        </Text>
-      </DreiBillboard>
-    </group>
-  )
-}
-
-/** Big system title floating above the star, fading in on approach. */
-function SystemTitle({ config, systemPosition }: { config: SystemConfig; systemPosition: Vector3 }) {
-  const groupRef = useRef<Group>(null)
-  const opacity = useRef(0)
-
-  useFrame(() => {
-    const group = groupRef.current
-    if (!group) return
-    const d = systemPosition.distanceTo(shipRig.position)
-    const target = d < 7000 && d > 900 ? 1 : 0
-    opacity.current = MathUtils.lerp(opacity.current, target, 0.06)
-    group.visible = opacity.current > 0.02
-    const s = 0.6 + 0.4 * opacity.current
-    group.scale.setScalar(s * Math.max(1, d / 2500))
-  })
-
-  return (
-    <group ref={groupRef} position={[0, config.starRadius * 2.6, 0]}>
-      <DreiBillboard>
-        <Text
-          font={FONT_BOLD}
-          fontSize={90}
-          color={config.starColor}
-          anchorX="center"
-          anchorY="bottom"
-          outlineWidth={2.2}
-          outlineColor="#000000"
-          letterSpacing={0.12}
-        >
-          {config.name.toUpperCase()}
-        </Text>
-        <Text
-          font={FONT}
-          fontSize={30}
-          color="#c9d6e8"
-          anchorX="center"
-          anchorY="top"
-          position={[0, -14, 0]}
-          maxWidth={1400}
-          outlineWidth={1}
-          outlineColor="#000000"
-        >
-          {config.overview}
-        </Text>
-      </DreiBillboard>
     </group>
   )
 }
@@ -155,7 +108,6 @@ export function StarSystem({ config }: { config: SystemConfig }) {
   return (
     <group position={config.position}>
       <Star color={config.starColor} radius={config.starRadius} seed={config.planets.length} />
-      <SystemTitle config={config} systemPosition={systemPosition} />
       {config.planets.map((planet, i) => (
         <OrbitingPlanet
           key={i}
