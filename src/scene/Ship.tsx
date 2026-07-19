@@ -1,5 +1,6 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Text } from '@react-three/drei'
 import {
   AdditiveBlending,
   Group,
@@ -17,6 +18,7 @@ import { warp, warpTurn, stepWarp } from '../physics/warp'
 import { shipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
+import { FONT_BOLD } from './boards/font'
 
 // Octagonal cross-section, rotated so a flat face sits on top
 const OCT = Math.PI / 8
@@ -401,6 +403,101 @@ export function Ship() {
               <meshStandardMaterial color="#10151c" metalness={0.4} roughness={0.6} />
             </mesh>
           ))}
+          {/* Hull conduits running fore–aft along the flat faces */}
+          {[
+            { x: 0.5, z: 0.26 },
+            { x: -0.5, z: 0.26 },
+            { x: 0.28, z: -0.5 },
+          ].map((c, i) => (
+            <mesh key={`pipe-${i}`} position={[c.x, 0.5, c.z]}>
+              <cylinderGeometry args={[0.028, 0.028, 2.3, 6]} />
+              <meshStandardMaterial {...PANEL} />
+            </mesh>
+          ))}
+          {/* Conduit clamps */}
+          {[1.3, 0.5, -0.3].map((y) => (
+            <mesh key={`clamp-${y}`} position={[0.5, y, 0.26]}>
+              <boxGeometry args={[0.09, 0.05, 0.09]} />
+              <meshStandardMaterial {...DARK} />
+            </mesh>
+          ))}
+          {/* Ventral equipment boxes */}
+          <mesh position={[0.12, 0.9, -0.56]}>
+            <boxGeometry args={[0.28, 0.42, 0.12]} />
+            <meshStandardMaterial {...DARK} />
+          </mesh>
+          <mesh position={[-0.18, 0.25, -0.58]}>
+            <boxGeometry args={[0.2, 0.26, 0.1]} />
+            <meshStandardMaterial {...PANEL} />
+          </mesh>
+          <mesh position={[0.05, -0.45, -0.62]}>
+            <boxGeometry args={[0.34, 0.3, 0.14]} />
+            <meshStandardMaterial {...DARK} />
+          </mesh>
+          {/* Aft mini comms dish on a strut */}
+          <group position={[0.42, -0.75, 0.52]} rotation-x={-0.6} rotation-z={0.3}>
+            <mesh>
+              <cylinderGeometry args={[0.012, 0.012, 0.3, 6]} />
+              <meshStandardMaterial {...DARK} />
+            </mesh>
+            <mesh position={[0, 0.2, 0]} rotation-x={0.4}>
+              <coneGeometry args={[0.11, 0.05, 12, 1, true]} />
+              <meshStandardMaterial color="#7d8794" metalness={0.6} roughness={0.35} side={2} />
+            </mesh>
+          </group>
+          {/* Whip antenna, aft ventral */}
+          <mesh position={[-0.3, -1.4, -0.6]} rotation-x={0.5}>
+            <cylinderGeometry args={[0.008, 0.003, 0.7, 4]} />
+            <meshStandardMaterial {...DARK} />
+          </mesh>
+          {/* Engine cooling vanes radially around the drive section */}
+          {[Math.PI / 4, (3 * Math.PI) / 4, (5 * Math.PI) / 4, (7 * Math.PI) / 4].map((a) => (
+            <mesh
+              key={`vane-${a}`}
+              position={[Math.cos(a) * 0.72, -1.85, Math.sin(a) * 0.72]}
+              rotation-y={-a}
+            >
+              <boxGeometry args={[0.03, 0.55, 0.3]} />
+              <meshStandardMaterial color="#10151c" metalness={0.5} roughness={0.55} />
+            </mesh>
+          ))}
+          {/* Forward docking lights (white, face forward) */}
+          {[0.3, -0.3].map((x) => (
+            <mesh key={`dock-${x}`} position={[x, 2.62, -0.28]}>
+              <sphereGeometry args={[0.03, 6, 6]} />
+              <meshBasicMaterial color={[3, 3, 2.8]} toneMapped={false} />
+            </mesh>
+          ))}
+          {/* Lower porthole row */}
+          {[1.35, 0.95, 0.55, 0.15].map((y) => (
+            <mesh key={`winlow-${y}`} position={[0.53, y, -0.3]}>
+              <boxGeometry args={[0.02, 0.07, 0.045]} />
+              <meshBasicMaterial color={[2.0, 1.7, 1.2]} toneMapped={false} />
+            </mesh>
+          ))}
+          {/* Registry markings on both flanks */}
+          <Text
+            font={FONT_BOLD}
+            fontSize={0.24}
+            color="#c8d2dd"
+            anchorX="center"
+            anchorY="middle"
+            position={[0.575, 1.05, -0.05]}
+            rotation={[Math.PI / 2, Math.PI / 2, 0]}
+          >
+            SL-01
+          </Text>
+          <Text
+            font={FONT_BOLD}
+            fontSize={0.24}
+            color="#c8d2dd"
+            anchorX="center"
+            anchorY="middle"
+            position={[-0.575, 1.05, -0.05]}
+            rotation={[Math.PI / 2, -Math.PI / 2, 0]}
+          >
+            SL-01
+          </Text>
           {/* RCS pods + puff cones, all around the hull */}
           {RCS_PODS.map((pod, i) => (
             <group key={i} position={pod.pos}>

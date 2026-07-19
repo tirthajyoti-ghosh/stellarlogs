@@ -56,7 +56,9 @@ export function HudBridge() {
       hudReadouts.driveEl.dataset.mode = hudReadouts.driveEl.textContent.toLowerCase()
     }
 
-    updateAudio(shipRig.thrusting, shipRig.boosting, shipRig.warping)
+    const rcsFiring =
+      shipInput.yaw !== 0 || shipInput.pitch !== 0 || shipInput.strafeX !== 0 || shipInput.reverse > 0
+    updateAudio(shipRig.thrusting, shipRig.boosting, warp.phase, rcsFiring)
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
