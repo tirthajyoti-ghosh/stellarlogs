@@ -14,6 +14,8 @@ export const shipRig: {
   boostCharge: number
   warping: boolean
   yaw: number
+  /** Normalized direction of travel (holds last heading when stopped) */
+  velocityDir: Vector3
 } = {
   position: new Vector3(),
   quaternion: new Quaternion(),
@@ -23,6 +25,7 @@ export const shipRig: {
   boostCharge: 1,
   warping: false,
   yaw: 0,
+  velocityDir: new Vector3(0, 0, -1),
 }
 
 // Dev-only inspection handle for debugging/automation
