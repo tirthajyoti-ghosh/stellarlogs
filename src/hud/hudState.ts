@@ -56,13 +56,13 @@ export function registerHudLabel(label: HudLabel): () => void {
 /** Status readouts, written by HudBridge, rendered by the HUD components. */
 export const hudReadouts = {
   speedEl: null as HTMLElement | null,
-  speedBarEl: null as HTMLElement | null,
   headingEl: null as HTMLElement | null,
   systemEl: null as HTMLElement | null,
   driveEl: null as HTMLElement | null,
   posEl: null as HTMLElement | null,
   gravEl: null as HTMLElement | null,
-  rcsEls: {} as Record<string, HTMLElement | null>,
+  pitchEl: null as HTMLElement | null,
+  shipVizEls: {} as Record<string, SVGElement | null>,
   targetNameEl: null as HTMLElement | null,
   targetDistEl: null as HTMLElement | null,
   targetCloseEl: null as HTMLElement | null,

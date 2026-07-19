@@ -14,6 +14,7 @@ export const shipRig: {
   boostCharge: number
   warping: boolean
   yaw: number
+  pitch: number
   /** Normalized direction of travel (holds last heading when stopped) */
   velocityDir: Vector3
 } = {
@@ -25,6 +26,7 @@ export const shipRig: {
   boostCharge: 1,
   warping: false,
   yaw: 0,
+  pitch: 0,
   velocityDir: new Vector3(0, 0, -1),
 }
 
