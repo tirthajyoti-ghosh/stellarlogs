@@ -10,6 +10,7 @@ import {
 } from 'three'
 import { shipRig } from '../state/shipRig'
 import { BAND_TILT } from './SkyDome'
+import { QUALITY } from '../config/quality'
 
 function makeStarTexture(): CanvasTexture {
   const size = 64
@@ -101,10 +102,10 @@ export function Starfield() {
   const farRef = useRef<Group>(null)
   const nearRef = useRef<Group>(null)
   const starTexture = useMemo(() => makeStarTexture(), [])
-  const farGeo = useMemo(() => makeShell(9000, 20000, 0.15), [])
-  const bandGeo = useMemo(() => makeBand(17000, 21000), [])
+  const farGeo = useMemo(() => makeShell(Math.round(9000 * QUALITY.starScale), 20000, 0.15), [])
+  const bandGeo = useMemo(() => makeBand(Math.round(17000 * QUALITY.starScale), 21000), [])
   const heroGeo = useMemo(() => makeShell(140, 19000, 0.1, 1.6), [])
-  const nearGeo = useMemo(() => makeShell(2600, 7000, 0.35), [])
+  const nearGeo = useMemo(() => makeShell(Math.round(2600 * QUALITY.starScale), 7000, 0.35), [])
 
   useFrame(() => {
     // Far layers ride with the ship (infinitely distant backdrop);

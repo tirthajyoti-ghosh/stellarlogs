@@ -34,9 +34,19 @@ export function useShipControls(): void {
       keys.delete(e.code)
       applyKeys()
     }
-    const onBlur = () => {
+    const clearAll = () => {
       keys.clear()
       applyKeys()
+      shipInput.thrust = 0
+      shipInput.reverse = 0
+      shipInput.strafeX = 0
+      shipInput.yaw = 0
+      shipInput.pitch = 0
+      shipInput.boost = false
+    }
+    const onBlur = () => clearAll()
+    const onVisibility = () => {
+      if (document.hidden) clearAll()
     }
 
     // Mouse-drag camera orbit
@@ -69,6 +79,7 @@ export function useShipControls(): void {
     window.addEventListener('keydown', onKeyDown)
     window.addEventListener('keyup', onKeyUp)
     window.addEventListener('blur', onBlur)
+    document.addEventListener('visibilitychange', onVisibility)
     window.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('pointermove', onPointerMove)
     window.addEventListener('pointerup', endDrag)
@@ -77,6 +88,7 @@ export function useShipControls(): void {
       window.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('keyup', onKeyUp)
       window.removeEventListener('blur', onBlur)
+      document.removeEventListener('visibilitychange', onVisibility)
       window.removeEventListener('pointerdown', onPointerDown)
       window.removeEventListener('pointermove', onPointerMove)
       window.removeEventListener('pointerup', endDrag)

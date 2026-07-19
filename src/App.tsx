@@ -7,11 +7,14 @@ import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { WarpStreaks } from './scene/WarpStreaks'
+import { Asteroids } from './scene/Asteroids'
+import { Nebulae } from './scene/Nebulae'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
 import { HUD } from './hud/HUD'
 import { ALL_SYSTEMS } from './config/systems'
+import { QUALITY } from './config/quality'
 
 export default function App() {
   useShipControls()
@@ -21,7 +24,7 @@ export default function App() {
       <Canvas
         gl={{ logarithmicDepthBuffer: true, antialias: true }}
         camera={{ fov: 62, near: 0.5, far: 60000 }}
-        dpr={[1, 2]}
+        dpr={QUALITY.dpr}
       >
         <color attach="background" args={['#020814']} />
         <ambientLight intensity={0.12} />
@@ -39,10 +42,12 @@ export default function App() {
         ))}
         <ContactStation />
         <WarpStreaks />
+        <Asteroids />
+        <Nebulae />
         <Ship />
         <ChaseCamera />
         <HudBridge />
-        <Effects />
+        {QUALITY.postprocessing && <Effects />}
       </Canvas>
 
       <HUD />

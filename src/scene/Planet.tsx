@@ -14,6 +14,7 @@ import { cloudVertex, cloudFragment } from './shaders/cloudShader'
 import { coronaVertex, coronaFragment } from './shaders/starShader'
 import { ringsVertex, ringsFragment } from './shaders/ringsShader'
 import type { PlanetConfig, PlanetType } from '../config/systems'
+import { QUALITY } from '../config/quality'
 
 const MODE: Record<PlanetType, number> = {
   gasGiant: 0,
@@ -148,17 +149,17 @@ export function Planet({ config, sunPosition }: PlanetProps) {
     <group>
       <group ref={spinRef}>
         <mesh material={surfaceMaterial}>
-          <sphereGeometry args={[config.radius, 64, 64]} />
+          <sphereGeometry args={[config.radius, QUALITY.planetSegments, QUALITY.planetSegments]} />
         </mesh>
         {cloudMaterial && (
           <mesh material={cloudMaterial}>
-            <sphereGeometry args={[config.radius * 1.02, 48, 48]} />
+            <sphereGeometry args={[config.radius * 1.02, QUALITY.planetSegments * 0.75, QUALITY.planetSegments * 0.75]} />
           </mesh>
         )}
       </group>
       {atmosphereMaterial && (
         <mesh material={atmosphereMaterial}>
-          <sphereGeometry args={[config.radius * 1.08, 48, 48]} />
+          <sphereGeometry args={[config.radius * 1.08, 32, 32]} />
         </mesh>
       )}
       {ringsMaterial && (

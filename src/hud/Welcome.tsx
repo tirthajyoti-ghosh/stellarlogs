@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { IS_TOUCH } from '../config/quality'
 
 const STORAGE_KEY = 'stellarlogs-visited'
 
@@ -39,18 +40,29 @@ export function Welcome() {
           orbit.
         </p>
         <div className="hud-welcome-controls">
-          <div>
-            <span className="hud-key">W</span> burn · <span className="hud-key">S</span> reverse ·{' '}
-            <span className="hud-key">A/D</span> turn · <span className="hud-key">R/F</span> pitch
-          </div>
-          <div>
-            <span className="hud-key">Q/E</span> strafe · <span className="hud-key">SHIFT</span>{' '}
-            afterburner · <span className="hud-key">N</span> jump ·{' '}
-            <span className="hud-key">drag</span> admire the ship
-          </div>
+          {IS_TOUCH ? (
+            <div>
+              <span className="hud-key">STICK</span> steer · <span className="hud-key">BURN</span>{' '}
+              thrust · <span className="hud-key">AB</span> afterburner ·{' '}
+              <span className="hud-key">REV</span> reverse · <span className="hud-key">JUMP DRIVE</span>{' '}
+              fast travel
+            </div>
+          ) : (
+            <>
+              <div>
+                <span className="hud-key">W</span> burn · <span className="hud-key">S</span> reverse ·{' '}
+                <span className="hud-key">A/D</span> turn · <span className="hud-key">R/F</span> pitch
+              </div>
+              <div>
+                <span className="hud-key">Q/E</span> strafe · <span className="hud-key">SHIFT</span>{' '}
+                afterburner · <span className="hud-key">N</span> jump ·{' '}
+                <span className="hud-key">drag</span> admire the ship
+              </div>
+            </>
+          )}
         </div>
         <button className="hud-welcome-go" onClick={dismiss}>
-          Press W to fly
+          {IS_TOUCH ? 'Start flying' : 'Press W to fly'}
         </button>
       </div>
     </div>

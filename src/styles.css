@@ -528,3 +528,78 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
   height: 70px;
   flex-shrink: 0;
 }
+
+/* Touch controls */
+.hud-touch {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.hud-stick {
+  position: absolute;
+  left: 26px;
+  bottom: 30px;
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  border: 1px solid rgba(111, 211, 232, 0.35);
+  background: radial-gradient(circle, rgba(10, 20, 36, 0.4), rgba(10, 20, 36, 0.65));
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hud-stick-knob {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(140, 220, 240, 0.5), rgba(60, 120, 150, 0.55));
+  border: 1px solid rgba(140, 220, 240, 0.6);
+}
+.hud-touch-buttons {
+  position: absolute;
+  right: 22px;
+  bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: auto;
+}
+.hud-touch-btn {
+  width: 72px;
+  height: 60px;
+  border-radius: 10px;
+  border: 1px solid rgba(111, 211, 232, 0.45);
+  background: rgba(10, 20, 36, 0.6);
+  color: #d5e8f2;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  touch-action: none;
+}
+.hud-touch-btn:active { background: rgba(111, 211, 232, 0.3); }
+.hud-touch-boost { border-color: rgba(232, 161, 60, 0.6); color: #f2c98a; }
+
+/* Mobile layout: compact cockpit */
+@media (max-width: 900px), (max-height: 560px) {
+  .hud-tape { display: none; }
+  .hud-mfd-right { display: none; }
+  .hud-console { display: none; }
+  .hud-cockpit { perspective: none; }
+  .hud-mfd-left {
+    transform: none;
+    top: 14px;
+    left: 14px;
+    bottom: auto;
+    width: 205px;
+    padding: 10px 14px 12px 14px;
+  }
+  .hud-system { font-size: 16px; }
+  .hud-console-housing { height: 70px; }
+  .hud-label-system { font-size: 11px; }
+  .hud-label-planet { font-size: 10px; }
+  .hud-welcome-card { padding: 22px 24px; max-height: 86vh; overflow-y: auto; }
+  .hud-welcome-card p { font-size: 13px; margin-top: 8px; }
+}
