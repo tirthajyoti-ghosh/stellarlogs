@@ -2,15 +2,12 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   AdditiveBlending,
-  DoubleSide,
-  ExtrudeGeometry,
   Group,
   LatheGeometry,
   MathUtils,
   Mesh,
   MeshBasicMaterial,
   PointLight,
-  Shape,
   Vector2,
   Vector3,
 } from 'three'
@@ -19,53 +16,60 @@ import { shipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
 
-const BANK_FACTOR = 0.55 // visual roll per unit of yaw rate
+// Spacecraft, not aircraft: barely any bank, attitude comes from RCS puffs
+const BANK_FACTOR = 0.16
 
-function makeFuselage(): LatheGeometry {
+function makeHull(): LatheGeometry {
   const profile = [
-    new Vector2(0.001, -2.15),
-    new Vector2(0.28, -2.1),
-    new Vector2(0.36, -1.7),
-    new Vector2(0.52, -0.8),
-    new Vector2(0.55, 0.2),
-    new Vector2(0.4, 1.2),
-    new Vector2(0.18, 2.2),
-    new Vector2(0.001, 3.0),
+    new Vector2(0.001, -2.0),
+    new Vector2(0.42, -1.95),
+    new Vector2(0.58, -1.5),
+    new Vector2(0.54, -0.9),
+    new Vector2(0.52, 0.6),
+    new Vector2(0.48, 1.6),
+    new Vector2(0.34, 2.5),
+    new Vector2(0.12, 3.0),
+    new Vector2(0.001, 3.25),
   ]
-  return new LatheGeometry(profile, 24)
+  return new LatheGeometry(profile, 28)
 }
 
-function makeWing(): ExtrudeGeometry {
-  const shape = new Shape()
-  shape.moveTo(0, 0.4)
-  shape.lineTo(2.3, -1.55)
-  shape.lineTo(1.9, -1.85)
-  shape.lineTo(0, -1.6)
-  shape.closePath()
-  return new ExtrudeGeometry(shape, { depth: 0.07, bevelEnabled: false })
+function makeEngineBell(): LatheGeometry {
+  const profile = [
+    new Vector2(0.14, 0.0),
+    new Vector2(0.2, -0.18),
+    new Vector2(0.3, -0.42),
+    new Vector2(0.38, -0.62),
+  ]
+  return new LatheGeometry(profile, 20)
 }
 
-function makeFin(): ExtrudeGeometry {
-  const shape = new Shape()
-  shape.moveTo(0, 0.3)
-  shape.lineTo(1.05, -0.9)
-  shape.lineTo(0.75, -1.1)
-  shape.lineTo(0, -1.0)
-  shape.closePath()
-  return new ExtrudeGeometry(shape, { depth: 0.06, bevelEnabled: false })
-}
+const HULL = { color: '#dde2ea', metalness: 0.45, roughness: 0.38 }
+const PANEL = { color: '#2b3242', metalness: 0.7, roughness: 0.45 }
+const ACCENT = { color: '#e8622a', metalness: 0.3, roughness: 0.5 }
+
+/** RCS pod positions (x, z) around the hull at mid-ship. */
+const RCS_PODS: { pos: [number, number, number]; axis: 'yaw' | 'pitch'; sign: 1 | -1 }[] = [
+  // exhaust +X pushes the nose -X (a left turn = yaw +)
+  { pos: [0.56, 1.7, 0], axis: 'yaw', sign: 1 },
+  { pos: [-0.56, 1.7, 0], axis: 'yaw', sign: -1 },
+  // exhaust +Z (up) pushes the nose down (pitch -)
+  { pos: [0, 1.7, 0.56], axis: 'pitch', sign: -1 },
+  { pos: [0, 1.7, -0.56], axis: 'pitch', sign: 1 },
+]
 
 /**
  * Owns the physics step (runs first each frame via negative priority) and
- * renders the procedural interceptor. Local frame inside the -90° X group:
+ * renders the ship — an Expanse-style utilitarian spacecraft: hull, engine
+ * bell, RCS pods, radiators, tanks. Local frame inside the -90° X group:
  * +Y = nose direction, +Z = up.
  */
 export function Ship() {
   const rigRef = useRef<Group>(null)
   const bankRef = useRef<Group>(null)
   const glowRef = useRef<PointLight>(null)
-  const plumeLeft = useRef<Mesh>(null)
-  const plumeRight = useRef<Mesh>(null)
+  const plumeRef = useRef<Mesh>(null)
+  const rcsRefs = useRef<(Mesh | null)[]>([])
   const state = useMemo(() => createShipState(new Vector3(...SPAWN_POSITION), SPAWN_YAW), [])
 
   // Dev-only teleport for visual inspection / automation
@@ -85,9 +89,8 @@ export function Ship() {
     }
   }
 
-  const fuselage = useMemo(() => makeFuselage(), [])
-  const wing = useMemo(() => makeWing(), [])
-  const fin = useMemo(() => makeFin(), [])
+  const hull = useMemo(() => makeHull(), [])
+  const bell = useMemo(() => makeEngineBell(), [])
 
   useFrame((_, dt) => {
     const alpha = stepShip(state, shipInput, dt)
@@ -103,18 +106,28 @@ export function Ship() {
       bankRef.current.rotation.z = state.yawRateSmooth * BANK_FACTOR
     }
 
-    // Engine visuals track thrust
-    const plumeTarget = state.thrusting ? (state.boosting ? 2.2 : 1) : 0
-    for (const plume of [plumeLeft.current, plumeRight.current]) {
-      if (!plume) continue
+    // Main drive plume tracks thrust
+    const plumeTarget = state.thrusting ? (state.boosting ? 2.6 : 1) : 0
+    const plume = plumeRef.current
+    if (plume) {
       const s = MathUtils.lerp(plume.scale.y, plumeTarget, 0.15)
       plume.scale.set(1, Math.max(0.001, s), 1)
-      ;(plume.material as MeshBasicMaterial).opacity = 0.75 * Math.min(1, s)
+      ;(plume.material as MeshBasicMaterial).opacity = 0.8 * Math.min(1, s)
     }
     if (glowRef.current) {
-      const target = state.thrusting ? (state.boosting ? 30 : 12) : 0
+      const target = state.thrusting ? (state.boosting ? 34 : 14) : 0
       glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target, 0.2)
     }
+
+    // RCS puffs fire opposite the turn direction, like a real spacecraft
+    RCS_PODS.forEach((pod, i) => {
+      const mesh = rcsRefs.current[i]
+      if (!mesh) return
+      const input = pod.axis === 'yaw' ? shipInput.yaw : shipInput.pitch
+      const firing = Math.max(0, input * pod.sign)
+      const mat = mesh.material as MeshBasicMaterial
+      mat.opacity = MathUtils.lerp(mat.opacity, firing * 0.85, 0.3)
+    })
 
     // Publish for camera / HUD / proximity
     shipRig.position.copy(rig.position)
@@ -130,72 +143,107 @@ export function Ship() {
     <group ref={rigRef}>
       <group ref={bankRef}>
         <group rotation-x={-Math.PI / 2}>
-          {/* Fuselage */}
-          <mesh geometry={fuselage}>
-            <meshStandardMaterial color="#c8d2e0" metalness={0.75} roughness={0.3} />
+          {/* Hull */}
+          <mesh geometry={hull}>
+            <meshStandardMaterial {...HULL} />
           </mesh>
-          {/* Canopy */}
-          <mesh position={[0, 0.7, 0.42]} scale={[0.32, 0.95, 0.28]}>
-            <sphereGeometry args={[1, 24, 16]} />
-            <meshStandardMaterial
-              color="#0e1a2a"
-              metalness={0.6}
-              roughness={0.12}
-              emissive="#2a5a8a"
-              emissiveIntensity={0.35}
-            />
+          {/* Nose stripe + rear stripe (racing accents) */}
+          <mesh position={[0, 2.35, 0]}>
+            <cylinderGeometry args={[0.415, 0.44, 0.18, 28]} />
+            <meshStandardMaterial {...ACCENT} />
           </mesh>
-          {/* Wings */}
-          <mesh geometry={wing} position={[0.3, 0.2, -0.04]} rotation-y={0.07}>
-            <meshStandardMaterial color="#232c3d" metalness={0.7} roughness={0.45} side={DoubleSide} />
+          <mesh position={[0, -1.1, 0]}>
+            <cylinderGeometry args={[0.545, 0.55, 0.22, 28]} />
+            <meshStandardMaterial {...ACCENT} />
           </mesh>
-          <group scale={[-1, 1, 1]}>
-            <mesh geometry={wing} position={[0.3, 0.2, -0.04]} rotation-y={0.07}>
-              <meshStandardMaterial color="#232c3d" metalness={0.7} roughness={0.45} side={DoubleSide} />
+          {/* Cockpit window band near the nose */}
+          {[-0.35, 0, 0.35].map((a) => (
+            <mesh key={a} position={[Math.sin(a) * 0.33, 2.72, Math.cos(a) * 0.33 * 0.9 + 0.06]} rotation-y={a}>
+              <boxGeometry args={[0.16, 0.34, 0.05]} />
+              <meshStandardMaterial
+                color="#0a141f"
+                metalness={0.5}
+                roughness={0.1}
+                emissive="#4a7a9a"
+                emissiveIntensity={0.5}
+              />
+            </mesh>
+          ))}
+          {/* Dorsal antenna */}
+          <group position={[0, 1.0, 0.5]}>
+            <mesh>
+              <cylinderGeometry args={[0.015, 0.015, 0.5, 6]} />
+              <meshStandardMaterial {...PANEL} />
+            </mesh>
+            <mesh position={[0, 0.28, 0]}>
+              <sphereGeometry args={[0.04, 8, 8]} />
+              <meshBasicMaterial color={[3.5, 0.9, 0.6]} toneMapped={false} />
             </mesh>
           </group>
-          {/* Tail fin (vertical) */}
-          <mesh geometry={fin} position={[0.03, -0.85, 0.35]} rotation-y={-Math.PI / 2}>
-            <meshStandardMaterial color="#232c3d" metalness={0.7} roughness={0.45} side={DoubleSide} />
-          </mesh>
-          {/* Wingtip strips (HDR — pick up bloom) */}
-          <mesh position={[2.35, -1.35, 0]}>
-            <boxGeometry args={[0.05, 0.5, 0.04]} />
-            <meshBasicMaterial color={[0.4, 3.2, 4.5]} toneMapped={false} />
-          </mesh>
-          <mesh position={[-2.35, -1.35, 0]}>
-            <boxGeometry args={[0.05, 0.5, 0.04]} />
-            <meshBasicMaterial color={[0.4, 3.2, 4.5]} toneMapped={false} />
-          </mesh>
-          {/* Engines */}
-          {[0.33, -0.33].map((x) => (
-            <group key={x} position={[x, -1.95, -0.02]}>
-              <mesh>
-                <cylinderGeometry args={[0.19, 0.23, 0.6, 16]} />
-                <meshStandardMaterial color="#1a2230" metalness={0.85} roughness={0.35} />
-              </mesh>
-              <mesh position={[0, -0.31, 0]} rotation-x={Math.PI / 2}>
-                <circleGeometry args={[0.17, 16]} />
-                <meshBasicMaterial color={[0.5, 4.0, 6.0]} toneMapped={false} />
-              </mesh>
-              <mesh
-                ref={x > 0 ? plumeRight : plumeLeft}
-                position={[0, -1.15, 0]}
-                rotation-x={Math.PI}
-                scale={[1, 0.001, 1]}
-              >
-                <coneGeometry args={[0.16, 1.6, 12, 1, true]} />
-                <meshBasicMaterial
-                  color="#7fd4ff"
-                  transparent
-                  opacity={0}
-                  blending={AdditiveBlending}
-                  depthWrite={false}
-                  toneMapped={false}
-                />
-              </mesh>
-            </group>
+          {/* Side fuel tanks */}
+          {[0.6, -0.6].map((x) => (
+            <mesh key={x} position={[x, -0.3, -0.12]}>
+              <capsuleGeometry args={[0.16, 1.5, 6, 12]} />
+              <meshStandardMaterial color="#aab2c0" metalness={0.6} roughness={0.35} />
+            </mesh>
           ))}
+          {/* Radiator panels (flush, vertical — not wings) */}
+          {[0.7, -0.7].map((x) => (
+            <mesh key={x} position={[x, -1.15, 0]}>
+              <boxGeometry args={[0.03, 1.1, 0.55]} />
+              <meshStandardMaterial color="#1a222f" metalness={0.4} roughness={0.6} />
+            </mesh>
+          ))}
+          {/* RCS pods + puff cones */}
+          {RCS_PODS.map((pod, i) => {
+            const dir = new Vector3(pod.pos[0], 0, pod.pos[2]).normalize()
+            return (
+              <group key={i} position={pod.pos}>
+                <mesh>
+                  <boxGeometry args={[0.14, 0.22, 0.14]} />
+                  <meshStandardMaterial {...PANEL} />
+                </mesh>
+                <mesh
+                  ref={(m) => {
+                    rcsRefs.current[i] = m
+                  }}
+                  position={[dir.x * 0.22, 0, dir.z * 0.22]}
+                  rotation={[dir.z !== 0 ? (dir.z > 0 ? Math.PI / 2 : -Math.PI / 2) : 0, 0, dir.x !== 0 ? (dir.x > 0 ? -Math.PI / 2 : Math.PI / 2) : 0]}
+                >
+                  <coneGeometry args={[0.07, 0.4, 8, 1, true]} />
+                  <meshBasicMaterial
+                    color="#cfe8ff"
+                    transparent
+                    opacity={0}
+                    blending={AdditiveBlending}
+                    depthWrite={false}
+                    toneMapped={false}
+                  />
+                </mesh>
+              </group>
+            )
+          })}
+          {/* Engine bell + plume */}
+          <group position={[0, -2.0, 0]}>
+            <mesh geometry={bell}>
+              <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+            </mesh>
+            <mesh position={[0, -0.05, 0]} rotation-x={Math.PI / 2}>
+              <circleGeometry args={[0.13, 16]} />
+              <meshBasicMaterial color={[0.5, 4.0, 6.0]} toneMapped={false} />
+            </mesh>
+            <mesh ref={plumeRef} position={[0, -1.35, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
+              <coneGeometry args={[0.24, 2.2, 12, 1, true]} />
+              <meshBasicMaterial
+                color="#7fd4ff"
+                transparent
+                opacity={0}
+                blending={AdditiveBlending}
+                depthWrite={false}
+                toneMapped={false}
+              />
+            </mesh>
+          </group>
         </group>
         <pointLight ref={glowRef} position={[0, 0, 3]} color="#7fd4ff" intensity={0} distance={45} decay={2} />
       </group>

@@ -54,14 +54,16 @@ void main() {
   float facing = clamp(dot(N, V), 0.0, 1.0);
   // Hot core, but granulation must stay visible inside the disc
   base = mix(base, hot, pow(facing, 1.8) * 0.45);
+  // Physical limb darkening: the disc edge is dimmer and more deeply tinted
   float limb = pow(1.0 - facing, 1.3);
-  base = mix(base, uColor * 1.2, limb * 0.9);
+  float darkening = 1.0 - limb * 0.55;
+  base = mix(base, uColor, limb * 0.6);
   // Prominences licking off the limb
   float prom = limb * smoothstep(0.35, 0.9, flares);
 
   // HDR output: core burns >1 for the bloom pass
-  vec3 color = base * (1.15 + pow(facing, 2.0) * 0.75 + turbulence * 0.35);
-  color += uColor * prom * 2.2;
+  vec3 color = base * darkening * (1.15 + pow(facing, 2.0) * 0.75 + turbulence * 0.35);
+  color += uColor * prom * 1.6;
 
   gl_FragColor = vec4(color, 1.0);
   #include <colorspace_fragment>

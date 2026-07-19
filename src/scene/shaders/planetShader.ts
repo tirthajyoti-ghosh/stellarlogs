@@ -58,6 +58,7 @@ void main() {
 
   vec3 surface = vec3(0.0);
   vec3 emissive = vec3(0.0);
+  float oceanMask = 0.0;
 
   if (uMode == 0) {
     // Gas giant: crisp turbulent latitude bands with storm streaks
@@ -90,7 +91,9 @@ void main() {
     float continents = fbm(p * 1.5);
     float detail = fbm(p * 6.0) * 0.15;
     float landMask = smoothstep(0.02, 0.12, continents + detail);
-    vec3 ocean = mix(uColorA * 0.7, uColorA, smoothstep(-0.4, 0.0, continents));
+    oceanMask = 1.0 - landMask;
+    // Shallows brighten toward the coastline
+    vec3 ocean = mix(uColorA * 0.6, uColorA * 1.25, smoothstep(-0.35, 0.1, continents + detail));
     vec3 land = mix(uColorB, uColorC, smoothstep(0.15, 0.5, continents + detail));
     surface = mix(ocean, land, landMask);
     float polar = smoothstep(0.72, 0.85, abs(normalize(vLocalPos).y) + detail);
@@ -116,6 +119,13 @@ void main() {
   // Mild saturation lift
   float luma = dot(lit, vec3(0.299, 0.587, 0.114));
   lit = mix(vec3(luma), lit, 1.18);
+
+  // Sun glint on open water
+  if (oceanMask > 0.0) {
+    vec3 R = reflect(-L, N);
+    float spec = pow(max(dot(R, V), 0.0), 110.0);
+    lit += vec3(1.0, 0.95, 0.85) * spec * oceanMask * dayside * 1.4;
+  }
 
   // Sun-side atmosphere rim
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0);

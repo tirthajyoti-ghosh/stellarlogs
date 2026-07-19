@@ -14,8 +14,8 @@ const BLOB_COLORS = [
 ]
 
 function paintSky(): CanvasTexture {
-  const w = 2048
-  const h = 1024
+  const w = 4096
+  const h = 2048
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
@@ -35,12 +35,12 @@ function paintSky(): CanvasTexture {
   // Broad glow of the band
   for (let x = 0; x < w; x += 8) {
     const y = bandY(x)
-    const g = ctx.createLinearGradient(0, y - 190, 0, y + 190)
+    const g = ctx.createLinearGradient(0, y - 380, 0, y + 380)
     g.addColorStop(0, 'rgba(120, 140, 190, 0)')
     g.addColorStop(0.5, 'rgba(140, 160, 210, 0.085)')
     g.addColorStop(1, 'rgba(120, 140, 190, 0)')
     ctx.fillStyle = g
-    ctx.fillRect(x, y - 190, 8, 380)
+    ctx.fillRect(x, y - 380, 8, 760)
   }
 
   // Colored nebula blobs hugging the band
@@ -51,8 +51,8 @@ function paintSky(): CanvasTexture {
   }
   for (let i = 0; i < 90; i++) {
     const x = rng() * w
-    const y = bandY(x) + (rng() - 0.5) * 260
-    const r = 50 + rng() * 190
+    const y = bandY(x) + (rng() - 0.5) * 520
+    const r = 100 + rng() * 380
     const color = BLOB_COLORS[Math.floor(rng() * BLOB_COLORS.length)]
     const alpha = 0.03 + rng() * 0.06
     const g = ctx.createRadialGradient(x, y, 0, x, y, r)
@@ -74,11 +74,29 @@ function paintSky(): CanvasTexture {
     }
   }
 
+  // Dense fine-star speckle: heavy in the band (the naked-eye milky way),
+  // lighter across the whole sky
+  for (let i = 0; i < 26000; i++) {
+    const inBand = i < 19000
+    const x = rng() * w
+    const spread = (rng() + rng() + rng() + rng() - 2) * 0.5
+    const y = inBand ? bandY(x) + spread * 560 : rng() * h
+    const r = 0.35 + rng() * (inBand ? 0.55 : 0.75)
+    const a = 0.08 + rng() * (inBand ? 0.3 : 0.4)
+    const warm = rng() > 0.75
+    ctx.fillStyle = warm
+      ? `rgba(255, 225, 195, ${a})`
+      : `rgba(210, 225, 255, ${a})`
+    ctx.beginPath()
+    ctx.arc(x, y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+
   // Dark dust lanes cutting the band
   for (let i = 0; i < 26; i++) {
     const x = rng() * w
-    const y = bandY(x) + (rng() - 0.5) * 90
-    const r = 40 + rng() * 130
+    const y = bandY(x) + (rng() - 0.5) * 180
+    const r = 80 + rng() * 260
     const g = ctx.createRadialGradient(x, y, 0, x, y, r)
     const alpha = 0.05 + rng() * 0.08
     g.addColorStop(0, `rgba(2, 5, 12, ${alpha})`)

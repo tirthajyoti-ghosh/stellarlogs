@@ -100,8 +100,8 @@ function makeBand(count: number, radius: number): BufferGeometry {
 export function Starfield() {
   const nearRef = useRef<Group>(null)
   const starTexture = useMemo(() => makeStarTexture(), [])
-  const farGeo = useMemo(() => makeShell(5200, 20000, 0.15), [])
-  const bandGeo = useMemo(() => makeBand(7500, 21000), [])
+  const farGeo = useMemo(() => makeShell(9000, 20000, 0.15), [])
+  const bandGeo = useMemo(() => makeBand(17000, 21000), [])
   const heroGeo = useMemo(() => makeShell(140, 19000, 0.1, 1.6), [])
   const nearGeo = useMemo(() => makeShell(2600, 7000, 0.35), [])
 
@@ -123,11 +123,11 @@ export function Starfield() {
 
   return (
     <>
-      <points geometry={farGeo}>{pointsMat(55)}</points>
-      <points geometry={bandGeo}>{pointsMat(42, 0.9)}</points>
-      <points geometry={heroGeo}>{pointsMat(160)}</points>
+      <points geometry={farGeo}>{pointsMat(30)}</points>
+      <points geometry={bandGeo}>{pointsMat(18, 0.9)}</points>
+      <points geometry={heroGeo}>{pointsMat(120)}</points>
       <group ref={nearRef}>
-        <points geometry={nearGeo}>{pointsMat(16)}</points>
+        <points geometry={nearGeo}>{pointsMat(9)}</points>
       </group>
     </>
   )
