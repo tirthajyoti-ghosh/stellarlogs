@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { BackSide, CanvasTexture, Mesh, Quaternion, SRGBColorSpace, Vector3 } from 'three'
 import { shipRig } from '../state/shipRig'
+import { QUALITY } from '../config/quality'
 
 /** Same plane as the starfield band — keep in sync with Starfield.tsx. */
 export const BAND_TILT = new Vector3(0.42, 1, 0.18).normalize()
@@ -16,8 +17,9 @@ const BLOB_COLORS = [
 ]
 
 function paintSky(): CanvasTexture {
-  const w = 4096
-  const h = 2048
+  const F = QUALITY.skyDomeSize / 4096 // feature scale vs the 4096 baseline
+  const w = QUALITY.skyDomeSize
+  const h = QUALITY.skyDomeSize / 2
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
@@ -37,12 +39,12 @@ function paintSky(): CanvasTexture {
   // Broad glow of the band
   for (let x = 0; x < w; x += 8) {
     const y = bandY(x)
-    const g = ctx.createLinearGradient(0, y - 380, 0, y + 380)
+    const g = ctx.createLinearGradient(0, y - 380 * F, 0, y + 380 * F)
     g.addColorStop(0, 'rgba(120, 140, 190, 0)')
     g.addColorStop(0.5, 'rgba(140, 160, 210, 0.085)')
     g.addColorStop(1, 'rgba(120, 140, 190, 0)')
     ctx.fillStyle = g
-    ctx.fillRect(x, y - 380, 8, 760)
+    ctx.fillRect(x, y - 380 * F, 8, 760 * F)
   }
 
   // Colored nebula blobs hugging the band
@@ -53,8 +55,8 @@ function paintSky(): CanvasTexture {
   }
   for (let i = 0; i < 90; i++) {
     const x = rng() * w
-    const y = bandY(x) + (rng() - 0.5) * 520
-    const r = 100 + rng() * 380
+    const y = bandY(x) + (rng() - 0.5) * 520 * F
+    const r = (100 + rng() * 380) * F
     const color = BLOB_COLORS[Math.floor(rng() * BLOB_COLORS.length)]
     const alpha = 0.03 + rng() * 0.06
     const g = ctx.createRadialGradient(x, y, 0, x, y, r)
@@ -79,11 +81,11 @@ function paintSky(): CanvasTexture {
 
   // Dense fine-star speckle: heavy in the band (the naked-eye milky way),
   // lighter across the whole sky
-  for (let i = 0; i < 26000; i++) {
+  for (let i = 0; i < Math.round(26000 * (F * F + 0.15)); i++) {
     const inBand = i < 19000
     const x = rng() * w
     const spread = (rng() + rng() + rng() + rng() - 2) * 0.5
-    const y = inBand ? bandY(x) + spread * 560 : rng() * h
+    const y = inBand ? bandY(x) + spread * 560 * F : rng() * h
     const r = 0.35 + rng() * (inBand ? 0.55 : 0.75)
     const a = 0.08 + rng() * (inBand ? 0.3 : 0.4)
     const warm = rng() > 0.75
@@ -98,8 +100,8 @@ function paintSky(): CanvasTexture {
   // Dark dust lanes cutting the band
   for (let i = 0; i < 26; i++) {
     const x = rng() * w
-    const y = bandY(x) + (rng() - 0.5) * 180
-    const r = 80 + rng() * 260
+    const y = bandY(x) + (rng() - 0.5) * 180 * F
+    const r = (80 + rng() * 260) * F
     const g = ctx.createRadialGradient(x, y, 0, x, y, r)
     const alpha = 0.05 + rng() * 0.08
     g.addColorStop(0, `rgba(2, 5, 12, ${alpha})`)
