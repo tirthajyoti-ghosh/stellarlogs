@@ -84,9 +84,9 @@ export function stepWarp(state: WarpableShip, dt: number): void {
     warpTurn.pitch = dp
     // Deliberate RCS turn: constant rate with a smooth settle at the end,
     // slow enough that the thruster couples are clearly visible
-    const RATE = 0.55 // rad/s
-    const yawStep = Math.sign(dy) * Math.min(Math.abs(dy) * 2.2 * dt, RATE * dt)
-    const pitchStep = Math.sign(dp) * Math.min(Math.abs(dp) * 2.2 * dt, RATE * dt)
+    const RATE = 1.15 // rad/s — a big turn reads in about two seconds
+    const yawStep = Math.sign(dy) * Math.min(Math.abs(dy) * 3 * dt, RATE * dt)
+    const pitchStep = Math.sign(dp) * Math.min(Math.abs(dp) * 3 * dt, RATE * dt)
     state.yaw += yawStep
     state.pitch += pitchStep
     state.velocity.multiplyScalar(Math.exp(-2.5 * dt))
