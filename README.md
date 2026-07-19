@@ -20,3 +20,6 @@ This portfolio is an extension of my identity. You pilot a spaceship to explore 
 For the best experience, open the site on a desktop: [stellarlogs.dev](https://stellarlogs.dev)
 
 Enjoy exploring my universe! 🌌
+### Credits
+
+- Spaceship model: ["MCRN Tachi [Expanse TV Show]"](https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf) by [Jakub.Vildomec](https://sketchfab.com/Jakub.Vildomec), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).

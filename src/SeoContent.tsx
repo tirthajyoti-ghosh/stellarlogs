@@ -54,6 +54,14 @@ export function SeoContent() {
           ))}
         </article>
       ))}
+      <p>
+        Spaceship model:{' '}
+        <a href="https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf">
+          "MCRN Tachi [Expanse TV Show]"
+        </a>{' '}
+        by Jakub.Vildomec, licensed under{' '}
+        <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+      </p>
     </section>
   )
 }

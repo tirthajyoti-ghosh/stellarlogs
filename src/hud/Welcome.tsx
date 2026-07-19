@@ -64,6 +64,20 @@ export function Welcome() {
         <button className="hud-welcome-go" onClick={dismiss}>
           {IS_TOUCH ? 'Start flying' : 'Press W to fly'}
         </button>
+        <p className="hud-welcome-credit">
+          Ship:{' '}
+          <a
+            href="https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf"
+            target="_blank"
+            rel="noreferrer"
+          >
+            "MCRN Tachi"
+          </a>{' '}
+          by Jakub.Vildomec, licensed under{' '}
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
+            CC BY 4.0
+          </a>
+        </p>
       </div>
     </div>
   )

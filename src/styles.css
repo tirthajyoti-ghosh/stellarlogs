@@ -275,6 +275,15 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
   background: rgba(111, 211, 232, 0.22);
   border-color: var(--hud-teal);
 }
+.hud-welcome-credit {
+  margin-top: 12px;
+  font-size: 10px;
+  text-align: center;
+  color: rgba(168, 190, 204, 0.55);
+}
+.hud-welcome-credit a {
+  color: rgba(111, 211, 232, 0.7);
+}
 
 /* ---------- Cockpit dashboard ---------- */
 
