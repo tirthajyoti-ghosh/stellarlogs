@@ -13,7 +13,8 @@ export default tseslint.config(
     languageOptions: { globals: globals.browser },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      // R3F props like `args`, `attach`, and object-mutation patterns are idiomatic
+      // Mutating three.js objects inside useFrame is the core R3F idiom
+      'react-hooks/immutability': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     },
   },
