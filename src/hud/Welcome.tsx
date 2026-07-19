@@ -41,10 +41,10 @@ export function Welcome() {
         <div className="hud-welcome-controls">
           <div>
             <span className="hud-key">W</span> burn · <span className="hud-key">S</span> reverse ·{' '}
-            <span className="hud-key">A/D</span> strafe · <span className="hud-key">R/F</span> up/down
+            <span className="hud-key">A/D</span> turn · <span className="hud-key">R/F</span> pitch
           </div>
           <div>
-            <span className="hud-key">Q/E</span> rotate · <span className="hud-key">SHIFT</span>{' '}
+            <span className="hud-key">Q/E</span> strafe · <span className="hud-key">SHIFT</span>{' '}
             afterburner · <span className="hud-key">N</span> jump ·{' '}
             <span className="hud-key">drag</span> admire the ship
           </div>

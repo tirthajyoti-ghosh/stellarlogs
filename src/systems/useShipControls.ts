@@ -6,9 +6,9 @@ const DRAG_SENSITIVITY = 0.0075 // rad per px
 const PITCH_CLAMP = 1.2
 
 /**
- * Desktop controls — RCS scheme, the whole ship translates:
- * W/↑ forward burn · S/↓ reverse burn · A/← D/→ strafe · R/F up/down ·
- * Q/E rotate · Shift boost. Mouse drag orbits the camera.
+ * Desktop controls — rotate to aim, translate to maneuver:
+ * W/↑ burn · S/↓ reverse · A/← D/→ turn (RCS couple) · R/F pitch (couple) ·
+ * Q/E lateral strafe · Shift boost. Mouse drag orbits the camera.
  */
 export function useShipControls(): void {
   useEffect(() => {
@@ -17,11 +17,11 @@ export function useShipControls(): void {
     const applyKeys = () => {
       shipInput.thrust = keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0
       shipInput.reverse = keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0
-      shipInput.strafeX =
-        (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) +
-        (keys.has('KeyA') || keys.has('ArrowLeft') ? -1 : 0)
-      shipInput.strafeY = (keys.has('KeyR') ? 1 : 0) + (keys.has('KeyF') ? -1 : 0)
-      shipInput.yaw = (keys.has('KeyQ') ? 1 : 0) + (keys.has('KeyE') ? -1 : 0)
+      shipInput.yaw =
+        (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0) +
+        (keys.has('KeyD') || keys.has('ArrowRight') ? -1 : 0)
+      shipInput.pitch = (keys.has('KeyR') ? 1 : 0) + (keys.has('KeyF') ? -1 : 0)
+      shipInput.strafeX = (keys.has('KeyE') ? 1 : 0) + (keys.has('KeyQ') ? -1 : 0)
       shipInput.boost = keys.has('ShiftLeft') || keys.has('ShiftRight')
     }
 

@@ -11,7 +11,6 @@ export interface ShipState {
   prevPosition: Vector3
   velocity: Vector3
   yaw: number
-  /** Only the warp autopilot pitches the hull; it levels out after arrival. */
   pitch: number
   prevYaw: number
   prevPitch: number
@@ -55,9 +54,11 @@ export function shipQuaternion(yaw: number, pitch: number, out: Quaternion): Qua
 }
 
 function substep(state: ShipState, input: ShipInput, dt: number): void {
-  // Yaw rotation via RCS; the hull otherwise stays level (no bank, no pitch)
+  // Attitude via RCS couples: yaw and pitch rotate the hull (no banking)
   state.yaw += input.yaw * FLIGHT.yawSpeed * dt
-  state.pitch *= Math.exp(-FLIGHT.pitchAutolevel * dt)
+  state.pitch += input.pitch * FLIGHT.pitchSpeed * dt
+  state.pitch = Math.max(-FLIGHT.pitchLimit, Math.min(FLIGHT.pitchLimit, state.pitch))
+  if (input.pitch === 0) state.pitch *= Math.exp(-FLIGHT.pitchAutolevel * dt)
 
   // Boost is a drive mode: active exactly while held, never a dip
   state.boosting = input.boost
@@ -76,8 +77,6 @@ function substep(state: ShipState, input: ShipInput, dt: number): void {
     state.velocity.addScaledVector(_forward, -input.reverse * FLIGHT.rcsAccel * dt)
   if (input.strafeX !== 0)
     state.velocity.addScaledVector(_right, input.strafeX * FLIGHT.rcsAccel * dt)
-  if (input.strafeY !== 0)
-    state.velocity.addScaledVector(_up, input.strafeY * FLIGHT.rcsAccel * dt)
 
   applyGravity(state.position, state.velocity, dt)
 

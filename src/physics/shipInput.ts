@@ -1,16 +1,16 @@
 /**
  * Mutable ship input intents, written by control hooks (keyboard, touch) and
- * read by the physics step. RCS-style 6-axis scheme: the ship translates on
- * three axes and rotates only in yaw — no banking, no nose-pitching.
- * Values normalized: thrust/reverse 0..1, strafes and yaw -1..1
- * (strafeX + = right, strafeY + = up, yaw + = rotate left).
+ * read by the physics step. Rotation for aiming (yaw/pitch via RCS couples),
+ * translation for maneuvering (thrust, reverse, lateral strafe).
+ * Values normalized: thrust/reverse 0..1; yaw/pitch/strafeX -1..1
+ * (yaw + = nose left, pitch + = nose up, strafeX + = right).
  */
 export interface ShipInput {
   thrust: number
   reverse: number
   strafeX: number
-  strafeY: number
   yaw: number
+  pitch: number
   boost: boolean
 }
 
@@ -18,7 +18,7 @@ export const shipInput: ShipInput = {
   thrust: 0,
   reverse: 0,
   strafeX: 0,
-  strafeY: 0,
   yaw: 0,
+  pitch: 0,
   boost: false,
 }

@@ -65,13 +65,14 @@ function paintSky(): CanvasTexture {
     ctx.arc(x, y, r, 0, Math.PI * 2)
     ctx.fill()
     // wrap horizontally so the seam is invisible
-    if (x < r) {
-      const g2 = ctx.createRadialGradient(x + w, y, 0, x + w, y, r)
+    for (const wx of [x - w, x + w]) {
+      if (wx + r < 0 || wx - r > w) continue
+      const g2 = ctx.createRadialGradient(wx, y, 0, wx, y, r)
       g2.addColorStop(0, `${color} ${alpha})`)
       g2.addColorStop(1, `${color} 0)`)
       ctx.fillStyle = g2
       ctx.beginPath()
-      ctx.arc(x + w, y, r, 0, Math.PI * 2)
+      ctx.arc(wx, y, r, 0, Math.PI * 2)
       ctx.fill()
     }
   }
@@ -107,6 +108,16 @@ function paintSky(): CanvasTexture {
     ctx.beginPath()
     ctx.arc(x, y, r * 1.6, 0, Math.PI * 2)
     ctx.fill()
+    for (const wx of [x - w, x + w]) {
+      if (wx + r * 1.6 < 0 || wx - r * 1.6 > w) continue
+      const g2 = ctx.createRadialGradient(wx, y, 0, wx, y, r)
+      g2.addColorStop(0, `rgba(2, 5, 12, ${alpha})`)
+      g2.addColorStop(1, 'rgba(2, 5, 12, 0)')
+      ctx.fillStyle = g2
+      ctx.beginPath()
+      ctx.arc(wx, y, r * 1.6, 0, Math.PI * 2)
+      ctx.fill()
+    }
   }
 
   const texture = new CanvasTexture(canvas)

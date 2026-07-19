@@ -49,19 +49,21 @@ interface RcsPod {
   fire: (input: ShipInput) => number
 }
 const RCS_PODS: RcsPod[] = [
-  // Yaw couple at the bow
+  // Yaw couple: turning left fires bow-starboard + stern-port (nose left, tail right)
   { pos: [0.56, 1.6, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, i.yaw) },
+  { pos: [-0.72, -1.6, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.yaw) },
   { pos: [-0.56, 1.6, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, -i.yaw) },
-  // Lateral strafe pairs (exhaust opposite motion)
+  { pos: [0.72, -1.6, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.yaw) },
+  // Pitch couple: nose up fires bow-ventral + stern-dorsal (nose up, tail down)
+  { pos: [0, 1.6, -0.56], dir: [0, 0, -1], fire: (i) => Math.max(0, i.pitch) },
+  { pos: [0, -1.6, 0.72], dir: [0, 0, 1], fire: (i) => Math.max(0, i.pitch) },
+  { pos: [0, 1.6, 0.56], dir: [0, 0, 1], fire: (i) => Math.max(0, -i.pitch) },
+  { pos: [0, -1.6, -0.72], dir: [0, 0, -1], fire: (i) => Math.max(0, -i.pitch) },
+  // Lateral strafe pairs (exhaust opposite motion, fore/aft together)
   { pos: [-0.58, 1.2, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.strafeX) },
-  { pos: [-0.72, -1.4, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.strafeX) },
+  { pos: [-0.74, -1.3, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.strafeX) },
   { pos: [0.58, 1.2, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.strafeX) },
-  { pos: [0.72, -1.4, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.strafeX) },
-  // Vertical strafe pairs
-  { pos: [0, 1.2, -0.58], dir: [0, 0, -1], fire: (i) => Math.max(0, i.strafeY) },
-  { pos: [0, -1.4, -0.72], dir: [0, 0, -1], fire: (i) => Math.max(0, i.strafeY) },
-  { pos: [0, 1.2, 0.58], dir: [0, 0, 1], fire: (i) => Math.max(0, -i.strafeY) },
-  { pos: [0, -1.4, 0.72], dir: [0, 0, 1], fire: (i) => Math.max(0, -i.strafeY) },
+  { pos: [0.74, -1.3, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.strafeX) },
   // Retro burn nozzles at the bow (exhaust forward = braking/reversing)
   { pos: [0.34, 2.7, 0], dir: [0, 1, 0], fire: (i) => i.reverse },
   { pos: [-0.34, 2.7, 0], dir: [0, 1, 0], fire: (i) => i.reverse },
