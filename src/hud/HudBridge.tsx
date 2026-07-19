@@ -6,7 +6,6 @@ import { shipInput } from '../physics/shipInput'
 import { warp } from '../physics/warp'
 import { getGravityBodies } from '../physics/gravity'
 import { ALL_SYSTEMS } from '../config/systems'
-import { FLIGHT } from '../config/flight'
 
 const _p = new Vector3()
 const EDGE = 96 // px margin when clamping off-screen markers
@@ -41,10 +40,6 @@ export function HudBridge() {
     hudReadouts.currentSystemName = nearestName
     if (hudReadouts.systemEl) hudReadouts.systemEl.textContent = nearestName
     if (hudReadouts.speedEl) hudReadouts.speedEl.textContent = String(Math.round(shipRig.speed))
-    if (hudReadouts.speedBarEl) {
-      const frac = Math.min(1, shipRig.speed / FLIGHT.boostMaxSpeed)
-      hudReadouts.speedBarEl.style.width = `${(frac * 100).toFixed(1)}%`
-    }
     if (hudReadouts.headingEl) {
       const deg = Math.round(((-shipRig.yaw * 180) / Math.PI + 360) % 360)
       hudReadouts.headingEl.textContent = `${deg}°`
@@ -81,19 +76,28 @@ export function HudBridge() {
       hudReadouts.gravEl.dataset.on = inWell ? '1' : ''
     }
 
-    // RCS activity lights mirror the actual thruster firings
-    const rcs = hudReadouts.rcsEls
-    const setLight = (key: string, on: boolean) => {
-      const el = rcs[key]
-      if (el) el.dataset.on = on ? '1' : ''
+    // Pitch attitude readout
+    if (hudReadouts.pitchEl) {
+      const deg = Math.round((shipRig.pitch * 180) / Math.PI)
+      hudReadouts.pitchEl.textContent = `${deg >= 0 ? '+' : '−'}${Math.abs(deg)}°`
     }
-    setLight('yawL', shipInput.yaw > 0)
-    setLight('yawR', shipInput.yaw < 0)
-    setLight('pitchU', shipInput.pitch > 0)
-    setLight('pitchD', shipInput.pitch < 0)
-    setLight('strafeL', shipInput.strafeX < 0)
-    setLight('strafeR', shipInput.strafeX > 0)
-    setLight('retro', shipInput.reverse > 0)
+
+    // Ship schematic: light the thruster ticks where exhaust actually fires
+    const viz = hudReadouts.shipVizEls
+    const lit = (key: string, on: boolean, strong = false) => {
+      const el = viz[key]
+      if (el) el.setAttribute('opacity', on ? (strong ? '0.95' : '0.85') : '0.12')
+    }
+    const i = shipInput
+    lit('bowR', i.yaw > 0 || i.strafeX < 0)
+    lit('sternL', i.yaw > 0 || i.strafeX > 0)
+    lit('bowL', i.yaw < 0 || i.strafeX > 0)
+    lit('sternR', i.yaw < 0 || i.strafeX < 0)
+    lit('retroL', i.reverse > 0)
+    lit('retroR', i.reverse > 0)
+    lit('chevU', i.pitch > 0)
+    lit('chevD', i.pitch < 0)
+    lit('flame', i.thrust > 0, shipRig.boosting)
 
     // Nearest contact: closest labeled body, with a smoothed closing rate
     let target: (typeof hudLabels)[number] | null = null
@@ -179,8 +183,9 @@ export function HudBridge() {
         y = size.height
       }
 
+      const EDGE_BOTTOM = 235 // keep markers clear of the cockpit dash
       const offscreen =
-        behind || x < EDGE || x > size.width - EDGE || y < EDGE || y > size.height - EDGE
+        behind || x < EDGE || x > size.width - EDGE || y < EDGE || y > size.height - EDGE_BOTTOM
 
       let arrow = ''
       if (offscreen) {
@@ -190,7 +195,7 @@ export function HudBridge() {
         const dy = y - cy
         const scale = Math.min(
           (size.width / 2 - EDGE) / Math.max(1e-4, Math.abs(dx)),
-          (size.height / 2 - EDGE) / Math.max(1e-4, Math.abs(dy)),
+          (dy > 0 ? size.height / 2 - 235 : size.height / 2 - EDGE) / Math.max(1e-4, Math.abs(dy)),
         )
         x = cx + dx * scale
         y = cy + dy * scale
