@@ -5,7 +5,15 @@ import { Quaternion, Vector3 } from 'three'
  * <Ship> and read by the camera, HUD, and proximity systems. Mutable on
  * purpose — this changes every frame and must not go through React state.
  */
-export const shipRig = {
+export const shipRig: {
+  position: Vector3
+  quaternion: Quaternion
+  speed: number
+  boosting: boolean
+  thrusting: boolean
+  boostCharge: number
+  yaw: number
+} = {
   position: new Vector3(),
   quaternion: new Quaternion(),
   speed: 0,
@@ -13,4 +21,9 @@ export const shipRig = {
   thrusting: false,
   boostCharge: 1,
   yaw: 0,
+}
+
+// Dev-only inspection handle for debugging/automation
+if (import.meta.env.DEV) {
+  ;(window as unknown as Record<string, unknown>).__shipRig = shipRig
 }
