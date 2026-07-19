@@ -5,9 +5,15 @@
 
 export type QualityTier = 'high' | 'medium' | 'low'
 
+/**
+ * Touch UI shows only for touch-first devices: touch points present AND the
+ * primary pointer is coarse (finger). A touchscreen laptop driven by a mouse
+ * reports a fine pointer, so it correctly gets the desktop controls.
+ */
 export const IS_TOUCH =
   typeof window !== 'undefined' &&
-  ('ontouchstart' in window || navigator.maxTouchPoints > 0)
+  navigator.maxTouchPoints > 0 &&
+  window.matchMedia('(pointer: coarse)').matches
 
 function detectTier(): QualityTier {
   if (typeof navigator === 'undefined') return 'high'

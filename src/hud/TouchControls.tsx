@@ -93,7 +93,7 @@ export function TouchControls() {
       </div>
       <div className="hud-touch-buttons">
         <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
-          AB
+          BOOST
         </button>
         <button className="hud-touch-btn hud-touch-burn" {...hold('thrust')}>
           BURN
