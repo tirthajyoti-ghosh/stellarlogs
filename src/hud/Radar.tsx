@@ -1,0 +1,127 @@
+import { useEffect, useRef } from 'react'
+import { Vector3 } from 'three'
+import { ALL_SYSTEMS } from '../config/systems'
+import { STATION_POSITION } from '../config/universe'
+import { hudLabels } from './hudState'
+import { shipRig } from '../state/shipRig'
+
+const SIZE = 148
+const R = SIZE / 2 - 8
+const _rel = new Vector3()
+
+/**
+ * Top-right radar: rotating sweep over a ship-oriented top-down plot.
+ * Far mode shows the seven systems; near a star it zooms to its planets.
+ */
+export function Radar() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    let raf = 0
+
+    const draw = (now: number) => {
+      raf = requestAnimationFrame(draw)
+      ctx.clearRect(0, 0, SIZE, SIZE)
+      const cx = SIZE / 2
+      const cy = SIZE / 2
+
+      // Rings + crosshairs
+      ctx.strokeStyle = 'rgba(92, 175, 251, 0.25)'
+      ctx.lineWidth = 1
+      for (const r of [R, R * 0.66, R * 0.33]) {
+        ctx.beginPath()
+        ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        ctx.stroke()
+      }
+      ctx.beginPath()
+      ctx.moveTo(cx - R, cy)
+      ctx.lineTo(cx + R, cy)
+      ctx.moveTo(cx, cy - R)
+      ctx.lineTo(cx, cy + R)
+      ctx.strokeStyle = 'rgba(92, 175, 251, 0.12)'
+      ctx.stroke()
+
+      // Range: zoomed when inside a system
+      let nearSystem: (typeof ALL_SYSTEMS)[number] | null = null
+      for (const system of ALL_SYSTEMS) {
+        _rel.set(...system.position)
+        if (_rel.distanceTo(shipRig.position) < 5800) {
+          nearSystem = system
+          break
+        }
+      }
+      const range = nearSystem ? 6200 : 20000
+
+      const yaw = shipRig.yaw
+      const plot = (wx: number, wz: number, color: string, size: number) => {
+        const dx = wx - shipRig.position.x
+        const dz = wz - shipRig.position.z
+        // rotate so "up" is the ship's heading
+        const rx = dx * Math.cos(-yaw) - dz * Math.sin(-yaw)
+        const rz = dx * Math.sin(-yaw) + dz * Math.cos(-yaw)
+        const px = cx + (rx / range) * R
+        const py = cy + (rz / range) * R
+        const dist = Math.hypot(px - cx, py - cy)
+        if (dist > R - 2) {
+          // clamp to rim as a faint tick
+          const s = (R - 2) / dist
+          ctx.globalAlpha = 0.5
+          ctx.fillStyle = color
+          ctx.fillRect(cx + (px - cx) * s - 1, cy + (py - cy) * s - 1, 2, 2)
+          ctx.globalAlpha = 1
+          return
+        }
+        ctx.fillStyle = color
+        ctx.beginPath()
+        ctx.arc(px, py, size, 0, Math.PI * 2)
+        ctx.fill()
+      }
+
+      if (nearSystem) {
+        plot(nearSystem.position[0], nearSystem.position[2], nearSystem.starColor, 4)
+        // live planet positions come from the registered planet labels
+        for (const label of hudLabels) {
+          if (label.kind === 'planet') {
+            plot(label.position.x, label.position.z, label.color, 2.2)
+          }
+        }
+      } else {
+        for (const system of ALL_SYSTEMS) {
+          plot(system.position[0], system.position[2], system.starColor, 3)
+        }
+        plot(STATION_POSITION[0], STATION_POSITION[2], '#7FFFD4', 2.2)
+      }
+
+      // Ship marker
+      ctx.fillStyle = '#ffffff'
+      ctx.beginPath()
+      ctx.moveTo(cx, cy - 5)
+      ctx.lineTo(cx - 3.5, cy + 4)
+      ctx.lineTo(cx + 3.5, cy + 4)
+      ctx.closePath()
+      ctx.fill()
+
+      // Sweep
+      const angle = (now / 1400) % (Math.PI * 2)
+      const grad = ctx.createConicGradient(angle, cx, cy)
+      grad.addColorStop(0, 'rgba(92, 175, 251, 0.28)')
+      grad.addColorStop(0.12, 'rgba(92, 175, 251, 0)')
+      grad.addColorStop(1, 'rgba(92, 175, 251, 0)')
+      ctx.fillStyle = grad
+      ctx.beginPath()
+      ctx.arc(cx, cy, R, 0, Math.PI * 2)
+      ctx.fill()
+    }
+    raf = requestAnimationFrame(draw)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  return (
+    <div className="hud-radar" data-ui>
+      <canvas ref={canvasRef} width={SIZE} height={SIZE} />
+    </div>
+  )
+}

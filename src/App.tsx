@@ -8,6 +8,8 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
+import { HudBridge } from './hud/HudBridge'
+import { HUD } from './hud/HUD'
 import { ALL_SYSTEMS } from './config/systems'
 
 export default function App() {
@@ -37,13 +39,11 @@ export default function App() {
         <ContactStation />
         <Ship />
         <ChaseCamera />
+        <HudBridge />
         <Effects />
       </Canvas>
 
-      <div className="dev-hint" data-ui>
-        <strong>W/↑</strong> thrust · <strong>S/↓</strong> brake · <strong>A/D</strong> turn ·{' '}
-        <strong>R/F</strong> pitch · <strong>Shift</strong> boost · <strong>drag</strong> to look around
-      </div>
+      <HUD />
     </div>
   )
 }
