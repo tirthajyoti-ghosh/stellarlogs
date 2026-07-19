@@ -40,22 +40,28 @@ void main() {
   #include <logdepthbuf_fragment>
 
   vec3 p = normalize(vLocalPos) * 3.0 + vec3(uSeed * 7.7);
-  float granules = fbm(p * 2.5 + vec3(uTime * 0.03));
+  float granules = fbm(p * 2.8 + vec3(uTime * 0.035));
+  float cells = fbm(p * 6.5 - vec3(uTime * 0.02)) * 0.5;
   float flares = ridgedFbm(p * 1.4 - vec3(uTime * 0.015));
 
-  vec3 hot = vec3(1.0, 0.98, 0.92);
-  vec3 base = mix(uColor, hot, 0.3 + granules * 0.22);
+  vec3 hot = vec3(1.0, 0.98, 0.94);
+  // High-contrast turbulent surface
+  float turbulence = clamp(granules * 0.7 + cells * 0.5, -1.0, 1.0);
+  vec3 base = mix(uColor, hot, 0.35 + turbulence * 0.45);
 
   vec3 N = normalize(vWorldNormal);
   vec3 V = normalize(cameraPosition - vWorldPos);
   float facing = clamp(dot(N, V), 0.0, 1.0);
-  // White-hot disc center falling off to the tinted limb
-  base = mix(base, hot, pow(facing, 2.0) * 0.55);
-  float limb = pow(1.0 - facing, 1.4);
-  base = mix(base, uColor, limb * 0.85);
+  // Hot core, but granulation must stay visible inside the disc
+  base = mix(base, hot, pow(facing, 1.8) * 0.45);
+  float limb = pow(1.0 - facing, 1.3);
+  base = mix(base, uColor * 1.2, limb * 0.9);
+  // Prominences licking off the limb
+  float prom = limb * smoothstep(0.35, 0.9, flares);
 
   // HDR output: core burns >1 for the bloom pass
-  vec3 color = base * (1.35 + granules * 0.25 + flares * 0.18);
+  vec3 color = base * (1.15 + pow(facing, 2.0) * 0.75 + turbulence * 0.35);
+  color += uColor * prom * 2.2;
 
   gl_FragColor = vec4(color, 1.0);
   #include <colorspace_fragment>

@@ -1,6 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Ship } from './scene/Ship'
+import { SkyDome } from './scene/SkyDome'
 import { ChaseCamera } from './scene/ChaseCamera'
 import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
@@ -27,6 +28,7 @@ export default function App() {
           <Lightformer intensity={0.8} color="#ffd9a0" position={[-8, 2, 4]} scale={[6, 4, 1]} />
           <Lightformer intensity={0.5} color="#3a5a8a" position={[8, -4, 2]} scale={[8, 5, 1]} />
         </Environment>
+        <SkyDome />
         <Starfield />
         <StarSystem config={PROJECTS_SYSTEM} />
         <Ship />

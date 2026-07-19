@@ -38,7 +38,7 @@ interface Palette {
 
 const PALETTES: Record<PlanetType, Palette> = {
   gasGiant: { a: '#e8d5b0', b: '#c98f42', c: '#7a4f22', atmosphere: '#ffd9a0', atmosphereShell: 0.5, noiseScale: 1.4 },
-  lava: { a: '#241512', b: '#4a2a1e', c: '#000000', atmosphere: '#ff6a2a', atmosphereShell: 0.35, emissive: '#ff5a1f', emissiveStrength: 2.6, noiseScale: 1.8 },
+  lava: { a: '#2e1c15', b: '#59352a', c: '#000000', atmosphere: '#ff6a2a', atmosphereShell: 0.35, emissive: '#ff5a1f', emissiveStrength: 1.9, noiseScale: 1.8 },
   ice: { a: '#e8f2fc', b: '#a9cbe8', c: '#6f9fc9', atmosphere: '#bfe0ff', atmosphereShell: 0.4, noiseScale: 2.0 },
   terrestrialWet: { a: '#0f3a6d', b: '#3d7a3c', c: '#8a9a50', atmosphere: '#6fb2ff', atmosphereShell: 0.6, noiseScale: 1.6, clouds: true },
   terrestrialDry: { a: '#b9894e', b: '#8a5a30', c: '#5c3a1e', atmosphere: '#e8b880', atmosphereShell: 0.35, noiseScale: 1.9, clouds: true },

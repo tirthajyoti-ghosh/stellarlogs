@@ -3,8 +3,8 @@ import { Bloom, ChromaticAberration, EffectComposer, Vignette } from '@react-thr
 /** Cinematic post chain. Bloom threshold 1.0 = only HDR emitters glow. */
 export function Effects() {
   return (
-    <EffectComposer multisampling={4}>
-      <Bloom mipmapBlur intensity={0.9} luminanceThreshold={1} levels={8} />
+    <EffectComposer multisampling={0}>
+      <Bloom mipmapBlur intensity={1.25} luminanceThreshold={1} levels={6} />
       <ChromaticAberration offset={[0.0005, 0.0005]} />
       <Vignette eskil={false} offset={0.22} darkness={0.72} />
     </EffectComposer>
