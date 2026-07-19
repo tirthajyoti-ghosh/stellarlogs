@@ -13,9 +13,9 @@ const RCS_GLYPH: Record<(typeof RCS_KEYS)[number], string> = {
 }
 
 /**
- * Flight readouts. Left cluster: velocity, drive state, speed bar, RCS
- * activity, position, gravity-well warning. Right cluster: current system,
- * heading, nearest-target data. All values written by HudBridge.
+ * The cockpit dashboard: three chamfered instrument plates along the bottom —
+ * drive (velocity, mode, RCS), navigation (system, heading, position), and
+ * the nearest-contact sensor readout. All values written by HudBridge.
  */
 export function StatusBar() {
   const speedRef = useRef<HTMLSpanElement>(null)
@@ -23,7 +23,7 @@ export function StatusBar() {
   const headingRef = useRef<HTMLSpanElement>(null)
   const systemRef = useRef<HTMLDivElement>(null)
   const driveRef = useRef<HTMLSpanElement>(null)
-  const posRef = useRef<HTMLDivElement>(null)
+  const posRef = useRef<HTMLSpanElement>(null)
   const gravRef = useRef<HTMLSpanElement>(null)
   const targetNameRef = useRef<HTMLSpanElement>(null)
   const targetDistRef = useRef<HTMLSpanElement>(null)
@@ -58,13 +58,14 @@ export function StatusBar() {
   }, [])
 
   return (
-    <>
-      <div className="hud-cluster hud-cluster-left" data-ui>
-        <div className="hud-micro">VELOCITY M/S</div>
+    <div className="hud-dash" data-ui>
+      <div className="hud-plate hud-plate-drive">
+        <div className="hud-plate-title">DRIVE</div>
         <div className="hud-velocity-row">
           <span className="hud-velocity" ref={speedRef}>
             0
           </span>
+          <span className="hud-velocity-unit">M/S</span>
           <span className="hud-drive" ref={driveRef}>
             IDLE
           </span>
@@ -76,7 +77,7 @@ export function StatusBar() {
           <div className="hud-speedbar-fill" ref={speedBarRef} />
         </div>
         <div className="hud-rcs-row">
-          <span className="hud-micro">RCS</span>
+          <span className="hud-rcs-label">RCS</span>
           {RCS_KEYS.map((key) => (
             <span
               key={key}
@@ -89,37 +90,39 @@ export function StatusBar() {
             </span>
           ))}
         </div>
-        <div className="hud-pos" ref={posRef}>
-          POS +0 +0 +0
-        </div>
       </div>
 
-      <div className="hud-cluster hud-cluster-right" data-ui>
-        <div className="hud-micro">SYSTEM</div>
+      <div className="hud-plate hud-plate-nav">
+        <div className="hud-plate-title">NAVIGATION</div>
         <div className="hud-system" ref={systemRef}>
           DEEP SPACE
         </div>
-        <div className="hud-heading-row">
-          <span className="hud-micro">HDG</span>
-          <span className="hud-heading" ref={headingRef}>
-            0°
+        <div className="hud-nav-data">
+          <span>
+            HDG <b ref={headingRef}>0°</b>
+          </span>
+          <span>
+            <b ref={posRef}>POS 0 0 0</b>
           </span>
         </div>
-        <div className="hud-target">
-          <div className="hud-micro">NEAREST CONTACT</div>
-          <div className="hud-target-row">
-            <span className="hud-target-name" ref={targetNameRef}>
-              —
-            </span>
-          </div>
-          <div className="hud-target-row hud-target-data">
-            <span ref={targetDistRef}>—</span>
-            <span ref={targetCloseRef} className="hud-target-close">
-              —
-            </span>
-          </div>
+      </div>
+
+      <div className="hud-plate hud-plate-contact">
+        <div className="hud-plate-title">NEAREST CONTACT</div>
+        <div className="hud-target-name-row">
+          <span className="hud-target-name" ref={targetNameRef}>
+            —
+          </span>
+        </div>
+        <div className="hud-nav-data">
+          <span>
+            RNG <b ref={targetDistRef}>—</b>
+          </span>
+          <span>
+            VEL <b ref={targetCloseRef} className="hud-target-close">—</b>
+          </span>
         </div>
       </div>
-    </>
+    </div>
   )
 }

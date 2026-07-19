@@ -95,22 +95,6 @@ export function HudBridge() {
     setLight('strafeR', shipInput.strafeX > 0)
     setLight('retro', shipInput.reverse > 0)
 
-    // Prograde marker: project the velocity direction onto the screen
-    if (hudReadouts.progradeEl) {
-      const el = hudReadouts.progradeEl
-      if (shipRig.speed > 4 && !shipRig.warping) {
-        _p.copy(shipRig.velocityDir).multiplyScalar(600).add(shipRig.position).project(camera)
-        const behind = _p.z > 1
-        const x = (_p.x * 0.5 + 0.5) * size.width
-        const y = (-_p.y * 0.5 + 0.5) * size.height
-        const onscreen = !behind && x > 30 && x < size.width - 30 && y > 30 && y < size.height - 30
-        el.style.opacity = onscreen ? '0.9' : '0'
-        if (onscreen) el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
-      } else {
-        el.style.opacity = '0'
-      }
-    }
-
     // Nearest contact: closest labeled body, with a smoothed closing rate
     let target: (typeof hudLabels)[number] | null = null
     let targetDist = Infinity
