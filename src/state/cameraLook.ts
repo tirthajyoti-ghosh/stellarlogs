@@ -1,11 +1,10 @@
 /**
- * Free-look state driven by plain mouse movement (no buttons): the cursor's
- * offset from screen center orbits the chase camera around the ship.
- * Steering drags take priority — the camera freezes while `dragging`.
+ * Free-look orbit state driven by mouse drag: dragging orbits the chase
+ * camera around the ship; releasing eases back behind it. Angles in radians,
+ * accumulated by the input layer, consumed (and eased) by the camera.
  */
 export const cameraLook = {
-  /** Normalized cursor position, -1..1 each axis, 0 = screen center. */
-  x: 0,
-  y: 0,
+  orbitYaw: 0,
+  orbitPitch: 0,
   dragging: false,
 }

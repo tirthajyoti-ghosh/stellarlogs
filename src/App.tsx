@@ -38,7 +38,7 @@ export default function App() {
 
       <div className="dev-hint" data-ui>
         <strong>W/↑</strong> thrust · <strong>S/↓</strong> brake · <strong>A/D</strong> turn ·{' '}
-        <strong>R/F</strong> pitch · <strong>Shift</strong> boost · or <strong>drag</strong> to steer
+        <strong>R/F</strong> pitch · <strong>Shift</strong> boost · <strong>drag</strong> to look around
       </div>
     </div>
   )
