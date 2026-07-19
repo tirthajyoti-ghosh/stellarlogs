@@ -1,4 +1,12 @@
-/** Visual/orbital configuration for star systems (content attaches in Phase 3). */
+import type { ContentItem, SystemContent } from '../content/types'
+import { WORK } from '../content/work'
+import { PROJECTS } from '../content/projects'
+import { BLOG } from '../content/blog'
+import { RECOMMENDATIONS } from '../content/recommendations'
+import { READING, SHOWS } from '../content/personal'
+import { TRAVEL } from '../content/travel'
+
+/** Visual/orbital configuration for star systems, built from content. */
 
 export type PlanetType =
   | 'gasGiant'
@@ -20,6 +28,8 @@ export interface PlanetConfig {
   rings?: boolean
   /** orbit-plane tilt, radians — small values add a lot of visual depth */
   inclination?: number
+  /** The portfolio content this planet carries on its billboards */
+  item: ContentItem
 }
 
 export interface SystemConfig {
@@ -28,31 +38,82 @@ export interface SystemConfig {
   starColor: string
   starRadius: number
   position: [number, number, number]
+  overview: string
   planets: PlanetConfig[]
 }
 
 /**
- * Phase 2 showcase — becomes the Projects system in Phase 3.
- * Planet ordering follows planetary-formation science: scorched rocky worlds
- * near the star, habitable terrestrials in the temperate zone, then the gas
- * giant near the frost line, ice world beyond it. Orbit speeds fall off
- * Kepler-style (v ∝ r^-1.5, scaled for gameplay).
+ * Planet archetypes per orbit slot, innermost → outermost, following
+ * formation science: scorched rocky worlds near the star, terrestrials in
+ * the temperate zone, gas giant near the frost line, ice beyond.
  */
-const keplerSpeed = (orbitRadius: number, innermost = 1250, base = 0.018) =>
-  base * Math.pow(innermost / orbitRadius, 1.5)
+const TYPE_BY_SLOT: { type: PlanetType; rings?: boolean }[] = [
+  { type: 'lava' },
+  { type: 'barren' },
+  { type: 'terrestrialWet' },
+  { type: 'terrestrialDry' },
+  { type: 'gasGiant', rings: true },
+  { type: 'ice' },
+]
 
-export const PROJECTS_SYSTEM: SystemConfig = {
-  id: 'projects',
-  name: 'Projects',
-  starColor: '#5CAFFB',
-  starRadius: 340,
-  position: [0, 0, -5400],
-  planets: [
-    { type: 'lava', radius: 48, orbitRadius: 1250, orbitSpeed: keplerSpeed(1250), phase: 4.1, seed: 3, inclination: 0.05 },
-    { type: 'barren', radius: 42, orbitRadius: 1780, orbitSpeed: keplerSpeed(1780), phase: 3.2, seed: 6, inclination: -0.08 },
-    { type: 'terrestrialWet', radius: 70, orbitRadius: 2450, orbitSpeed: keplerSpeed(2450), phase: 2.4, seed: 2, inclination: -0.04 },
-    { type: 'terrestrialDry', radius: 58, orbitRadius: 3080, orbitSpeed: keplerSpeed(3080), phase: 1.5, seed: 5, inclination: 0.07 },
-    { type: 'gasGiant', radius: 118, orbitRadius: 3850, orbitSpeed: keplerSpeed(3850), phase: 0.6, seed: 1, rings: true, inclination: 0.11 },
-    { type: 'ice', radius: 60, orbitRadius: 4550, orbitSpeed: keplerSpeed(4550), phase: 5.3, seed: 4, inclination: -0.1 },
-  ],
+const RADIUS_BY_TYPE: Record<PlanetType, number> = {
+  lava: 48,
+  barren: 42,
+  terrestrialWet: 70,
+  terrestrialDry: 58,
+  gasGiant: 118,
+  ice: 60,
 }
+
+const FIRST_ORBIT = 1250
+const ORBIT_STEP = 650
+const keplerSpeed = (orbitRadius: number) => 0.018 * Math.pow(FIRST_ORBIT / orbitRadius, 1.5)
+
+interface SystemPlacement {
+  content: SystemContent
+  position: [number, number, number]
+  seedBase: number
+}
+
+/**
+ * Solar neighborhood layout: Projects dead ahead of spawn, Work to port,
+ * the personal systems behind. All within a ~13k radius.
+ */
+const PLACEMENTS: SystemPlacement[] = [
+  { content: PROJECTS, position: [0, 0, -5400], seedBase: 1 },
+  { content: WORK, position: [-8200, 250, -8600], seedBase: 11 },
+  { content: BLOG, position: [8600, -180, -7400], seedBase: 21 },
+  { content: RECOMMENDATIONS, position: [-11000, 150, -1200], seedBase: 31 },
+  { content: READING, position: [10800, 380, -300], seedBase: 41 },
+  { content: SHOWS, position: [7200, -320, 6400], seedBase: 51 },
+  { content: TRAVEL, position: [-7400, -240, 6800], seedBase: 61 },
+]
+
+function buildSystem({ content, position, seedBase }: SystemPlacement): SystemConfig {
+  const phaseStep = (Math.PI * 2) / content.items.length
+  return {
+    id: content.id,
+    name: content.name,
+    starColor: content.starColor,
+    starRadius: 340,
+    position,
+    overview: content.overview,
+    planets: content.items.map((item, i) => {
+      const slot = TYPE_BY_SLOT[i % TYPE_BY_SLOT.length]
+      const orbitRadius = FIRST_ORBIT + i * ORBIT_STEP
+      return {
+        type: slot.type,
+        rings: slot.rings,
+        radius: RADIUS_BY_TYPE[slot.type],
+        orbitRadius,
+        orbitSpeed: keplerSpeed(orbitRadius),
+        phase: seedBase * 1.7 + i * (phaseStep + 0.9),
+        seed: seedBase + i,
+        inclination: (i % 2 === 0 ? 1 : -1) * (0.04 + ((seedBase + i) % 5) * 0.02),
+        item,
+      }
+    }),
+  }
+}
+
+export const ALL_SYSTEMS: SystemConfig[] = PLACEMENTS.map(buildSystem)

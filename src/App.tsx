@@ -5,9 +5,10 @@ import { SkyDome } from './scene/SkyDome'
 import { ChaseCamera } from './scene/ChaseCamera'
 import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
+import { ContactStation } from './scene/ContactStation'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
-import { PROJECTS_SYSTEM } from './config/systems'
+import { ALL_SYSTEMS } from './config/systems'
 
 export default function App() {
   useShipControls()
@@ -30,7 +31,10 @@ export default function App() {
         </Environment>
         <SkyDome />
         <Starfield />
-        <StarSystem config={PROJECTS_SYSTEM} />
+        {ALL_SYSTEMS.map((system) => (
+          <StarSystem key={system.id} config={system} />
+        ))}
+        <ContactStation />
         <Ship />
         <ChaseCamera />
         <Effects />
