@@ -40,13 +40,13 @@ export function Welcome() {
         </p>
         <div className="hud-welcome-controls">
           <div>
-            <span className="hud-key">W</span> thrust · <span className="hud-key">S</span> brake ·{' '}
-            <span className="hud-key">A/D</span> turn · <span className="hud-key">R/F</span> pitch
+            <span className="hud-key">W</span> burn · <span className="hud-key">S</span> reverse ·{' '}
+            <span className="hud-key">A/D</span> strafe · <span className="hud-key">R/F</span> up/down
           </div>
           <div>
-            <span className="hud-key">SHIFT</span> afterburner ·{' '}
-            <span className="hud-key">N</span> jump drive · <span className="hud-key">drag</span>{' '}
-            admire the ship
+            <span className="hud-key">Q/E</span> rotate · <span className="hud-key">SHIFT</span>{' '}
+            afterburner · <span className="hud-key">N</span> jump ·{' '}
+            <span className="hud-key">drag</span> admire the ship
           </div>
         </div>
         <button className="hud-welcome-go" onClick={dismiss}>

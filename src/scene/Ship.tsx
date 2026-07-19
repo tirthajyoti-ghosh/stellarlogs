@@ -8,6 +8,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   PointLight,
+  Quaternion,
   Vector2,
   Vector3,
 } from 'three'
@@ -17,8 +18,6 @@ import { shipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
 
-// Spacecraft, not aircraft: barely any bank, attitude comes from RCS puffs
-const BANK_FACTOR = 0.16
 // Octagonal cross-section, rotated so a flat face sits on top
 const OCT = Math.PI / 8
 
@@ -38,15 +37,41 @@ const PANEL = { color: '#262c35', metalness: 0.65, roughness: 0.5, flatShading: 
 const DARK = { color: '#141922', metalness: 0.75, roughness: 0.42, flatShading: true }
 const ACCENT = { color: '#b8451f', metalness: 0.4, roughness: 0.55, flatShading: true }
 
-/** RCS pod positions (x, z) around the hull toward the bow. */
-const RCS_PODS: { pos: [number, number, number]; axis: 'yaw' | 'pitch'; sign: 1 | -1 }[] = [
-  // exhaust +X pushes the nose -X (a left turn = yaw +)
-  { pos: [0.56, 1.6, 0], axis: 'yaw', sign: 1 },
-  { pos: [-0.56, 1.6, 0], axis: 'yaw', sign: -1 },
-  // exhaust +Z (up) pushes the nose down (pitch -)
-  { pos: [0, 1.6, 0.56], axis: 'pitch', sign: -1 },
-  { pos: [0, 1.6, -0.56], axis: 'pitch', sign: 1 },
+/**
+ * RCS pods (local frame: +Y forward, +Z up, +X starboard). Each pod's puff
+ * cone points along its exhaust direction; `fire` maps input to intensity —
+ * exhaust opposite the wanted motion, fore/aft pairs for pure translation.
+ */
+import type { ShipInput } from '../physics/shipInput'
+interface RcsPod {
+  pos: [number, number, number]
+  dir: [number, number, number]
+  fire: (input: ShipInput) => number
+}
+const RCS_PODS: RcsPod[] = [
+  // Yaw couple at the bow
+  { pos: [0.56, 1.6, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, i.yaw) },
+  { pos: [-0.56, 1.6, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, -i.yaw) },
+  // Lateral strafe pairs (exhaust opposite motion)
+  { pos: [-0.58, 1.2, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.strafeX) },
+  { pos: [-0.72, -1.4, 0], dir: [-1, 0, 0], fire: (i) => Math.max(0, i.strafeX) },
+  { pos: [0.58, 1.2, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.strafeX) },
+  { pos: [0.72, -1.4, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, -i.strafeX) },
+  // Vertical strafe pairs
+  { pos: [0, 1.2, -0.58], dir: [0, 0, -1], fire: (i) => Math.max(0, i.strafeY) },
+  { pos: [0, -1.4, -0.72], dir: [0, 0, -1], fire: (i) => Math.max(0, i.strafeY) },
+  { pos: [0, 1.2, 0.58], dir: [0, 0, 1], fire: (i) => Math.max(0, -i.strafeY) },
+  { pos: [0, -1.4, 0.72], dir: [0, 0, 1], fire: (i) => Math.max(0, -i.strafeY) },
+  // Retro burn nozzles at the bow (exhaust forward = braking/reversing)
+  { pos: [0.34, 2.7, 0], dir: [0, 1, 0], fire: (i) => i.reverse },
+  { pos: [-0.34, 2.7, 0], dir: [0, 1, 0], fire: (i) => i.reverse },
 ]
+const _podUp = new Vector3(0, 1, 0)
+const RCS_QUATS = RCS_PODS.map((pod) => {
+  const q = new Quaternion()
+  q.setFromUnitVectors(_podUp, new Vector3(...pod.dir).normalize())
+  return q
+})
 
 /** Lit portholes along the forward hull flanks. */
 const WINDOWS: [number, number, number][] = [
@@ -69,7 +94,6 @@ const WINDOWS: [number, number, number][] = [
  */
 export function Ship() {
   const rigRef = useRef<Group>(null)
-  const bankRef = useRef<Group>(null)
   const glowRef = useRef<PointLight>(null)
   const plumeCoreRef = useRef<Mesh>(null)
   const plumeOuterRef = useRef<Mesh>(null)
@@ -113,10 +137,6 @@ export function Ship() {
     const yaw = MathUtils.lerp(state.prevYaw, state.yaw, alpha)
     const pitch = MathUtils.lerp(state.prevPitch, state.pitch, alpha)
     shipQuaternion(yaw, pitch, rig.quaternion)
-
-    if (bankRef.current) {
-      bankRef.current.rotation.z = state.yawRateSmooth * BANK_FACTOR
-    }
 
     // Epstein-style drive exhaust: layered core + glow, flicker under thrust,
     // stretched white-hot afterburner while boosting
@@ -162,14 +182,12 @@ export function Ship() {
       m.color.setRGB(1 + s * 5, 1 + s * 5, 1 + s * 5.5)
     }
 
-    // RCS puffs fire opposite the turn direction, like a real spacecraft
+    // RCS puffs fire opposite the wanted motion, like a real spacecraft
     RCS_PODS.forEach((pod, i) => {
       const mesh = rcsRefs.current[i]
       if (!mesh) return
-      const input = pod.axis === 'yaw' ? shipInput.yaw : shipInput.pitch
-      const firing = Math.max(0, input * pod.sign)
       const mat = mesh.material as MeshBasicMaterial
-      mat.opacity = MathUtils.lerp(mat.opacity, firing * 0.85, 0.3)
+      mat.opacity = MathUtils.lerp(mat.opacity, pod.fire(shipInput) * 0.85, 0.3)
     })
 
     // Publish for camera / HUD / proximity
@@ -185,7 +203,7 @@ export function Ship() {
 
   return (
     <group ref={rigRef}>
-      <group ref={bankRef}>
+      <group>
         <group rotation-x={-Math.PI / 2}>
           {/* Blunt angular bow with bridge visor */}
           <mesh position={[0, 2.78, 0]} rotation-y={OCT}>
@@ -353,35 +371,32 @@ export function Ship() {
               <meshStandardMaterial color="#10151c" metalness={0.4} roughness={0.6} />
             </mesh>
           ))}
-          {/* RCS pods + puff cones */}
-          {RCS_PODS.map((pod, i) => {
-            const dir = new Vector3(pod.pos[0], 0, pod.pos[2]).normalize()
-            return (
-              <group key={i} position={pod.pos}>
-                <mesh>
-                  <boxGeometry args={[0.16, 0.24, 0.16]} />
-                  <meshStandardMaterial {...DARK} />
-                </mesh>
-                <mesh
-                  ref={(m) => {
-                    rcsRefs.current[i] = m
-                  }}
-                  position={[dir.x * 0.24, 0, dir.z * 0.24]}
-                  rotation={[dir.z !== 0 ? (dir.z > 0 ? Math.PI / 2 : -Math.PI / 2) : 0, 0, dir.x !== 0 ? (dir.x > 0 ? -Math.PI / 2 : Math.PI / 2) : 0]}
-                >
-                  <coneGeometry args={[0.07, 0.42, 8, 1, true]} />
-                  <meshBasicMaterial
-                    color="#cfe8ff"
-                    transparent
-                    opacity={0}
-                    blending={AdditiveBlending}
-                    depthWrite={false}
-                    toneMapped={false}
-                  />
-                </mesh>
-              </group>
-            )
-          })}
+          {/* RCS pods + puff cones, all around the hull */}
+          {RCS_PODS.map((pod, i) => (
+            <group key={i} position={pod.pos}>
+              <mesh>
+                <boxGeometry args={[0.13, 0.18, 0.13]} />
+                <meshStandardMaterial {...DARK} />
+              </mesh>
+              <mesh
+                ref={(m) => {
+                  rcsRefs.current[i] = m
+                }}
+                position={[pod.dir[0] * 0.2, pod.dir[1] * 0.2, pod.dir[2] * 0.2]}
+                quaternion={RCS_QUATS[i]}
+              >
+                <coneGeometry args={[0.07, 0.42, 8, 1, true]} />
+                <meshBasicMaterial
+                  color="#cfe8ff"
+                  transparent
+                  opacity={0}
+                  blending={AdditiveBlending}
+                  depthWrite={false}
+                  toneMapped={false}
+                />
+              </mesh>
+            </group>
+          ))}
           {/* Vernier thrusters around the main drive */}
           {[
             [0.45, 0.45],

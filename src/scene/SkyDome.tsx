@@ -1,5 +1,7 @@
-import { useMemo } from 'react'
-import { BackSide, CanvasTexture, Quaternion, SRGBColorSpace, Vector3 } from 'three'
+import { useMemo, useRef } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { BackSide, CanvasTexture, Mesh, Quaternion, SRGBColorSpace, Vector3 } from 'three'
+import { shipRig } from '../state/shipRig'
 
 /** Same plane as the starfield band — keep in sync with Starfield.tsx. */
 export const BAND_TILT = new Vector3(0.42, 1, 0.18).normalize()
@@ -118,14 +120,20 @@ function paintSky(): CanvasTexture {
  * dust lanes. One draw call — replaces per-sprite haze overdraw.
  */
 export function SkyDome() {
+  const meshRef = useRef<Mesh>(null)
   const texture = useMemo(() => paintSky(), [])
   const quaternion = useMemo(
     () => new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), BAND_TILT),
     [],
   )
 
+  // A backdrop must be unreachable: keep it centered on the ship
+  useFrame(() => {
+    meshRef.current?.position.copy(shipRig.position)
+  })
+
   return (
-    <mesh quaternion={quaternion} renderOrder={-2}>
+    <mesh ref={meshRef} quaternion={quaternion} renderOrder={-2}>
       <sphereGeometry args={[24000, 48, 32]} />
       <meshBasicMaterial map={texture} side={BackSide} depthWrite={false} fog={false} />
     </mesh>

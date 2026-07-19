@@ -13,11 +13,11 @@ import {
 import { shipRig } from '../state/shipRig'
 import { warp } from '../physics/warp'
 
-const COUNT = 520
-const TUBE_RADIUS_MIN = 30
-const TUBE_RADIUS_MAX = 260
-const TUBE_LENGTH = 3200
-const STREAK_LENGTH = 260
+const COUNT = 1600
+const TUBE_RADIUS_MIN = 24
+const TUBE_RADIUS_MAX = 520
+const TUBE_LENGTH = 4200
+const STREAK_LENGTH = 420
 
 const _dir = new Vector3()
 const _quat = new Quaternion()
