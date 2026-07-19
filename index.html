@@ -2,10 +2,10 @@
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
         <script defer src="/_vercel/insights/script.js"></script>
-        
+
         <!-- Primary Meta Tags -->
         <title>Tirtha | Senior AI Engineer — 30+ Production Agents for Enterprise</title>
         <meta name="title" content="Tirtha | Senior AI Engineer — 30+ Production Agents for Enterprise">
@@ -17,163 +17,26 @@
         <meta property="og:type" content="website">
         <meta property="og:url" content="https://stellarlogs.dev/">
         <meta property="og:title" content="Tirthajyoti (Tirtha) Ghosh | Senior AI Engineer">
-        <meta property="og:description" content="Senior AI Engineer. Built 30+ production AI agents for enterprise clients. Python, FastAPI, PostgreSQL, TypeScript, React. Explore my interactive space-themed portfolio.">
+        <meta property="og:description" content="Senior AI Engineer. Built 30+ production AI agents for enterprise clients. Python, FastAPI, PostgreSQL, TypeScript, React. Explore my interactive 3D space portfolio.">
         <meta property="og:image" content="https://stellarlogs.dev/assets/preview.png">
 
         <!-- Twitter -->
         <meta property="twitter:card" content="summary_large_image">
         <meta property="twitter:url" content="https://stellarlogs.dev/">
         <meta property="twitter:title" content="Tirthajyoti (Tirtha) Ghosh | Senior AI Engineer">
-        <meta property="twitter:description" content="Senior AI Engineer. Built 30+ production AI agents for enterprise clients. Python, FastAPI, PostgreSQL, TypeScript, React. Explore my interactive space-themed portfolio.">
+        <meta property="twitter:description" content="Senior AI Engineer. Built 30+ production AI agents for enterprise clients. Python, FastAPI, PostgreSQL, TypeScript, React. Explore my interactive 3D space portfolio.">
         <meta property="twitter:image" content="https://stellarlogs.dev/assets/preview.png">
-        
+
         <!-- Favicon -->
-        <link rel="icon" type="image/png" href="assets/favicon.png">
-        
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+
         <!-- Additional Meta -->
         <meta name="robots" content="index, follow">
         <meta name="language" content="English">
-        <meta name="revisit-after" content="7 days">
         <meta name="theme-color" content="#020814">
-        
-        <!-- Styles and Scripts -->
-        <link rel="stylesheet" href="style.css" />
-        <script type="module" src="js/main.js"></script>
     </head>
     <body>
-        <canvas id="gameCanvas"></canvas>
-        
-        <!-- HUD Container -->
-        <div id="hud-container">
-            <!-- Scanline effect -->
-            <div class="scan-line"></div>
-            
-            <!-- Decorative frame corners -->
-            <div class="hud-frame">
-                <div class="frame-corner" id="corner-tl"></div>
-                <div class="frame-corner" id="corner-tr"></div>
-                <div class="frame-corner" id="corner-bl"></div>
-                <div class="frame-corner" id="corner-br"></div>
-            </div>
-            
-            <!-- Top information bar -->
-            <div id="top-info-bar">
-                <div class="info-section">
-                    <div class="info-label">Location</div>
-                    <div class="info-value" id="current-location">X:0 Y:0</div>
-                </div>
-                <div class="info-section">
-                    <div class="info-label">Heading</div>
-                    <div class="info-value" id="current-heading">0° N</div>
-                </div>
-                <div class="info-section">
-                    <div class="info-label">System</div>
-                    <div class="info-value" id="current-system">--</div>
-                </div>
-            </div>
-            
-            <!-- Radar in top right -->
-            <div id="radar-container">
-                <div id="radar-grid">
-                    <div class="radar-circle" style="width: 30px; height: 30px"></div>
-                    <div class="radar-circle" style="width: 60px; height: 60px"></div>
-                    <div class="radar-circle" style="width: 90px; height: 90px"></div>
-                </div>
-                <div id="radar-ship"></div>
-                <canvas id="radar-sweep" width="120" height="120"></canvas>
-            </div>
-            
-            <!-- Navigation side panel -->
-            <div id="nav-panel">
-                <div id="nav-panel-header">
-                    <div id="nav-panel-title">STAR SYSTEMS</div>
-                    <div id="nav-panel-toggle">-</div>
-                </div>
-                <div id="planet-data"></div>
-            </div>
-
-            <!-- Touch Controls Placeholder - Hidden by default, shown via CSS for touch devices -->
-            <div id="touch-controls">
-                <div id="joystick-area">
-                    <div id="joystick-handle"></div>
-                </div>
-                <div id="action-buttons">
-                    <button id="interact-button" style="display: none;">Interact</button> <!-- Keep style="display: none;" as it's controlled by JS -->
-                    <button id="boost-button">Boost</button>
-                    <!-- <button id="mobile-nav-toggle">Nav</button> -->
-                </div>
-            </div>
-            
-            <!-- Bottom status indicators -->
-            <div id="bottom-status-bar">
-                <div class="status-item">
-                    <div class="status-label">VELOCITY</div>
-                    <div class="info-value" id="current-speed">0.00</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">THRUSTERS</div>
-                    <div class="thruster-indicator" id="thruster-indicator"></div>
-                </div>
-                <div class="status-item">
-                    <div class="status-label">BOOST</div>
-                    <div class="boost-meter" id="boost-meter">
-                        <div class="boost-fill" id="boost-fill"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Direction indicators that appear when objects are off screen -->
-            <div class="direction-indicator" id="direction-indicator-template">
-                <div class="direction-dot"></div>
-                <span class="direction-system-name"></span>
-            </div>
-            
-            <!-- Object info panel -->
-            <div id="info"></div>
-            
-            <!-- Control hints -->            
-            <div id="controls-info">
-                <h3>Controls</h3>
-                <div class="control-item">
-                    <span class="key">W/↑</span> <span class="action">Thrust</span>
-                </div>
-                <div class="control-item">
-                    <span class="key">A/←</span> <span class="action">Turn Left</span>
-                </div>
-                <div class="control-item">
-                    <span class="key">D/→</span> <span class="action">Turn Right</span>
-                </div>
-                <div class="control-item">
-                    <span class="key">SHIFT</span> <span class="action">Boost</span>
-                </div>
-                <div class="control-item">
-                    <span class="key">E</span> <span class="action">Interact</span>
-                </div>
-                <div class="control-item">
-                    <span class="key">ESC</span> <span class="action">Close Window</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Welcome popup that follows the spaceship -->
-        <div id="welcome-popup" class="info-popup spaceship-popup">
-            <div class="popup-header">
-                <h2>Welcome to my Universe</h2>
-                <button id="welcome-close-btn" class="close-btn" aria-label="Close welcome message">×</button>
-            </div>
-            <div class="popup-content">
-                <p>👋 I'm <strong>Tirtha</strong>, ex-tech cofounder & fullstack engineer with 5+ years of experience.</p>
-                <p>You're currently piloting a spaceship in my interactive portfolio universe.</p>
-                
-                <div class="controls-guide">
-                    <h3>Navigation</h3>
-                    <p>Each <strong>star system</strong> represents a section of my portfolio.</p>
-                    <p>Follow the colored <strong>direction indicators</strong> to find different systems.</p>
-                </div>
-                
-                <p>Fly near any star or planet to learn more about my work experience, projects, and interests.</p>
-                <p class="dismiss-hint">Press <span class="key-hint">E</span> to begin exploration</p>
-            </div>
-        </div>
+        <div id="root"></div>
+        <script type="module" src="/src/main.tsx"></script>
     </body>
 </html>
