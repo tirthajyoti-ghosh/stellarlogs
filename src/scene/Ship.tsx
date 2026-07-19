@@ -13,7 +13,7 @@ import {
   Vector3,
 } from 'three'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
-import { warp, stepWarp } from '../physics/warp'
+import { warp, warpTurn, stepWarp } from '../physics/warp'
 import { shipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
@@ -144,29 +144,41 @@ export function Ship() {
     // stretched white-hot afterburner while boosting
     const now = performance.now() / 1000
     const flicker = 1 + 0.05 * Math.sin(now * 43) + 0.035 * Math.sin(now * 97)
-    const coreTarget = state.thrusting ? (state.boosting ? 3.4 : 1) : 0
-    const outerTarget = state.thrusting ? (state.boosting ? 2.5 : 1) : 0
+    const jumping = warp.phase === 'jump'
+    const coreTarget = jumping ? 5.2 : state.thrusting ? (state.boosting ? 3.4 : 1) : 0
+    const outerTarget = jumping ? 3.6 : state.thrusting ? (state.boosting ? 2.5 : 1) : 0
+    const coreWidth = jumping ? 1.9 : state.boosting ? 1.15 : 1
+    const outerWidth = jumping ? 2.4 : state.boosting ? 1.3 : 1
     const core = plumeCoreRef.current
     if (core) {
       const s = MathUtils.lerp(core.scale.y, coreTarget, 0.12) * flicker
-      core.scale.set(state.boosting ? 1.15 : 1, Math.max(0.001, s), state.boosting ? 1.15 : 1)
+      core.scale.set(coreWidth, Math.max(0.001, s), coreWidth)
       const mat = core.material as MeshBasicMaterial
       mat.opacity = 0.95 * Math.min(1, s)
-      mat.color.setRGB(
-        state.boosting ? 3.2 : 1.6,
-        state.boosting ? 4.4 : 2.6,
-        state.boosting ? 5.2 : 3.6,
-      )
+      if (jumping) {
+        // Warp lance: white-violet, far hotter than the drive plume
+        mat.color.setRGB(4.6, 3.2, 6.4)
+      } else {
+        mat.color.setRGB(
+          state.boosting ? 3.2 : 1.6,
+          state.boosting ? 4.4 : 2.6,
+          state.boosting ? 5.2 : 3.6,
+        )
+      }
     }
     const outer = plumeOuterRef.current
     if (outer) {
       const s = MathUtils.lerp(outer.scale.y, outerTarget, 0.12) * flicker
-      outer.scale.set(state.boosting ? 1.3 : 1, Math.max(0.001, s), state.boosting ? 1.3 : 1)
-      ;(outer.material as MeshBasicMaterial).opacity = 0.45 * Math.min(1, s)
+      outer.scale.set(outerWidth, Math.max(0.001, s), outerWidth)
+      const mat = outer.material as MeshBasicMaterial
+      mat.opacity = (jumping ? 0.6 : 0.45) * Math.min(1, s)
+      if (jumping) mat.color.setRGB(2.4, 0.9, 3.4)
+      else mat.color.setRGB(0.35, 0.66, 0.91)
     }
     if (glowRef.current) {
-      const target = state.thrusting ? (state.boosting ? 60 : 16) : 0
+      const target = jumping ? 80 : state.thrusting ? (state.boosting ? 60 : 16) : 0
       glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target * flicker, 0.2)
+      glowRef.current.color.set(jumping ? '#b07aff' : '#7fd4ff')
     }
 
     // Navigation lights: slow red/green pulse, sharp white strobe
@@ -184,12 +196,24 @@ export function Ship() {
       m.color.setRGB(1 + s * 5, 1 + s * 5, 1 + s * 5.5)
     }
 
-    // RCS puffs fire opposite the wanted motion, like a real spacecraft
+    // RCS puffs fire opposite the wanted motion — during warp alignment the
+    // autopilot's rotation drives them instead of the player's input
+    const podInput =
+      warp.phase === 'align'
+        ? {
+            thrust: 0,
+            reverse: 0,
+            strafeX: 0,
+            yaw: MathUtils.clamp(warpTurn.yaw * 3, -1, 1),
+            pitch: MathUtils.clamp(warpTurn.pitch * 3, -1, 1),
+            boost: false,
+          }
+        : shipInput
     RCS_PODS.forEach((pod, i) => {
       const mesh = rcsRefs.current[i]
       if (!mesh) return
       const mat = mesh.material as MeshBasicMaterial
-      mat.opacity = MathUtils.lerp(mat.opacity, pod.fire(shipInput) * 0.85, 0.3)
+      mat.opacity = MathUtils.lerp(mat.opacity, pod.fire(podInput) * 0.85, 0.3)
     })
 
     // Publish for camera / HUD / proximity

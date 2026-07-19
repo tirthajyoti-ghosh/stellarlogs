@@ -24,6 +24,9 @@ export const warp: WarpState = {
   jumpDistance: 0,
 }
 
+/** Remaining align rotation, radians — drives the RCS thruster visuals. */
+export const warpTurn = { yaw: 0, pitch: 0 }
+
 const _dir = new Vector3()
 
 /** Begin a jump toward a destination (system core or station). */
@@ -41,6 +44,8 @@ export function startWarp(destination: Vector3, shipPosition: Vector3, standoff:
 
 export function cancelWarp(): void {
   warp.phase = 'idle'
+  warpTurn.yaw = 0
+  warpTurn.pitch = 0
 }
 
 function wrapAngle(a: number): number {
@@ -75,13 +80,19 @@ export function stepWarp(state: WarpableShip, dt: number): void {
     const pitchTarget = Math.asin(Math.max(-1, Math.min(1, _dir.y)))
     const dy = wrapAngle(yawTarget - state.yaw)
     const dp = pitchTarget - state.pitch
+    warpTurn.yaw = dy
+    warpTurn.pitch = dp
     const k = 1 - Math.exp(-3.5 * dt)
     state.yaw += dy * k
     state.pitch += dp * k
     state.velocity.multiplyScalar(Math.exp(-2.5 * dt))
     state.speed = state.velocity.length()
     state.position.addScaledVector(state.velocity, dt)
-    if (Math.abs(dy) < 0.04 && Math.abs(dp) < 0.04) warp.phase = 'jump'
+    if (Math.abs(dy) < 0.04 && Math.abs(dp) < 0.04) {
+      warp.phase = 'jump'
+      warpTurn.yaw = 0
+      warpTurn.pitch = 0
+    }
     return
   }
 
