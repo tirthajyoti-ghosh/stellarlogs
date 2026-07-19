@@ -11,12 +11,10 @@ export interface ShipState {
   prevPosition: Vector3
   velocity: Vector3
   yaw: number
+  /** Only the warp autopilot pitches the hull; it levels out after arrival. */
   pitch: number
   prevYaw: number
   prevPitch: number
-  /** Smoothed yaw rate, drives visual banking. */
-  yawRateSmooth: number
-  pitchRateSmooth: number
   boostCharge: number
   boosting: boolean
   thrusting: boolean
@@ -37,8 +35,6 @@ export function createShipState(spawn: Vector3, yaw = 0): ShipState {
     pitch: 0,
     prevYaw: yaw,
     prevPitch: 0,
-    yawRateSmooth: 0,
-    pitchRateSmooth: 0,
     boostCharge: 1,
     boosting: false,
     thrusting: false,
@@ -50,50 +46,38 @@ export function createShipState(spawn: Vector3, yaw = 0): ShipState {
 const _euler = new Euler()
 const _quat = new Quaternion()
 const _forward = new Vector3()
+const _right = new Vector3()
+const _up = new Vector3()
 
 export function shipQuaternion(yaw: number, pitch: number, out: Quaternion): Quaternion {
   _euler.set(pitch, yaw, 0, 'YXZ')
   return out.setFromEuler(_euler)
 }
 
-function updateBoost(state: ShipState, input: ShipInput): void {
-  // Boost is a drive mode, not a consumable: active exactly while held, so
-  // sustained Shift+W is one smooth continuous acceleration — never a dip.
+function substep(state: ShipState, input: ShipInput, dt: number): void {
+  // Yaw rotation via RCS; the hull otherwise stays level (no bank, no pitch)
+  state.yaw += input.yaw * FLIGHT.yawSpeed * dt
+  state.pitch *= Math.exp(-FLIGHT.pitchAutolevel * dt)
+
+  // Boost is a drive mode: active exactly while held, never a dip
   state.boosting = input.boost
   state.boostCharge = 1
-}
 
-function substep(state: ShipState, input: ShipInput, dt: number): void {
-  // Orientation (kinematic; the damped velocity handles the Newtonian drift)
-  const yawRate = input.yaw * FLIGHT.yawSpeed
-  const pitchRate = input.pitch * FLIGHT.pitchSpeed
-  state.yaw += yawRate * dt
-  state.pitch += pitchRate * dt
-  state.pitch = Math.max(-FLIGHT.pitchLimit, Math.min(FLIGHT.pitchLimit, state.pitch))
-  if (input.pitch === 0) state.pitch *= Math.exp(-FLIGHT.pitchAutolevel * dt)
-
-  // Smoothed rates for the camera/banking (visual only)
-  const smoothing = 1 - Math.exp(-8 * dt)
-  state.yawRateSmooth += (yawRate - state.yawRateSmooth) * smoothing
-  state.pitchRateSmooth += (pitchRate - state.pitchRateSmooth) * smoothing
-
-  updateBoost(state, input)
-
-  // Thrust along the nose
   shipQuaternion(state.yaw, state.pitch, _quat)
   _forward.set(0, 0, -1).applyQuaternion(_quat)
+  _right.set(1, 0, 0).applyQuaternion(_quat)
+  _up.set(0, 1, 0).applyQuaternion(_quat)
+
   const accel = FLIGHT.thrustAccel * (state.boosting ? FLIGHT.boostAccelMult : 1)
   state.thrusting = input.thrust > 0
-  if (input.thrust > 0) {
-    state.velocity.addScaledVector(_forward, input.thrust * accel * dt)
-  }
-  if (input.brake > 0) {
-    const v = state.velocity.length()
-    if (v > 0.001) {
-      const drop = Math.min(input.brake * FLIGHT.brakeAccel * dt, v)
-      state.velocity.multiplyScalar((v - drop) / v)
-    }
-  }
+  if (input.thrust > 0) state.velocity.addScaledVector(_forward, input.thrust * accel * dt)
+  // RCS translation: reverse burn and lateral/vertical strafes
+  if (input.reverse > 0)
+    state.velocity.addScaledVector(_forward, -input.reverse * FLIGHT.rcsAccel * dt)
+  if (input.strafeX !== 0)
+    state.velocity.addScaledVector(_right, input.strafeX * FLIGHT.rcsAccel * dt)
+  if (input.strafeY !== 0)
+    state.velocity.addScaledVector(_up, input.strafeY * FLIGHT.rcsAccel * dt)
 
   applyGravity(state.position, state.velocity, dt)
 

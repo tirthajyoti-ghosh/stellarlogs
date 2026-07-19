@@ -98,6 +98,7 @@ function makeBand(count: number, radius: number): BufferGeometry {
  * parallax shell that trails the ship.
  */
 export function Starfield() {
+  const farRef = useRef<Group>(null)
   const nearRef = useRef<Group>(null)
   const starTexture = useMemo(() => makeStarTexture(), [])
   const farGeo = useMemo(() => makeShell(9000, 20000, 0.15), [])
@@ -106,6 +107,9 @@ export function Starfield() {
   const nearGeo = useMemo(() => makeShell(2600, 7000, 0.35), [])
 
   useFrame(() => {
+    // Far layers ride with the ship (infinitely distant backdrop);
+    // the near layer trails at 85% for parallax
+    farRef.current?.position.copy(shipRig.position)
     nearRef.current?.position.copy(shipRig.position).multiplyScalar(0.85)
   })
 
@@ -123,9 +127,11 @@ export function Starfield() {
 
   return (
     <>
-      <points geometry={farGeo}>{pointsMat(30)}</points>
-      <points geometry={bandGeo}>{pointsMat(18, 0.9)}</points>
-      <points geometry={heroGeo}>{pointsMat(120)}</points>
+      <group ref={farRef}>
+        <points geometry={farGeo}>{pointsMat(30)}</points>
+        <points geometry={bandGeo}>{pointsMat(18, 0.9)}</points>
+        <points geometry={heroGeo}>{pointsMat(120)}</points>
+      </group>
       <group ref={nearRef}>
         <points geometry={nearGeo}>{pointsMat(9)}</points>
       </group>
