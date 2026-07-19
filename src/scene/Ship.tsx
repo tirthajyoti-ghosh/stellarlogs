@@ -201,6 +201,9 @@ export function Ship() {
     shipRig.boostCharge = state.boostCharge
     shipRig.warping = warp.phase !== 'idle'
     shipRig.yaw = yaw
+    if (state.speed > 1) {
+      shipRig.velocityDir.copy(state.velocity).normalize()
+    }
   }, -2)
 
   return (

@@ -2,12 +2,19 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
 import { shipRig } from '../state/shipRig'
+import { shipInput } from '../physics/shipInput'
 import { warp } from '../physics/warp'
+import { getGravityBodies } from '../physics/gravity'
 import { ALL_SYSTEMS } from '../config/systems'
 import { FLIGHT } from '../config/flight'
 
 const _p = new Vector3()
 const EDGE = 96 // px margin when clamping off-screen markers
+// Closing-speed estimate state for the nearest contact
+let lastTargetId = ''
+let lastTargetDist = 0
+let lastTargetTime = 0
+let closingSmooth = 0
 
 function formatDistance(d: number): string {
   return d >= 1000 ? `${(d / 1000).toFixed(1)}k` : `${Math.round(d)}`
@@ -55,6 +62,98 @@ export function HudBridge() {
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
+
+    // Position readout
+    if (hudReadouts.posEl) {
+      const p = shipRig.position
+      hudReadouts.posEl.textContent = `POS ${(p.x / 1000).toFixed(1)} ${(p.y / 1000).toFixed(1)} ${(p.z / 1000).toFixed(1)}`
+    }
+
+    // Gravity-well warning: lit while inside any body's influence
+    if (hudReadouts.gravEl) {
+      let inWell = false
+      for (const body of getGravityBodies()) {
+        if (body.position.distanceTo(shipRig.position) < body.influenceRadius) {
+          inWell = true
+          break
+        }
+      }
+      hudReadouts.gravEl.dataset.on = inWell ? '1' : ''
+    }
+
+    // RCS activity lights mirror the actual thruster firings
+    const rcs = hudReadouts.rcsEls
+    const setLight = (key: string, on: boolean) => {
+      const el = rcs[key]
+      if (el) el.dataset.on = on ? '1' : ''
+    }
+    setLight('yawL', shipInput.yaw > 0)
+    setLight('yawR', shipInput.yaw < 0)
+    setLight('pitchU', shipInput.pitch > 0)
+    setLight('pitchD', shipInput.pitch < 0)
+    setLight('strafeL', shipInput.strafeX < 0)
+    setLight('strafeR', shipInput.strafeX > 0)
+    setLight('retro', shipInput.reverse > 0)
+
+    // Prograde marker: project the velocity direction onto the screen
+    if (hudReadouts.progradeEl) {
+      const el = hudReadouts.progradeEl
+      if (shipRig.speed > 4 && !shipRig.warping) {
+        _p.copy(shipRig.velocityDir).multiplyScalar(600).add(shipRig.position).project(camera)
+        const behind = _p.z > 1
+        const x = (_p.x * 0.5 + 0.5) * size.width
+        const y = (-_p.y * 0.5 + 0.5) * size.height
+        const onscreen = !behind && x > 30 && x < size.width - 30 && y > 30 && y < size.height - 30
+        el.style.opacity = onscreen ? '0.9' : '0'
+        if (onscreen) el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+      } else {
+        el.style.opacity = '0'
+      }
+    }
+
+    // Nearest contact: closest labeled body, with a smoothed closing rate
+    let target: (typeof hudLabels)[number] | null = null
+    let targetDist = Infinity
+    for (const label of hudLabels) {
+      const d = label.position.distanceTo(shipRig.position)
+      if (d < targetDist) {
+        targetDist = d
+        target = label
+      }
+    }
+    if (target && hudReadouts.targetNameEl && hudReadouts.targetDistEl && hudReadouts.targetCloseEl) {
+      const now = performance.now() / 1000
+      if (target.id === lastTargetId && now > lastTargetTime) {
+        const rate = (lastTargetDist - targetDist) / Math.max(1e-3, now - lastTargetTime)
+        closingSmooth += (rate - closingSmooth) * 0.12
+      } else {
+        closingSmooth = 0
+      }
+      lastTargetId = target.id
+      lastTargetDist = targetDist
+      lastTargetTime = now
+      hudReadouts.targetNameEl.textContent = target.name
+      hudReadouts.targetNameEl.style.color = target.color
+      hudReadouts.targetDistEl.textContent = `${formatDistance(targetDist)} M`
+      const closing = Math.round(closingSmooth)
+      hudReadouts.targetCloseEl.textContent = `${closing >= 0 ? '−' : '+'}${Math.abs(closing)} M/S`
+      hudReadouts.targetCloseEl.dataset.closing = closing >= 0 ? '1' : ''
+    }
+
+    // Jump-drive panel
+    if (warp.phase !== 'idle' && hudReadouts.warpDestEl && hudReadouts.warpDistEl && hudReadouts.warpPhaseEl) {
+      let destName = 'COMMS STATION'
+      for (const system of ALL_SYSTEMS) {
+        _p.set(...system.position)
+        if (_p.distanceTo(warp.target) < 200) destName = system.name.toUpperCase()
+      }
+      const remaining = warp.arrival.distanceTo(shipRig.position)
+      hudReadouts.warpDestEl.textContent = destName
+      hudReadouts.warpPhaseEl.textContent = warp.phase === 'align' ? 'ALIGNING' : 'JUMPING'
+      const eta = warp.phase === 'jump' ? remaining / Math.max(1, shipRig.speed) : 0
+      hudReadouts.warpDistEl.textContent =
+        warp.phase === 'jump' ? `${formatDistance(remaining)} M · ETA ${eta.toFixed(1)}S` : `${formatDistance(remaining)} M`
+    }
 
     // Greedy overlap culling: nearer labels claim screen space first
     const placed: { x: number; y: number }[] = []

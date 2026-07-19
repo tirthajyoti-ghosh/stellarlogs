@@ -3,6 +3,9 @@ import { Radar } from './Radar'
 import { StatusBar } from './StatusBar'
 import { NavPanel } from './NavPanel'
 import { Welcome } from './Welcome'
+import { Reticle } from './Reticle'
+import { HeadingTape } from './HeadingTape'
+import { WarpPanel } from './WarpPanel'
 
 /** DOM overlay: utilitarian Expanse-style HUD over the 3D canvas. */
 export function HUD() {
@@ -12,8 +15,11 @@ export function HUD() {
       <div className="hud-warp-tint" />
       <div className="hud-warp-flash" />
       <LabelLayer />
+      <Reticle />
+      <HeadingTape />
       <Radar />
       <StatusBar />
+      <WarpPanel />
       <NavPanel />
       <Welcome />
     </div>
