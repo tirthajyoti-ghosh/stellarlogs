@@ -8,10 +8,6 @@ const OFFSET = new Vector3(0, 3.6, 13) // behind and above, in ship space
 const LOOK_AHEAD = new Vector3(0, 1.2, -14)
 const BASE_FOV = 62
 const BOOST_FOV = 76
-// How far the free-look orbits, radians at full cursor deflection
-const LOOK_YAW_RANGE = 2.6
-const LOOK_PITCH_RANGE = 0.9
-const DEADZONE = 0.06
 // Extra camera pull-back per unit of ship speed (sense of velocity)
 const SPEED_PULLBACK = 0.012
 
@@ -35,14 +31,16 @@ export function ChaseCamera() {
   useFrame(({ camera }, dt) => {
     const cam = camera as PerspectiveCamera
 
-    // Damped free-look orbit angles from cursor position
-    const lookX = Math.abs(cameraLook.x) < DEADZONE ? 0 : cameraLook.x
-    const lookY = Math.abs(cameraLook.y) < DEADZONE ? 0 : cameraLook.y
-    const targetYaw = cameraLook.dragging ? orbit.current.yaw : -lookX * LOOK_YAW_RANGE
-    const targetPitch = cameraLook.dragging ? orbit.current.pitch : lookY * LOOK_PITCH_RANGE
-    const t = 1 - Math.exp(-5 * dt)
-    orbit.current.yaw += (targetYaw - orbit.current.yaw) * t
-    orbit.current.pitch += (targetPitch - orbit.current.pitch) * t
+    // While dragging, track the accumulated orbit angles tightly; on release
+    // the stored angles ease back to zero (settle behind the ship)
+    if (!cameraLook.dragging) {
+      const decay = Math.exp(-2.2 * dt)
+      cameraLook.orbitYaw *= decay
+      cameraLook.orbitPitch *= decay
+    }
+    const t = 1 - Math.exp(-(cameraLook.dragging ? 14 : 5) * dt)
+    orbit.current.yaw += (cameraLook.orbitYaw - orbit.current.yaw) * t
+    orbit.current.pitch += (cameraLook.orbitPitch - orbit.current.pitch) * t
 
     const orbitAmount = Math.min(
       1,

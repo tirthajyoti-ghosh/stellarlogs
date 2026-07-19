@@ -2,11 +2,14 @@ import { useEffect } from 'react'
 import { shipInput } from '../physics/shipInput'
 import { cameraLook } from '../state/cameraLook'
 
+const DRAG_SENSITIVITY = 0.0075 // rad per px
+const PITCH_CLAMP = 1.2
+
 /**
  * Desktop controls.
- * Keyboard: W/↑ thrust, S/↓ brake, A/← D/→ yaw, R/F pitch, Shift boost.
- * Pointer: press-and-drag anywhere acts as a virtual stick (yaw + pitch),
- * which is also exactly how the mobile joystick will drive the ship.
+ * Keyboard steers the ship: W/↑ thrust, S/↓ brake, A/← D/→ yaw, R/F pitch,
+ * Shift boost. Mouse drag orbits the camera around the ship (release eases
+ * back behind it) — flying is keys, admiring is mouse.
  */
 export function useShipControls(): void {
   useEffect(() => {
@@ -36,40 +39,31 @@ export function useShipControls(): void {
       applyKeys()
     }
 
-    // Pointer-drag steering (virtual stick centered on the press point)
+    // Mouse-drag camera orbit
     let dragId: number | null = null
-    let originX = 0
-    let originY = 0
-    const STICK_RANGE = 110 // px to reach full deflection
+    let lastX = 0
+    let lastY = 0
 
     const onPointerDown = (e: PointerEvent) => {
       if (dragId !== null) return
       if ((e.target as HTMLElement).closest('button, a, [data-ui]')) return
       dragId = e.pointerId
       cameraLook.dragging = true
-      originX = e.clientX
-      originY = e.clientY
+      lastX = e.clientX
+      lastY = e.clientY
     }
     const onPointerMove = (e: PointerEvent) => {
-      // Free-look: cursor offset from center orbits the camera (mouse only —
-      // touch devices get their own controls)
-      if (e.pointerType === 'mouse' && dragId === null) {
-        cameraLook.x = (e.clientX / window.innerWidth) * 2 - 1
-        cameraLook.y = (e.clientY / window.innerHeight) * 2 - 1
-      }
       if (e.pointerId !== dragId) return
-      const dx = (e.clientX - originX) / STICK_RANGE
-      const dy = (e.clientY - originY) / STICK_RANGE
-      shipInput.yaw = Math.max(-1, Math.min(1, -dx))
-      shipInput.pitch = Math.max(-1, Math.min(1, -dy))
+      cameraLook.orbitYaw -= (e.clientX - lastX) * DRAG_SENSITIVITY
+      cameraLook.orbitPitch += (e.clientY - lastY) * DRAG_SENSITIVITY
+      cameraLook.orbitPitch = Math.max(-PITCH_CLAMP, Math.min(PITCH_CLAMP, cameraLook.orbitPitch))
+      lastX = e.clientX
+      lastY = e.clientY
     }
     const endDrag = (e: PointerEvent) => {
       if (e.pointerId !== dragId) return
       dragId = null
       cameraLook.dragging = false
-      shipInput.yaw = 0
-      shipInput.pitch = 0
-      applyKeys() // keyboard may still be held
     }
 
     window.addEventListener('keydown', onKeyDown)

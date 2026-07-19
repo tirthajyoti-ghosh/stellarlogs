@@ -31,38 +31,40 @@ function makeEngineBell(): LatheGeometry {
   return new LatheGeometry(profile, 20)
 }
 
-const HULL = { color: '#98a1ad', metalness: 0.55, roughness: 0.42, flatShading: true }
-const PANEL = { color: '#4a5262', metalness: 0.6, roughness: 0.5, flatShading: true }
-const DARK = { color: '#2a3140', metalness: 0.7, roughness: 0.45, flatShading: true }
-const ACCENT = { color: '#d95f2b', metalness: 0.35, roughness: 0.55, flatShading: true }
+// Dark military palette — the ship carries its own lights
+const HULL = { color: '#3d444d', metalness: 0.7, roughness: 0.38, flatShading: true }
+const PANEL = { color: '#262c35', metalness: 0.65, roughness: 0.5, flatShading: true }
+const DARK = { color: '#141922', metalness: 0.75, roughness: 0.42, flatShading: true }
+const ACCENT = { color: '#b8451f', metalness: 0.4, roughness: 0.55, flatShading: true }
 
 /** RCS pod positions (x, z) around the hull toward the bow. */
 const RCS_PODS: { pos: [number, number, number]; axis: 'yaw' | 'pitch'; sign: 1 | -1 }[] = [
   // exhaust +X pushes the nose -X (a left turn = yaw +)
-  { pos: [0.6, 1.6, 0], axis: 'yaw', sign: 1 },
-  { pos: [-0.6, 1.6, 0], axis: 'yaw', sign: -1 },
+  { pos: [0.56, 1.6, 0], axis: 'yaw', sign: 1 },
+  { pos: [-0.56, 1.6, 0], axis: 'yaw', sign: -1 },
   // exhaust +Z (up) pushes the nose down (pitch -)
-  { pos: [0, 1.6, 0.6], axis: 'pitch', sign: -1 },
-  { pos: [0, 1.6, -0.6], axis: 'pitch', sign: 1 },
+  { pos: [0, 1.6, 0.56], axis: 'pitch', sign: -1 },
+  { pos: [0, 1.6, -0.56], axis: 'pitch', sign: 1 },
 ]
 
 /** Lit portholes along the forward hull flanks. */
 const WINDOWS: [number, number, number][] = [
-  [0.55, 1.25, 0.12],
-  [0.55, 0.95, 0.12],
-  [0.55, 0.35, -0.1],
-  [0.56, -0.05, 0.05],
-  [-0.55, 1.1, 0.1],
-  [-0.55, 0.7, -0.08],
-  [-0.56, 0.1, 0.08],
-  [-0.56, -0.25, -0.05],
+  [0.54, 1.55, 0.12],
+  [0.54, 1.25, 0.12],
+  [0.55, 0.65, -0.1],
+  [0.55, 0.25, 0.05],
+  [-0.54, 1.4, 0.1],
+  [-0.54, 1.0, -0.08],
+  [-0.55, 0.4, 0.08],
+  [-0.55, 0.05, -0.05],
 ]
 
 /**
  * Owns the physics step (runs first each frame via negative priority) and
- * renders the ship — an Expanse-style corvette: angular flat-shaded octagonal
- * hull sections, layered plating, PDC turrets, RCS pods, drive bell. Local
- * frame inside the -90° X group: +Y = nose direction, +Z = up.
+ * renders the ship — a dark Expanse-style corvette: blunt angular bow,
+ * flat-shaded octagonal hull, layered plating, running lights and hull
+ * floodlights that pick the shape out of the black. Local frame inside the
+ * -90° X group: +Y = nose direction, +Z = up.
  */
 export function Ship() {
   const rigRef = useRef<Group>(null)
@@ -71,6 +73,9 @@ export function Ship() {
   const plumeCoreRef = useRef<Mesh>(null)
   const plumeOuterRef = useRef<Mesh>(null)
   const rcsRefs = useRef<(Mesh | null)[]>([])
+  const strobeRef = useRef<Mesh>(null)
+  const portLightRef = useRef<Mesh>(null)
+  const starboardLightRef = useRef<Mesh>(null)
   const state = useMemo(() => createShipState(new Vector3(...SPAWN_POSITION), SPAWN_YAW), [])
 
   // Dev-only teleport for visual inspection / automation
@@ -135,6 +140,21 @@ export function Ship() {
       glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target * flicker, 0.2)
     }
 
+    // Navigation lights: slow red/green pulse, sharp white strobe
+    if (portLightRef.current) {
+      const m = portLightRef.current.material as MeshBasicMaterial
+      m.color.setRGB(2.4 * (0.55 + 0.45 * Math.sin(now * 2.2)), 0.1, 0.1)
+    }
+    if (starboardLightRef.current) {
+      const m = starboardLightRef.current.material as MeshBasicMaterial
+      m.color.setRGB(0.1, 2.2 * (0.55 + 0.45 * Math.sin(now * 2.2 + 1.5)), 0.15)
+    }
+    if (strobeRef.current) {
+      const s = Math.pow(Math.max(0, Math.sin(now * 1.4)), 24)
+      const m = strobeRef.current.material as MeshBasicMaterial
+      m.color.setRGB(1 + s * 5, 1 + s * 5, 1 + s * 5.5)
+    }
+
     // RCS puffs fire opposite the turn direction, like a real spacecraft
     RCS_PODS.forEach((pod, i) => {
       const mesh = rcsRefs.current[i]
@@ -159,50 +179,42 @@ export function Ship() {
     <group ref={rigRef}>
       <group ref={bankRef}>
         <group rotation-x={-Math.PI / 2}>
-          {/* Angular octagonal hull, bow to stern */}
-          <mesh position={[0, 3.0, 0]} rotation-y={OCT}>
-            <cylinderGeometry args={[0.1, 0.22, 0.35, 8]} />
+          {/* Blunt angular bow with bridge visor */}
+          <mesh position={[0, 2.78, 0]} rotation-y={OCT}>
+            <cylinderGeometry args={[0.34, 0.38, 0.12, 8]} />
             <meshStandardMaterial {...DARK} />
           </mesh>
-          <mesh position={[0, 2.2, 0]} rotation-y={OCT}>
-            <cylinderGeometry args={[0.22, 0.52, 1.3, 8]} />
+          <mesh position={[0, 2.4, 0]} rotation-y={OCT}>
+            <cylinderGeometry args={[0.38, 0.52, 0.7, 8]} />
             <meshStandardMaterial {...HULL} />
           </mesh>
-          <mesh position={[0, 0.7, 0]} rotation-y={OCT}>
-            <cylinderGeometry args={[0.52, 0.56, 1.7, 8]} />
+          <mesh position={[0, 2.8, 0.14]}>
+            <boxGeometry args={[0.4, 0.06, 0.1]} />
+            <meshBasicMaterial color={[1.6, 2.2, 2.8]} toneMapped={false} />
+          </mesh>
+          {/* Forward hull */}
+          <mesh position={[0, 1.05, 0]} rotation-y={OCT}>
+            <cylinderGeometry args={[0.52, 0.56, 2.0, 8]} />
             <meshStandardMaterial {...HULL} />
           </mesh>
-          <mesh position={[0, -0.6, 0]} rotation-y={OCT}>
+          {/* Mid section */}
+          <mesh position={[0, -0.5, 0]} rotation-y={OCT}>
             <cylinderGeometry args={[0.56, 0.68, 0.9, 8]} />
             <meshStandardMaterial {...PANEL} />
           </mesh>
-          <mesh position={[0, -1.7, 0]} rotation-y={OCT}>
+          {/* Drive section */}
+          <mesh position={[0, -1.6, 0]} rotation-y={OCT}>
             <cylinderGeometry args={[0.68, 0.76, 1.3, 8]} />
             <meshStandardMaterial {...HULL} />
           </mesh>
-          {/* Orange hull stripes */}
-          <mesh position={[0, 1.72, 0]} rotation-y={OCT}>
-            <cylinderGeometry args={[0.527, 0.535, 0.24, 8]} />
+          {/* Burnt-orange hull stripes */}
+          <mesh position={[0, 1.95, 0]} rotation-y={OCT}>
+            <cylinderGeometry args={[0.523, 0.53, 0.2, 8]} />
             <meshStandardMaterial {...ACCENT} />
           </mesh>
-          <mesh position={[0, -1.14, 0]} rotation-y={OCT}>
-            <cylinderGeometry args={[0.695, 0.7, 0.26, 8]} />
+          <mesh position={[0, -1.04, 0]} rotation-y={OCT}>
+            <cylinderGeometry args={[0.687, 0.692, 0.24, 8]} />
             <meshStandardMaterial {...ACCENT} />
-          </mesh>
-          {/* Raised armor plating on the flanks and spine */}
-          {[0.56, -0.56].map((x) => (
-            <mesh key={`plate-${x}`} position={[x, 0.6, 0]}>
-              <boxGeometry args={[0.07, 1.5, 0.62]} />
-              <meshStandardMaterial {...PANEL} />
-            </mesh>
-          ))}
-          <mesh position={[0, 0.9, 0.55]}>
-            <boxGeometry args={[0.7, 1.1, 0.07]} />
-            <meshStandardMaterial {...PANEL} />
-          </mesh>
-          <mesh position={[0, -0.1, -0.56]}>
-            <boxGeometry args={[0.66, 0.9, 0.06]} />
-            <meshStandardMaterial {...PANEL} />
           </mesh>
           {/* Dorsal superstructure (bridge block) */}
           <group position={[0, 0.85, 0.6]}>
@@ -228,7 +240,7 @@ export function Ship() {
               </mesh>
               <mesh position={[0, -0.75, 0]}>
                 <coneGeometry args={[0.12, 0.22, 10, 1, true]} />
-                <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+                <meshStandardMaterial color="#10151c" metalness={0.9} roughness={0.3} side={2} />
               </mesh>
               <mesh position={[x > 0 ? 0.16 : -0.16, 0.4, 0]}>
                 <boxGeometry args={[0.02, 0.3, 0.08]} />
@@ -238,9 +250,9 @@ export function Ship() {
           ))}
           {/* Hull ribs at section joins */}
           {[
-            { y: 1.55, r: 0.545 },
-            { y: -0.14, r: 0.585 },
-            { y: -1.06, r: 0.705 },
+            { y: 2.02, r: 0.535 },
+            { y: -0.06, r: 0.575 },
+            { y: -0.96, r: 0.695 },
           ].map((rib) => (
             <mesh key={`rib-${rib.y}`} position={[0, rib.y, 0]} rotation-y={OCT}>
               <cylinderGeometry args={[rib.r, rib.r, 0.07, 8]} />
@@ -259,20 +271,20 @@ export function Ship() {
             </mesh>
           </group>
           {/* Sensor pod, port bow */}
-          <group position={[-0.55, 1.35, 0.2]}>
+          <group position={[-0.55, 1.75, 0.2]}>
             <mesh>
               <boxGeometry args={[0.12, 0.3, 0.12]} />
               <meshStandardMaterial {...DARK} />
             </mesh>
             <mesh position={[-0.09, 0.05, 0]} rotation-z={Math.PI / 2}>
               <coneGeometry args={[0.09, 0.1, 12]} />
-              <meshStandardMaterial color="#c8ccd4" metalness={0.5} roughness={0.4} />
+              <meshStandardMaterial color="#5a636e" metalness={0.5} roughness={0.4} />
             </mesh>
           </group>
           {/* PDC turrets, dorsal and ventral */}
           {[
-            { pos: [0.2, 1.45, 0.6] as const, up: 1 },
-            { pos: [-0.25, 0.2, -0.62] as const, up: -1 },
+            { pos: [0.2, 1.75, 0.56] as const, up: 1 },
+            { pos: [-0.25, 0.5, -0.6] as const, up: -1 },
           ].map((t, i) => (
             <group key={`pdc-${i}`} position={[t.pos[0], t.pos[1], t.pos[2]]}>
               <mesh>
@@ -292,29 +304,45 @@ export function Ship() {
               <meshBasicMaterial color={[2.4, 2.0, 1.4]} toneMapped={false} />
             </mesh>
           ))}
-          {/* Dorsal comms mast */}
-          <group position={[0, 1.0, 0.56]}>
+          {/* Running-light strips along the hull */}
+          {[0.555, -0.555].map((x) => (
+            <mesh key={`strip-${x}`} position={[x, 0.85, -0.32]}>
+              <boxGeometry args={[0.015, 1.7, 0.03]} />
+              <meshBasicMaterial color={[0.5, 1.1, 1.5]} toneMapped={false} />
+            </mesh>
+          ))}
+          {/* Navigation lights: port red / starboard green / white strobe */}
+          <mesh ref={starboardLightRef} position={[0.6, 1.05, 0.35]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshBasicMaterial color={[0.1, 2.2, 0.15]} toneMapped={false} />
+          </mesh>
+          <mesh ref={portLightRef} position={[-0.6, 1.05, 0.35]}>
+            <sphereGeometry args={[0.04, 8, 8]} />
+            <meshBasicMaterial color={[2.4, 0.1, 0.1]} toneMapped={false} />
+          </mesh>
+          {/* Dorsal comms mast with strobe */}
+          <group position={[0, 1.35, 0.56]}>
             <mesh>
               <cylinderGeometry args={[0.015, 0.015, 0.55, 6]} />
               <meshStandardMaterial {...DARK} />
             </mesh>
-            <mesh position={[0, 0.3, 0]}>
-              <sphereGeometry args={[0.04, 8, 8]} />
-              <meshBasicMaterial color={[3.5, 0.9, 0.6]} toneMapped={false} />
+            <mesh ref={strobeRef} position={[0, 0.3, 0]}>
+              <sphereGeometry args={[0.035, 8, 8]} />
+              <meshBasicMaterial color={[1, 1, 1]} toneMapped={false} />
             </mesh>
           </group>
           {/* Propellant tanks tucked against the drive section */}
           {[0.62, -0.62].map((z) => (
-            <mesh key={`tank-${z}`} position={[0, -1.55, z]} rotation-x={Math.PI / 2}>
+            <mesh key={`tank-${z}`} position={[0, -1.45, z]} rotation-x={Math.PI / 2}>
               <capsuleGeometry args={[0.15, 0.9, 6, 12]} />
-              <meshStandardMaterial color="#7d8794" metalness={0.6} roughness={0.35} />
+              <meshStandardMaterial color="#4a525c" metalness={0.65} roughness={0.35} />
             </mesh>
           ))}
           {/* Radiator panels on the drive section */}
           {[0.79, -0.79].map((x) => (
-            <mesh key={`rad-${x}`} position={[x, -1.7, 0]}>
+            <mesh key={`rad-${x}`} position={[x, -1.6, 0]}>
               <boxGeometry args={[0.035, 1.05, 0.6]} />
-              <meshStandardMaterial color="#1a222f" metalness={0.4} roughness={0.6} />
+              <meshStandardMaterial color="#10151c" metalness={0.4} roughness={0.6} />
             </mesh>
           ))}
           {/* RCS pods + puff cones */}
@@ -353,15 +381,15 @@ export function Ship() {
             [0.45, -0.45],
             [-0.45, -0.45],
           ].map(([x, z], i) => (
-            <mesh key={`vern-${i}`} position={[x, -2.32, z]}>
+            <mesh key={`vern-${i}`} position={[x, -2.22, z]}>
               <coneGeometry args={[0.09, 0.24, 10, 1, true]} />
-              <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+              <meshStandardMaterial color="#10151c" metalness={0.9} roughness={0.3} side={2} />
             </mesh>
           ))}
           {/* Drive bell + plume */}
-          <group position={[0, -2.35, 0]}>
+          <group position={[0, -2.25, 0]}>
             <mesh geometry={bell}>
-              <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+              <meshStandardMaterial color="#10151c" metalness={0.9} roughness={0.3} side={2} />
             </mesh>
             <mesh position={[0, -0.1, 0]} rotation-x={Math.PI / 2}>
               <circleGeometry args={[0.19, 16]} />
@@ -390,6 +418,10 @@ export function Ship() {
               />
             </mesh>
           </group>
+          {/* Hull floodlights — the ship illuminates itself */}
+          <pointLight position={[0, 1.6, 1.3]} color="#e8f0ff" intensity={3} distance={5.5} decay={2} />
+          <pointLight position={[0.9, 2.5, -0.6]} color="#fff2dd" intensity={2.2} distance={5} decay={2} />
+          <pointLight position={[-1.1, -1.3, 0.9]} color="#dde8ff" intensity={2.4} distance={6} decay={2} />
         </group>
         <pointLight ref={glowRef} position={[0, 0, 3.2]} color="#7fd4ff" intensity={0} distance={45} decay={2} />
       </group>
