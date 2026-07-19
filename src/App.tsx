@@ -13,6 +13,7 @@ import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
 import { HUD } from './hud/HUD'
+import { SeoContent } from './SeoContent'
 import { ALL_SYSTEMS } from './config/systems'
 import { QUALITY } from './config/quality'
 
@@ -51,6 +52,7 @@ export default function App() {
       </Canvas>
 
       <HUD />
+      <SeoContent />
     </div>
   )
 }

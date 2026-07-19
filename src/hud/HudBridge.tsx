@@ -5,6 +5,7 @@ import { shipRig } from '../state/shipRig'
 import { shipInput } from '../physics/shipInput'
 import { warp } from '../physics/warp'
 import { getGravityBodies } from '../physics/gravity'
+import { updateAudio } from '../audio/engine'
 import { ALL_SYSTEMS } from '../config/systems'
 
 const _p = new Vector3()
@@ -54,6 +55,8 @@ export function HudBridge() {
             : 'IDLE'
       hudReadouts.driveEl.dataset.mode = hudReadouts.driveEl.textContent.toLowerCase()
     }
+
+    updateAudio(shipRig.thrusting, shipRig.boosting, shipRig.warping)
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
