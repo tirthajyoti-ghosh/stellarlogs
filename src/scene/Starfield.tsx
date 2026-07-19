@@ -6,8 +6,10 @@ import {
   BufferGeometry,
   CanvasTexture,
   Group,
+  Vector3,
 } from 'three'
 import { shipRig } from '../state/shipRig'
+import { BAND_TILT } from './SkyDome'
 
 function makeStarTexture(): CanvasTexture {
   const size = 64
@@ -25,16 +27,17 @@ function makeStarTexture(): CanvasTexture {
 
 const STAR_TINTS: [number, number, number][] = [
   [1, 1, 1],
-  [0.72, 0.82, 1], // blue-white
-  [1, 0.88, 0.7], // warm
-  [1, 0.75, 0.62], // orange
+  [0.72, 0.82, 1],
+  [1, 0.88, 0.7],
+  [1, 0.75, 0.62],
 ]
 
-function makeShell(count: number, radius: number, jitter: number): BufferGeometry {
+
+
+function makeShell(count: number, radius: number, jitter: number, brightness = 1): BufferGeometry {
   const positions = new Float32Array(count * 3)
   const colors = new Float32Array(count * 3)
   for (let i = 0; i < count; i++) {
-    // Uniform points on a sphere shell with radial jitter
     const u = Math.random() * 2 - 1
     const theta = Math.random() * Math.PI * 2
     const s = Math.sqrt(1 - u * u)
@@ -43,10 +46,46 @@ function makeShell(count: number, radius: number, jitter: number): BufferGeometr
     positions[i * 3 + 1] = u * r
     positions[i * 3 + 2] = s * Math.sin(theta) * r
     const tint = STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)]
-    const brightness = 0.35 + Math.random() * 0.65
-    colors[i * 3] = tint[0] * brightness
-    colors[i * 3 + 1] = tint[1] * brightness
-    colors[i * 3 + 2] = tint[2] * brightness
+    const b = (0.35 + Math.random() * 0.65) * brightness
+    colors[i * 3] = tint[0] * b
+    colors[i * 3 + 1] = tint[1] * b
+    colors[i * 3 + 2] = tint[2] * b
+  }
+  const geo = new BufferGeometry()
+  geo.setAttribute('position', new BufferAttribute(positions, 3))
+  geo.setAttribute('color', new BufferAttribute(colors, 3))
+  return geo
+}
+
+/** Dense star band hugging the galactic plane, Gaussian spread around it. */
+function makeBand(count: number, radius: number): BufferGeometry {
+  const positions = new Float32Array(count * 3)
+  const colors = new Float32Array(count * 3)
+  const p = new Vector3()
+  for (let i = 0; i < count; i++) {
+    const theta = Math.random() * Math.PI * 2
+    // approximate gaussian around the band plane
+    const spread =
+      (Math.random() + Math.random() + Math.random() + Math.random() - 2) * 0.14
+    p.set(Math.cos(theta), spread, Math.sin(theta)).normalize()
+    // rotate so the band plane is tilted: build basis from BAND_TILT
+    const up = BAND_TILT
+    const t1 = new Vector3(1, 0, 0).cross(up).normalize()
+    const t2 = up.clone().cross(t1)
+    const world = t1
+      .clone()
+      .multiplyScalar(p.x)
+      .addScaledVector(up, p.y)
+      .addScaledVector(t2, p.z)
+      .multiplyScalar(radius * (0.92 + Math.random() * 0.16))
+    positions[i * 3] = world.x
+    positions[i * 3 + 1] = world.y
+    positions[i * 3 + 2] = world.z
+    const tint = STAR_TINTS[Math.floor(Math.random() * STAR_TINTS.length)]
+    const b = 0.25 + Math.random() * 0.5
+    colors[i * 3] = tint[0] * b
+    colors[i * 3 + 1] = tint[1] * b
+    colors[i * 3 + 2] = tint[2] * b
   }
   const geo = new BufferGeometry()
   geo.setAttribute('position', new BufferAttribute(positions, 3))
@@ -55,43 +94,40 @@ function makeShell(count: number, radius: number, jitter: number): BufferGeometr
 }
 
 /**
- * Two star layers: a distant static shell and a nearer shell that follows the
- * ship at a fraction of its motion, producing parallax as you fly.
+ * Sky dome: distant shell + milky-way band with nebula haze, plus a nearer
+ * parallax shell that trails the ship.
  */
 export function Starfield() {
   const nearRef = useRef<Group>(null)
-  const texture = useMemo(() => makeStarTexture(), [])
-  const farGeo = useMemo(() => makeShell(4200, 20000, 0.15), [])
-  const nearGeo = useMemo(() => makeShell(2200, 7000, 0.35), [])
+  const starTexture = useMemo(() => makeStarTexture(), [])
+  const farGeo = useMemo(() => makeShell(5200, 20000, 0.15), [])
+  const bandGeo = useMemo(() => makeBand(7500, 21000), [])
+  const heroGeo = useMemo(() => makeShell(140, 19000, 0.1, 1.6), [])
+  const nearGeo = useMemo(() => makeShell(2600, 7000, 0.35), [])
 
   useFrame(() => {
-    // Near layer trails the ship at 85% => 15% relative drift = parallax
     nearRef.current?.position.copy(shipRig.position).multiplyScalar(0.85)
   })
 
+  const pointsMat = (size: number, opacity = 1) => (
+    <pointsMaterial
+      map={starTexture}
+      size={size}
+      vertexColors
+      transparent
+      opacity={opacity}
+      depthWrite={false}
+      blending={AdditiveBlending}
+    />
+  )
+
   return (
     <>
-      <points geometry={farGeo}>
-        <pointsMaterial
-          map={texture}
-          size={55}
-          vertexColors
-          transparent
-          depthWrite={false}
-          blending={AdditiveBlending}
-        />
-      </points>
+      <points geometry={farGeo}>{pointsMat(55)}</points>
+      <points geometry={bandGeo}>{pointsMat(42, 0.9)}</points>
+      <points geometry={heroGeo}>{pointsMat(160)}</points>
       <group ref={nearRef}>
-        <points geometry={nearGeo}>
-          <pointsMaterial
-            map={texture}
-            size={16}
-            vertexColors
-            transparent
-            depthWrite={false}
-            blending={AdditiveBlending}
-          />
-        </points>
+        <points geometry={nearGeo}>{pointsMat(16)}</points>
       </group>
     </>
   )

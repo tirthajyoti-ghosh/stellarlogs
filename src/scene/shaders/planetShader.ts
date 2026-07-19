@@ -60,13 +60,19 @@ void main() {
   vec3 emissive = vec3(0.0);
 
   if (uMode == 0) {
-    // Gas giant: turbulent latitude bands
+    // Gas giant: crisp turbulent latitude bands with storm streaks
+    float lat = normalize(vLocalPos).y;
     float turb = fbm(p * 1.6 + vec3(0.0, uTime * 0.008, 0.0)) * 0.55;
-    float bands = sin((normalize(vLocalPos).y + turb * 0.35) * 14.0 + uSeed);
-    float bands2 = sin((normalize(vLocalPos).y + turb * 0.5) * 5.0 - uSeed * 2.0);
-    vec3 base = mix(uColorA, uColorB, bands * 0.5 + 0.5);
-    surface = mix(base, uColorC, smoothstep(0.2, 0.9, bands2) * 0.5);
-    surface += turb * 0.12;
+    float streaks = fbm(vec3(p.x * 3.0, lat * 24.0, p.z * 3.0)) * 0.3;
+    float bands = sin((lat + turb * 0.28 + streaks * 0.1) * 14.0 + uSeed);
+    float crisp = smoothstep(-0.6, 0.6, bands);
+    float bands2 = sin((lat + turb * 0.45) * 5.0 - uSeed * 2.0);
+    vec3 base = mix(uColorA, uColorB, crisp);
+    surface = mix(base, uColorC, smoothstep(0.3, 0.95, bands2) * 0.55);
+    // Pale storm ovals
+    float storm = smoothstep(0.55, 0.8, fbm(p * 2.6 + vec3(uSeed * 5.0)));
+    surface = mix(surface, uColorA * 1.25, storm * 0.5);
+    surface += turb * 0.1;
   } else if (uMode == 1) {
     // Lava: dark crust with glowing ridged cracks
     float crust = fbm(p * 1.8);
@@ -103,10 +109,13 @@ void main() {
     surface *= 1.0 - craters * 0.35;
   }
 
-  // Soft wrap lighting with a gentle terminator
+  // Soft wrap lighting with a gentle terminator; punchy day side
   float ndl = dot(N, L);
   float dayside = smoothstep(-0.18, 0.35, ndl);
-  vec3 lit = surface * mix(0.02, 1.05, dayside);
+  vec3 lit = surface * mix(0.015, 1.35, dayside);
+  // Mild saturation lift
+  float luma = dot(lit, vec3(0.299, 0.587, 0.114));
+  lit = mix(vec3(luma), lit, 1.18);
 
   // Sun-side atmosphere rim
   float fresnel = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), 3.0);
