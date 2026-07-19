@@ -19,11 +19,4 @@ export const FLIGHT = {
   pitchSpeed: 1.15,
   pitchLimit: 1.25,
   pitchAutolevel: 0.12,
-  /** Full boost charge lasts this many seconds */
-  boostDuration: 1.6,
-  boostRechargeTime: 2.5,
-  /** Charge needed to fire boost normally */
-  boostMinCharge: 0.15,
-  /** After running dry, charge needed before boost can re-ignite (prevents pulsing) */
-  boostReigniteCharge: 0.6,
 } as const

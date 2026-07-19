@@ -19,8 +19,6 @@ export interface ShipState {
   pitchRateSmooth: number
   boostCharge: number
   boosting: boolean
-  /** True after running dry — boost can't re-ignite until recharged enough. */
-  boostDepleted: boolean
   thrusting: boolean
   speed: number
   /**
@@ -43,7 +41,6 @@ export function createShipState(spawn: Vector3, yaw = 0): ShipState {
     pitchRateSmooth: 0,
     boostCharge: 1,
     boosting: false,
-    boostDepleted: false,
     thrusting: false,
     speed: 0,
     speedCeiling: FLIGHT.maxSpeed,
@@ -59,19 +56,11 @@ export function shipQuaternion(yaw: number, pitch: number, out: Quaternion): Qua
   return out.setFromEuler(_euler)
 }
 
-function updateBoost(state: ShipState, input: ShipInput, dt: number): void {
-  if (state.boostCharge <= 0) state.boostDepleted = true
-  if (state.boostDepleted && state.boostCharge >= FLIGHT.boostReigniteCharge) {
-    state.boostDepleted = false
-  }
-  const canIgnite = !state.boostDepleted && state.boostCharge > FLIGHT.boostMinCharge
-  if (input.boost && (state.boosting ? state.boostCharge > 0 : canIgnite)) {
-    state.boosting = true
-    state.boostCharge = Math.max(0, state.boostCharge - dt / FLIGHT.boostDuration)
-  } else {
-    state.boosting = false
-    state.boostCharge = Math.min(1, state.boostCharge + dt / FLIGHT.boostRechargeTime)
-  }
+function updateBoost(state: ShipState, input: ShipInput): void {
+  // Boost is a drive mode, not a consumable: active exactly while held, so
+  // sustained Shift+W is one smooth continuous acceleration — never a dip.
+  state.boosting = input.boost
+  state.boostCharge = 1
 }
 
 function substep(state: ShipState, input: ShipInput, dt: number): void {
@@ -88,7 +77,7 @@ function substep(state: ShipState, input: ShipInput, dt: number): void {
   state.yawRateSmooth += (yawRate - state.yawRateSmooth) * smoothing
   state.pitchRateSmooth += (pitchRate - state.pitchRateSmooth) * smoothing
 
-  updateBoost(state, input, dt)
+  updateBoost(state, input)
 
   // Thrust along the nose
   shipQuaternion(state.yaw, state.pitch, _quat)
