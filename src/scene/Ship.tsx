@@ -68,7 +68,8 @@ export function Ship() {
   const rigRef = useRef<Group>(null)
   const bankRef = useRef<Group>(null)
   const glowRef = useRef<PointLight>(null)
-  const plumeRef = useRef<Mesh>(null)
+  const plumeCoreRef = useRef<Mesh>(null)
+  const plumeOuterRef = useRef<Mesh>(null)
   const rcsRefs = useRef<(Mesh | null)[]>([])
   const state = useMemo(() => createShipState(new Vector3(...SPAWN_POSITION), SPAWN_YAW), [])
 
@@ -105,17 +106,33 @@ export function Ship() {
       bankRef.current.rotation.z = state.yawRateSmooth * BANK_FACTOR
     }
 
-    // Main drive plume tracks thrust
-    const plumeTarget = state.thrusting ? (state.boosting ? 2.6 : 1) : 0
-    const plume = plumeRef.current
-    if (plume) {
-      const s = MathUtils.lerp(plume.scale.y, plumeTarget, 0.15)
-      plume.scale.set(1, Math.max(0.001, s), 1)
-      ;(plume.material as MeshBasicMaterial).opacity = 0.8 * Math.min(1, s)
+    // Epstein-style drive exhaust: layered core + glow, flicker under thrust,
+    // stretched white-hot afterburner while boosting
+    const now = performance.now() / 1000
+    const flicker = 1 + 0.05 * Math.sin(now * 43) + 0.035 * Math.sin(now * 97)
+    const coreTarget = state.thrusting ? (state.boosting ? 3.4 : 1) : 0
+    const outerTarget = state.thrusting ? (state.boosting ? 2.5 : 1) : 0
+    const core = plumeCoreRef.current
+    if (core) {
+      const s = MathUtils.lerp(core.scale.y, coreTarget, 0.12) * flicker
+      core.scale.set(state.boosting ? 1.15 : 1, Math.max(0.001, s), state.boosting ? 1.15 : 1)
+      const mat = core.material as MeshBasicMaterial
+      mat.opacity = 0.95 * Math.min(1, s)
+      mat.color.setRGB(
+        state.boosting ? 3.2 : 1.6,
+        state.boosting ? 4.4 : 2.6,
+        state.boosting ? 5.2 : 3.6,
+      )
+    }
+    const outer = plumeOuterRef.current
+    if (outer) {
+      const s = MathUtils.lerp(outer.scale.y, outerTarget, 0.12) * flicker
+      outer.scale.set(state.boosting ? 1.3 : 1, Math.max(0.001, s), state.boosting ? 1.3 : 1)
+      ;(outer.material as MeshBasicMaterial).opacity = 0.45 * Math.min(1, s)
     }
     if (glowRef.current) {
-      const target = state.thrusting ? (state.boosting ? 34 : 14) : 0
-      glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target, 0.2)
+      const target = state.thrusting ? (state.boosting ? 60 : 16) : 0
+      glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target * flicker, 0.2)
     }
 
     // RCS puffs fire opposite the turn direction, like a real spacecraft
@@ -187,6 +204,71 @@ export function Ship() {
             <boxGeometry args={[0.66, 0.9, 0.06]} />
             <meshStandardMaterial {...PANEL} />
           </mesh>
+          {/* Dorsal superstructure (bridge block) */}
+          <group position={[0, 0.85, 0.6]}>
+            <mesh>
+              <boxGeometry args={[0.46, 0.95, 0.24]} />
+              <meshStandardMaterial {...HULL} />
+            </mesh>
+            <mesh position={[0, 0.12, 0.16]}>
+              <boxGeometry args={[0.34, 0.5, 0.1]} />
+              <meshStandardMaterial {...PANEL} />
+            </mesh>
+            <mesh position={[0, 0.3, 0.13]}>
+              <boxGeometry args={[0.26, 0.06, 0.06]} />
+              <meshBasicMaterial color={[1.8, 2.2, 2.6]} toneMapped={false} />
+            </mesh>
+          </group>
+          {/* Flank auxiliary drive pods */}
+          {[0.74, -0.74].map((x) => (
+            <group key={`pod-${x}`} position={[x, -0.85, 0]}>
+              <mesh>
+                <boxGeometry args={[0.3, 1.35, 0.44]} />
+                <meshStandardMaterial {...PANEL} />
+              </mesh>
+              <mesh position={[0, -0.75, 0]}>
+                <coneGeometry args={[0.12, 0.22, 10, 1, true]} />
+                <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+              </mesh>
+              <mesh position={[x > 0 ? 0.16 : -0.16, 0.4, 0]}>
+                <boxGeometry args={[0.02, 0.3, 0.08]} />
+                <meshBasicMaterial color={[2.4, 2.0, 1.4]} toneMapped={false} />
+              </mesh>
+            </group>
+          ))}
+          {/* Hull ribs at section joins */}
+          {[
+            { y: 1.55, r: 0.545 },
+            { y: -0.14, r: 0.585 },
+            { y: -1.06, r: 0.705 },
+          ].map((rib) => (
+            <mesh key={`rib-${rib.y}`} position={[0, rib.y, 0]} rotation-y={OCT}>
+              <cylinderGeometry args={[rib.r, rib.r, 0.07, 8]} />
+              <meshStandardMaterial {...PANEL} />
+            </mesh>
+          ))}
+          {/* Docking hatch on the starboard flank */}
+          <group position={[0.565, 0.25, 0]} rotation-z={-Math.PI / 2}>
+            <mesh>
+              <cylinderGeometry args={[0.16, 0.16, 0.05, 16]} />
+              <meshStandardMaterial {...DARK} />
+            </mesh>
+            <mesh position={[0, 0.03, 0]}>
+              <cylinderGeometry args={[0.1, 0.1, 0.02, 16]} />
+              <meshStandardMaterial {...PANEL} />
+            </mesh>
+          </group>
+          {/* Sensor pod, port bow */}
+          <group position={[-0.55, 1.35, 0.2]}>
+            <mesh>
+              <boxGeometry args={[0.12, 0.3, 0.12]} />
+              <meshStandardMaterial {...DARK} />
+            </mesh>
+            <mesh position={[-0.09, 0.05, 0]} rotation-z={Math.PI / 2}>
+              <coneGeometry args={[0.09, 0.1, 12]} />
+              <meshStandardMaterial color="#c8ccd4" metalness={0.5} roughness={0.4} />
+            </mesh>
+          </group>
           {/* PDC turrets, dorsal and ventral */}
           {[
             { pos: [0.2, 1.45, 0.6] as const, up: 1 },
@@ -264,6 +346,18 @@ export function Ship() {
               </group>
             )
           })}
+          {/* Vernier thrusters around the main drive */}
+          {[
+            [0.45, 0.45],
+            [-0.45, 0.45],
+            [0.45, -0.45],
+            [-0.45, -0.45],
+          ].map(([x, z], i) => (
+            <mesh key={`vern-${i}`} position={[x, -2.32, z]}>
+              <coneGeometry args={[0.09, 0.24, 10, 1, true]} />
+              <meshStandardMaterial color="#1a2230" metalness={0.9} roughness={0.3} side={2} />
+            </mesh>
+          ))}
           {/* Drive bell + plume */}
           <group position={[0, -2.35, 0]}>
             <mesh geometry={bell}>
@@ -273,10 +367,21 @@ export function Ship() {
               <circleGeometry args={[0.19, 16]} />
               <meshBasicMaterial color={[0.5, 4.0, 6.0]} toneMapped={false} />
             </mesh>
-            <mesh ref={plumeRef} position={[0, -1.55, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
-              <coneGeometry args={[0.3, 2.4, 12, 1, true]} />
+            <mesh ref={plumeCoreRef} position={[0, -1.7, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
+              <coneGeometry args={[0.14, 2.8, 12, 1, true]} />
               <meshBasicMaterial
-                color="#7fd4ff"
+                color="#bfe8ff"
+                transparent
+                opacity={0}
+                blending={AdditiveBlending}
+                depthWrite={false}
+                toneMapped={false}
+              />
+            </mesh>
+            <mesh ref={plumeOuterRef} position={[0, -1.45, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
+              <coneGeometry args={[0.34, 2.2, 12, 1, true]} />
+              <meshBasicMaterial
+                color="#5aa8e8"
                 transparent
                 opacity={0}
                 blending={AdditiveBlending}

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { shipInput } from '../physics/shipInput'
+import { cameraLook } from '../state/cameraLook'
 
 /**
  * Desktop controls.
@@ -45,10 +46,17 @@ export function useShipControls(): void {
       if (dragId !== null) return
       if ((e.target as HTMLElement).closest('button, a, [data-ui]')) return
       dragId = e.pointerId
+      cameraLook.dragging = true
       originX = e.clientX
       originY = e.clientY
     }
     const onPointerMove = (e: PointerEvent) => {
+      // Free-look: cursor offset from center orbits the camera (mouse only —
+      // touch devices get their own controls)
+      if (e.pointerType === 'mouse' && dragId === null) {
+        cameraLook.x = (e.clientX / window.innerWidth) * 2 - 1
+        cameraLook.y = (e.clientY / window.innerHeight) * 2 - 1
+      }
       if (e.pointerId !== dragId) return
       const dx = (e.clientX - originX) / STICK_RANGE
       const dy = (e.clientY - originY) / STICK_RANGE
@@ -58,6 +66,7 @@ export function useShipControls(): void {
     const endDrag = (e: PointerEvent) => {
       if (e.pointerId !== dragId) return
       dragId = null
+      cameraLook.dragging = false
       shipInput.yaw = 0
       shipInput.pitch = 0
       applyKeys() // keyboard may still be held
