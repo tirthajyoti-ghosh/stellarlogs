@@ -87,8 +87,8 @@ export function Star({ color, radius, seed = 1 }: StarProps) {
         <sphereGeometry args={[radius * 1.35, 48, 48]} />
       </mesh>
       <sprite material={spriteMaterial} scale={[radius * 7, radius * 7, 1]} />
-      <pointLight color={color} intensity={4} distance={0} decay={0.35} />
-      <pointLight color="#fff4e0" intensity={3} distance={0} decay={0.35} />
+      {/* One light per star — with 7 systems, light count matters */}
+      <pointLight color="#fff0dd" intensity={6.5} distance={0} decay={0.35} />
     </group>
   )
 }
