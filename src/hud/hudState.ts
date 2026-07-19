@@ -66,7 +66,6 @@ export const hudReadouts = {
   targetNameEl: null as HTMLElement | null,
   targetDistEl: null as HTMLElement | null,
   targetCloseEl: null as HTMLElement | null,
-  progradeEl: null as HTMLElement | null,
   warpDestEl: null as HTMLElement | null,
   warpDistEl: null as HTMLElement | null,
   warpPhaseEl: null as HTMLElement | null,
