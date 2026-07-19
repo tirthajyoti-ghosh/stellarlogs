@@ -29,7 +29,7 @@ export function Radar() {
       const cy = SIZE / 2
 
       // Rings + crosshairs
-      ctx.strokeStyle = 'rgba(92, 175, 251, 0.25)'
+      ctx.strokeStyle = 'rgba(150, 190, 225, 0.2)'
       ctx.lineWidth = 1
       for (const r of [R, R * 0.66, R * 0.33]) {
         ctx.beginPath()
@@ -41,7 +41,7 @@ export function Radar() {
       ctx.lineTo(cx + R, cy)
       ctx.moveTo(cx, cy - R)
       ctx.lineTo(cx, cy + R)
-      ctx.strokeStyle = 'rgba(92, 175, 251, 0.12)'
+      ctx.strokeStyle = 'rgba(150, 190, 225, 0.1)'
       ctx.stroke()
 
       // Range: zoomed when inside a system
@@ -53,7 +53,7 @@ export function Radar() {
           break
         }
       }
-      const range = nearSystem ? 6200 : 20000
+      const range = nearSystem ? 6200 : 30000
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
@@ -107,9 +107,9 @@ export function Radar() {
       // Sweep
       const angle = (now / 1400) % (Math.PI * 2)
       const grad = ctx.createConicGradient(angle, cx, cy)
-      grad.addColorStop(0, 'rgba(92, 175, 251, 0.28)')
-      grad.addColorStop(0.12, 'rgba(92, 175, 251, 0)')
-      grad.addColorStop(1, 'rgba(92, 175, 251, 0)')
+      grad.addColorStop(0, 'rgba(111, 211, 232, 0.25)')
+      grad.addColorStop(0.12, 'rgba(111, 211, 232, 0)')
+      grad.addColorStop(1, 'rgba(111, 211, 232, 0)')
       ctx.fillStyle = grad
       ctx.beginPath()
       ctx.arc(cx, cy, R, 0, Math.PI * 2)

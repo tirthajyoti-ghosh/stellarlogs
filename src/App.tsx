@@ -6,6 +6,7 @@ import { ChaseCamera } from './scene/ChaseCamera'
 import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
+import { WarpStreaks } from './scene/WarpStreaks'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
@@ -37,6 +38,7 @@ export default function App() {
           <StarSystem key={system.id} config={system} />
         ))}
         <ContactStation />
+        <WarpStreaks />
         <Ship />
         <ChaseCamera />
         <HudBridge />

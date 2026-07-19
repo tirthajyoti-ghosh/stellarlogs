@@ -3,10 +3,10 @@
  * Tune here — nothing else in the physics needs touching.
  */
 export const FLIGHT = {
-  thrustAccel: 85,
-  brakeAccel: 60,
-  maxSpeed: 115,
-  boostMaxSpeed: 280,
+  thrustAccel: 140,
+  brakeAccel: 100,
+  maxSpeed: 210,
+  boostMaxSpeed: 520,
   boostAccelMult: 3.2,
   /** s^-1, exponential velocity decay (space "drag" for game feel) */
   linearDamping: 0.35,

@@ -86,7 +86,7 @@ export function stepWarp(state: WarpableShip, dt: number): void {
   }
 
   // jump: speed scales with remaining distance — fast ramp, smooth arrival
-  const speed = Math.max(600, Math.min(26000, dist * 1.6))
+  const speed = Math.max(700, Math.min(38000, dist * 1.6))
   const step = Math.min(dist, speed * dt)
   state.position.addScaledVector(_dir, step)
   state.speed = speed

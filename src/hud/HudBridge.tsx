@@ -3,6 +3,7 @@ import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
 import { shipRig } from '../state/shipRig'
 import { ALL_SYSTEMS } from '../config/systems'
+import { FLIGHT } from '../config/flight'
 
 const _p = new Vector3()
 const EDGE = 96 // px margin when clamping off-screen markers
@@ -32,6 +33,10 @@ export function HudBridge() {
     hudReadouts.currentSystemName = nearestName
     if (hudReadouts.systemEl) hudReadouts.systemEl.textContent = nearestName
     if (hudReadouts.speedEl) hudReadouts.speedEl.textContent = String(Math.round(shipRig.speed))
+    if (hudReadouts.speedBarEl) {
+      const frac = Math.min(1, shipRig.speed / FLIGHT.boostMaxSpeed)
+      hudReadouts.speedBarEl.style.width = `${(frac * 100).toFixed(1)}%`
+    }
     if (hudReadouts.headingEl) {
       const deg = Math.round(((-shipRig.yaw * 180) / Math.PI + 360) % 360)
       hudReadouts.headingEl.textContent = `${deg}°`
@@ -46,6 +51,8 @@ export function HudBridge() {
             : 'IDLE'
       hudReadouts.driveEl.dataset.mode = hudReadouts.driveEl.textContent.toLowerCase()
     }
+
+    document.body.dataset.warp = shipRig.warping ? '1' : ''
 
     for (const label of hudLabels) {
       const el = label.el
