@@ -56,6 +56,7 @@ export function registerHudLabel(label: HudLabel): () => void {
 /** Status readouts, written by HudBridge, rendered by StatusBar. */
 export const hudReadouts = {
   speedEl: null as HTMLElement | null,
+  speedBarEl: null as HTMLElement | null,
   headingEl: null as HTMLElement | null,
   systemEl: null as HTMLElement | null,
   driveEl: null as HTMLElement | null,

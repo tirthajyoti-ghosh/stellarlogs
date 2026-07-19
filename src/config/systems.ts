@@ -80,13 +80,13 @@ interface SystemPlacement {
  * the personal systems behind. All within a ~13k radius.
  */
 const PLACEMENTS: SystemPlacement[] = [
-  { content: PROJECTS, position: [0, 0, -5400], seedBase: 1 },
-  { content: WORK, position: [-8200, 250, -8600], seedBase: 11 },
-  { content: BLOG, position: [8600, -180, -7400], seedBase: 21 },
-  { content: RECOMMENDATIONS, position: [-11000, 150, -1200], seedBase: 31 },
-  { content: READING, position: [10800, 380, -300], seedBase: 41 },
-  { content: SHOWS, position: [7200, -320, 6400], seedBase: 51 },
-  { content: TRAVEL, position: [-7400, -240, 6800], seedBase: 61 },
+  { content: PROJECTS, position: [0, 0, -8400], seedBase: 1 },
+  { content: WORK, position: [-12600, 350, -13000], seedBase: 11 },
+  { content: BLOG, position: [13200, -260, -11300], seedBase: 21 },
+  { content: RECOMMENDATIONS, position: [-16600, 220, -1900], seedBase: 31 },
+  { content: READING, position: [16300, 540, -500], seedBase: 41 },
+  { content: SHOWS, position: [11000, -470, 9800], seedBase: 51 },
+  { content: TRAVEL, position: [-11300, -360, 10400], seedBase: 61 },
 ]
 
 function buildSystem({ content, position, seedBase }: SystemPlacement): SystemConfig {
