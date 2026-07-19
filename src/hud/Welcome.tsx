@@ -43,7 +43,7 @@ export function Welcome() {
           {IS_TOUCH ? (
             <div>
               <span className="hud-key">STICK</span> steer · <span className="hud-key">BURN</span>{' '}
-              thrust · <span className="hud-key">AB</span> afterburner ·{' '}
+              thrust · <span className="hud-key">BOOST</span> afterburner ·{' '}
               <span className="hud-key">REV</span> reverse · <span className="hud-key">JUMP DRIVE</span>{' '}
               fast travel
             </div>
