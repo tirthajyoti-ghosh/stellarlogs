@@ -13,7 +13,7 @@ import {
 import { shipRig } from '../state/shipRig'
 import { warp } from '../physics/warp'
 
-const COUNT = 360
+const COUNT = 520
 const TUBE_RADIUS_MIN = 30
 const TUBE_RADIUS_MAX = 260
 const TUBE_LENGTH = 3200
@@ -48,13 +48,15 @@ export function WarpStreaks() {
       offsets[i * 3] = Math.cos(a) * r
       offsets[i * 3 + 1] = Math.sin(a) * r
       offsets[i * 3 + 2] = rng() * TUBE_LENGTH - TUBE_LENGTH / 2
-      // head bright blue-white, tail dim blue
-      colors[i * 6] = 0.75
-      colors[i * 6 + 1] = 0.9
-      colors[i * 6 + 2] = 1.0
-      colors[i * 6 + 3] = 0.2
-      colors[i * 6 + 4] = 0.35
-      colors[i * 6 + 5] = 0.7
+      // Palette variety: blue-white, violet, pink-magenta streaks
+      const pick = rng()
+      const head = pick < 0.55 ? [0.75, 0.9, 1.0] : pick < 0.85 ? [0.75, 0.6, 1.0] : [1.0, 0.6, 0.9]
+      colors[i * 6] = head[0]
+      colors[i * 6 + 1] = head[1]
+      colors[i * 6 + 2] = head[2]
+      colors[i * 6 + 3] = head[0] * 0.28
+      colors[i * 6 + 4] = head[1] * 0.3
+      colors[i * 6 + 5] = head[2] * 0.6
     }
     const geometry = new BufferGeometry()
     geometry.setAttribute('position', new BufferAttribute(positions, 3))

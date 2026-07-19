@@ -414,3 +414,20 @@ body[data-warp='1'] .hud-warp-tint { opacity: 1; }
   background: rgba(111, 211, 232, 0.2);
   border-color: var(--hud-teal);
 }
+
+/* Warp entry flash */
+.hud-warp-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(220, 230, 255, 0.95), rgba(150, 170, 255, 0.5) 55%, transparent 80%);
+  opacity: 0;
+}
+body[data-warpphase='jump'] .hud-warp-flash {
+  animation: hud-warpflash 0.7s ease-out forwards;
+}
+@keyframes hud-warpflash {
+  0% { opacity: 0; }
+  12% { opacity: 1; }
+  100% { opacity: 0; }
+}

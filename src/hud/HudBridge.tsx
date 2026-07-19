@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
 import { shipRig } from '../state/shipRig'
+import { warp } from '../physics/warp'
 import { ALL_SYSTEMS } from '../config/systems'
 import { FLIGHT } from '../config/flight'
 
@@ -53,8 +54,16 @@ export function HudBridge() {
     }
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
+    document.body.dataset.warpphase = warp.phase
 
-    for (const label of hudLabels) {
+    // Greedy overlap culling: nearer labels claim screen space first
+    const placed: { x: number; y: number }[] = []
+    const sorted = [...hudLabels].sort(
+      (a, b) =>
+        a.position.distanceTo(shipRig.position) - b.position.distanceTo(shipRig.position),
+    )
+
+    for (const label of sorted) {
       const el = label.el
       if (!el) continue
       const dist = label.position.distanceTo(shipRig.position)
@@ -64,6 +73,11 @@ export function HudBridge() {
       if (label.kind === 'system') visible = dist > 1600
       else if (label.kind === 'planet') visible = dist < 3200 && dist > 140
       else visible = dist < 2600 && dist > 220
+
+      // Mid-jump, focus the HUD: only the destination marker stays up
+      if (warp.phase === 'jump') {
+        visible = label.kind === 'system' && label.position.distanceTo(warp.target) < 200
+      }
 
       if (!visible) {
         el.style.opacity = '0'
@@ -99,6 +113,14 @@ export function HudBridge() {
         y = cy + dy * scale
         arrow = ` ${Math.round((Math.atan2(dy, dx) * 180) / Math.PI)}deg`
       }
+
+      // Skip labels that would collide with an already-placed one
+      const collides = placed.some((p) => Math.abs(p.x - x) < 150 && Math.abs(p.y - y) < 22)
+      if (collides) {
+        el.style.opacity = '0'
+        continue
+      }
+      placed.push({ x, y })
 
       el.style.opacity = label.kind === 'system' ? '0.92' : '0.85'
       el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`

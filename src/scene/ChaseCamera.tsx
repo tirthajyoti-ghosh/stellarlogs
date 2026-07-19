@@ -53,9 +53,11 @@ export function ChaseCamera() {
 
     // Desired offset in world space: pulled in while orbiting (hero shot),
     // pushed out slightly with speed
+    // Pullback caps at sub-light speeds so warp doesn't shrink the ship away
+    const pullback = 1 + Math.min(shipRig.speed, 520) * SPEED_PULLBACK * 0.1
     _desiredOffset
       .copy(OFFSET)
-      .multiplyScalar((1 - orbitAmount * 0.45) * (1 + shipRig.speed * SPEED_PULLBACK * 0.1))
+      .multiplyScalar((1 - orbitAmount * 0.45) * pullback)
       .applyQuaternion(_orbitQuat)
       .applyQuaternion(shipRig.quaternion)
 
@@ -68,6 +70,14 @@ export function ChaseCamera() {
     }
     // Camera rides with the ship — position lag never scales with speed
     cam.position.copy(shipRig.position).add(offset.current)
+    // Fine high-frequency shake while the drive is punching
+    if (shipRig.warping && shipRig.speed > 2000) {
+      const t = performance.now() / 1000
+      const amp = Math.min(1, shipRig.speed / 14000) * 0.5
+      cam.position.x += Math.sin(t * 61.7) * amp
+      cam.position.y += Math.sin(t * 47.3 + 1.7) * amp
+      cam.position.z += Math.sin(t * 53.9 + 3.1) * amp
+    }
 
     // While orbiting, keep the ship itself centered; when settled behind,
     // look ahead of the nose for flying

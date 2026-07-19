@@ -10,6 +10,7 @@ export function HUD() {
     <div className="hud">
       <div className="hud-scanline" />
       <div className="hud-warp-tint" />
+      <div className="hud-warp-flash" />
       <LabelLayer />
       <Radar />
       <StatusBar />

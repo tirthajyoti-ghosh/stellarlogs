@@ -53,15 +53,15 @@ export function Radar() {
           break
         }
       }
-      const range = nearSystem ? 6200 : 30000
+      const range = nearSystem ? 6200 : 40000
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
         const dx = wx - shipRig.position.x
         const dz = wz - shipRig.position.z
-        // rotate so "up" is the ship's heading
-        const rx = dx * Math.cos(-yaw) - dz * Math.sin(-yaw)
-        const rz = dx * Math.sin(-yaw) + dz * Math.cos(-yaw)
+        // rotate so "up" is the ship's heading (R(yaw) maps forward to -Y)
+        const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
+        const rz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
         const px = cx + (rx / range) * R
         const py = cy + (rz / range) * R
         const dist = Math.hypot(px - cx, py - cy)
