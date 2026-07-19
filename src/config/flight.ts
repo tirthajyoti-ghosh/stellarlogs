@@ -16,8 +16,10 @@ export const FLIGHT = {
    */
   overspeedBleed: 0.6,
   yawSpeed: 1.7,
+  pitchSpeed: 1.15,
+  pitchLimit: 1.25,
+  /** Gentle pull of the nose back to level when no pitch input (s^-1) */
+  pitchAutolevel: 0.15,
   /** RCS translation authority (reverse burn + strafes), units/s^2 */
   rcsAccel: 95,
-  /** After a warp pitches the hull, it levels back out at this rate (s^-1) */
-  pitchAutolevel: 1.4,
 } as const
