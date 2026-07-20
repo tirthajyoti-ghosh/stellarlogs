@@ -1,9 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { Color, Group, Mesh, MeshBasicMaterial, SRGBColorSpace, Texture, TextureLoader } from 'three'
+import {
+  AdditiveBlending,
+  Color,
+  Group,
+  MathUtils,
+  Mesh,
+  MeshBasicMaterial,
+  SRGBColorSpace,
+  Texture,
+  TextureLoader,
+  Vector3,
+} from 'three'
 import type { BoardSpec } from './boardSpecs'
 import { FONT, FONT_BOLD } from './font'
+import { shipRig } from '../../state/shipRig'
 
 const PANEL_BG = '#050d1c'
 
@@ -11,6 +23,14 @@ interface BillboardProps {
   spec: BoardSpec
   accentColor: string
   position: [number, number, number]
+  /** Live world position of the parent planet, to aim the board at the ship */
+  planetWorldPos: Vector3
+}
+
+function wrapAngle(a: number): number {
+  while (a > Math.PI) a -= Math.PI * 2
+  while (a < -Math.PI) a += Math.PI * 2
+  return a
 }
 
 function ImagePlane({ url, width, height }: { url: string; width: number; height: number }) {
@@ -192,28 +212,101 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
   )
 }
 
-/**
- * One content panel as a physical orbital billboard: framed panel with a
- * satellite bus and thrusters, slowly spinning about its vertical axis.
- * The parent (PlanetBoards) drives position; spin happens here.
- */
-export function Billboard({ spec, accentColor, position }: BillboardProps) {
-  const spinRef = useRef<Group>(null)
-  // Deterministic per-board phase from its dimensions (stable across renders)
-  const phase = useMemo(() => ((spec.width * 7.31 + spec.height * 3.7) % 6.28), [spec.width, spec.height])
+/** A single station-keeping jet: additive cone that puffs when the board turns. */
+function PuffJet({
+  x,
+  z,
+  dir,
+  jetRef,
+}: {
+  x: number
+  z: number
+  dir: 1 | -1
+  jetRef: (m: Mesh | null) => void
+}) {
+  return (
+    <mesh ref={jetRef} position={[x, 0, z]} rotation-x={(dir * Math.PI) / 2}>
+      <coneGeometry args={[0.7, 3, 8, 1, true]} />
+      <meshBasicMaterial
+        color="#bfe8ff"
+        transparent
+        opacity={0}
+        blending={AdditiveBlending}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </mesh>
+  )
+}
 
-  useFrame(({ clock }) => {
+const _boardWorld = new Vector3()
+
+/**
+ * One content panel as a physical orbital billboard. Geostationary (the parent
+ * fixes its position); the board turns on its vertical axis to FACE the ship
+ * whenever it's in reading range, firing a visible station-keeping thruster
+ * couple while it slews. Its front face is +Z.
+ */
+export function Billboard({ spec, accentColor, position, planetWorldPos }: BillboardProps) {
+  const rootRef = useRef<Group>(null)
+  const spinRef = useRef<Group>(null)
+  // Deterministic per-board start angle so they don't all begin aligned
+  const phase = useMemo(() => (spec.width * 7.31 + spec.height * 3.7) % 6.28, [spec.width, spec.height])
+  const jets = useRef<{ leftF: Mesh | null; leftB: Mesh | null; rightF: Mesh | null; rightB: Mesh | null }>({
+    leftF: null,
+    leftB: null,
+    rightF: null,
+    rightB: null,
+  })
+  const initialized = useRef(false)
+
+  const halfW = spec.width / 2 + 2
+
+  useFrame((_, dt) => {
     const spin = spinRef.current
-    if (!spin) return
-    // Slow satellite spin with a slight tumble wobble
-    spin.rotation.y = phase + clock.elapsedTime * 0.12
-    spin.rotation.x = Math.sin(clock.elapsedTime * 0.11 + phase) * 0.05
+    const root = rootRef.current
+    if (!spin || !root) return
+    if (!initialized.current) {
+      spin.rotation.y = phase
+      initialized.current = true
+    }
+
+    // Board world position = planet position + this board's fixed local offset
+    _boardWorld.copy(planetWorldPos).add(root.position)
+    const dx = shipRig.position.x - _boardWorld.x
+    const dz = shipRig.position.z - _boardWorld.z
+    // Front face is +Z; aim it at the ship (yaw only — signs stay upright)
+    const targetYaw = Math.atan2(dx, dz)
+    const delta = wrapAngle(targetYaw - spin.rotation.y)
+
+    // Slow, visible slew with a rate cap; RCS couple fires while turning
+    const RATE = 0.7 // rad/s
+    const maxStep = RATE * dt
+    const step = MathUtils.clamp(delta, -maxStep, maxStep)
+    spin.rotation.y += step
+
+    const effort = Math.abs(delta) > 0.015 ? Math.min(1, Math.abs(step) / Math.max(1e-5, maxStep)) : 0
+    // step > 0 (turning one way) fires left-back + right-front, and vice-versa
+    const cwFire = step > 0 ? effort : 0
+    const ccwFire = step < 0 ? effort : 0
+    const set = (m: Mesh | null, v: number) => {
+      if (m) (m.material as MeshBasicMaterial).opacity = MathUtils.lerp((m.material as MeshBasicMaterial).opacity, v * 0.9, 0.35)
+    }
+    set(jets.current.leftB, cwFire)
+    set(jets.current.rightF, cwFire)
+    set(jets.current.leftF, ccwFire)
+    set(jets.current.rightB, ccwFire)
   })
 
   return (
-    <group position={position}>
+    <group ref={rootRef} position={position}>
       <group ref={spinRef}>
         <BoardStructure width={spec.width} height={spec.height} accentColor={accentColor} />
+        {/* Station-keeping jets: a yaw couple at the left/right edges */}
+        <PuffJet x={-halfW} z={3} dir={1} jetRef={(m) => (jets.current.leftF = m)} />
+        <PuffJet x={-halfW} z={-3} dir={-1} jetRef={(m) => (jets.current.leftB = m)} />
+        <PuffJet x={halfW} z={3} dir={1} jetRef={(m) => (jets.current.rightF = m)} />
+        <PuffJet x={halfW} z={-3} dir={-1} jetRef={(m) => (jets.current.rightB = m)} />
         {/* Accent glow frame */}
         <mesh position={[0, 0, -0.4]}>
           <planeGeometry args={[spec.width + 1.6, spec.height + 1.6]} />

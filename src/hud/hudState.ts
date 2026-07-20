@@ -22,6 +22,12 @@ export interface HudLabel {
   yOffset: number
   /** DOM node, attached by LabelLayer */
   el: HTMLDivElement | null
+  /** Parent system name, shown in the tactical chip for planets */
+  group?: string
+  /** One-line "what is this" for the tactical purpose readout */
+  detail?: string
+  /** Distance (world units) at which this body's boards become readable */
+  readRange?: number
 }
 
 export const hudLabels: HudLabel[] = [
@@ -33,6 +39,7 @@ export const hudLabels: HudLabel[] = [
     position: new Vector3(...s.position),
     yOffset: s.starRadius * 2.2,
     el: null,
+    detail: `${s.planets.length} PLANETS`,
   })),
   {
     id: 'station',
@@ -42,6 +49,7 @@ export const hudLabels: HudLabel[] = [
     position: new Vector3(...STATION_POSITION),
     yOffset: 90,
     el: null,
+    detail: 'CONTACT & LINKS',
   },
 ]
 
@@ -63,9 +71,14 @@ export const hudReadouts = {
   gravEl: null as HTMLElement | null,
   pitchEl: null as HTMLElement | null,
   shipVizEls: {} as Record<string, SVGElement | null>,
+  targetChipEl: null as HTMLElement | null,
   targetNameEl: null as HTMLElement | null,
-  targetDistEl: null as HTMLElement | null,
+  targetBearingEl: null as HTMLElement | null,
+  targetRangeEl: null as HTMLElement | null,
   targetCloseEl: null as HTMLElement | null,
+  targetPurposeEl: null as HTMLElement | null,
+  /** Jump destination for the current tactical contact (its system/station) */
+  targetJump: null as { position: Vector3; standoff: number } | null,
   warpDestEl: null as HTMLElement | null,
   warpDistEl: null as HTMLElement | null,
   warpPhaseEl: null as HTMLElement | null,

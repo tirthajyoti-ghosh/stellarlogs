@@ -23,9 +23,10 @@ interface OrbitingPlanetProps {
   systemPosition: Vector3
   sunPosition: Vector3
   accentColor: string
+  systemName: string
 }
 
-function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor }: OrbitingPlanetProps) {
+function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor, systemName }: OrbitingPlanetProps) {
   const groupRef = useRef<Group>(null)
   // Shared, mutated in place — gravity body and boards track the orbit
   const worldPos = useMemo(() => new Vector3(), [])
@@ -55,13 +56,15 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor }: Or
       position: worldPos,
       yOffset: config.radius * 1.6,
       el: null,
+      group: systemName.toUpperCase(),
+      readRange: config.radius * 7 + 220,
     })
     labelsChanged()
     return () => {
       unregister()
       labelsChanged()
     }
-  }, [accentColor, config.item.title, config.radius, config.seed, worldPos])
+  }, [accentColor, config.item.title, config.radius, config.seed, worldPos, systemName])
 
   useFrame(({ clock }) => {
     const angle = config.phase + clock.elapsedTime * config.orbitSpeed
@@ -115,6 +118,7 @@ export function StarSystem({ config }: { config: SystemConfig }) {
           systemPosition={systemPosition}
           sunPosition={systemPosition}
           accentColor={config.starColor}
+          systemName={config.name}
         />
       ))}
       {orbitGeometries.map((geo, i) => {

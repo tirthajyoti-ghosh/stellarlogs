@@ -31,7 +31,7 @@ export function PlanetBoards({ item, planetRadius, worldPos, accentColor }: Plan
   const showDistance = planetRadius * 7 + 220
   const orbitRadius = planetRadius * 1.75 + 40
 
-  useFrame(({ clock }) => {
+  useFrame(() => {
     const group = groupRef.current
     if (!group) return
     const distance = worldPos.distanceTo(shipRig.position)
@@ -44,14 +44,15 @@ export function PlanetBoards({ item, planetRadius, worldPos, accentColor }: Plan
     if (!group.visible) return
     group.scale.setScalar(s)
 
-    // Slow procession of the boards around the planet
-    const t = clock.elapsedTime * 0.045
+    // Geostationary: boards hold FIXED positions in a ring over the planet
+    // (they ride the planet's orbit, but never drift around it). Each board
+    // turns to face the ship on its own — see Billboard.
     const n = Math.max(1, group.children.length)
     group.children.forEach((child, i) => {
-      const angle = t + (i * Math.PI * 2) / n
+      const angle = (i * Math.PI * 2) / n
       child.position.set(
         Math.cos(angle) * orbitRadius,
-        Math.sin(clock.elapsedTime * 0.3 + i * 2.1) * planetRadius * 0.12,
+        (i % 2 === 0 ? 1 : -1) * planetRadius * 0.16,
         Math.sin(angle) * orbitRadius,
       )
     })
@@ -60,7 +61,13 @@ export function PlanetBoards({ item, planetRadius, worldPos, accentColor }: Plan
   return (
     <group ref={groupRef}>
       {specs.map((spec, i) => (
-        <Billboard key={i} spec={spec} accentColor={accentColor} position={[0, 0, 0]} />
+        <Billboard
+          key={i}
+          spec={spec}
+          accentColor={accentColor}
+          position={[0, 0, 0]}
+          planetWorldPos={worldPos}
+        />
       ))}
     </group>
   )

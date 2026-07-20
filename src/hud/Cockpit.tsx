@@ -126,9 +126,12 @@ export function Cockpit() {
   const posRef = useRef<HTMLElement>(null)
   const gravRef = useRef<HTMLSpanElement>(null)
   const pitchRef = useRef<HTMLElement>(null)
+  const targetChipRef = useRef<HTMLSpanElement>(null)
   const targetNameRef = useRef<HTMLSpanElement>(null)
-  const targetDistRef = useRef<HTMLElement>(null)
+  const targetBearingRef = useRef<HTMLSpanElement>(null)
+  const targetRangeRef = useRef<HTMLElement>(null)
   const targetCloseRef = useRef<HTMLElement>(null)
+  const targetPurposeRef = useRef<HTMLSpanElement>(null)
   const [jumpPage, setJumpPage] = useState(false)
   const [, setTick] = useState(0)
 
@@ -140,9 +143,12 @@ export function Cockpit() {
     hudReadouts.posEl = posRef.current
     hudReadouts.gravEl = gravRef.current
     hudReadouts.pitchEl = pitchRef.current
+    hudReadouts.targetChipEl = targetChipRef.current
     hudReadouts.targetNameEl = targetNameRef.current
-    hudReadouts.targetDistEl = targetDistRef.current
+    hudReadouts.targetBearingEl = targetBearingRef.current
+    hudReadouts.targetRangeEl = targetRangeRef.current
     hudReadouts.targetCloseEl = targetCloseRef.current
+    hudReadouts.targetPurposeEl = targetPurposeRef.current
     return () => {
       hudReadouts.speedEl = null
       hudReadouts.headingEl = null
@@ -151,9 +157,12 @@ export function Cockpit() {
       hudReadouts.posEl = null
       hudReadouts.gravEl = null
       hudReadouts.pitchEl = null
+      hudReadouts.targetChipEl = null
       hudReadouts.targetNameEl = null
-      hudReadouts.targetDistEl = null
+      hudReadouts.targetBearingEl = null
+      hudReadouts.targetRangeEl = null
       hudReadouts.targetCloseEl = null
+      hudReadouts.targetPurposeEl = null
     }
   }, [jumpPage])
 
@@ -171,6 +180,14 @@ export function Cockpit() {
     const id = setInterval(() => setTick((t) => t + 1), 500)
     return () => clearInterval(id)
   }, [jumpPage])
+
+  // Tactical contact → jump to its system/station (radar blips do the same)
+  const jumpToContact = () => {
+    const j = hudReadouts.targetJump
+    if (!j || warp.phase !== 'idle') return
+    if (j.position.distanceTo(shipRig.position) < j.standoff * 1.3) return
+    startWarp(j.position, shipRig.position, j.standoff)
+  }
 
   return (
     <div className="hud-cockpit">
@@ -262,19 +279,28 @@ export function Cockpit() {
       <div className="hud-mfd hud-mfd-right" data-ui>
         <div className="hud-mfd-title">TACTICAL</div>
         <Radar />
-        <div className="hud-target-name-row">
+        <button className="hud-target" onClick={jumpToContact} title="Jump to this contact">
+          <div className="hud-target-head">
+            <span className="hud-target-chip" ref={targetChipRef}>
+              —
+            </span>
+            <span className="hud-target-bearing" ref={targetBearingRef} aria-hidden>
+              ▲
+            </span>
+          </div>
           <span className="hud-target-name" ref={targetNameRef}>
             —
           </span>
-        </div>
-        <div className="hud-mfd-data">
-          <span>
-            RNG <b ref={targetDistRef}>—</b>
+          <div className="hud-target-line">
+            <span ref={targetRangeRef}>—</span>
+            <span className="hud-target-close" ref={targetCloseRef}>
+              —
+            </span>
+          </div>
+          <span className="hud-target-purpose" ref={targetPurposeRef}>
+            —
           </span>
-          <span>
-            VEL <b ref={targetCloseRef} className="hud-target-close">—</b>
-          </span>
-        </div>
+        </button>
       </div>
     </div>
   )
