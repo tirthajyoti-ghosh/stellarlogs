@@ -54,11 +54,10 @@ export function shipQuaternion(yaw: number, pitch: number, out: Quaternion): Qua
 }
 
 function substep(state: ShipState, input: ShipInput, dt: number): void {
-  // Attitude via RCS couples: yaw and pitch rotate the hull (no banking)
+  // Attitude via RCS couples: yaw and pitch rotate the hull (no banking).
+  // No limits, no auto-level: the ship holds whatever attitude it's left in.
   state.yaw += input.yaw * FLIGHT.yawSpeed * dt
   state.pitch += input.pitch * FLIGHT.pitchSpeed * dt
-  state.pitch = Math.max(-FLIGHT.pitchLimit, Math.min(FLIGHT.pitchLimit, state.pitch))
-  if (input.pitch === 0) state.pitch *= Math.exp(-FLIGHT.pitchAutolevel * dt)
 
   // Boost is a drive mode: active exactly while held, never a dip
   state.boosting = input.boost
