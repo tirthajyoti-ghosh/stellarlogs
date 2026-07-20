@@ -3,7 +3,6 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import {
   AdditiveBlending,
-  BufferGeometry,
   Group,
   MathUtils,
   Mesh,
@@ -13,7 +12,6 @@ import {
   Quaternion,
   Vector3,
 } from 'three'
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
 import { warp, warpTurn, stepWarp } from '../physics/warp'
 import { shipInput } from '../physics/shipInput'
@@ -63,56 +61,28 @@ const RCS_QUATS = RCS_PODS.map((pod) => {
   return q
 })
 
-interface ShipPart {
-  geometry: BufferGeometry
-  material: MeshStandardMaterial
-}
-
 /**
- * "MCRN Tachi" by Jakub.Vildomec (Sketchfab, CC Attribution) — 355 meshes
- * sharing 4 materials, merged down to 4 draw calls with world transforms
- * baked in. Credit shown in the welcome card, SEO mirror and README.
+ * "MCRN Tachi" by Jakub.Vildomec (Sketchfab, CC Attribution). The GLB is
+ * pre-optimized offline with gltf-transform (join + weld + meshopt + webp,
+ * 19.6MB → 2.4MB) down to one mesh per material — 4 draw calls as-is. The
+ * geometry is quantized (KHR_mesh_quantization: node scale carries the
+ * dequantization), so the scene must render with its node transforms intact.
+ * Credit shown in the welcome card, SEO mirror and README.
  */
-function useTachiParts(): ShipPart[] {
+function TachiModel() {
   const gltf = useGLTF(MODEL_URL)
-  return useMemo(() => {
-    gltf.scene.updateMatrixWorld(true)
-    const byMaterial = new Map<MeshStandardMaterial, BufferGeometry[]>()
+  useMemo(() => {
     gltf.scene.traverse((obj) => {
       const mesh = obj as Mesh
       if (!mesh.isMesh) return
-      let g = mesh.geometry.clone()
-      if (g.index) g = g.toNonIndexed()
-      g.applyMatrix4(mesh.matrixWorld)
-      for (const name of Object.keys(g.attributes)) {
-        if (name !== 'position' && name !== 'normal' && name !== 'uv') g.deleteAttribute(name)
-      }
       const material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as MeshStandardMaterial
-      const list = byMaterial.get(material) ?? []
-      list.push(g)
-      byMaterial.set(material, list)
-    })
-    const parts: ShipPart[] = []
-    for (const [material, geoms] of byMaterial) {
-      const merged = mergeGeometries(geoms, false)
-      geoms.forEach((g) => g.dispose())
-      if (!merged) continue
       material.envMapIntensity = 1.1
-      parts.push({ geometry: merged, material })
-    }
-    return parts
+    })
   }, [gltf])
-}
-
-/** Orients the raw model into the ship's local frame (+Y nose, +Z up). */
-function TachiModel() {
-  const parts = useTachiParts()
   return (
     <group position={[0, -MODEL_CENTER, 0]} rotation-y={Math.PI}>
       <group rotation-x={-Math.PI / 2} scale={MODEL_SCALE}>
-        {parts.map((part, i) => (
-          <mesh key={i} geometry={part.geometry} material={part.material} />
-        ))}
+        <primitive object={gltf.scene} />
       </group>
     </group>
   )

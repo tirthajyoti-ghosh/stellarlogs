@@ -36,6 +36,8 @@ interface QualitySettings {
   dpr: [number, number]
   postprocessing: boolean
   planetSegments: number
+  /** width of the baked equirect planet textures (height = width/2) */
+  bakeWidth: number
   /** multiplier applied to starfield point counts */
   starScale: number
   asteroidCount: number
@@ -45,9 +47,12 @@ interface QualitySettings {
 const SETTINGS: Record<QualityTier, QualitySettings> = {
   high: {
     tier: 'high',
-    dpr: [1, 2],
+    // Capped at 1.5 even on Retina: ~44% fewer shaded pixels than dpr 2 for a
+    // nearly invisible sharpness cost — the single cheapest fps win we have.
+    dpr: [1, 1.5],
     postprocessing: true,
     planetSegments: 64,
+    bakeWidth: 2048,
     starScale: 1,
     asteroidCount: 380,
     skyDomeSize: 4096,
@@ -57,6 +62,7 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     dpr: [1, 1.5],
     postprocessing: true,
     planetSegments: 48,
+    bakeWidth: 1024,
     starScale: 0.6,
     asteroidCount: 200,
     skyDomeSize: 2048,
@@ -66,6 +72,7 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     dpr: [1, 1.15],
     postprocessing: false,
     planetSegments: 32,
+    bakeWidth: 512,
     starScale: 0.35,
     asteroidCount: 90,
     skyDomeSize: 2048,

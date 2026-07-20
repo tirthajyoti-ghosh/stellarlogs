@@ -79,7 +79,7 @@ export function stepWarp(state: WarpableShip, dt: number): void {
     const yawTarget = Math.atan2(-_dir.x, -_dir.z)
     const pitchTarget = Math.asin(Math.max(-1, Math.min(1, _dir.y)))
     const dy = wrapAngle(yawTarget - state.yaw)
-    const dp = pitchTarget - state.pitch
+    const dp = wrapAngle(pitchTarget - state.pitch)
     warpTurn.yaw = dy
     warpTurn.pitch = dp
     // Deliberate RCS turn: constant rate with a smooth settle at the end,

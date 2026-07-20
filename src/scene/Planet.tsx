@@ -1,18 +1,22 @@
-import { useMemo, useRef } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useEffect, useMemo, useRef } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
 import {
   AdditiveBlending,
   BackSide,
   Color,
+  DataTexture,
   DoubleSide,
   Group,
+  RGBAFormat,
   ShaderMaterial,
   Vector3,
 } from 'three'
 import { planetVertex, planetFragment } from './shaders/planetShader'
 import { cloudVertex, cloudFragment } from './shaders/cloudShader'
+import { planetBakeFragment, cloudBakeFragment } from './shaders/planetBakeShader'
 import { coronaVertex, coronaFragment } from './shaders/starShader'
 import { ringsVertex, ringsFragment } from './shaders/ringsShader'
+import { bakeEquirect } from './planetBake'
 import type { PlanetConfig, PlanetType } from '../config/systems'
 import { QUALITY } from '../config/quality'
 
@@ -46,15 +50,34 @@ const PALETTES: Record<PlanetType, Palette> = {
   barren: { a: '#8d8d94', b: '#5c5c63', c: '#3a3a40', atmosphere: '#9aa0ab', atmosphereShell: 0, noiseScale: 2.2 },
 }
 
+/** 1x1 stand-in shown for the few frames before a planet's bake completes. */
+function solidTexture(css: string, alpha = 0): DataTexture {
+  const c = new Color(css)
+  const data = new Uint8Array([
+    Math.round(c.r * 255),
+    Math.round(c.g * 255),
+    Math.round(c.b * 255),
+    Math.round(alpha * 255),
+  ])
+  const tex = new DataTexture(data, 1, 1, RGBAFormat)
+  tex.needsUpdate = true
+  return tex
+}
+
 interface PlanetProps {
   config: PlanetConfig
   sunPosition: Vector3
 }
 
-/** Procedural shader planet with optional clouds, atmosphere shell and rings. */
+/**
+ * Shader planet with optional clouds, atmosphere shell and rings. The
+ * procedural surface is baked ONCE into an equirect texture at startup
+ * (per-frame cost is just a texture sample + lighting).
+ */
 export function Planet({ config, sunPosition }: PlanetProps) {
   const spinRef = useRef<Group>(null)
   const palette = PALETTES[config.type]
+  const gl = useThree((s) => s.gl)
 
   const surfaceMaterial = useMemo(
     () =>
@@ -62,20 +85,15 @@ export function Planet({ config, sunPosition }: PlanetProps) {
         vertexShader: planetVertex,
         fragmentShader: planetFragment,
         uniforms: {
-          uTime: { value: 0 },
+          uMap: { value: solidTexture(palette.b) },
           uSunPosition: { value: sunPosition },
-          uColorA: { value: new Color(palette.a) },
-          uColorB: { value: new Color(palette.b) },
-          uColorC: { value: new Color(palette.c) },
           uAtmosphereColor: { value: new Color(palette.atmosphere) },
           uEmissiveColor: { value: new Color(palette.emissive ?? '#000000') },
           uEmissiveStrength: { value: palette.emissiveStrength ?? 0 },
-          uNoiseScale: { value: palette.noiseScale },
-          uSeed: { value: config.seed },
           uMode: { value: MODE[config.type] },
         },
       }),
-    [config.seed, config.type, palette, sunPosition],
+    [palette, sunPosition, config.type],
   )
 
   const cloudMaterial = useMemo(
@@ -85,16 +103,50 @@ export function Planet({ config, sunPosition }: PlanetProps) {
             vertexShader: cloudVertex,
             fragmentShader: cloudFragment,
             uniforms: {
+              uMap: { value: solidTexture('#ffffff', 0) },
               uTime: { value: 0 },
               uSunPosition: { value: sunPosition },
-              uSeed: { value: config.seed * 3.7 },
             },
             transparent: true,
             depthWrite: false,
           })
         : null,
-    [config.seed, palette.clouds, sunPosition],
+    [palette.clouds, sunPosition],
   )
+
+  // Queue the one-time surface (and cloud) bakes; swap textures in when done
+  useEffect(() => {
+    const w = QUALITY.bakeWidth
+    bakeEquirect(
+      gl,
+      planetBakeFragment,
+      {
+        uColorA: { value: new Color(palette.a) },
+        uColorB: { value: new Color(palette.b) },
+        uColorC: { value: new Color(palette.c) },
+        uNoiseScale: { value: palette.noiseScale },
+        uSeed: { value: config.seed },
+        uMode: { value: MODE[config.type] },
+      },
+      w,
+      w / 2,
+      (texture) => {
+        surfaceMaterial.uniforms.uMap.value = texture
+      },
+    )
+    if (cloudMaterial) {
+      bakeEquirect(
+        gl,
+        cloudBakeFragment,
+        { uSeed: { value: config.seed * 3.7 } },
+        w / 2,
+        w / 4,
+        (texture) => {
+          cloudMaterial.uniforms.uMap.value = texture
+        },
+      )
+    }
+  }, [gl, surfaceMaterial, cloudMaterial, palette, config.seed, config.type])
 
   const atmosphereMaterial = useMemo(
     () =>
@@ -139,9 +191,7 @@ export function Planet({ config, sunPosition }: PlanetProps) {
   )
 
   useFrame(({ clock }, dt) => {
-    const t = clock.elapsedTime
-    surfaceMaterial.uniforms.uTime.value = t
-    if (cloudMaterial) cloudMaterial.uniforms.uTime.value = t
+    if (cloudMaterial) cloudMaterial.uniforms.uTime.value = clock.elapsedTime
     if (spinRef.current) spinRef.current.rotation.y += dt * 0.02
   })
 

@@ -81,9 +81,11 @@ export function HudBridge() {
       hudReadouts.gravEl.dataset.on = inWell ? '1' : ''
     }
 
-    // Pitch attitude readout
+    // Pitch attitude readout — pitch is unbounded, display wraps to ±180°
     if (hudReadouts.pitchEl) {
-      const deg = Math.round((shipRig.pitch * 180) / Math.PI)
+      let deg = Math.round((shipRig.pitch * 180) / Math.PI) % 360
+      if (deg > 180) deg -= 360
+      if (deg < -180) deg += 360
       hudReadouts.pitchEl.textContent = `${deg >= 0 ? '+' : '−'}${Math.abs(deg)}°`
     }
 
