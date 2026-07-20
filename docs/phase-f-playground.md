@@ -45,9 +45,35 @@ The core deliverable of F.1 is a small, general pattern so F.2/F.3 are cheap:
 
 ---
 
-## F.1 — PDC Gunnery Range ✅ SHIPPED 2026-07-21
+## F.1 — PDC Gunnery Range — v2 "TORPEDO DEFENSE" (v1 retired)
 
-Built to the spec below. Deviations/notes: turrets do NOT enforce one-target
+**v1 (shooting gallery) playtest verdict (Tirtha, 2026-07-21): too easy, plays
+itself — "fly near, hold Space" is not a game; also tracers appeared to fire
+from an invisible shell around the ship (spawn-frame integration + streak
+centering bug). v2 redesign below keeps the rigs/zone/panel/audio and replaces
+the game: PDCs do their REAL job — point defense against incoming torpedoes.**
+
+### v2 — Torpedo Defense (Phase F.1b)
+
+- **Arm**: in-zone, first FIRE press arms the drill; wave 1 launches after a
+  short countdown. Leaving the zone aborts.
+- **Waves**: wave N spawns `min(2+N, 9)` torpedoes, staggered ~1s, from random
+  bearings at ~700u. Torpedoes home on the ship: speed `45+10N` (cap ~120),
+  turn-rate capped (~1.2 rad/s) so hard lateral boosts make them overshoot and
+  re-attack. Visual: small dark body + brilliant drive plume (show-accurate —
+  on screen Expanse torpedoes ARE points of light; no model needed).
+- **Defense**: PDCs auto-engage incoming within range/arcs (existing rig
+  logic). THE GAMEPLAY IS FLYING: attitude decides which arcs bear, position
+  opens firing time, dodging handles leakers.
+- **Hit**: torpedo within ~5u of the ship = drill over — red damage vignette,
+  "HIT — N WAVES CLEARED". No HP bar; gentle, instant restart. Wave cleared →
+  short breather → next wave.
+- **Score**: BEST = deepest wave fully cleared (localStorage
+  `stellarlogs-defense-best`); panel: WAVE · INCOMING · KILLS · BEST.
+- **Tracer fixes** (bug above): tracers spawn tail-anchored AT the muzzle tip,
+  no integration on the spawn frame, muzzle-flash sprites on the guns.
+
+v1 spec below, kept for the parts v2 reuses. Deviations/notes: turrets do NOT enforce one-target
 exclusivity (each independently tracks the nearest in-arc target; batteries
 converge like real CIWS); RANGE tuned 220→300 and drone cloud 520→420 after
 playtesting (220 left most of the cloud unreachable); PDC audio is the
@@ -170,10 +196,32 @@ walk onto drones, pops + respawns → TIME/DESTROYED/BEST/LOCKS update & persist
 leave → panel fades, round resets. ~60fps, ~16–18 ship draw calls. Touch FIRE
 on mobile emulation.
 
-## Later slices (same pattern, noted for continuity)
+## Later slices (locked 2026-07-21: build ALL of A/B/C, with REAL assets)
 
-- **F.2 Race course** — start gate + ~6–8 checkpoint rings (torus geometry +
-  trigger volumes) through the Projects belt; timer + best lap.
-- **F.3 Easter eggs** — Cylon Raider + MCRN Canterbury; unmarked, caption on
-  close approach. Needs sourced (Sketchfab/CC) or procedural models — a research
-  step like Phase C.
+Placeholder/low-poly props are out — B and C need sourced models (Phase-C-style
+research + gltf-transform pipeline). Candidates already scouted (Sketchfab,
+downloadable):
+
+- **F.2 — Evasive prey → an actual SHIP hunt.** The target is a real ship, not
+  a drone: it flees, jinks, hides among asteroids — inspirations: the
+  Razorback chase, the Amun-Ra stealth ship ambush. Candidates:
+  "Stealth Ship - Vehicle Design" (3.9k faces, CC-BY — strong Amun-Ra vibe),
+  "TMP Guardian Starfighter" (27k, CC-BY). PDCs + pursuit flying; possibly its
+  own POI deeper in the Projects belt.
+- **F.3 — Freighter escort.** Defend a freighter under attack by mixed threats:
+  torpedo volleys, strafing ships, thrown rocks. Candidates: "Valley Forge —
+  Greenhouse Space Freighter" (180k, CC-BY, decimatable — Silent Running
+  homage), "Heavy Class Firefly" (244k, CC-BY). Position between threat and
+  ward; escort scoring.
+- **F.4 — Race course** (unchanged concept): start gate + checkpoint rings
+  through the Projects belt; timer + best lap.
+- **F.5 — Easter eggs**: Cylon Raider + MCRN Canterbury wrecks, unmarked.
+
+### Future weapon system — the RAILGUN (noted per Tirtha)
+
+In later seasons the Roci gets a keel-mounted railgun. Design sketch for
+later: a chargeable single-shot weapon (hold to charge, release to fire a
+hypersonic slug with recoil that physically pushes the ship — Newtonian!),
+aimed by pointing the nose. Would slot into B (finishing blow on the fleeing
+ship) and C (cracking big rocks). Needs: model surgery on the Tachi keel or a
+sourced railgun model, slug tracer + impact FX, deep "thunk-crack" synth.

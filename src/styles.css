@@ -565,6 +565,19 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
 
 /* ---------- Activity zones (gunnery range etc.) ---------- */
 
+.hud-damage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(200, 30, 20, 0) 45%, rgba(200, 30, 20, 0.45) 100%);
+  opacity: 0;
+}
+body[data-hit='1'] .hud-damage { animation: hud-hit 0.65s ease-out; }
+@keyframes hud-hit {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 .hud-activity {
   position: absolute;
   top: 74px;
