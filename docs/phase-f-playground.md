@@ -52,113 +52,113 @@ The Tachi already has PDC turrets, and the drifting asteroid field is already on
 the spawn→Projects path — so the range teaches "you can shoot" within the first
 minute, using an existing landmark for context.
 
-### Research findings (2026-07-20) — locked: FULL articulation
+### Research findings (2026-07-20, re-verified) — locked: FULL articulation
 
 **The model can do show-accurate PDCs.** The original 19.6MB Tachi has **6
-complete, articulated PDC turrets**, each an Expanse-accurate assembly:
-deployable bay (large + small doors, hinge, pistons, shielding), ball mount
-(sphere + holder + two swivel joints), rotary Gatling (barrels + holder + body +
-ammo box). Mount points around the hull (raw model space, ship-unit scale):
+complete PDC turret assemblies** (deployable bay, ball mount, rotary Gatling).
+Verified suffix `.001`–`.006` = one physical turret (same-suffix parts cluster
+within ~20 raw units), with one quirk: `pdc_gun_details3` uses a bare name for
+its sixth instance. Turret positions (VERIFIED against sphere centers; raw
+model space, ×0.0135 for ship units):
 
-| Turret | Position (ship units) | Mount |
+| Turret | Sphere center (raw) | Mount |
 |---|---|---|
-| .001 | `(-1.06, 0.00, +0.92)` | port mid |
-| .004 | `(+1.06, 0.00, +0.92)` | starboard mid |
-| .002 | `( 0.00, +0.85, -0.60)` | dorsal aft |
-| .003 | `( 0.00, -0.85, -0.60)` | ventral aft |
-| .005 | `(-0.70, -0.05, +2.56)` | port bow |
-| .006 | `(+0.70, -0.05, +2.56)` | starboard bow |
+| .001 | `(0, +68, -47)` | dorsal aft |
+| .002 | `(-83, 0, +71)` | port mid |
+| .003 | `(+1, -68, -47)` | ventral aft |
+| .004 | `(+83, 0, +71)` | starboard mid |
+| .005 | `(-57, -3, +192)` | port bow |
+| .006 | `(+57, -3, +192)` | starboard bow |
 
-Caveats (both solved in code): the shipped 2.4MB model is **merged into 4 static
-meshes** (turrets baked, can't move), the source has **no glTF animations** (we
-animate procedurally), and the source parts are **flat-parented, grouped only by
-name suffix** `.001`–`.006` (we reconstruct 6 turret groups in code).
+**Payload is free**: an un-joined meshopt+webp export is still 2.4MB. The model
+ships DEPLOYED (no closed pose exists) → **v1 keeps turrets always deployed;
+no stow/deploy animation** (bay doors are later polish).
 
-**Payload is free.** Re-exporting the model *un-merged* (`gltf-transform optimize
---join false --compress meshopt --texture-compress webp`) is **still 2.4MB** —
-meshopt ignores mesh count. We ship this articulated variant and control draw
-calls in code: merge non-PDC meshes by material (4 calls, as today) + keep 6
-turret groups, each merged into ~3 sub-parts (static base, movable swivel
-assembly, spinning barrels) → **~22 draw calls total**, negligible at 60fps.
-Turrets sit stowed in normal flight; they only wake in the range.
+**These are ball turrets** — one free rotation per turret, not a yaw/elevation
+hierarchy. Each turret = ONE movable ball group (sphere + gun assembly, aimed
+with a single clamped quaternion look-at) + a spinning barrels child. Draw
+calls: ~4 hull + 6×2 turret parts ≈ **16–18**.
 
-**Sound is synthesizable, no copyright issue.** The show's PDC firing sound is
-built on a real **GAU-8 Avenger** (the A-10 "BRRRT") — a rotary cannon at
-~65–70 rounds/s whose deep "raspberry" tone *is* the ~66 Hz pulse-repetition
-frequency. We synthesize it in the existing WebAudio engine (no ripped audio):
-- **Fire**: ~66 Hz pulse/saw (buzz fundamental) + rapid noise-burst reports
-  synced to it + mid "tear" band + light clatter, with a short spin-up ramp.
-- **Traverse**: servo whine — filtered saw whose pitch tracks turret angular
-  velocity (fast slew → higher whine) + faint motor rumble, gated to movement.
-- **Deploy**: bay-door thunk + pneumatic hiss.
+**Sound is synthesizable** (the show's PDC firing is GAU-8-family — a rotary
+cannon at ~65–70 rounds/s whose ~66 Hz pulse-repetition tone IS the "BRRRT"):
+- **Fire**: ~66 Hz pulse fundamental + synced noise-burst reports + mid "tear"
+  band, short spin-up ramp.
+- **Traverse**: servo whine, pitch tracking turret angular velocity, gated to
+  movement.
+- Quality gate: if the synth doesn't convince on first review, fall back to a
+  public-domain US DoD A-10 recording (one-off exception to no-samples).
 
-### Scene
-- A procedural **range-control buoy** at the zone center (marker + blinking
-  light), no external assets.
-- ~12 **target drones**: small procedural glowing markers (octahedron + red
-  target ring) drifting slowly inside a ~600u volume around the buoy.
+### Model pipeline — ALL geometry surgery happens OFFLINE
+
+A build script (`scripts/build-tachi.mjs`, gltf-transform Node API) reads the
+ORIGINAL float-precision GLB and outputs a ready-rigged `public/models/tachi.glb`:
+
+- Assign every `pdc_*` node to its turret by **nearest sphere center** (immune
+  to the naming quirks).
+- Per turret: a pivot node `pdc_N` at the sphere center; child `pdc_N_ball` =
+  joined movable gun assembly (baked into pivot-local space); grandchild
+  `pdc_N_barrels` = joined Gatling barrels (spin axis = rest aim direction,
+  from sphere center toward barrels centroid). Bay parts + sphere socket stay
+  in the hull.
+- Hull: everything else joined by material (~4 meshes).
+- THEN weld + quantize + meshopt + webp. Quantization LAST, on the final node
+  hierarchy — never transform quantized attributes at runtime (documented
+  landmine).
+- Runtime just does `getObjectByName('pdc_N')` and rotates. No geometry code in
+  the browser. The model swap and the rig-driving code land in the SAME commit.
 
 ### Firing — automated point-defense (show-accurate, NO reticle)
-Real PDCs are *automated* — they acquire and track incoming automatically. So
-the range works the Expanse way and this also drops the disliked reticle:
-- On entering the range the 6 turrets **deploy** (bay doors open, guns extend).
-- Each turret **auto-acquires the nearest target drone within its firing arc**
-  and **traverses to track it** (visible swivel motion + servo-whine sound).
-- The pilot holds **FIRE** (`Space` / left-click in-zone; **FIRE** button on
-  touch). Turrets with a lock **spin up and fire** GAU-8 bursts; **tracers**
-  stream from the real barrel tips to the target, which **pops** (flash +
-  particle burst) and **respawns** elsewhere after ~1.2s.
-- No aiming needed → skill = maneuvering the ship to keep drones inside the
-  turret arcs, plus burst timing. Cleaner HUD, more show-accurate.
-- Mouse-fire is gated to in-zone so exploration clicks (billboard links) are
-  unaffected.
+
+- Turrets **auto-acquire and track** drones (visible ball rotation + servo
+  whine). The pilot holds **FIRE** (`Space` / in-zone click / touch FIRE
+  button); locked turrets spin up and fire.
+- **The challenge is flying, not aiming.** Constraints that create skill:
+  - turret range ~**220u**, per-turret arc cone ~**100°** around rest direction
+    (clamped look-at — guns never aim through the hull);
+  - **one target per turret** (max 6 simultaneous locks);
+  - drones spread across a ~**600u** cloud → from any position only 1–3 turrets
+    bear; a good run is a flight line that keeps feeding turrets.
+- **Projectile tracers with travel time** (~800 u/s instanced streaks, like the
+  warp streaks; turrets lead their targets; proximity hit-test) — the show's
+  "walking the stream onto the target" look. NOT instant raycasts.
+- Hit → drone pops (flash + particle burst), respawns elsewhere after ~1.2s.
+- Mouse-fire gated to in-zone so exploration clicks are unaffected.
 
 ### Scoring (no fail state, replayable)
-- Entering starts a **30-second round**; `DESTROYED` counts up.
-- At 0 the run locks, compares to **BEST** (`localStorage`
-  `stellarlogs-gunnery-best`), flashes the score / "NEW BEST", then auto-restarts
-  after a beat. You can leave any time; nothing punishes you.
-- Activity panel: **TIME · DESTROYED · BEST · LOCKS n** (turrets currently
-  tracking); entry hint "HOLD FIRE — TURRETS AUTO-TRACK".
+- The 30-second round starts on the **first shot**, not on zone entry.
+- At 0 the run locks, compares to BEST (`localStorage stellarlogs-gunnery-best`),
+  flashes "NEW BEST" if beaten, auto-restarts after a beat.
+- Panel: **TIME · DESTROYED · BEST · LOCKS n**; hint "HOLD SPACE — TURRETS
+  AUTO-TRACK".
 
-### Model pipeline (articulated Tachi)
-- Replace `public/models/tachi.glb` with the articulated export (un-joined,
-  meshopt+webp, 2.4MB). Already prototyped at
-  `scratchpad/tachi-articulated.glb`.
-- In `Ship.tsx` load: merge non-PDC meshes by material (4 draw calls) and build
-  6 **turret rigs** from the `.001`–`.006` suffixes — each rig = a group at the
-  turret pivot with: static base (merged), a **yaw/elevation swivel** node
-  (sphere + swivel + body + barrels-holder, merged) rotated to aim, a **barrels**
-  node spun about its axis while firing, and the **bay doors** for the deploy
-  animation. Expose the rigs so `GunneryRange` can drive aim/spin/fire.
+### Architecture — activity decoupled from the ship
+- `src/state/turretControl.ts` — imperative shared state (like `shipRig`): the
+  range writes the target list; the Ship's own frame loop aims its turret rigs,
+  spins barrels, and reports muzzle transforms + lock states back. Ship stays
+  self-contained; turrets can serve other uses later.
 
 ### Files
-New:
-- `src/scene/activities/GunneryRange.tsx` — buoy, target drones, per-turret
-  target assignment, tracers, pop FX, round timer; drives the ship's turret rigs.
-- `src/scene/shipTurrets.ts` — reconstruct 6 turret rigs from the GLB nodes;
-  shared aim/spin/deploy API.
-- `src/state/activityState.ts` — shared activity HUD state + gunnery best.
-- `src/hud/ActivityPanel.tsx` — the shared activity panel.
+New: `scripts/build-tachi.mjs` · `src/scene/activities/GunneryRange.tsx` ·
+`src/scene/shipTurrets.ts` (rig discovery + aim/spin update, driven from
+Ship.tsx) · `src/state/turretControl.ts` · `src/state/activityState.ts` ·
+`src/hud/ActivityPanel.tsx`.
+Touched: `Ship.tsx` (turret update in frame loop) · `audio/engine.ts` (fire
+synth, servo whine) · `App.tsx` · `hudState.ts` + `LabelLayer/HudBridge` (POI
+kind) · fire input (`useFireControls`) · `TouchControls.tsx` (in-zone FIRE) ·
+`config/*` (zone, arcs, range, RoF, round length).
 
-Touched:
-- `src/scene/Ship.tsx` — build turret rigs at load; deploy/stow by activity.
-- `src/audio/engine.ts` — GAU-8 fire synth, servo-whine traverse, deploy thunk.
-- `src/App.tsx` — mount `GunneryRange`, `ActivityPanel`.
-- `src/hud/hudState.ts` — add `'poi'` to `LabelKind`; register the range POI.
-- `src/hud/LabelLayer.tsx` / `HudBridge.tsx` — subtle POI label style + vis rule.
-- fire input — `Space` + gated in-zone click (new `useFireControls`).
-- `src/hud/TouchControls.tsx` — FIRE button shown only in-zone.
-- `src/config/*` — zone center/radius, target count, RoF, round length, arcs.
+### Build order (each step verified before the next)
+① build script → inspect output GLB (node graph, sizes, draw calls) →
+② Ship loads it; dev handle aims turrets at a test point; verify tracking looks
+right and never clips the hull → ③ zone + drones + activity panel → ④ firing,
+tracers, hits, scoring → ⑤ sound → ⑥ touch + POI label + polish.
 
 ### Verification
-Fly the corridor → POI label + buoy visible → enter zone → turrets deploy + panel
-fades in → drones drift, turrets traverse to track them (servo whine) → HOLD FIRE
-→ barrels spin, GAU-8 BRRRT, tracers from real barrel tips, drones pop → TIME /
-DESTROYED / BEST / LOCKS update and persist → leaving stows turrets, fades panel,
-resets the round. Hold ~60fps (~22 draw calls). FIRE button on mobile emulation.
-
----
+Corridor → POI + buoy visible → enter zone → panel fades in, turrets begin
+tracking drones (servo whine) → HOLD SPACE → barrels spin, BRRRT, tracer streams
+walk onto drones, pops + respawns → TIME/DESTROYED/BEST/LOCKS update & persist →
+leave → panel fades, round resets. ~60fps, ~16–18 ship draw calls. Touch FIRE
+on mobile emulation.
 
 ## Later slices (same pattern, noted for continuity)
 

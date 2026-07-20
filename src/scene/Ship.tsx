@@ -13,6 +13,8 @@ import {
   Vector3,
 } from 'three'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
+import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
+import { turretControl } from '../state/turretControl'
 import { warp, warpTurn, stepWarp } from '../physics/warp'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
@@ -78,6 +80,8 @@ function TachiModel() {
       const material = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as MeshStandardMaterial
       material.envMapIntensity = 1.1
     })
+    // PDC ball-turret rigs (pdc_1..pdc_6 pivot nodes from the build script)
+    discoverTurrets(gltf.scene)
   }, [gltf])
   return (
     <group position={[0, -MODEL_CENTER, 0]} rotation-y={Math.PI}>
@@ -121,6 +125,14 @@ export function Ship() {
       state.yaw = state.prevYaw = yaw
       state.pitch = state.prevPitch = pitch
     }
+    ;(window as unknown as Record<string, unknown>).__aimTurrets = (
+      x?: number,
+      y?: number,
+      z?: number,
+    ) => {
+      devAimAt(x === undefined ? null : new Vector3(x, y!, z!))
+    }
+    ;(window as unknown as Record<string, unknown>).__turrets = turretControl
   }
 
   useFrame((_, dt) => {
@@ -219,6 +231,9 @@ export function Ship() {
       const mat = mesh.material as MeshBasicMaterial
       mat.opacity = MathUtils.lerp(mat.opacity, pod.fire(podInput) * 0.85, 0.3)
     })
+
+    // PDC turrets: acquire/track targets, slew balls, spin barrels
+    updateTurrets(dt)
 
     // Publish for camera / HUD / proximity
     shipRig.position.copy(rig.position)
