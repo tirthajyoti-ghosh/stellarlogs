@@ -14,6 +14,7 @@ export function HUD() {
       <div className="hud-scanline" />
       <div className="hud-warp-tint" />
       <div className="hud-warp-flash" />
+      <div className="hud-damage" />
       <LabelLayer />
       <HeadingTape />
       <Cockpit />
