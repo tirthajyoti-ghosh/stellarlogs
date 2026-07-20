@@ -60,7 +60,16 @@ export function SeoContent() {
           "MCRN Tachi [Expanse TV Show]"
         </a>{' '}
         by Jakub.Vildomec, licensed under{' '}
-        <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
+        <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. Space station model:{' '}
+        <a href="https://sketchfab.com/3d-models/gateway-57c6a27313794618a299ebe9ec8c2afd">"Gateway"</a> by
+        andreas9343 (CC BY 4.0). Asteroid models:{' '}
+        <a href="https://sketchfab.com/3d-models/asteroids-pack-metallic-version-eff495d9315c47dbb2777ec80bef40d8">
+          "Asteroids Pack (metallic version)"
+        </a>{' '}
+        by SebastianSosnowski (CC BY 4.0). Nebula imagery courtesy of{' '}
+        <a href="https://esahubble.org">ESA/Hubble</a> (NASA, ESA — CC BY 4.0). Milky Way sky from{' '}
+        <a href="https://svs.gsfc.nasa.gov/4851">NASA/Goddard SVS "Deep Star Maps 2020"</a> (public
+        domain).
       </p>
     </section>
   )

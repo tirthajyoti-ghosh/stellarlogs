@@ -65,7 +65,10 @@ export function Welcome() {
           {IS_TOUCH ? 'Start flying' : 'Press W to fly'}
         </button>
         <p className="hud-welcome-credit">
-          Ship:{' '}
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
+            CC BY
+          </a>{' '}
+          assets:{' '}
           <a
             href="https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf"
             target="_blank"
@@ -73,9 +76,29 @@ export function Welcome() {
           >
             "MCRN Tachi"
           </a>{' '}
-          by Jakub.Vildomec, licensed under{' '}
-          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-            CC BY 4.0
+          by Jakub.Vildomec ·{' '}
+          <a
+            href="https://sketchfab.com/3d-models/gateway-57c6a27313794618a299ebe9ec8c2afd"
+            target="_blank"
+            rel="noreferrer"
+          >
+            "Gateway"
+          </a>{' '}
+          by andreas9343 ·{' '}
+          <a
+            href="https://sketchfab.com/3d-models/asteroids-pack-metallic-version-eff495d9315c47dbb2777ec80bef40d8"
+            target="_blank"
+            rel="noreferrer"
+          >
+            "Asteroids Pack"
+          </a>{' '}
+          by SebastianSosnowski · nebulae by{' '}
+          <a href="https://esahubble.org" target="_blank" rel="noreferrer">
+            ESA/Hubble
+          </a>{' '}
+          · star map by{' '}
+          <a href="https://svs.gsfc.nasa.gov/4851" target="_blank" rel="noreferrer">
+            NASA/SVS
           </a>
         </p>
       </div>
