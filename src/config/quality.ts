@@ -41,7 +41,6 @@ interface QualitySettings {
   /** multiplier applied to starfield point counts */
   starScale: number
   asteroidCount: number
-  skyDomeSize: number
 }
 
 const SETTINGS: Record<QualityTier, QualitySettings> = {
@@ -55,7 +54,6 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     bakeWidth: 2048,
     starScale: 1,
     asteroidCount: 380,
-    skyDomeSize: 4096,
   },
   medium: {
     tier: 'medium',
@@ -65,7 +63,6 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     bakeWidth: 1024,
     starScale: 0.6,
     asteroidCount: 200,
-    skyDomeSize: 2048,
   },
   low: {
     tier: 'low',
@@ -75,7 +72,6 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     bakeWidth: 512,
     starScale: 0.35,
     asteroidCount: 90,
-    skyDomeSize: 2048,
   },
 }
 
