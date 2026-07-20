@@ -137,7 +137,9 @@ export function HudBridge() {
             ? `PLANET · ${target.group ?? ''}`
             : target.kind === 'station'
               ? 'STATION'
-              : 'STAR SYSTEM'
+              : target.kind === 'poi'
+                ? 'POINT OF INTEREST'
+                : 'STAR SYSTEM'
         hudReadouts.targetChipEl.textContent = chip
         hudReadouts.targetChipEl.style.color = target.color
       }
@@ -185,9 +187,11 @@ export function HudBridge() {
         ;(window as unknown as Record<string, unknown>).__contactPos = target.position.toArray()
       }
 
-      // Jump target = the contact's system (or the station itself)
+      // Jump target = the contact's system (or the station/POI itself)
       if (target.kind === 'station') {
         hudReadouts.targetJump = { position: target.position, standoff: 420 }
+      } else if (target.kind === 'poi') {
+        hudReadouts.targetJump = { position: target.position, standoff: 600 }
       } else {
         let sys = ALL_SYSTEMS[0]
         let best = Infinity
@@ -237,6 +241,7 @@ export function HudBridge() {
       let visible: boolean
       if (label.kind === 'system') visible = dist > 1600
       else if (label.kind === 'planet') visible = dist < 3200 && dist > 140
+      else if (label.kind === 'poi') visible = dist < 4000 && dist > 700
       else visible = dist < 2600 && dist > 220
 
       // Mid-jump, focus the HUD: only the destination marker stays up
@@ -288,7 +293,7 @@ export function HudBridge() {
       }
       placed.push({ x, y })
 
-      el.style.opacity = label.kind === 'system' ? '0.92' : '0.85'
+      el.style.opacity = label.kind === 'system' ? '0.92' : label.kind === 'poi' ? '0.55' : '0.85'
       el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
       const distEl = el.querySelector<HTMLElement>('.hud-label-dist')
       if (distEl) distEl.textContent = formatDistance(dist)

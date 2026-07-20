@@ -9,7 +9,7 @@ import { STATION_POSITION } from '../config/universe'
  * onto the DOM nodes (no React state at 60fps).
  */
 
-export type LabelKind = 'system' | 'planet' | 'station'
+export type LabelKind = 'system' | 'planet' | 'station' | 'poi'
 
 export interface HudLabel {
   id: string
