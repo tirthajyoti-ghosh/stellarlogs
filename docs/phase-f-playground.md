@@ -45,7 +45,17 @@ The core deliverable of F.1 is a small, general pattern so F.2/F.3 are cheap:
 
 ---
 
-## F.1 — PDC Gunnery Range (this slice)
+## F.1 — PDC Gunnery Range ✅ SHIPPED 2026-07-21
+
+Built to the spec below. Deviations/notes: turrets do NOT enforce one-target
+exclusivity (each independently tracks the nearest in-arc target; batteries
+converge like real CIWS); RANGE tuned 220→300 and drone cloud 520→420 after
+playtesting (220 left most of the cloud unreachable); PDC audio is the
+synthesized GAU-8 profile — LISTEN AND JUDGE (quality gate: swap to a
+public-domain DoD A-10 sample if unconvincing). One unexplained transient:
+brief ship drift observed twice during rapid dev-teleports mid-round, never
+reproduced in normal flight or isolated firing tests — watch for it.
+
 
 ### Why here
 The Tachi already has PDC turrets, and the drifting asteroid field is already on

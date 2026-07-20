@@ -21,7 +21,9 @@ export interface TurretMuzzle {
 export const turretControl = {
   /** World-space target points, written by the active activity (empty = stand down) */
   targets: [] as { position: Vector3 }[],
-  /** Pilot holding FIRE */
+  /** Raw input: FIRE held (Space / pointer / touch button) — set by input layers */
+  fireIntent: false,
+  /** Effective firing state (fireIntent gated by the active zone) */
   firing: false,
 
   // ---- written back by the ship's turret update ----

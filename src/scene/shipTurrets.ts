@@ -14,7 +14,7 @@ import { turretControl } from '../state/turretControl'
 
 const SLEW_RATE = 2.6 // rad/s — CIWS-fast but visibly mechanical
 const ARC_HALF = MathUtils.degToRad(75) // cone half-angle around each arc axis
-const RANGE = 220 // world units
+const RANGE = 300 // world units
 const MUZZLE_LEN = 34 // raw model units from pivot to muzzle tip
 const SPIN_UP = 3.2 // 1/s barrel spin-up rate
 const SPIN_DOWN = 1.4

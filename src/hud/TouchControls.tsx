@@ -1,5 +1,7 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
+import { turretControl } from '../state/turretControl'
+import { activityState } from '../state/activityState'
 import { IS_TOUCH } from '../config/quality'
 
 const STICK_RADIUS = 56
@@ -11,6 +13,13 @@ const STICK_RADIUS = 56
 export function TouchControls() {
   const areaRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
+  // FIRE appears only inside an activity zone (polled at low frequency)
+  const [inActivity, setInActivity] = useState(false)
+  useEffect(() => {
+    if (!IS_TOUCH) return
+    const id = setInterval(() => setInActivity(activityState.active), 300)
+    return () => clearInterval(id)
+  }, [])
 
   useEffect(() => {
     const area = areaRef.current
@@ -92,6 +101,20 @@ export function TouchControls() {
         <div className="hud-stick-knob" ref={knobRef} />
       </div>
       <div className="hud-touch-buttons">
+        {inActivity && (
+          <button
+            className="hud-touch-btn hud-touch-fire"
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId)
+              turretControl.fireIntent = true
+            }}
+            onPointerUp={() => (turretControl.fireIntent = false)}
+            onPointerCancel={() => (turretControl.fireIntent = false)}
+            onLostPointerCapture={() => (turretControl.fireIntent = false)}
+          >
+            FIRE
+          </button>
+        )}
         <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
           BOOST
         </button>

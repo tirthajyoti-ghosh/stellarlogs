@@ -2,6 +2,7 @@ import { LabelLayer } from './LabelLayer'
 import { Cockpit } from './Cockpit'
 import { HeadingTape } from './HeadingTape'
 import { WarpPanel } from './WarpPanel'
+import { ActivityPanel } from './ActivityPanel'
 import { Welcome } from './Welcome'
 import { TouchControls } from './TouchControls'
 import { MuteButton } from './MuteButton'
@@ -17,6 +18,7 @@ export function HUD() {
       <HeadingTape />
       <Cockpit />
       <WarpPanel />
+      <ActivityPanel />
       <TouchControls />
       <MuteButton />
       <Welcome />
