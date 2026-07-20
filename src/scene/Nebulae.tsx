@@ -17,9 +17,11 @@ function makeHazeTexture(): CanvasTexture {
 }
 
 /**
- * Real nebula photo → sprite texture: draw into a canvas and fade the edges
- * out radially so the rectangular frame vanishes against space (the additive
- * sprite then only shows the glowing gas).
+ * Real nebula photo → sprite texture. The photos fill their frames, so the
+ * fade must reach ZERO alpha before every edge or the sprite reads as a
+ * floating photograph: an ELLIPTICAL falloff matched to the rectangle (a
+ * circular one leaves the short-axis edges visible), starting early enough
+ * that only the nebula's core survives at full strength.
  */
 function loadNebulaTexture(url: string, onDone: (tex: Texture, aspect: number) => void): void {
   const img = new Image()
@@ -32,12 +34,18 @@ function loadNebulaTexture(url: string, onDone: (tex: Texture, aspect: number) =
     const ctx = canvas.getContext('2d')!
     ctx.drawImage(img, 0, 0, w, h)
     ctx.globalCompositeOperation = 'destination-in'
-    const g = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) / 2)
+    ctx.save()
+    ctx.translate(w / 2, h / 2)
+    ctx.scale(1, h / w) // circle → ellipse spanning the full rect
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, w / 2)
     g.addColorStop(0, 'rgba(0,0,0,1)')
-    g.addColorStop(0.55, 'rgba(0,0,0,0.85)')
+    g.addColorStop(0.35, 'rgba(0,0,0,0.96)')
+    g.addColorStop(0.62, 'rgba(0,0,0,0.5)')
+    g.addColorStop(0.85, 'rgba(0,0,0,0.12)')
     g.addColorStop(1, 'rgba(0,0,0,0)')
     ctx.fillStyle = g
-    ctx.fillRect(0, 0, w, h)
+    ctx.fillRect(-w / 2, -w / 2, w, w)
+    ctx.restore()
     const tex = new CanvasTexture(canvas)
     tex.colorSpace = SRGBColorSpace
     onDone(tex, h / w)
@@ -57,12 +65,12 @@ interface Cluster {
 
 /**
  * Localized nebula clusters between the systems, each anchored by a REAL
- * nebula photograph (ESA/Hubble, CC BY 4.0): Orion, Carina, Lagoon.
+ * nebula photograph (ESA/Hubble, CC BY 4.0): Orion, Lagoon, Bubble.
  */
 const CLUSTERS: Cluster[] = [
   { center: [6500, 400, -6200], color: '#5a6ad8', spread: 2200, sprites: 6, scale: 1500, image: '/textures/nebula/heic0601a.jpg' },
   { center: [-8000, -300, 5200], color: '#8a4ac8', spread: 2600, sprites: 7, scale: 1700, image: '/textures/nebula/heic1808a.jpg' },
-  { center: [-4500, 500, -12800], color: '#c85a4a', spread: 2000, sprites: 5, scale: 1400, image: '/textures/nebula/heic0707a.jpg' },
+  { center: [-4500, 500, -12800], color: '#c85a4a', spread: 2000, sprites: 5, scale: 1400, image: '/textures/nebula/heic1608a.jpg' },
   { center: [12500, -200, 3800], color: '#3a8ac8', spread: 2400, sprites: 6, scale: 1600, image: '/textures/nebula/heic0601a.jpg' },
 ]
 
