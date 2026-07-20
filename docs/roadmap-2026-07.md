@@ -118,14 +118,17 @@ recommender-named planets), `RNG`/`VEL` jargon, no purpose. Redesign:
 
 ## Phase F — Playground (Bruno-Simon-style fun, space edition)
 
-First bundle (one action + one skill + secrets):
+Planned in detail in `docs/phase-f-playground.md`. Locked 2026-07-20:
+distributed placement on natural landmarks; subtle POI markers for the games,
+unmarked easter eggs; **build the PDC Gunnery Range first** (F.1) to establish a
+reusable activity-zone pattern, then race (F.2) and easter eggs (F.3).
 
-1. **PDC target range** — drone/debris targets near the comms station; click to
-   fire PDC tracers; hit counter + best streak. The Tachi already has the guns.
-2. **Race rings time trial** — checkpoint rings through an asteroid belt; local
-   best time on the HUD.
-3. **Easter eggs ×2** — derelict Cylon Raider adrift in deep space (old README
-   promise) + a wrecked freighter ("Canterbury" homage).
+1. **F.1 PDC Gunnery Range** — drifting field on the spawn→Projects corridor;
+   nose-aim + Space/click fire, tracers, ~12 respawning target drones, 30s
+   time-attack with persisted best. Introduces the shared activity-zone HUD.
+2. **F.2 Race rings** — start gate + checkpoint rings through the Projects belt;
+   timer + best.
+3. **F.3 Easter eggs** — unmarked Cylon Raider + MCRN Canterbury wrecks.
 
 Later candidates: zero-g bowling (nudge cargo pods into a gravity well),
 gravity-slingshot speed challenge, visitor "whisper" message buoys (needs a
