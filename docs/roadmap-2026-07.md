@@ -123,9 +123,13 @@ distributed placement on natural landmarks; subtle POI markers for the games,
 unmarked easter eggs; **build the PDC Gunnery Range first** (F.1) to establish a
 reusable activity-zone pattern, then race (F.2) and easter eggs (F.3).
 
-1. **F.1 PDC Gunnery Range** — drifting field on the spawn→Projects corridor;
-   nose-aim + Space/click fire, tracers, ~12 respawning target drones, 30s
-   time-attack with persisted best. Introduces the shared activity-zone HUD.
+1. **F.1 PDC Gunnery Range** — drifting field on the spawn→Projects corridor.
+   Show-accurate PDCs: the Roci's 6 turrets (articulated, reconstructed from the
+   model) deploy, auto-traverse to track ~12 respawning drones, spin up and fire
+   GAU-8-synth bursts (BRRRT) with servo-whine traverse; hold-fire, no reticle;
+   30s time-attack with persisted best. Introduces the shared activity-zone HUD.
+   Model: articulated Tachi export (un-joined meshopt+webp, still 2.4MB, ~22
+   draw calls). See docs/phase-f-playground.md for the research findings.
 2. **F.2 Race rings** — start gate + checkpoint rings through the Projects belt;
    timer + best.
 3. **F.3 Easter eggs** — unmarked Cylon Raider + MCRN Canterbury wrecks.
