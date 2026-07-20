@@ -51,7 +51,15 @@ wraps to ±180°, chase camera stays coherent, warp align takes shortest path).
 - No other auto-actions exist today (yaw has no centering; warp auto-align is
   pilot-commanded, keep it).
 
-## Phase C — Asset upgrades (all licenses verified free; CC-BY needs credits)
+## Phase C — Asset upgrades ✅ SHIPPED 2026-07-20 (commit 1fdd4ac)
+
+Gateway station (6.6MB), SebastianSosnowski asteroid pack (0.47MB, 10 instanced
+variants), NASA/SVS Deep Star Maps sky (tone-mapped EXR → 4k JPG, dimmed via
+material color), ESA/Hubble nebula photo sprites (Orion/Carina/Lagoon) with
+radial edge fades. Skipped: alexandr.melas skydomes (only 1024², too low-res)
+and Solar System Scope planet textures (baked procedural planets already hit
+the bar — revisit only if a specific planet type looks weak). All credits in
+Welcome card, SeoContent, README.
 
 | Asset | Source | License | Plan |
 |---|---|---|---|
