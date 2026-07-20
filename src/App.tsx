@@ -8,7 +8,6 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { WarpStreaks } from './scene/WarpStreaks'
 import { Asteroids } from './scene/Asteroids'
-import { Nebulae } from './scene/Nebulae'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
@@ -44,7 +43,6 @@ export default function App() {
         <ContactStation />
         <WarpStreaks />
         <Asteroids />
-        <Nebulae />
         <Ship />
         <ChaseCamera />
         <HudBridge />
