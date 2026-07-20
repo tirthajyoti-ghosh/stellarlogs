@@ -116,7 +116,7 @@ export function HudBridge() {
         target = label
       }
     }
-    if (target && hudReadouts.targetNameEl && hudReadouts.targetDistEl && hudReadouts.targetCloseEl) {
+    if (target && hudReadouts.targetNameEl) {
       const now = performance.now() / 1000
       if (target.id === lastTargetId && now > lastTargetTime) {
         const rate = (lastTargetDist - targetDist) / Math.max(1e-3, now - lastTargetTime)
@@ -127,12 +127,83 @@ export function HudBridge() {
       lastTargetId = target.id
       lastTargetDist = targetDist
       lastTargetTime = now
+
+      // Name + type/system chip
       hudReadouts.targetNameEl.textContent = target.name
       hudReadouts.targetNameEl.style.color = target.color
-      hudReadouts.targetDistEl.textContent = `${formatDistance(targetDist)} M`
-      const closing = Math.round(closingSmooth)
-      hudReadouts.targetCloseEl.textContent = `${closing >= 0 ? '−' : '+'}${Math.abs(closing)} M/S`
-      hudReadouts.targetCloseEl.dataset.closing = closing >= 0 ? '1' : ''
+      if (hudReadouts.targetChipEl) {
+        const chip =
+          target.kind === 'planet'
+            ? `PLANET · ${target.group ?? ''}`
+            : target.kind === 'station'
+              ? 'STATION'
+              : 'STAR SYSTEM'
+        hudReadouts.targetChipEl.textContent = chip
+        hudReadouts.targetChipEl.style.color = target.color
+      }
+
+      // Bearing chevron: direction to contact relative to the ship's nose
+      if (hudReadouts.targetBearingEl) {
+        const dx = target.position.x - shipRig.position.x
+        const dz = target.position.z - shipRig.position.z
+        const yaw = shipRig.yaw
+        const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
+        const rz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
+        const deg = (Math.atan2(rx, -rz) * 180) / Math.PI
+        hudReadouts.targetBearingEl.style.transform = `rotate(${deg.toFixed(0)}deg)`
+      }
+
+      // Plain-language range
+      if (hudReadouts.targetRangeEl) {
+        hudReadouts.targetRangeEl.textContent =
+          targetDist >= 1000 ? `${(targetDist / 1000).toFixed(1)} KM` : `${Math.round(targetDist)} M`
+      }
+
+      // Closing / opening / holding
+      if (hudReadouts.targetCloseEl) {
+        const c = Math.round(closingSmooth)
+        hudReadouts.targetCloseEl.textContent =
+          Math.abs(c) < 1 ? 'HOLDING' : c > 0 ? `CLOSING ${c} M/S` : `OPENING ${-c} M/S`
+        hudReadouts.targetCloseEl.dataset.closing = c > 0 ? '1' : ''
+      }
+
+      // Purpose line: why the pilot cares
+      if (hudReadouts.targetPurposeEl) {
+        let purpose: string
+        if (target.kind === 'planet') {
+          purpose =
+            target.readRange && targetDist < target.readRange
+              ? 'IN RANGE · BOARDS READABLE'
+              : 'CONTENT BOARDS IN ORBIT'
+        } else {
+          purpose = target.detail ?? ''
+        }
+        hudReadouts.targetPurposeEl.textContent = purpose
+      }
+
+      if (import.meta.env.DEV) {
+        ;(window as unknown as Record<string, unknown>).__contactPos = target.position.toArray()
+      }
+
+      // Jump target = the contact's system (or the station itself)
+      if (target.kind === 'station') {
+        hudReadouts.targetJump = { position: target.position, standoff: 420 }
+      } else {
+        let sys = ALL_SYSTEMS[0]
+        let best = Infinity
+        for (const s of ALL_SYSTEMS) {
+          _p.set(...s.position)
+          const d = _p.distanceTo(target.position)
+          if (d < best) {
+            best = d
+            sys = s
+          }
+        }
+        hudReadouts.targetJump = {
+          position: new Vector3(...sys.position),
+          standoff: sys.starRadius * 6 + 1600,
+        }
+      }
     }
 
     // Jump-drive panel

@@ -60,10 +60,11 @@ export function ContactStation() {
       boardScale.current = MathUtils.lerp(boardScale.current, d < 700 ? 1 : 0, 0.08)
       boards.visible = boardScale.current > 0.02
       boards.scale.setScalar(boardScale.current)
-      const a = clock.elapsedTime * 0.06
+      // Geostationary ring; each board turns to face the ship (see Billboard)
+      const n = Math.max(1, boards.children.length)
       boards.children.forEach((child, i) => {
-        const angle = a + (i * Math.PI * 2) / Math.max(1, boards.children.length)
-        child.position.set(Math.cos(angle) * 115, 14, Math.sin(angle) * 115)
+        const angle = (i * Math.PI * 2) / n
+        child.position.set(Math.cos(angle) * 115, (i % 2 === 0 ? 1 : -1) * 16, Math.sin(angle) * 115)
       })
     }
   })
@@ -86,7 +87,13 @@ export function ContactStation() {
       {/* Contact boards */}
       <group ref={boardsRef}>
         {specs.map((spec, i) => (
-          <Billboard key={i} spec={spec} accentColor={ACCENT} position={[0, 0, 0]} />
+          <Billboard
+            key={i}
+            spec={spec}
+            accentColor={ACCENT}
+            position={[0, 0, 0]}
+            planetWorldPos={position}
+          />
         ))}
       </group>
     </group>

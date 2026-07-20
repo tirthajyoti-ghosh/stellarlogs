@@ -489,19 +489,79 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
   border-radius: 50%;
   background: radial-gradient(circle, rgba(6, 14, 26, 0.4) 60%, rgba(6, 14, 26, 0.7));
 }
-.hud-target-name-row {
-  min-height: 22px;
+.hud-target {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 8px 8px;
+  background: rgba(111, 211, 232, 0.04);
+  border: 1px solid rgba(111, 211, 232, 0.14);
+  border-radius: 3px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.hud-target:hover {
+  background: rgba(111, 211, 232, 0.11);
+  border-color: rgba(111, 211, 232, 0.4);
+}
+.hud-target-head {
   display: flex;
   align-items: center;
-  margin-top: 6px;
+  justify-content: space-between;
+  gap: 8px;
+}
+.hud-target-chip {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--hud-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-target-bearing {
+  flex: none;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--hud-teal);
+  transition: transform 0.1s linear;
 }
 .hud-target-name {
+  display: block;
   font-size: 15px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
 }
-.hud-target-close[data-closing='1'] { color: var(--hud-teal) !important; }
+.hud-target-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #b8d0e4;
+  font-variant-numeric: tabular-nums;
+}
+.hud-target-close { color: var(--hud-dim); }
+.hud-target-close[data-closing='1'] { color: var(--hud-teal); }
+.hud-target-purpose {
+  display: block;
+  margin-top: 5px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--hud-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* Console internals */
 .hud-console-cols {

@@ -72,7 +72,15 @@ Welcome card, SeoContent, README.
 Every CC-BY asset added → credit line in Welcome card small print, SeoContent,
 and README (same pattern as the Tachi credit).
 
-## Phase D — Billboards: geostationary + face-the-pilot
+## Phase D — Billboards ✅ SHIPPED 2026-07-20
+
+Boards hold fixed geostationary positions in a ring over each planet/station
+(no more procession/spin) and each board slowly yaws to face the ship whenever
+it's in reading range, firing a visible station-keeping RCS couple (additive
+puff jets at the left/right edges) while it slews. Applies to planet boards and
+the contact-station boards.
+
+Original plan below.
 
 - Kill the spin and orbital drift: boards hold fixed positions over each planet
   (geostationary).
@@ -82,7 +90,19 @@ and README (same pattern as the Tachi credit).
 - Beyond read range boards sit static. No full camera-billboarding — rejected
   as fake-feeling.
 
-## Phase E — Tactical MFD: make the nearest-contact readout useful
+## Phase E — Tactical MFD ✅ SHIPPED 2026-07-20
+
+Nearest-contact readout redesigned: type/system chip (`PLANET · RECOMMENDATIONS`
+/ `STAR SYSTEM` / `STATION`), ellipsis-truncated name, bearing chevron (rotates
+to point at the contact relative to the nose), plain-language range
+(`4.0 KM` / `530 M`), closing/opening/holding rate, and a purpose line
+(`CONTENT BOARDS IN ORBIT` → `IN RANGE · BOARDS READABLE`; system/station show
+planet count / "CONTACT & LINKS"). Click-to-jump: the tactical panel jumps to
+the contact's system/station, and radar blips are clickable to jump too (the
+radar is now a menu). Dev handles added: `window.__contactPos`,
+`window.__radarBlips` (DEV-only, stripped in prod).
+
+Original plan below.
 
 Current state: shows raw nearest-planet name (overflows on long names, e.g.
 recommender-named planets), `RNG`/`VEL` jargon, no purpose. Redesign:

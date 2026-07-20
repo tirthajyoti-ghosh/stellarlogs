@@ -2,12 +2,21 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
+import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
+import { startWarp, warp } from '../physics/warp'
 
 const SIZE = 132
 const R = SIZE / 2 - 8
 const _rel = new Vector3()
+
+interface RadarBlip {
+  px: number
+  py: number
+  position: Vector3
+  standoff: number
+}
 
 /**
  * Top-right radar: rotating sweep over a ship-oriented top-down plot.
@@ -15,6 +24,8 @@ const _rel = new Vector3()
  */
 export function Radar() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Jumpable blips (systems + station), refreshed each draw for click hit-tests
+  const blips = useRef<RadarBlip[]>([])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -22,9 +33,30 @@ export function Radar() {
     const ctx = canvas.getContext('2d')!
     let raf = 0
 
+    const onClick = (e: MouseEvent) => {
+      if (warp.phase !== 'idle') return
+      const rect = canvas.getBoundingClientRect()
+      const mx = ((e.clientX - rect.left) / rect.width) * SIZE
+      const my = ((e.clientY - rect.top) / rect.height) * SIZE
+      let best: RadarBlip | null = null
+      let bestD = 11 // px hit radius (canvas space)
+      for (const b of blips.current) {
+        const d = Math.hypot(b.px - mx, b.py - my)
+        if (d < bestD) {
+          bestD = d
+          best = b
+        }
+      }
+      if (best && best.position.distanceTo(shipRig.position) > best.standoff * 1.3) {
+        startWarp(best.position, shipRig.position, best.standoff)
+      }
+    }
+    canvas.addEventListener('click', onClick)
+
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw)
       ctx.clearRect(0, 0, SIZE, SIZE)
+      blips.current.length = 0
       const cx = SIZE / 2
       const cy = SIZE / 2
 
@@ -72,12 +104,13 @@ export function Radar() {
           ctx.fillStyle = color
           ctx.fillRect(cx + (px - cx) * s - 1, cy + (py - cy) * s - 1, 2, 2)
           ctx.globalAlpha = 1
-          return
+          return null
         }
         ctx.fillStyle = color
         ctx.beginPath()
         ctx.arc(px, py, size, 0, Math.PI * 2)
         ctx.fill()
+        return { px, py }
       }
 
       if (nearSystem) {
@@ -90,9 +123,25 @@ export function Radar() {
         }
       } else {
         for (const system of ALL_SYSTEMS) {
-          plot(system.position[0], system.position[2], system.starColor, 3)
+          const p = plot(system.position[0], system.position[2], system.starColor, 3)
+          if (p) {
+            blips.current.push({
+              px: p.px,
+              py: p.py,
+              position: new Vector3(...system.position),
+              standoff: system.starRadius * 6 + 1600,
+            })
+          }
         }
-        plot(STATION_POSITION[0], STATION_POSITION[2], '#7FFFD4', 2.2)
+        const sp = plot(STATION_POSITION[0], STATION_POSITION[2], CONTACT.starColor, 2.2)
+        if (sp) {
+          blips.current.push({
+            px: sp.px,
+            py: sp.py,
+            position: new Vector3(...STATION_POSITION),
+            standoff: 420,
+          })
+        }
       }
 
       // Ship marker
@@ -115,8 +164,14 @@ export function Radar() {
       ctx.arc(cx, cy, R, 0, Math.PI * 2)
       ctx.fill()
     }
+    if (import.meta.env.DEV) {
+      ;(window as unknown as Record<string, unknown>).__radarBlips = blips
+    }
     raf = requestAnimationFrame(draw)
-    return () => cancelAnimationFrame(raf)
+    return () => {
+      cancelAnimationFrame(raf)
+      canvas.removeEventListener('click', onClick)
+    }
   }, [])
 
   return (
