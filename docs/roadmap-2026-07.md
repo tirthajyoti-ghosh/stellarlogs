@@ -6,7 +6,14 @@ browser-verifiable (screenshots + fps sampling via Playwright).
 
 ---
 
-## Phase A — Performance (do first; everything else builds on a smooth base)
+## Phase A — Performance ✅ SHIPPED 2026-07-20 (commit a7acd12)
+
+Results: Projects-core fps 50 → 60 (capped) on the dev machine; GLB 19.6MB →
+2.4MB. Star shader NOT baked (still live-animated; revisit only if low-tier
+devices still struggle). Dynamic resolution not needed — the static 1.5 cap
+plus planet bakes hit 60. NOTE: the optimized GLB uses KHR_mesh_quantization —
+never bake matrices into its attributes (normalized ints clamp); render via
+<primitive> with node transforms intact.
 
 The ship is NOT the bottleneck (140k tris, 1K textures, ~53MB VRAM, 4 draw
 calls). In-system slowness is dominated by per-pixel procedural planet shaders
@@ -28,7 +35,10 @@ at Retina DPR 2 with bloom.
 5. **Measure first**: before/after fps sampled in-system with a planet
    fullscreen; `renderer.info` draw-call counts in the perf notes.
 
-## Phase B — Flight feel: remove ALL automatic attitude actions
+## Phase B — Flight feel ✅ SHIPPED 2026-07-20 (commit a7acd12)
+
+Auto-level and pitch limit removed; full 360° pitch verified inverted (HUD
+wraps to ±180°, chase camera stays coherent, warp align takes shortest path).
 
 - **Delete pitch auto-level** (`pitchAutolevel` in `src/config/flight.ts`,
   applied in `src/physics/integrator.ts`). The ship must hold whatever attitude
