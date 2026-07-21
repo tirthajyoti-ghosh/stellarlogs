@@ -9,6 +9,7 @@ import { warp } from '../physics/warp'
 import { getGravityBodies } from '../physics/gravity'
 import { updateAudio } from '../audio/engine'
 import { ALL_SYSTEMS } from '../config/systems'
+import { GUNNERY_POI } from '../config/pois'
 
 const _p = new Vector3()
 const EDGE = 96 // px margin when clamping off-screen markers
@@ -296,7 +297,7 @@ export function HudBridge() {
         hudReadouts.targetJump = { position: target.position, standoff: 420 }
       } else if (target.kind === 'poi') {
         // Land OUTSIDE the activity's auto-start ring — see it, then enter it
-        hudReadouts.targetJump = { position: target.position, standoff: 1150 }
+        hudReadouts.targetJump = { position: target.position, standoff: GUNNERY_POI.standoff }
       } else {
         let sys = ALL_SYSTEMS[0]
         let best = Infinity

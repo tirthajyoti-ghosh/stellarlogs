@@ -29,6 +29,8 @@ import { shipRig } from '../../state/shipRig'
 const MAX_VENTS = 2
 const SMOKE_N = 56
 const EMBER_N = 24
+/** Approximate hull half-extents in rig-local space (nose = -Z, no roll) */
+const HULL = { x: 1.15, y: 0.95, z: 3.25 }
 
 interface Vent {
   active: boolean
@@ -52,13 +54,31 @@ export const damageFx = {
   add(worldVel: { x: number; y: number; z: number }): void {
     const vent =
       this.vents.find((v) => !v.active) ?? this.vents[Math.floor(Math.random() * MAX_VENTS)]
-    _v.set(worldVel.x, worldVel.y, worldVel.z).normalize().multiplyScalar(-3.0)
-    _v.x += (Math.random() - 0.5) * 1.4
-    _v.y += (Math.random() - 0.5) * 1.4
-    _v.z += (Math.random() - 0.5) * 1.4
+    // Direction the hit came FROM, in rig-local space (with a little scatter)
     _q.copy(shipRig.quaternion).invert()
-    vent.localPos.copy(_v).applyQuaternion(_q)
-    vent.localDir.copy(vent.localPos).normalize()
+    _v.set(worldVel.x, worldVel.y, worldVel.z)
+      .normalize()
+      .multiplyScalar(-1)
+      .applyQuaternion(_q)
+    _v.x += (Math.random() - 0.5) * 0.4
+    _v.y += (Math.random() - 0.5) * 0.4
+    _v.z += (Math.random() - 0.5) * 0.4
+    _v.normalize()
+    // Project onto the hull ellipsoid so the breach sits ON the ship
+    const t =
+      1 /
+      Math.sqrt(
+        (_v.x / HULL.x) ** 2 + (_v.y / HULL.y) ** 2 + (_v.z / HULL.z) ** 2,
+      )
+    vent.localPos.copy(_v).multiplyScalar(t * 0.96)
+    // Vent along the ellipsoid surface normal at the breach
+    vent.localDir
+      .set(
+        vent.localPos.x / (HULL.x * HULL.x),
+        vent.localPos.y / (HULL.y * HULL.y),
+        vent.localPos.z / (HULL.z * HULL.z),
+      )
+      .normalize()
     vent.active = true
   },
   clear(): void {
@@ -219,7 +239,7 @@ export function HullDamage() {
       const shipVx = shipRig.velocityDir.x * shipRig.speed
       const shipVy = shipRig.velocityDir.y * shipRig.speed
       const shipVz = shipRig.velocityDir.z * shipRig.speed
-      accum.current.smoke += dt * (7 + damageFx.severity * 7) * active.length
+      accum.current.smoke += dt * (14 + damageFx.severity * 8) * active.length
       accum.current.ember += dt * (1.6 + damageFx.severity * 1.4) * active.length
       const ventWorld = (vent: Vent) => {
         _w.copy(vent.localPos).applyQuaternion(shipRig.quaternion).add(shipRig.position)
@@ -229,16 +249,16 @@ export function HullDamage() {
         accum.current.smoke -= 1
         ventWorld(active[Math.floor(Math.random() * active.length)])
         // fast narrow jet — venting atmosphere, not billowing smoke
-        const jet = 7 + Math.random() * 4
+        const jet = 4.5 + Math.random() * 3
         spawn(
           smoke,
           _w.x + (Math.random() - 0.5) * 0.25,
           _w.y + (Math.random() - 0.5) * 0.25,
           _w.z + (Math.random() - 0.5) * 0.25,
-          shipVx + _v.x * jet + (Math.random() - 0.5) * 0.6,
-          shipVy + _v.y * jet + (Math.random() - 0.5) * 0.6,
-          shipVz + _v.z * jet + (Math.random() - 0.5) * 0.6,
-          1.0 + Math.random() * 0.6,
+          shipVx + _v.x * jet + (Math.random() - 0.5) * 0.5,
+          shipVy + _v.y * jet + (Math.random() - 0.5) * 0.5,
+          shipVz + _v.z * jet + (Math.random() - 0.5) * 0.5,
+          0.75 + Math.random() * 0.45,
         )
       }
       while (accum.current.ember >= 1) {
@@ -278,8 +298,8 @@ export function HullDamage() {
         sys.offsets[i * 3 + 1] = sys.pos[i * 3 + 1]
         sys.offsets[i * 3 + 2] = sys.pos[i * 3 + 2]
         if (sys === smoke) {
-          sys.sizes[i] = 0.4 + t * 1.5
-          sys.alphas[i] = 0.8 * Math.min(1, sys.age[i] * 8) * Math.pow(1 - t, 1.4)
+          sys.sizes[i] = 0.3 + t * 0.95
+          sys.alphas[i] = 0.7 * Math.min(1, sys.age[i] * 8) * Math.pow(1 - t, 1.5)
         } else {
           sys.sizes[i] = 0.2 + Math.sin(t * Math.PI) * 0.12
           sys.alphas[i] = 1 - t
@@ -301,9 +321,9 @@ export function HullDamage() {
       if (on) {
         _w.copy(vent.localPos).applyQuaternion(shipRig.quaternion).add(shipRig.position)
         sprite.position.copy(_w).add(
-          _v.set((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6),
+          _v.set((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3),
         )
-        const s = 1.5 + Math.random() * 1.5
+        const s = 1.2 + Math.random() * 1.1
         sprite.scale.set(s, s, 1)
         const material = sprite.material
         material.rotation = Math.random() * Math.PI * 2

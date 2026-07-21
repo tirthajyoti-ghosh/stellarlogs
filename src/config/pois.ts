@@ -5,6 +5,6 @@
  */
 export const GUNNERY_POI = {
   position: [-1600, -60, -1600] as [number, number, number],
-  /** Warp/jump arrival distance — lands OUTSIDE the auto-start ring (900) */
-  standoff: 1150,
+  /** Warp/jump arrival distance — lands OUTSIDE the auto-start ring (1400) */
+  standoff: 1700,
 }
