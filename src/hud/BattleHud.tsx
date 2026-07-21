@@ -2,14 +2,18 @@ import { useEffect, useRef } from 'react'
 import { activityState } from '../state/activityState'
 import { turretControl } from '../state/turretControl'
 import { shipRig } from '../state/shipRig'
+import { hudReadouts } from './hudState'
 
 /**
  * Battle-mode combat HUD, built on space-combat-game anatomy (Everspace,
- * Ace Combat, House of the Dying Sun): everything anchors to a CENTER
- * boresight reticle — velocity tape on its left, PDC turret status on its
- * right, segmented hull bar beneath — plus the genre-standard blinking
- * TORPEDO INBOUND warning strip top-center. Replaces the cruise panels
- * entirely while a drill runs. Driven per frame via rAF, no React state.
+ * Ace Combat, House of the Dying Sun): readouts cluster around screen
+ * center — velocity left, PDC turret status right, segmented hull bar
+ * beneath — plus the genre-standard blinking TORPEDO INBOUND warning strip
+ * top-center. No decorative boresight: the guns aim themselves, so the only
+ * center-screen element is the DRIFT marker (projected by HudBridge at the
+ * ship's true velocity direction — the datum that makes Newtonian evasion
+ * flyable). Replaces the cruise panels entirely while a drill runs. Driven
+ * per frame via rAF, no React state.
  */
 export function BattleHud() {
   const rootRef = useRef<HTMLDivElement>(null)
@@ -125,19 +129,24 @@ export function BattleHud() {
       </div>
       <div className="hud-bh-wave" ref={waveRef} />
 
-      <div className="hud-bh-center">
-        <svg viewBox="-75 -75 150 150" width="170" height="170">
-          <circle r="47" fill="none" stroke="currentColor" strokeWidth="1.1" opacity="0.7" />
-          <line x1="0" y1="-47" x2="0" y2="-57" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
-          <line x1="0" y1="47" x2="0" y2="57" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
-          <line x1="-47" y1="0" x2="-57" y2="0" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
-          <line x1="47" y1="0" x2="57" y2="0" stroke="currentColor" strokeWidth="1.2" opacity="0.8" />
-          <line x1="-73" y1="0" x2="-61" y2="0" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-          <line x1="61" y1="0" x2="73" y2="0" stroke="currentColor" strokeWidth="1" opacity="0.4" />
-          <path d="M -33 -33 A 47 47 0 0 1 33 -33" fill="none" stroke="currentColor" strokeWidth="2.4" opacity="0.28" />
-          <circle r="1.7" fill="currentColor" opacity="0.9" />
+      {/* Drift marker: projected at the TRUE velocity vector by HudBridge */}
+      <div
+        className="hud-bh-drift"
+        ref={(el) => {
+          hudReadouts.driftEl = el
+        }}
+      >
+        <svg viewBox="-12 -12 24 24" width="24" height="24">
+          <circle r="5.5" fill="none" stroke="currentColor" strokeWidth="1.3" />
+          <line x1="0" y1="-5.5" x2="0" y2="-10.5" stroke="currentColor" strokeWidth="1.3" />
+          <line x1="-5.5" y1="0" x2="-10.5" y2="0" stroke="currentColor" strokeWidth="1.3" />
+          <line x1="5.5" y1="0" x2="10.5" y2="0" stroke="currentColor" strokeWidth="1.3" />
+          <circle r="0.9" fill="currentColor" />
         </svg>
+        <b>DRIFT</b>
+      </div>
 
+      <div className="hud-bh-center">
         <div className="hud-bh-vel">
           <b>VEL</b>
           <div className="hud-bh-vel-num" ref={velRef}>0</div>

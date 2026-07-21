@@ -102,6 +102,14 @@ export function Welcome() {
           </a>{' '}
           by sakigakefuruzawa ·{' '}
           <a
+            href="https://sketchfab.com/3d-models/sci-fi-beaconway-point-marker-free-model-a1d91ebb3e2d41bba31c02b11423d97f"
+            target="_blank"
+            rel="noreferrer"
+          >
+            "Beacon"
+          </a>{' '}
+          by AMMediaGames ·{' '}
+          <a
             href="https://opengameart.org/content/wgstudio-explosion-animation"
             target="_blank"
             rel="noreferrer"

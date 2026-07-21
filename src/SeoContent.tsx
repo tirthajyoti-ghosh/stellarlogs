@@ -66,7 +66,11 @@ export function SeoContent() {
         <a href="https://sketchfab.com/3d-models/asteroids-pack-metallic-version-eff495d9315c47dbb2777ec80bef40d8">
           "Asteroids Pack (metallic version)"
         </a>{' '}
-        by SebastianSosnowski (CC BY 4.0). Torpedo model from{' '}
+        by SebastianSosnowski (CC BY 4.0). Boundary buoy from{' '}
+        <a href="https://sketchfab.com/3d-models/sci-fi-beaconway-point-marker-free-model-a1d91ebb3e2d41bba31c02b11423d97f">
+          "Sci-Fi Beacon/Way Point Marker Free Model"
+        </a>{' '}
+        by AMMediaGames (CC BY 4.0). Torpedo model from{' '}
         <a href="https://sketchfab.com/3d-models/low-poly-missiles-and-torpedos-99783c90ce904951a3c71e851a527d35">
           "Low Poly Missiles and Torpedos"
         </a>{' '}

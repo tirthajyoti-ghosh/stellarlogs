@@ -186,6 +186,30 @@ export function HudBridge() {
     // Battle: the contact box stands down (hidden via CSS) — threat data
     // lives in the BattleHud warning strip + bracket markers instead.
 
+    // Drift marker: project where the ship is ACTUALLY traveling. In
+    // Newtonian flight nose ≠ velocity; this is the counter-burn datum.
+    {
+      const el = hudReadouts.driftEl
+      if (el) {
+        let shown = false
+        if (activityState.battle && shipRig.speed > 12) {
+          _p.copy(shipRig.velocityDir).multiplyScalar(220).add(shipRig.position)
+          _p.project(camera)
+          if (_p.z < 1) {
+            const x = (_p.x * 0.5 + 0.5) * size.width
+            const y = (-_p.y * 0.5 + 0.5) * size.height
+            // no edge-clamping: a drift marker that lies is worse than none
+            if (x > 30 && x < size.width - 30 && y > 30 && y < size.height - 235) {
+              el.style.opacity = '0.85'
+              el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+              shown = true
+            }
+          }
+        }
+        if (!shown) el.style.opacity = '0'
+      }
+    }
+
     // Nearest contact: closest labeled body, with a smoothed closing rate
     let target: (typeof hudLabels)[number] | null = null
     let targetDist = Infinity
