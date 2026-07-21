@@ -27,6 +27,7 @@ import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerImpact, triggerFanfare, triggerKlaxon } from '../../audio/engine'
 import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
+import { HullDamage, damageFx } from '../fx/HullDamage'
 import { GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
 import { FONT_BOLD } from '../boards/font'
@@ -215,7 +216,6 @@ export function GunneryRange() {
   const tracerMeshRef = useRef<InstancedMesh>(null)
   const strobeRefs = useRef<(Mesh | null)[]>([])
   const muzzleFlashRefs = useRef<(Sprite | null)[]>([])
-  const sparkRefs = useRef<(Sprite | null)[]>([])
   const holoRef = useRef<Group>(null)
   const buoyMeshRef = useRef<InstancedMesh>(null)
   const orbMeshRef = useRef<InstancedMesh>(null)
@@ -256,6 +256,7 @@ export function GunneryRange() {
 
   const game = useRef({
     phase: 'idle' as Phase,
+    lastPhase: 'idle' as Phase,
     wave: 0,
     kills: 0,
     hull: 3,
@@ -422,9 +423,10 @@ export function GunneryRange() {
       _v.project(camera)
       activityState.hitDirDeg = (Math.atan2(_v.x, _v.y) * 180) / Math.PI
       activityState.hitDirUntil = now + 1.0
-      // fireball ON the hull
+      // fireball ON the hull + a breach that keeps venting where it hit
       _v.copy(torp.velocity).normalize().multiplyScalar(-4).add(shipRig.position)
       spawnExplosion(_v, 1.6)
+      damageFx.add(torp.velocity)
       if (g.hull <= 0) {
         endDrill('failed')
       } else if (g.hull === 1) {
@@ -449,6 +451,12 @@ export function GunneryRange() {
     if (g.phase === 'countdown' && now >= g.phaseUntil) launchWave(now)
     if (g.phase === 'breather' && now >= g.phaseUntil) launchWave(now)
     if (g.phase === 'over' && now >= g.phaseUntil) g.phase = 'idle'
+
+    // Breach venting tracks the wound level; patched on RETURNING to idle
+    // (edge-triggered so DEV staging and the over-phase leak survive)
+    if (g.phase === 'idle' && g.lastPhase !== 'idle') damageFx.clear()
+    else if (g.phase !== 'idle') damageFx.severity = Math.min(1, (3 - g.hull) / 2)
+    g.lastPhase = g.phase
 
     // Arena grace: drifting out warns loudly instead of silently cancelling
     if (battleRunning) {
@@ -662,21 +670,6 @@ export function GunneryRange() {
       if (on) {
         sprite.position.copy(muzzle.position)
         const s = 0.28 + Math.random() * 0.22
-        sprite.scale.set(s, s, 1)
-      }
-    }
-    // hull damage sparks while wounded
-    const damaged = battleRunning && g.hull < 3
-    for (let i = 0; i < sparkRefs.current.length; i++) {
-      const sprite = sparkRefs.current[i]
-      if (!sprite) continue
-      const on = damaged && Math.random() < (g.hull === 1 ? 0.75 : 0.4)
-      sprite.visible = on
-      if (on) {
-        sprite.position
-          .copy(shipRig.position)
-          .add(_v.set((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 6))
-        const s = 0.5 + Math.random() * 0.9
         sprite.scale.set(s, s, 1)
       }
     }
@@ -898,26 +891,8 @@ export function GunneryRange() {
         </sprite>
       ))}
 
-      {/* Hull damage sparks */}
-      {[0, 1, 2, 3].map((i) => (
-        <sprite
-          key={`spark-${i}`}
-          visible={false}
-          ref={(s) => {
-            sparkRefs.current[i] = s
-          }}
-        >
-          <spriteMaterial
-            map={flashTexture}
-            color="#ffb070"
-            transparent
-            opacity={0.8}
-            depthWrite={false}
-            blending={AdditiveBlending}
-            toneMapped={false}
-          />
-        </sprite>
-      ))}
+      {/* Hull breaches: pinned venting vapor + embers + arc flicker */}
+      <HullDamage />
     </group>
   )
 }
