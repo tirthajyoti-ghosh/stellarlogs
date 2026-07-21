@@ -44,13 +44,13 @@ import { FONT_BOLD } from '../boards/font'
  */
 
 const CENTER = new Vector3(...GUNNERY_POI.position)
-const ARM_RADIUS = 900
-const LIVE_RADIUS = 2000
+const ARM_RADIUS = 1400
+const LIVE_RADIUS = 2600
 const GRACE_SECONDS = 10
 const TORP_POOL = 12
 const TORP_HIT_SHIP = 6.5
 const TORP_KILL_RADIUS = 3.4
-const SPAWN_DISTANCE = 500
+const SPAWN_DISTANCE = 600
 const TRACER_SPEED = 800
 const TRACER_LIFE = 0.45
 const TRACER_LEN = 2.6
@@ -59,7 +59,7 @@ const ROUNDS_PER_SEC = 10
 const BEST_TIME_KEY = 'stellarlogs-defense-best-time'
 const TORPEDO_URL = '/models/torpedo.glb'
 const BUOY_URL = '/models/buoy.glb'
-const BUOY_COUNT = 16
+const BUOY_COUNT = 22
 /** Local Y of the buoy's warning-light column (12u-tall normalized model) */
 const BUOY_LIGHT_Y = 3.4
 
@@ -98,23 +98,26 @@ interface LaunchSpec {
 
 /**
  * Wave design: saturation + evasion create the challenge (six ball turrets
- * cover the sphere, so blind spots don't exist). W1 comes from ASTERN so the
- * very first act is turning the ship. W2 splits forward/astern-below. W3
- * saturates three axes + a fast low-turn runner that must be dodged.
- * A stationary armed ship IS hit by wave 2 (verified acceptance test).
+ * cover the sphere, so blind spots don't exist). W1: four from ASTERN so the
+ * very first act is turning the ship. W2: seven split forward/astern fans.
+ * W3: ten across four axes + a fast low-turn runner that must be dodged.
+ * A stationary ship takes hits by wave 2 (verified acceptance test).
  */
 const WAVES: LaunchSpec[][] = [
   [
-    { yawOff: Math.PI - 0.3, elev: 0.12 },
-    { yawOff: Math.PI, elev: -0.1 },
-    { yawOff: Math.PI + 0.3, elev: 0.05 },
+    { yawOff: Math.PI - 0.35, elev: 0.12 },
+    { yawOff: Math.PI - 0.12, elev: -0.22 },
+    { yawOff: Math.PI + 0.12, elev: 0.3 },
+    { yawOff: Math.PI + 0.35, elev: 0.02 },
   ],
   [
-    { yawOff: -0.35, elev: 0.08 },
-    { yawOff: 0.3, elev: 0.15 },
-    { yawOff: Math.PI - 0.5, elev: 0.55 },
-    { yawOff: Math.PI, elev: -0.28 },
-    { yawOff: Math.PI + 0.5, elev: -0.8 },
+    { yawOff: -0.4, elev: 0.08 },
+    { yawOff: 0.02, elev: -0.3 },
+    { yawOff: 0.38, elev: 0.18 },
+    { yawOff: Math.PI - 0.55, elev: 0.55 },
+    { yawOff: Math.PI - 0.18, elev: -0.28 },
+    { yawOff: Math.PI + 0.18, elev: 0.35 },
+    { yawOff: Math.PI + 0.55, elev: -0.8 },
   ],
   [
     { yawOff: -1.5, elev: 0.1 },
@@ -123,10 +126,13 @@ const WAVES: LaunchSpec[][] = [
     { yawOff: 1.55, elev: 0.12 },
     { yawOff: 1.8, elev: -0.1 },
     { yawOff: 1.35, elev: 0.3 },
+    { yawOff: Math.PI - 0.3, elev: 0.6 },
+    { yawOff: Math.PI + 0.3, elev: -0.55 },
+    { yawOff: 0.05, elev: 0.25 },
     { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
   ],
 ]
-const BASE_SPEED = [66, 138, 150]
+const BASE_SPEED = [95, 165, 185]
 const BASE_TURN = [0.9, 1.0, 1.1]
 
 function makeFlashTexture(): CanvasTexture {
