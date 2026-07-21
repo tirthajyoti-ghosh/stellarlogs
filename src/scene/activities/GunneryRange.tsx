@@ -280,11 +280,16 @@ export function GunneryRange() {
       g.flashUntil = now + 2
     }
 
-    // ---- HUD panel ----
+    // ---- HUD panel + battle state ----
+    activityState.battle = g.phase === 'countdown' || g.phase === 'wave' || g.phase === 'breather'
+    activityState.threats = activityState.battle ? torpedoes : []
     activityState.active = inZone
     if (inZone) {
       activityState.title = 'PDC DEFENSE DRILL'
-      activityState.hint = g.phase === 'idle' ? 'HOLD SPACE / CLICK TO BEGIN — TURRETS AUTO-TRACK' : ''
+      activityState.hint =
+        g.phase === 'idle'
+          ? 'PRESS SPACE / TAP TO BEGIN — GUNS ARE AUTOMATIC. FLY.'
+          : 'GUNS AUTO — FLY'
       activityState.lines = [
         { label: 'WAVE', value: String(g.wave) },
         { label: 'INCOMING', value: String(incoming) },
@@ -301,7 +306,8 @@ export function GunneryRange() {
         if (torpedoes[i].alive && torpedoes[i].launched) targets.push(targetSlots[i])
       }
       turretControl.targets = targets
-      turretControl.firing = turretControl.fireIntent
+      // Guns are AUTOMATIC while a drill runs — the pilot's job is flying
+      turretControl.firing = activityState.battle
     } else if (turretControl.targets.length > 0) {
       turretControl.targets = []
       turretControl.firing = false
