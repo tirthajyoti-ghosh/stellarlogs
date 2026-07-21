@@ -1,8 +1,9 @@
 /**
- * Battle-mode threat markers: a pooled DOM layer of red diamonds, one per
- * live threat. Positions/visibility are written imperatively by HudBridge
- * each frame (same pattern as the label layer). The nearest threat carries
- * an impact-time readout.
+ * Battle-mode threat markers: pooled corner-bracket target boxes (the
+ * video-game convention — four L corners around the contact) with a range
+ * readout and a TRK tag while a turret is locked on. Off-screen threats
+ * become edge chevrons. Positions/visibility are written imperatively by
+ * HudBridge each frame (same pattern as the label layer).
  */
 
 export const THREAT_POOL = 12
@@ -23,7 +24,10 @@ export function ThreatLayer() {
           }}
         >
           <span className="hud-threat-arrow">▲</span>
-          <span className="hud-threat-diamond" />
+          <span className="hud-threat-box">
+            <i /><i /><i /><i />
+          </span>
+          <span className="hud-threat-trk">TRK</span>
           <span className="hud-threat-info" />
         </div>
       ))}

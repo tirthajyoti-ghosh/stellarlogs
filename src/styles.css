@@ -576,9 +576,13 @@ body[data-battle='1'] .hud-mfd-left {
   pointer-events: none !important;
   transition: opacity 0.4s;
 }
+/* Battle: cruise furniture stands down — the combat cluster owns the screen */
 body[data-battle='1'] .hud-activity {
-  border-color: rgba(232, 120, 60, 0.4);
-  border-top-color: rgba(255, 110, 70, 0.75);
+  opacity: 0 !important;
+  pointer-events: none;
+}
+body[data-battle='1'] .hud-target {
+  display: none;
 }
 
 /* Threat markers */
@@ -600,14 +604,37 @@ body[data-battle='1'] .hud-activity {
   will-change: transform;
   color: #ff5040;
 }
-.hud-threat-diamond {
-  width: 11px;
-  height: 11px;
-  border: 1.6px solid currentColor;
-  transform: rotate(45deg);
-  box-shadow: 0 0 8px rgba(255, 80, 64, 0.55);
+/* Corner-bracket target box — the video-game contact marker */
+.hud-threat-box {
+  position: relative;
+  display: none;
+  width: 26px;
+  height: 26px;
+  transition: width 0.15s, height 0.15s;
 }
-.hud-threat[data-off='1'] .hud-threat-diamond { display: none; }
+.hud-threat:not([data-off='1']) .hud-threat-box { display: block; }
+.hud-threat-box i {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border: 1.6px solid currentColor;
+}
+.hud-threat-box i:nth-child(1) { top: 0; left: 0; border-right: none; border-bottom: none; }
+.hud-threat-box i:nth-child(2) { top: 0; right: 0; border-left: none; border-bottom: none; }
+.hud-threat-box i:nth-child(3) { bottom: 0; left: 0; border-right: none; border-top: none; }
+.hud-threat-box i:nth-child(4) { bottom: 0; right: 0; border-left: none; border-top: none; }
+.hud-threat-trk {
+  position: absolute;
+  top: -3px;
+  right: -27px;
+  display: none;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #ffb454;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.hud-threat[data-trk='1']:not([data-off='1']) .hud-threat-trk { display: block; }
 .hud-threat-arrow {
   display: none;
   font-size: 13px;
@@ -625,14 +652,14 @@ body[data-battle='1'] .hud-activity {
 .hud-threat[data-nearest='1'] {
   color: #ff7a3a;
 }
-.hud-threat[data-nearest='1'] .hud-threat-diamond {
-  width: 14px;
-  height: 14px;
-  animation: hud-threat-pulse 0.6s infinite alternate;
+.hud-threat[data-nearest='1'] .hud-threat-box {
+  width: 34px;
+  height: 34px;
+  animation: hud-threat-pulse 0.5s infinite alternate;
 }
 @keyframes hud-threat-pulse {
-  from { box-shadow: 0 0 6px rgba(255, 122, 58, 0.5); }
-  to { box-shadow: 0 0 14px rgba(255, 122, 58, 0.95); }
+  from { filter: drop-shadow(0 0 2px rgba(255, 100, 50, 0.4)); }
+  to { filter: drop-shadow(0 0 9px rgba(255, 100, 50, 0.95)); }
 }
 
 /* ---------- Activity zones (gunnery range etc.) ---------- */
@@ -653,6 +680,7 @@ body[data-hit='1'] .hud-damage { animation: hud-hit 0.9s ease-out; }
 body[data-hit='1'] .hud-console,
 body[data-hit='1'] .hud-mfd,
 body[data-hit='1'] .hud-tape,
+body[data-hit='1'] .hud-battlehud,
 body[data-hit='1'] .hud-activity {
   animation: hud-kick 0.45s ease-out;
 }
@@ -665,18 +693,19 @@ body[data-hit='1'] .hud-activity {
   100% { translate: 0 0; }
 }
 
-/* Big center battle banners */
+/* Big center battle banners — lower-third strip, game style */
 .hud-banner {
   position: absolute;
-  top: 24%;
+  top: 30%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 36px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: 0.42em;
-  padding-left: 0.42em; /* optically recenter tracked text */
+  padding: 7px 42px 7px calc(42px + 0.42em); /* optically recenter tracked text */
   white-space: nowrap;
   color: var(--hud-bright);
+  background: linear-gradient(90deg, transparent, rgba(8, 12, 20, 0.6) 18%, rgba(8, 12, 20, 0.6) 82%, transparent);
   opacity: 0;
   transition: opacity 0.25s;
   pointer-events: none;
@@ -782,8 +811,188 @@ body[data-hit='1'] .hud-activity {
   min-height: 11px;
 }
 
-.hud-label-poi { font-size: 10px; }
-.hud-label-poi .hud-label-name { letter-spacing: 0.24em; }
+.hud-label-poi { font-size: 11.5px; }
+.hud-label-poi .hud-label-name {
+  letter-spacing: 0.24em;
+  text-shadow: 0 0 10px rgba(255, 180, 84, 0.45), 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
+/* ---------- Combat HUD cluster (battle only) ---------- */
+
+.hud-battlehud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s;
+  --bh: #ffb46e;
+  color: var(--bh);
+  font-variant-numeric: tabular-nums;
+}
+.hud-battlehud[data-on='1'] { opacity: 1; }
+
+/* Top-center threat warning — Ace Combat style */
+.hud-bh-warning {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.hud-bh-warning[data-on='1'] { opacity: 1; }
+.hud-bh-warning-text {
+  padding: 4px 18px 4px calc(18px + 0.34em);
+  border: 1px solid rgba(255, 80, 64, 0.7);
+  border-left-width: 5px;
+  border-right-width: 5px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  color: #ff5040;
+  background: rgba(60, 8, 6, 0.4);
+  text-shadow: 0 0 14px rgba(255, 70, 45, 0.6);
+  animation: hud-warn-blink 0.9s step-end infinite;
+}
+.hud-bh-warning[data-crit='1'] .hud-bh-warning-text { animation-duration: 0.4s; }
+@keyframes hud-warn-blink {
+  50% { opacity: 0.45; }
+}
+.hud-bh-warning-sub {
+  margin-top: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #ff8a70;
+}
+.hud-bh-wave {
+  position: absolute;
+  top: calc(14% + 62px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.34em;
+  opacity: 0.7;
+}
+
+/* Center boresight reticle + flanking readouts */
+.hud-bh-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+.hud-bh-center > svg {
+  display: block;
+  color: var(--bh);
+  opacity: 0.8;
+  filter: drop-shadow(0 0 6px rgba(255, 160, 90, 0.22));
+}
+.hud-bh-vel,
+.hud-bh-pdc {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.hud-bh-vel { right: calc(100% + 44px); }
+.hud-bh-pdc { left: calc(100% + 44px); }
+.hud-bh-vel b,
+.hud-bh-pdc b,
+.hud-bh-hull b {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  opacity: 0.65;
+}
+.hud-bh-vel-num {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffd9ae;
+  text-shadow: 0 0 12px rgba(255, 170, 90, 0.35);
+}
+.hud-bh-pips { display: flex; gap: 5px; }
+.hud-bh-pips i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgba(255, 180, 110, 0.5);
+  transform: rotate(45deg);
+  transition: background 0.12s, box-shadow 0.12s;
+}
+.hud-bh-pips i[data-on='1'] {
+  background: rgba(255, 170, 90, 0.8);
+  border-color: #ffc888;
+}
+.hud-bh-pips i[data-hot='1'] {
+  background: #ffdcb0;
+  box-shadow: 0 0 9px rgba(255, 175, 95, 0.95);
+}
+.hud-bh-pdc-count {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #ffd9ae;
+}
+
+/* Hull integrity under the reticle */
+.hud-bh-hull {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.hud-bh-hull b:last-child { font-size: 11px; letter-spacing: 0.08em; opacity: 1; color: #cfe6d2; }
+.hud-bh-hull-segs { display: flex; gap: 4px; }
+.hud-bh-hull-segs i {
+  width: 34px;
+  height: 7px;
+  background: rgba(150, 235, 170, 0.82);
+  box-shadow: 0 0 8px rgba(120, 235, 150, 0.32);
+  clip-path: polygon(3px 0, 100% 0, calc(100% - 3px) 100%, 0 100%);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.hud-bh-hull-segs i[data-lost='1'] {
+  background: rgba(120, 30, 24, 0.72);
+  box-shadow: none;
+}
+.hud-battlehud[data-critical='1'] .hud-bh-hull-segs i:not([data-lost='1']) {
+  background: #ff6a55;
+  box-shadow: 0 0 10px rgba(255, 80, 50, 0.6);
+  animation: hud-warn-blink 0.5s step-end infinite;
+}
+.hud-battlehud[data-critical='1'] .hud-bh-hull b:last-child { color: #ff8a70; }
+
+/* Coach line — only speaks when the drill has advice */
+.hud-bh-coach {
+  position: absolute;
+  top: calc(100% + 40px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #ffd9ae;
+  text-shadow: 0 0 10px rgba(255, 170, 90, 0.4);
+}
+
+@media (max-width: 760px) {
+  .hud-bh-vel { right: calc(100% + 10px); }
+  .hud-bh-pdc { left: calc(100% + 10px); }
+  .hud-bh-vel-num { font-size: 26px; }
+  .hud-bh-center > svg { width: 128px; height: 128px; }
+  .hud-bh-warning-text { font-size: 11.5px; letter-spacing: 0.26em; }
+  .hud-banner { font-size: 18px; }
+}
 
 .hud-touch-fire {
   border-color: rgba(232, 100, 60, 0.6) !important;

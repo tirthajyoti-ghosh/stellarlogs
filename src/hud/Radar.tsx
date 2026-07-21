@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
+import { GUNNERY_POI } from '../config/pois'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
@@ -179,6 +180,16 @@ export function Radar() {
             py: sp.py,
             position: new Vector3(...STATION_POSITION),
             standoff: 420,
+          })
+        }
+        // Gunnery range POI — jump lands outside its auto-start ring
+        const gp = plot(GUNNERY_POI.position[0], GUNNERY_POI.position[2], '#ffb454', 2.2)
+        if (gp) {
+          blips.current.push({
+            px: gp.px,
+            py: gp.py,
+            position: new Vector3(...GUNNERY_POI.position),
+            standoff: GUNNERY_POI.standoff,
           })
         }
       }
