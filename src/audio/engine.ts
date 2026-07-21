@@ -221,7 +221,8 @@ export function updateAudio(
   // PDC fire: BRRRT while spun-up and firing with locks; the pulse rate rides
   // the spin-up (40 → 66Hz) so bursts audibly wind up like a rotary cannon
   const shooting = turretControl.firing && turretControl.spin > 0.85 && turretControl.locks > 0
-  engine.pdcGain.gain.setTargetAtTime(shooting ? 0.3 : 0, t, shooting ? 0.03 : 0.08)
+  const fireGain = shooting ? Math.min(0.38, 0.16 + turretControl.locks * 0.045) : 0
+  engine.pdcGain.gain.setTargetAtTime(fireGain, t, shooting ? 0.03 : 0.08)
   const rate = 40 + 26 * turretControl.spin
   engine.pdcRateOsc.frequency.setTargetAtTime(rate, t, 0.06)
   engine.pdcBodyOsc.frequency.setTargetAtTime(rate, t, 0.06)
@@ -230,6 +231,31 @@ export function updateAudio(
   const slew = Math.min(1, turretControl.traverseSpeed / 6)
   engine.servoGain.gain.setTargetAtTime(slew * 0.05, t, 0.07)
   engine.servoOsc.frequency.setTargetAtTime(180 + slew * 320, t, 0.07)
+}
+
+/** One-shot: incoming-wave klaxon — two descending two-tone blasts. */
+export function triggerKlaxon(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  for (let i = 0; i < 2; i++) {
+    const o = ctx.createOscillator()
+    o.type = 'sawtooth'
+    const at = t + i * 0.34
+    o.frequency.setValueAtTime(540, at)
+    o.frequency.exponentialRampToValueAtTime(320, at + 0.24)
+    const band = ctx.createBiquadFilter()
+    band.type = 'bandpass'
+    band.frequency.value = 640
+    band.Q.value = 1.2
+    const gn = ctx.createGain()
+    gn.gain.setValueAtTime(0, at)
+    gn.gain.linearRampToValueAtTime(0.09, at + 0.02)
+    gn.gain.linearRampToValueAtTime(0, at + 0.28)
+    o.connect(band).connect(gn).connect(master)
+    o.start(at)
+    o.stop(at + 0.3)
+  }
 }
 
 /** One-shot: torpedo impact — deep thud + metallic ring + alarm chirp. */

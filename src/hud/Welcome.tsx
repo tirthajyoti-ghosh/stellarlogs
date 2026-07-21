@@ -92,7 +92,23 @@ export function Welcome() {
           >
             "Asteroids Pack"
           </a>{' '}
-          by SebastianSosnowski · nebulae by{' '}
+          by SebastianSosnowski ·{' '}
+          <a
+            href="https://sketchfab.com/3d-models/low-poly-missiles-and-torpedos-99783c90ce904951a3c71e851a527d35"
+            target="_blank"
+            rel="noreferrer"
+          >
+            "Missiles"
+          </a>{' '}
+          by sakigakefuruzawa ·{' '}
+          <a
+            href="https://opengameart.org/content/wgstudio-explosion-animation"
+            target="_blank"
+            rel="noreferrer"
+          >
+            explosion FX
+          </a>{' '}
+          by WrathGames Studio · nebulae by{' '}
           <a href="https://esahubble.org" target="_blank" rel="noreferrer">
             ESA/Hubble
           </a>{' '}

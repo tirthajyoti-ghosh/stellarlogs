@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
+import { Text, useGLTF } from '@react-three/drei'
 import {
   AdditiveBlending,
+  BufferGeometry,
   CanvasTexture,
   InstancedMesh,
+  Material,
   Matrix4,
   Mesh,
   MeshBasicMaterial,
+  MeshStandardMaterial,
   Object3D,
   Quaternion,
   Sprite,
@@ -18,39 +22,41 @@ import { turretControl } from '../../state/turretControl'
 import { activityState } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
-import { triggerImpact, triggerFanfare } from '../../audio/engine'
+import { triggerImpact, triggerFanfare, triggerKlaxon } from '../../audio/engine'
+import { spawnExplosion } from '../fx/Explosions'
+import { IS_TOUCH } from '../../config/quality'
+import { FONT_BOLD } from '../boards/font'
 
 /**
- * F.1 v3 — PDC DEFENSE DRILL (experience redesign): a FINITE 3-wave defense
- * exercise you can WIN. Guns are automatic; the pilot's job is flying —
- * wave bearings deliberately probe the turrets' blind arcs so a static ship
- * takes hits by design (rotate the deliberate RCS ship; dodge the runner).
- * 3-hit hull with real impact physics (impulse + tumble + shake). Clearing
- * wave 3 = DRILL COMPLETE + fanfare; a clean fast run sets the best time.
- * See docs/experience-redesign-2026-07.md.
+ * F.1 — PDC DEFENSE DRILL. Finite 3-wave defense exercise you WIN. Guns are
+ * automatic; the pilot's job is flying. Wave design forces action from the
+ * first second: W1 attacks from ASTERN (turn the ship — the coach line says
+ * so), W2 splits axes, W3 saturates three axes plus a runner you dodge.
+ * Torpedoes (real missile model) weave evasively so kills happen close-in.
+ * 3-hit hull with full impact feedback. See docs/experience-redesign-2026-07.
  */
 
 const CENTER = new Vector3(-300, -60, -500)
-const ARM_RADIUS = 900 // panel appears / drill can be armed
-const LIVE_RADIUS = 2500 // drill keeps running inside this
+const ARM_RADIUS = 900
+const LIVE_RADIUS = 2500
 const GRACE_SECONDS = 10
 const TORP_POOL = 12
 const TORP_HIT_SHIP = 6
 const TORP_KILL_RADIUS = 4
-const SPAWN_DISTANCE = 700
+const SPAWN_DISTANCE = 500
 const TRACER_SPEED = 800
 const TRACER_LIFE = 0.45
 const TRACER_LEN = 6
 const TRACER_POOL = 96
 const ROUNDS_PER_SEC = 10
 const BEST_TIME_KEY = 'stellarlogs-defense-best-time'
+const TORPEDO_URL = '/models/torpedo.glb'
 
 interface Torpedo {
   position: Vector3
   velocity: Vector3
   speed: number
   turnRate: number
-  /** evasive corkscrew amplitude (u/s lateral) — 0 flies straight */
   weave: number
   weavePhase: number
   alive: boolean
@@ -64,40 +70,36 @@ interface Tracer {
   life: number
   fresh: boolean
   active: boolean
+  /** Torpedo index this round was fired at — dumb rounds miss everything else */
+  targetIdx: number
 }
 
 type Phase = 'idle' | 'countdown' | 'wave' | 'breather' | 'over'
 
-/** One torpedo's launch spec: bearing relative to the ship's yaw at launch. */
 interface LaunchSpec {
-  /** radians off the nose (0 = dead ahead, π = astern) */
   yawOff: number
-  /** vertical angle, radians (negative = from below) */
   elev: number
   speedMult?: number
   turnMult?: number
 }
 
 /**
- * Wave compositions — the challenge guarantee is SATURATION, not blind spots
- * (six ball turrets cover nearly the full sphere): every wave arrives
- * near-simultaneously, splitting the batteries across axes, at speeds that
- * shrink the engagement window (~300u range) below what a static defense
- * can clear. W1: one axis, slow — the guns handle it, teaching. W2: forward
- * pair + astern-below TRIO vs only 2 aft-covering turrets — a static ship
- * takes a leaker; rotating (or burning to open the range) saves you. W3:
- * three-axis saturation + a fast low-turn runner you dodge, not shoot.
+ * Wave design: saturation + evasion create the challenge (six ball turrets
+ * cover the sphere, so blind spots don't exist). W1 comes from ASTERN so the
+ * very first act is turning the ship. W2 splits forward/astern-below. W3
+ * saturates three axes + a fast low-turn runner that must be dodged.
+ * A stationary armed ship IS hit by wave 2 (verified acceptance test).
  */
 const WAVES: LaunchSpec[][] = [
   [
-    { yawOff: -0.25, elev: 0.1 },
-    { yawOff: 0.05, elev: -0.12 },
-    { yawOff: 0.3, elev: 0.05 },
+    { yawOff: Math.PI - 0.3, elev: 0.12 },
+    { yawOff: Math.PI, elev: -0.1 },
+    { yawOff: Math.PI + 0.3, elev: 0.05 },
   ],
   [
     { yawOff: -0.35, elev: 0.08 },
     { yawOff: 0.3, elev: 0.15 },
-    { yawOff: Math.PI - 0.5, elev: -0.6 },
+    { yawOff: Math.PI - 0.5, elev: 0.55 },
     { yawOff: Math.PI, elev: -0.28 },
     { yawOff: Math.PI + 0.5, elev: -0.8 },
   ],
@@ -111,7 +113,7 @@ const WAVES: LaunchSpec[][] = [
     { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
   ],
 ]
-const BASE_SPEED = [60, 112, 125]
+const BASE_SPEED = [66, 138, 150]
 const BASE_TURN = [0.9, 1.0, 1.1]
 
 function makeFlashTexture(): CanvasTexture {
@@ -128,7 +130,6 @@ function makeFlashTexture(): CanvasTexture {
   return new CanvasTexture(canvas)
 }
 
-const FLASH_POOL = 8
 const _m = new Matrix4()
 const _q = new Quaternion()
 const _v = new Vector3()
@@ -136,18 +137,67 @@ const _up = new Vector3(0, 1, 0)
 const _perp = new Vector3()
 const _dummy = new Object3D()
 
+/**
+ * Torpedo body from "Low Poly Missiles and Torpedos" by sakigakefuruzawa
+ * (Sketchfab, CC BY 4.0) — one missile extracted offline
+ * (scripts/extract-torpedo.mjs), float geometry (no quantization), baked here
+ * to +Y-forward, ~4.6u long for our instancing convention.
+ */
+function useTorpedoBody(): { geometry: BufferGeometry; material: Material } {
+  const gltf = useGLTF(TORPEDO_URL)
+  return useMemo(() => {
+    gltf.scene.updateMatrixWorld(true)
+    let found: Mesh | null = null
+    gltf.scene.traverse((obj) => {
+      const m = obj as Mesh
+      if (m.isMesh && !found) found = m
+    })
+    const source = found as unknown as Mesh
+    const geometry = source.geometry.clone()
+    geometry.applyMatrix4(source.matrixWorld)
+    geometry.computeBoundingBox()
+    const center = geometry.boundingBox!.getCenter(new Vector3())
+    const size = geometry.boundingBox!.getSize(new Vector3())
+    const scale = 4.6 / Math.max(size.x, size.y, size.z)
+    const bake = new Matrix4()
+      .makeRotationX(-Math.PI / 2) // long axis Z → our +Y-forward convention
+      .multiply(new Matrix4().makeScale(scale, scale, scale))
+      .multiply(new Matrix4().makeTranslation(-center.x, -center.y, -center.z))
+    geometry.applyMatrix4(bake)
+    const material = (
+      Array.isArray(source.material) ? source.material[0] : source.material
+    ) as MeshStandardMaterial
+    material.envMapIntensity = 1.1
+    return { geometry, material }
+  }, [gltf])
+}
+
+/** A lit perimeter pylon marking the practice-volume boundary. */
+function Pylon({ position }: { position: [number, number, number] }) {
+  return (
+    <group position={position}>
+      <mesh>
+        <cylinderGeometry args={[0.7, 1, 24, 6]} />
+        <meshStandardMaterial color="#2c333e" metalness={0.7} roughness={0.5} flatShading />
+      </mesh>
+      <mesh position={[0, 13.4, 0]}>
+        <sphereGeometry args={[1.3, 8, 8]} />
+        <meshBasicMaterial color={[2.2, 1.35, 0.45]} toneMapped={false} />
+      </mesh>
+    </group>
+  )
+}
+
 export function GunneryRange() {
   const torpMeshRef = useRef<InstancedMesh>(null)
   const plumeMeshRef = useRef<InstancedMesh>(null)
   const tracerMeshRef = useRef<InstancedMesh>(null)
-  const beaconRef = useRef<Mesh>(null)
-  const flashRefs = useRef<(Sprite | null)[]>([])
+  const strobeRefs = useRef<(Mesh | null)[]>([])
   const muzzleFlashRefs = useRef<(Sprite | null)[]>([])
   const sparkRefs = useRef<(Sprite | null)[]>([])
-  const flashState = useRef(
-    Array.from({ length: FLASH_POOL }, () => ({ at: new Vector3(), start: -10, scale: 1 })),
-  )
   const flashTexture = useMemo(() => makeFlashTexture(), [])
+  const torpedoBody = useTorpedoBody()
+  const wasInZone = useRef(false)
 
   const torpedoes = useMemo<Torpedo[]>(
     () =>
@@ -174,6 +224,7 @@ export function GunneryRange() {
         life: 0,
         fresh: false,
         active: false,
+        targetIdx: -1,
       })),
     [],
   )
@@ -201,7 +252,7 @@ export function GunneryRange() {
       color: '#9adbe8',
       kind: 'poi',
       position: CENTER,
-      yOffset: 70,
+      yOffset: 95,
       el: null,
       detail: 'PDC DEFENSE DRILL',
     })
@@ -212,7 +263,8 @@ export function GunneryRange() {
     }
   }, [])
 
-  // ARM input: Space or click in the zone starts the drill (guns are auto)
+  // ARM input: Space on desktop; on touch the ARM button sets fireIntent.
+  // Canvas taps/clicks never arm (camera drags were arming it by accident).
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'Space' || e.repeat) return
@@ -225,38 +277,38 @@ export function GunneryRange() {
     const up = (e: KeyboardEvent) => {
       if (e.code === 'Space') turretControl.fireIntent = false
     }
-    const pointerDown = (e: PointerEvent) => {
-      if (!activityState.active) return
-      if ((e.target as HTMLElement).closest('[data-ui]')) return
-      turretControl.fireIntent = true
-    }
     const clear = () => {
       turretControl.fireIntent = false
     }
     window.addEventListener('keydown', down)
     window.addEventListener('keyup', up)
-    window.addEventListener('pointerdown', pointerDown)
-    window.addEventListener('pointerup', clear)
     window.addEventListener('blur', clear)
     return () => {
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
-      window.removeEventListener('pointerdown', pointerDown)
-      window.removeEventListener('pointerup', clear)
       window.removeEventListener('blur', clear)
     }
   }, [])
 
-  useFrame(({ clock }, dt) => {
+  useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
     const g = game.current
+    activityState.bannerClock = now
     const distToCenter = shipRig.position.distanceTo(CENTER)
     const inArmZone = distToCenter < ARM_RADIUS
     const battleRunning = g.phase === 'countdown' || g.phase === 'wave' || g.phase === 'breather'
 
+    // Zone-entry callout: the visitor should KNOW they crossed into a playzone
+    if (inArmZone && !wasInZone.current && g.phase === 'idle') {
+      activityState.banner = { text: 'ENTERING GUNNERY RANGE', kind: 'info', until: now + 2.6 }
+    }
+    wasInZone.current = inArmZone
+
     function launchWave(t: number) {
       g.wave++
       g.phase = 'wave'
+      triggerKlaxon()
+      activityState.banner = { text: `WAVE ${g.wave} / 3`, kind: 'battle', until: t + 1.7 }
       const specs = WAVES[g.wave - 1]
       const speedBase = BASE_SPEED[g.wave - 1] * (g.veteran ? 1.35 : 1)
       const turnBase = BASE_TURN[g.wave - 1] * (g.veteran ? 1.2 : 1)
@@ -264,7 +316,6 @@ export function GunneryRange() {
       specs.forEach((spec, i) => {
         const torp = torpedoes[i]
         const yaw = shipYaw + spec.yawOff
-        // world direction for this bearing (forward = -Z rotated by yaw)
         _v.set(-Math.sin(yaw), 0, -Math.cos(yaw))
         _v.y = Math.tan(spec.elev)
         _v.normalize()
@@ -273,7 +324,7 @@ export function GunneryRange() {
           .addScaledVector(_v, spec.speedMult ? SPAWN_DISTANCE * 0.8 : SPAWN_DISTANCE)
         torp.speed = speedBase * (spec.speedMult ?? 1)
         torp.turnRate = turnBase * (spec.turnMult ?? 1)
-        torp.weave = g.wave === 1 || spec.speedMult ? 0 : 40
+        torp.weave = g.wave === 1 || spec.speedMult ? 0 : 48
         torp.weavePhase = i * 2.1
         torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
         torp.alive = true
@@ -289,9 +340,7 @@ export function GunneryRange() {
       const time = now - g.armedAt
       if (result === 'complete') {
         const clean = g.hull === 3
-        let text = g.veteran
-          ? `VETERAN DRILL COMPLETE — ${time.toFixed(1)}S`
-          : `DRILL COMPLETE — ${time.toFixed(1)}S`
+        let text = `${time.toFixed(1)}S`
         if (clean && !g.veteran && (g.bestTime === 0 || time < g.bestTime)) {
           g.bestTime = time
           localStorage.setItem(BEST_TIME_KEY, time.toFixed(1))
@@ -300,20 +349,23 @@ export function GunneryRange() {
         g.flashText = text
         g.nextVeteran = !g.veteran
         triggerFanfare()
-        // celebration: ring of detonations around the ship
+        activityState.banner = {
+          text: g.veteran ? 'VETERAN DRILL COMPLETE' : 'DRILL COMPLETE',
+          kind: 'win',
+          until: now + 3,
+        }
+        // celebration: ring of fireballs around the ship
         for (let i = 0; i < 6; i++) {
-          const slot = flashState.current[i % FLASH_POOL]
           const a = (i / 6) * Math.PI * 2
-          slot.at
-            .copy(shipRig.position)
-            .add(_v.set(Math.cos(a) * 28, (Math.random() - 0.5) * 16, Math.sin(a) * 28))
-          slot.start = now + i * 0.14
-          slot.scale = 1.6
+          _v.set(Math.cos(a) * 30, (Math.random() - 0.5) * 18, Math.sin(a) * 30).add(shipRig.position)
+          spawnExplosion(_v, 1.1, i * 0.16)
         }
       } else if (result === 'failed') {
-        g.flashText = 'HULL CRITICAL — DRILL ABORTED'
+        g.flashText = 'DRILL ABORTED'
+        activityState.banner = { text: 'HULL CRITICAL', kind: 'fail', until: now + 3 }
       } else {
-        g.flashText = 'DRILL ABANDONED'
+        g.flashText = ''
+        activityState.banner = { text: 'DRILL ABANDONED', kind: 'info', until: now + 2.2 }
       }
       g.flashUntil = now + 3
       g.phase = 'over'
@@ -336,10 +388,14 @@ export function GunneryRange() {
       setTimeout(() => {
         delete document.body.dataset.hit
       }, 650)
-      const slot = flashState.current.reduce((a, b) => (a.start < b.start ? a : b))
-      slot.at.copy(shipRig.position)
-      slot.start = now
-      slot.scale = 1.4
+      // damage-direction indicator: where did that come from?
+      _v.copy(torp.velocity).normalize().multiplyScalar(-60).add(shipRig.position)
+      _v.project(camera)
+      activityState.hitDirDeg = (Math.atan2(_v.x, _v.y) * 180) / Math.PI
+      activityState.hitDirUntil = now + 1.0
+      // fireball ON the hull
+      _v.copy(torp.velocity).normalize().multiplyScalar(-4).add(shipRig.position)
+      spawnExplosion(_v, 1.6)
       if (g.hull <= 0) {
         endDrill('failed')
       } else {
@@ -358,8 +414,13 @@ export function GunneryRange() {
       g.armedAt = now
       g.graceUntil = 0
       g.phaseUntil = now + 1.6
-      g.flashText = g.veteran ? 'VETERAN DRILL — INCOMING' : 'INCOMING'
-      g.flashUntil = now + 1.6
+      activityState.banner = {
+        text: g.veteran ? 'VETERAN DRILL — INCOMING' : 'INCOMING',
+        kind: 'battle',
+        until: now + 1.6,
+      }
+      g.flashText = ''
+      g.flashUntil = 0
       turretControl.fireIntent = false
     }
     if (g.phase === 'countdown' && now >= g.phaseUntil) launchWave(now)
@@ -380,7 +441,7 @@ export function GunneryRange() {
       }
     }
 
-    // ---- torpedoes: staggered launch, homing with capped turn ----
+    // ---- torpedoes: staggered launch, weaving pursuit ----
     let incoming = 0
     for (const torp of torpedoes) {
       if (!torp.alive) continue
@@ -391,8 +452,6 @@ export function GunneryRange() {
       incoming++
       _v.copy(shipRig.position).sub(torp.position).normalize()
       if (torp.weave > 0) {
-        // evasive corkscrew: lateral sinusoid perpendicular to the approach —
-        // defeats gun streams at range, so kills concentrate close-in
         const wob = Math.sin(now * 2.3 + torp.weavePhase) * torp.weave
         const wobV = Math.cos(now * 1.7 + torp.weavePhase) * torp.weave * 0.6
         _perp.set(-_v.z, 0, _v.x).normalize()
@@ -417,7 +476,7 @@ export function GunneryRange() {
         endDrill('complete')
       } else {
         g.phase = 'breather'
-        g.phaseUntil = now + 2.4
+        g.phaseUntil = now + 4.0
         g.flashText = `WAVE ${g.wave} CLEARED`
         g.flashUntil = now + 2
       }
@@ -430,20 +489,32 @@ export function GunneryRange() {
     if (activityState.active) {
       activityState.title =
         g.veteran && battleRunning ? 'PDC DEFENSE — VETERAN' : 'PDC DEFENSE DRILL'
+      const coach =
+        battleRunning && g.wave === 1 && g.phase === 'wave' && turretControl.locks === 0 && incoming > 0
       activityState.hint =
         g.phase === 'idle'
           ? g.nextVeteran
-            ? 'PRESS SPACE / TAP — VETERAN DRILL. GUNS ARE AUTOMATIC. FLY.'
-            : 'PRESS SPACE / TAP TO BEGIN — GUNS ARE AUTOMATIC. FLY.'
-          : battleRunning
-            ? 'GUNS AUTO — FLY'
-            : ''
+            ? `${IS_TOUCH ? 'TAP ARM' : 'PRESS SPACE'} — VETERAN DRILL. GUNS ARE AUTOMATIC. FLY.`
+            : `${IS_TOUCH ? 'TAP ARM' : 'PRESS SPACE'} TO BEGIN — GUNS ARE AUTOMATIC. FLY.`
+          : coach
+            ? 'THREATS AFT — TURN THE SHIP (A / D)'
+            : battleRunning
+              ? 'GUNS AUTO — FLY'
+              : ''
       activityState.lines = [
         { label: 'WAVE', value: battleRunning ? `${g.wave}/3` : '—' },
-        { label: 'INCOMING', value: String(incoming) },
+        { label: 'INCOMING', value: battleRunning ? String(incoming) : '—' },
         {
           label: 'HULL',
-          value: g.hull === 3 ? '100%' : g.hull === 2 ? '66%' : g.hull === 1 ? '33%' : '0%',
+          value: !battleRunning
+            ? '—'
+            : g.hull === 3
+              ? '100%'
+              : g.hull === 2
+                ? '66%'
+                : g.hull === 1
+                  ? '33%'
+                  : '0%',
         },
         { label: 'BEST', value: g.bestTime > 0 ? `${g.bestTime.toFixed(1)}S` : '—' },
       ]
@@ -476,18 +547,13 @@ export function GunneryRange() {
         tracer.active = false
         continue
       }
-      for (let i = 0; i < torpedoes.length; i++) {
-        const torp = torpedoes[i]
-        if (!torp.alive || !torp.launched) continue
+      const torp = torpedoes[tracer.targetIdx]
+      if (torp && torp.alive && torp.launched) {
         if (tracer.position.distanceTo(torp.position) < TORP_KILL_RADIUS) {
           torp.alive = false
           tracer.active = false
           g.kills++
-          const slot = flashState.current.reduce((a, b) => (a.start < b.start ? a : b))
-          slot.at.copy(torp.position)
-          slot.start = now
-          slot.scale = 1
-          break
+          spawnExplosion(torp.position, 0.9)
         }
       }
     }
@@ -506,6 +572,8 @@ export function GunneryRange() {
           g.fireAccum[ti] -= 1
           const tracer = tracers.find((t) => !t.active)
           if (!tracer) break
+          const slot = turretControl.targets[muzzle.targetIndex]
+          tracer.targetIdx = targetSlots.findIndex((ts) => ts === slot)
           tracer.active = true
           tracer.fresh = true
           tracer.life = TRACER_LIFE
@@ -536,7 +604,7 @@ export function GunneryRange() {
         _dummy.updateMatrix()
         torpMesh.setMatrixAt(n, _dummy.matrix)
         const flicker = 0.85 + Math.random() * 0.35
-        _dummy.position.addScaledVector(_v, -3.2)
+        _dummy.position.addScaledVector(_v, -3.4)
         _dummy.scale.set(flicker, flicker * (1 + Math.random() * 0.3), flicker)
         _dummy.updateMatrix()
         plumeMesh.setMatrixAt(n, _dummy.matrix)
@@ -572,7 +640,7 @@ export function GunneryRange() {
         sprite.scale.set(s, s, 1)
       }
     }
-    // hull damage sparks: the ship trails sparks while wounded
+    // hull damage sparks while wounded
     const damaged = battleRunning && g.hull < 3
     for (let i = 0; i < sparkRefs.current.length; i++) {
       const sprite = sparkRefs.current[i]
@@ -587,53 +655,98 @@ export function GunneryRange() {
         sprite.scale.set(s, s, 1)
       }
     }
-    if (beaconRef.current) {
-      const pulse = Math.pow(Math.max(0, Math.sin(now * 2.4)), 12)
-      const material = beaconRef.current.material as MeshBasicMaterial
-      material.color.setRGB(1 + pulse * 3, 0.9 + pulse * 2.4, 0.5 + pulse)
-    }
-    flashState.current.forEach((flash, i) => {
-      const sprite = flashRefs.current[i]
-      if (!sprite) return
-      const age = now - flash.start
-      if (age > 0.35 || age < 0) {
-        sprite.visible = false
-        return
-      }
-      sprite.visible = true
-      sprite.position.copy(flash.at)
-      const s = (5 + age * 42) * flash.scale
-      sprite.scale.set(s, s, 1)
-      ;(sprite.material as { opacity: number }).opacity = 1 - age / 0.35
+    // beacon strobes: staggered blink up the column
+    strobeRefs.current.forEach((strobe, i) => {
+      if (!strobe) return
+      const pulse = Math.pow(Math.max(0, Math.sin(now * 2.4 + i * 1.1)), 14)
+      const material = strobe.material as MeshBasicMaterial
+      material.color.setRGB(1 + pulse * 3.4, 0.85 + pulse * 2.4, 0.45 + pulse * 0.9)
     })
   })
 
+  const pylons = useMemo(() => {
+    const list: [number, number, number][] = []
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2
+      list.push([CENTER.x + Math.cos(a) * 870, CENTER.y - 10, CENTER.z + Math.sin(a) * 870])
+    }
+    return list
+  }, [])
+
   return (
     <group>
-      {/* Range-control buoy */}
+      {/* THE LANDMARK: tall strobed beacon column with an illuminated sign —
+          a visible invitation per the design law */}
       <group position={CENTER.toArray()}>
         <mesh>
-          <cylinderGeometry args={[1.2, 1.8, 26, 6]} />
-          <meshStandardMaterial color="#3a424e" metalness={0.65} roughness={0.5} flatShading />
+          <cylinderGeometry args={[1.6, 2.6, 150, 8]} />
+          <meshStandardMaterial color="#333b47" metalness={0.7} roughness={0.45} flatShading />
         </mesh>
-        {[8, -8].map((y) => (
-          <mesh key={y} position={[0, y, 0]}>
-            <boxGeometry args={[6.5, 1.4, 6.5]} />
-            <meshStandardMaterial color="#252b34" metalness={0.7} roughness={0.45} flatShading />
+        {[-40, 0, 40].map((y) => (
+          <mesh key={y} position={[0, y, 0]} rotation-y={Math.PI / 4}>
+            <boxGeometry args={[10, 1.6, 1.6]} />
+            <meshStandardMaterial color="#242b35" metalness={0.7} roughness={0.5} flatShading />
           </mesh>
         ))}
-        <mesh ref={beaconRef} position={[0, 15.5, 0]}>
-          <sphereGeometry args={[1.5, 10, 10]} />
-          <meshBasicMaterial color={[1, 0.9, 0.5]} toneMapped={false} />
-        </mesh>
-        <pointLight position={[0, 20, 0]} color="#ffd9a0" intensity={3} distance={120} decay={1.8} />
+        {[-55, -5, 45].map((y, i) => (
+          <mesh
+            key={y}
+            position={[0, y, 0]}
+            ref={(m) => {
+              strobeRefs.current[i] = m
+            }}
+          >
+            <sphereGeometry args={[1.7, 8, 8]} />
+            <meshBasicMaterial color={[1, 0.85, 0.45]} toneMapped={false} />
+          </mesh>
+        ))}
+        {/* Illuminated sign, readable both sides */}
+        <group position={[0, 66, 0]}>
+          <mesh>
+            <boxGeometry args={[54, 16, 1.6]} />
+            <meshStandardMaterial color="#1a212c" metalness={0.6} roughness={0.5} flatShading />
+          </mesh>
+          {[1, -1].map((side) => (
+            <group key={side} position={[0, 0, side * 1.0]} rotation-y={side === 1 ? 0 : Math.PI}>
+              <Text
+                font={FONT_BOLD}
+                fontSize={6.4}
+                letterSpacing={0.12}
+                color="#ffb454"
+                anchorX="center"
+                anchorY="middle"
+                position={[0, 2.4, 0.2]}
+              >
+                GUNNERY RANGE
+              </Text>
+              <Text
+                font={FONT_BOLD}
+                fontSize={2.4}
+                letterSpacing={0.3}
+                color="#8fb8d8"
+                anchorX="center"
+                anchorY="middle"
+                position={[0, -4.4, 0.2]}
+              >
+                PDC DEFENSE DRILL
+              </Text>
+            </group>
+          ))}
+        </group>
+        <pointLight position={[0, 80, 0]} color="#ffd9a0" intensity={5} distance={220} decay={1.7} />
       </group>
 
-      {/* Torpedoes: dark body + brilliant drive plume (the show look) */}
-      <instancedMesh ref={torpMeshRef} args={[undefined, undefined, TORP_POOL]} frustumCulled={false}>
-        <capsuleGeometry args={[0.7, 3.4, 4, 8]} />
-        <meshStandardMaterial color="#20242c" metalness={0.7} roughness={0.4} />
-      </instancedMesh>
+      {/* Perimeter pylons: the arena has visible edges */}
+      {pylons.map((p, i) => (
+        <Pylon key={i} position={p} />
+      ))}
+
+      {/* Torpedoes: real missile body + brilliant drive plume */}
+      <instancedMesh
+        ref={torpMeshRef}
+        args={[torpedoBody.geometry, torpedoBody.material, TORP_POOL]}
+        frustumCulled={false}
+      />
       <instancedMesh ref={plumeMeshRef} args={[undefined, undefined, TORP_POOL]} frustumCulled={false}>
         <coneGeometry args={[1.1, 5.5, 8, 1, true]} />
         <meshBasicMaterial
@@ -699,25 +812,8 @@ export function GunneryRange() {
           />
         </sprite>
       ))}
-
-      {/* Detonation / celebration flashes */}
-      {Array.from({ length: FLASH_POOL }, (_, i) => (
-        <sprite
-          key={i}
-          visible={false}
-          ref={(s) => {
-            flashRefs.current[i] = s
-          }}
-        >
-          <spriteMaterial
-            map={flashTexture}
-            transparent
-            depthWrite={false}
-            blending={AdditiveBlending}
-            toneMapped={false}
-          />
-        </sprite>
-      ))}
     </group>
   )
 }
+
+useGLTF.preload(TORPEDO_URL)

@@ -4,6 +4,7 @@ import { HeadingTape } from './HeadingTape'
 import { WarpPanel } from './WarpPanel'
 import { ActivityPanel } from './ActivityPanel'
 import { ThreatLayer } from './ThreatLayer'
+import { BattleFx } from './BattleFx'
 import { Welcome } from './Welcome'
 import { TouchControls } from './TouchControls'
 import { MuteButton } from './MuteButton'
@@ -18,6 +19,7 @@ export function HUD() {
       <div className="hud-damage" />
       <LabelLayer />
       <ThreatLayer />
+      <BattleFx />
       <HeadingTape />
       <Cockpit />
       <WarpPanel />

@@ -66,7 +66,13 @@ export function SeoContent() {
         <a href="https://sketchfab.com/3d-models/asteroids-pack-metallic-version-eff495d9315c47dbb2777ec80bef40d8">
           "Asteroids Pack (metallic version)"
         </a>{' '}
-        by SebastianSosnowski (CC BY 4.0). Nebula imagery courtesy of{' '}
+        by SebastianSosnowski (CC BY 4.0). Torpedo model from{' '}
+        <a href="https://sketchfab.com/3d-models/low-poly-missiles-and-torpedos-99783c90ce904951a3c71e851a527d35">
+          "Low Poly Missiles and Torpedos"
+        </a>{' '}
+        by sakigakefuruzawa (CC BY 4.0). Explosion animation by{' '}
+        <a href="https://opengameart.org/content/wgstudio-explosion-animation">WrathGames Studio</a>{' '}
+        (OpenGameArt, CC BY 3.0). Nebula imagery courtesy of{' '}
         <a href="https://esahubble.org">ESA/Hubble</a> (NASA, ESA — CC BY 4.0). Milky Way sky from{' '}
         <a href="https://svs.gsfc.nasa.gov/4851">NASA/Goddard SVS "Deep Star Maps 2020"</a> (public
         domain).

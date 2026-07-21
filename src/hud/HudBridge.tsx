@@ -182,6 +182,61 @@ export function HudBridge() {
     lit('chevD', i.pitch < 0)
     lit('flame', i.thrust > 0, shipRig.boosting)
 
+    // Battle: the tactical readout becomes a THREAT board
+    if (activityState.battle && hudReadouts.targetNameEl) {
+      let nearest: (typeof activityState.threats)[number] | null = null
+      let nearestDist = Infinity
+      let count = 0
+      for (const threat of activityState.threats) {
+        if (!threat.alive || !threat.launched) continue
+        count++
+        _p.set(threat.position.x, threat.position.y, threat.position.z)
+        const d = _p.distanceTo(shipRig.position)
+        if (d < nearestDist) {
+          nearestDist = d
+          nearest = threat
+        }
+      }
+      if (hudReadouts.targetChipEl) {
+        hudReadouts.targetChipEl.textContent = 'THREAT BOARD'
+        hudReadouts.targetChipEl.style.color = '#ff5040'
+      }
+      hudReadouts.targetNameEl.style.color = '#ff5040'
+      if (nearest) {
+        hudReadouts.targetNameEl.textContent = `TORPEDO ×${count}`
+        const dx = nearest.position.x - shipRig.position.x
+        const dy = nearest.position.y - shipRig.position.y
+        const dz = nearest.position.z - shipRig.position.z
+        const closing =
+          -(nearest.velocity.x * dx + nearest.velocity.y * dy + nearest.velocity.z * dz) /
+          Math.max(1, nearestDist)
+        if (hudReadouts.targetBearingEl) {
+          const yaw = shipRig.yaw
+          const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
+          const rz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
+          const deg = (Math.atan2(rx, -rz) * 180) / Math.PI
+          hudReadouts.targetBearingEl.style.transform = `rotate(${deg.toFixed(0)}deg)`
+        }
+        if (hudReadouts.targetRangeEl)
+          hudReadouts.targetRangeEl.textContent = `${Math.round(nearestDist)} M`
+        if (hudReadouts.targetCloseEl) {
+          hudReadouts.targetCloseEl.textContent =
+            closing > 1 ? `CLOSING ${Math.round(closing)} M/S` : 'TRACKING'
+          hudReadouts.targetCloseEl.dataset.closing = ''
+        }
+        if (hudReadouts.targetPurposeEl) {
+          const impact = closing > 1 ? nearestDist / closing : Infinity
+          hudReadouts.targetPurposeEl.textContent =
+            impact < 30 ? `NEAREST IMPACT ${impact.toFixed(0)}S` : 'GUNS ENGAGING'
+        }
+      } else {
+        hudReadouts.targetNameEl.textContent = 'NO CONTACTS'
+        if (hudReadouts.targetRangeEl) hudReadouts.targetRangeEl.textContent = '—'
+        if (hudReadouts.targetCloseEl) hudReadouts.targetCloseEl.textContent = '—'
+        if (hudReadouts.targetPurposeEl) hudReadouts.targetPurposeEl.textContent = 'STANDING BY'
+      }
+    }
+
     // Nearest contact: closest labeled body, with a smoothed closing rate
     let target: (typeof hudLabels)[number] | null = null
     let targetDist = Infinity
@@ -192,7 +247,7 @@ export function HudBridge() {
         target = label
       }
     }
-    if (target && hudReadouts.targetNameEl) {
+    if (target && hudReadouts.targetNameEl && !activityState.battle) {
       const now = performance.now() / 1000
       if (target.id === lastTargetId && now > lastTargetTime) {
         const rate = (lastTargetDist - targetDist) / Math.max(1e-3, now - lastTargetTime)
@@ -311,6 +366,11 @@ export function HudBridge() {
     for (const label of sorted) {
       const el = label.el
       if (!el) continue
+      // Battle stations: ALL world labels stand down — threats own the screen
+      if (activityState.battle) {
+        el.style.opacity = '0'
+        continue
+      }
       const dist = label.position.distanceTo(shipRig.position)
 
       // Visibility rules per kind

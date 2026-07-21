@@ -112,7 +112,7 @@ export function TouchControls() {
             onPointerCancel={() => (turretControl.fireIntent = false)}
             onLostPointerCapture={() => (turretControl.fireIntent = false)}
           >
-            FIRE
+            ARM
           </button>
         )}
         <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
