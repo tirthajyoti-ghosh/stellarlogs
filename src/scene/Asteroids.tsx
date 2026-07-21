@@ -130,12 +130,12 @@ function Belt({ position, radius, width, thickness, seed }: BeltProps) {
 function Belts() {
   return (
     <>
-      {/* Projects system outer belt */}
-      <Belt position={[0, 0, -10500]} radius={5300} width={700} thickness={180} seed={3} />
-      {/* Work system inner belt */}
-      <Belt position={[-15800, 440, -16300]} radius={2100} width={420} thickness={120} seed={7} />
-      {/* Drifting field between spawn and Projects */}
-      <Belt position={[2600, -140, -4800]} radius={900} width={900} thickness={420} seed={11} />
+      {/* Projects system outer belt (future race course threads through it) */}
+      <Belt position={[0, 0, -2900]} radius={1800} width={300} thickness={110} seed={3} />
+      {/* Work system outer belt */}
+      <Belt position={[-3600, 300, -2700]} radius={1750} width={280} thickness={100} seed={7} />
+      {/* Drifting rocks around the defense-drill site */}
+      <Belt position={[-300, -60, -500]} radius={550} width={450} thickness={240} seed={11} />
     </>
   )
 }
