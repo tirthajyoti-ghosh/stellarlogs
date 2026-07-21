@@ -13,43 +13,47 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
+import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
 import { activityState } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
+import { triggerImpact, triggerFanfare } from '../../audio/engine'
 
 /**
- * F.1 v2 — TORPEDO DEFENSE. PDCs doing their real job: waves of torpedoes
- * home on the ship; the auto-tracking turrets engage whatever their arcs
- * cover, so the GAMEPLAY IS FLYING — face your batteries at the threat axis,
- * split coverage when a wave comes from two bearings, and dodge the leakers
- * (torpedo turn rate is capped: a hard lateral boost makes them overshoot).
- * One hit ends the drill. Deepest wave cleared is the persisted best.
- * See docs/phase-f-playground.md (v2 section).
+ * F.1 v3 — PDC DEFENSE DRILL (experience redesign): a FINITE 3-wave defense
+ * exercise you can WIN. Guns are automatic; the pilot's job is flying —
+ * wave bearings deliberately probe the turrets' blind arcs so a static ship
+ * takes hits by design (rotate the deliberate RCS ship; dodge the runner).
+ * 3-hit hull with real impact physics (impulse + tumble + shake). Clearing
+ * wave 3 = DRILL COMPLETE + fanfare; a clean fast run sets the best time.
+ * See docs/experience-redesign-2026-07.md.
  */
 
 const CENTER = new Vector3(-300, -60, -500)
-const ZONE_RADIUS = 900
+const ARM_RADIUS = 900 // panel appears / drill can be armed
+const LIVE_RADIUS = 2500 // drill keeps running inside this
+const GRACE_SECONDS = 10
 const TORP_POOL = 12
-const TORP_HIT_SHIP = 6 // torpedo reaches the ship
-const TORP_KILL_RADIUS = 7 // tracer proximity that intercepts a torpedo
+const TORP_HIT_SHIP = 6
+const TORP_KILL_RADIUS = 4
 const SPAWN_DISTANCE = 700
 const TRACER_SPEED = 800
 const TRACER_LIFE = 0.45
 const TRACER_LEN = 6
 const TRACER_POOL = 96
-const ROUNDS_PER_SEC = 15
-const BEST_KEY = 'stellarlogs-defense-best'
-
-const waveCount = (wave: number) => Math.min(2 + wave, 9)
-const waveSpeed = (wave: number) => Math.min(45 + wave * 10, 120)
-const waveTurnRate = (wave: number) => Math.min(0.9 + wave * 0.08, 1.5)
+const ROUNDS_PER_SEC = 10
+const BEST_TIME_KEY = 'stellarlogs-defense-best-time'
 
 interface Torpedo {
   position: Vector3
   velocity: Vector3
+  speed: number
+  turnRate: number
+  /** evasive corkscrew amplitude (u/s lateral) — 0 flies straight */
+  weave: number
+  weavePhase: number
   alive: boolean
-  /** staggered launch time (absolute clock seconds) */
   launchAt: number
   launched: boolean
 }
@@ -63,6 +67,52 @@ interface Tracer {
 }
 
 type Phase = 'idle' | 'countdown' | 'wave' | 'breather' | 'over'
+
+/** One torpedo's launch spec: bearing relative to the ship's yaw at launch. */
+interface LaunchSpec {
+  /** radians off the nose (0 = dead ahead, π = astern) */
+  yawOff: number
+  /** vertical angle, radians (negative = from below) */
+  elev: number
+  speedMult?: number
+  turnMult?: number
+}
+
+/**
+ * Wave compositions — the challenge guarantee is SATURATION, not blind spots
+ * (six ball turrets cover nearly the full sphere): every wave arrives
+ * near-simultaneously, splitting the batteries across axes, at speeds that
+ * shrink the engagement window (~300u range) below what a static defense
+ * can clear. W1: one axis, slow — the guns handle it, teaching. W2: forward
+ * pair + astern-below TRIO vs only 2 aft-covering turrets — a static ship
+ * takes a leaker; rotating (or burning to open the range) saves you. W3:
+ * three-axis saturation + a fast low-turn runner you dodge, not shoot.
+ */
+const WAVES: LaunchSpec[][] = [
+  [
+    { yawOff: -0.25, elev: 0.1 },
+    { yawOff: 0.05, elev: -0.12 },
+    { yawOff: 0.3, elev: 0.05 },
+  ],
+  [
+    { yawOff: -0.35, elev: 0.08 },
+    { yawOff: 0.3, elev: 0.15 },
+    { yawOff: Math.PI - 0.5, elev: -0.6 },
+    { yawOff: Math.PI, elev: -0.28 },
+    { yawOff: Math.PI + 0.5, elev: -0.8 },
+  ],
+  [
+    { yawOff: -1.5, elev: 0.1 },
+    { yawOff: -1.75, elev: -0.15 },
+    { yawOff: -1.3, elev: -0.3 },
+    { yawOff: 1.55, elev: 0.12 },
+    { yawOff: 1.8, elev: -0.1 },
+    { yawOff: 1.35, elev: 0.3 },
+    { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
+  ],
+]
+const BASE_SPEED = [60, 112, 125]
+const BASE_TURN = [0.9, 1.0, 1.1]
 
 function makeFlashTexture(): CanvasTexture {
   const size = 64
@@ -78,10 +128,12 @@ function makeFlashTexture(): CanvasTexture {
   return new CanvasTexture(canvas)
 }
 
+const FLASH_POOL = 8
 const _m = new Matrix4()
 const _q = new Quaternion()
 const _v = new Vector3()
 const _up = new Vector3(0, 1, 0)
+const _perp = new Vector3()
 const _dummy = new Object3D()
 
 export function GunneryRange() {
@@ -91,7 +143,10 @@ export function GunneryRange() {
   const beaconRef = useRef<Mesh>(null)
   const flashRefs = useRef<(Sprite | null)[]>([])
   const muzzleFlashRefs = useRef<(Sprite | null)[]>([])
-  const flashState = useRef(Array.from({ length: 4 }, () => ({ at: new Vector3(), start: -10 })))
+  const sparkRefs = useRef<(Sprite | null)[]>([])
+  const flashState = useRef(
+    Array.from({ length: FLASH_POOL }, () => ({ at: new Vector3(), start: -10, scale: 1 })),
+  )
   const flashTexture = useMemo(() => makeFlashTexture(), [])
 
   const torpedoes = useMemo<Torpedo[]>(
@@ -99,6 +154,10 @@ export function GunneryRange() {
       Array.from({ length: TORP_POOL }, () => ({
         position: new Vector3(),
         velocity: new Vector3(),
+        speed: 50,
+        turnRate: 1,
+        weave: 0,
+        weavePhase: 0,
         alive: false,
         launchAt: 0,
         launched: false,
@@ -123,8 +182,13 @@ export function GunneryRange() {
     phase: 'idle' as Phase,
     wave: 0,
     kills: 0,
-    best: Number(localStorage.getItem(BEST_KEY) ?? 0),
+    hull: 3,
+    veteran: false,
+    nextVeteran: false,
+    armedAt: 0,
+    bestTime: Number(localStorage.getItem(BEST_TIME_KEY) ?? 0),
     phaseUntil: 0,
+    graceUntil: 0,
     flashUntil: 0,
     flashText: '',
     fireAccum: [0, 0, 0, 0, 0, 0],
@@ -148,7 +212,7 @@ export function GunneryRange() {
     }
   }, [])
 
-  // Fire intent: Space held, or pointer held on the canvas while in the zone
+  // ARM input: Space or click in the zone starts the drill (guns are auto)
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'Space' || e.repeat) return
@@ -186,71 +250,138 @@ export function GunneryRange() {
   useFrame(({ clock }, dt) => {
     const now = clock.elapsedTime
     const g = game.current
-    const inZone = shipRig.position.distanceTo(CENTER) < ZONE_RADIUS
+    const distToCenter = shipRig.position.distanceTo(CENTER)
+    const inArmZone = distToCenter < ARM_RADIUS
+    const battleRunning = g.phase === 'countdown' || g.phase === 'wave' || g.phase === 'breather'
+
+    function launchWave(t: number) {
+      g.wave++
+      g.phase = 'wave'
+      const specs = WAVES[g.wave - 1]
+      const speedBase = BASE_SPEED[g.wave - 1] * (g.veteran ? 1.35 : 1)
+      const turnBase = BASE_TURN[g.wave - 1] * (g.veteran ? 1.2 : 1)
+      const shipYaw = shipRig.yaw
+      specs.forEach((spec, i) => {
+        const torp = torpedoes[i]
+        const yaw = shipYaw + spec.yawOff
+        // world direction for this bearing (forward = -Z rotated by yaw)
+        _v.set(-Math.sin(yaw), 0, -Math.cos(yaw))
+        _v.y = Math.tan(spec.elev)
+        _v.normalize()
+        torp.position
+          .copy(shipRig.position)
+          .addScaledVector(_v, spec.speedMult ? SPAWN_DISTANCE * 0.8 : SPAWN_DISTANCE)
+        torp.speed = speedBase * (spec.speedMult ?? 1)
+        torp.turnRate = turnBase * (spec.turnMult ?? 1)
+        torp.weave = g.wave === 1 || spec.speedMult ? 0 : 40
+        torp.weavePhase = i * 2.1
+        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
+        torp.alive = true
+        torp.launched = i === 0
+        torp.launchAt = t + i * 0.15
+      })
+      for (let i = specs.length; i < TORP_POOL; i++) torpedoes[i].alive = false
+      g.flashText = `WAVE ${g.wave} OF 3`
+      g.flashUntil = t + 1.4
+    }
+
+    function endDrill(result: 'complete' | 'failed' | 'abandoned') {
+      const time = now - g.armedAt
+      if (result === 'complete') {
+        const clean = g.hull === 3
+        let text = g.veteran
+          ? `VETERAN DRILL COMPLETE — ${time.toFixed(1)}S`
+          : `DRILL COMPLETE — ${time.toFixed(1)}S`
+        if (clean && !g.veteran && (g.bestTime === 0 || time < g.bestTime)) {
+          g.bestTime = time
+          localStorage.setItem(BEST_TIME_KEY, time.toFixed(1))
+          text += ' · NEW BEST'
+        }
+        g.flashText = text
+        g.nextVeteran = !g.veteran
+        triggerFanfare()
+        // celebration: ring of detonations around the ship
+        for (let i = 0; i < 6; i++) {
+          const slot = flashState.current[i % FLASH_POOL]
+          const a = (i / 6) * Math.PI * 2
+          slot.at
+            .copy(shipRig.position)
+            .add(_v.set(Math.cos(a) * 28, (Math.random() - 0.5) * 16, Math.sin(a) * 28))
+          slot.start = now + i * 0.14
+          slot.scale = 1.6
+        }
+      } else if (result === 'failed') {
+        g.flashText = 'HULL CRITICAL — DRILL ABORTED'
+      } else {
+        g.flashText = 'DRILL ABANDONED'
+      }
+      g.flashUntil = now + 3
+      g.phase = 'over'
+      g.phaseUntil = now + 3
+      g.graceUntil = 0
+      for (const torp of torpedoes) torp.alive = false
+    }
+
+    function shipHit(torp: Torpedo) {
+      torp.alive = false
+      g.hull--
+      // physics: shove + tumble the pilot has to recover from
+      _v.copy(torp.velocity).normalize()
+      shipRig.pendingImpulse.addScaledVector(_v, 85)
+      shipRig.tumbleYaw += (Math.random() > 0.5 ? 1 : -1) * (1.1 + Math.random() * 0.7)
+      shipRig.tumblePitch += (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.6)
+      cameraLook.shake = 1
+      triggerImpact()
+      document.body.dataset.hit = '1'
+      setTimeout(() => {
+        delete document.body.dataset.hit
+      }, 650)
+      const slot = flashState.current.reduce((a, b) => (a.start < b.start ? a : b))
+      slot.at.copy(shipRig.position)
+      slot.start = now
+      slot.scale = 1.4
+      if (g.hull <= 0) {
+        endDrill('failed')
+      } else {
+        g.flashText = `HULL ${g.hull === 2 ? '66' : '33'}%`
+        g.flashUntil = now + 1.6
+      }
+    }
 
     // ---- drill state machine ----
-    if (!inZone && g.phase !== 'idle') {
-      endDrill(false)
-    }
-    if (inZone && g.phase === 'idle' && turretControl.fireIntent) {
+    if (inArmZone && g.phase === 'idle' && turretControl.fireIntent) {
       g.phase = 'countdown'
       g.wave = 0
       g.kills = 0
+      g.hull = 3
+      g.veteran = g.nextVeteran
+      g.armedAt = now
+      g.graceUntil = 0
       g.phaseUntil = now + 1.6
-      g.flashText = 'INCOMING'
+      g.flashText = g.veteran ? 'VETERAN DRILL — INCOMING' : 'INCOMING'
       g.flashUntil = now + 1.6
+      turretControl.fireIntent = false
     }
     if (g.phase === 'countdown' && now >= g.phaseUntil) launchWave(now)
     if (g.phase === 'breather' && now >= g.phaseUntil) launchWave(now)
     if (g.phase === 'over' && now >= g.phaseUntil) g.phase = 'idle'
 
-    function launchWave(t: number) {
-      g.wave++
-      g.phase = 'wave'
-      const n = waveCount(g.wave)
-      const speed = waveSpeed(g.wave)
-      for (let i = 0; i < n; i++) {
-        const torp = torpedoes[i]
-        _v.set(Math.random() - 0.5, (Math.random() - 0.5) * 0.6, Math.random() - 0.5)
-          .normalize()
-          .multiplyScalar(SPAWN_DISTANCE)
-        torp.position.copy(shipRig.position).add(_v)
-        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(speed)
-        torp.alive = true
-        torp.launched = i === 0
-        torp.launchAt = t + i * 1.0
-      }
-      for (let i = n; i < TORP_POOL; i++) torpedoes[i].alive = false
-      g.flashText = `WAVE ${g.wave}`
-      g.flashUntil = t + 1.4
-    }
-
-    function endDrill(hit: boolean) {
-      const cleared = g.phase === 'wave' ? g.wave - 1 : g.wave
-      if (g.phase !== 'idle' && g.phase !== 'over') {
-        if (cleared > g.best) {
-          g.best = cleared
-          localStorage.setItem(BEST_KEY, String(g.best))
-          g.flashText = hit ? `HIT — NEW BEST ${cleared}` : `NEW BEST ${cleared}`
-        } else {
-          g.flashText = hit ? `HIT — ${cleared} WAVES CLEARED` : `${cleared} WAVES CLEARED`
-        }
-        g.flashUntil = now + 3
-        g.phase = 'over'
-        g.phaseUntil = now + 3
-        for (const torp of torpedoes) torp.alive = false
-        if (hit) {
-          document.body.dataset.hit = '1'
-          setTimeout(() => {
-            delete document.body.dataset.hit
-          }, 650)
-        }
+    // Arena grace: drifting out warns loudly instead of silently cancelling
+    if (battleRunning) {
+      if (distToCenter > LIVE_RADIUS) {
+        if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
+        const left = Math.max(0, g.graceUntil - now)
+        g.flashText = `RETURN TO RANGE — ${Math.ceil(left)}S`
+        g.flashUntil = now + 0.4
+        if (now >= g.graceUntil) endDrill('abandoned')
+      } else if (g.graceUntil !== 0) {
+        g.graceUntil = 0
+        g.flashUntil = 0
       }
     }
 
-    // ---- torpedoes: launch stagger, homing with capped turn rate ----
+    // ---- torpedoes: staggered launch, homing with capped turn ----
     let incoming = 0
-    const turnRate = waveTurnRate(g.wave)
     for (const torp of torpedoes) {
       if (!torp.alive) continue
       if (!torp.launched) {
@@ -258,63 +389,81 @@ export function GunneryRange() {
         else continue
       }
       incoming++
-      const speed = torp.velocity.length()
       _v.copy(shipRig.position).sub(torp.position).normalize()
-      // steer toward the ship, turn rate capped so dodging works
-      const desired = _v.multiplyScalar(speed)
-      const maxStep = turnRate * speed * dt
-      _v.copy(desired).sub(torp.velocity).clampLength(0, maxStep)
-      torp.velocity.add(_v).setLength(speed)
+      if (torp.weave > 0) {
+        // evasive corkscrew: lateral sinusoid perpendicular to the approach —
+        // defeats gun streams at range, so kills concentrate close-in
+        const wob = Math.sin(now * 2.3 + torp.weavePhase) * torp.weave
+        const wobV = Math.cos(now * 1.7 + torp.weavePhase) * torp.weave * 0.6
+        _perp.set(-_v.z, 0, _v.x).normalize()
+        _v.multiplyScalar(torp.speed).addScaledVector(_perp, wob)
+        _v.y += wobV
+        _v.setLength(torp.speed)
+      } else {
+        _v.multiplyScalar(torp.speed)
+      }
+      const maxStep = torp.turnRate * torp.speed * dt
+      _v.sub(torp.velocity).clampLength(0, maxStep)
+      torp.velocity.add(_v).setLength(torp.speed)
       torp.position.addScaledVector(torp.velocity, dt)
-
       if (g.phase === 'wave' && torp.position.distanceTo(shipRig.position) < TORP_HIT_SHIP) {
-        endDrill(true)
-        break
+        shipHit(torp)
+        if (g.phase !== 'wave') break
+        incoming--
       }
     }
     if (g.phase === 'wave' && incoming === 0) {
-      // all torpedoes of this wave intercepted
-      g.phase = 'breather'
-      g.phaseUntil = now + 2.4
-      g.flashText = `WAVE ${g.wave} CLEARED`
-      g.flashUntil = now + 2
+      if (g.wave >= 3) {
+        endDrill('complete')
+      } else {
+        g.phase = 'breather'
+        g.phaseUntil = now + 2.4
+        g.flashText = `WAVE ${g.wave} CLEARED`
+        g.flashUntil = now + 2
+      }
     }
 
     // ---- HUD panel + battle state ----
-    activityState.battle = g.phase === 'countdown' || g.phase === 'wave' || g.phase === 'breather'
-    activityState.threats = activityState.battle ? torpedoes : []
-    activityState.active = inZone
-    if (inZone) {
-      activityState.title = 'PDC DEFENSE DRILL'
+    activityState.battle = battleRunning
+    activityState.threats = battleRunning ? torpedoes : []
+    activityState.active = inArmZone || battleRunning || g.phase === 'over'
+    if (activityState.active) {
+      activityState.title =
+        g.veteran && battleRunning ? 'PDC DEFENSE — VETERAN' : 'PDC DEFENSE DRILL'
       activityState.hint =
         g.phase === 'idle'
-          ? 'PRESS SPACE / TAP TO BEGIN — GUNS ARE AUTOMATIC. FLY.'
-          : 'GUNS AUTO — FLY'
+          ? g.nextVeteran
+            ? 'PRESS SPACE / TAP — VETERAN DRILL. GUNS ARE AUTOMATIC. FLY.'
+            : 'PRESS SPACE / TAP TO BEGIN — GUNS ARE AUTOMATIC. FLY.'
+          : battleRunning
+            ? 'GUNS AUTO — FLY'
+            : ''
       activityState.lines = [
-        { label: 'WAVE', value: String(g.wave) },
+        { label: 'WAVE', value: battleRunning ? `${g.wave}/3` : '—' },
         { label: 'INCOMING', value: String(incoming) },
-        { label: 'KILLS', value: String(g.kills) },
-        { label: 'BEST', value: String(g.best) },
+        {
+          label: 'HULL',
+          value: g.hull === 3 ? '100%' : g.hull === 2 ? '66%' : g.hull === 1 ? '33%' : '0%',
+        },
+        { label: 'BEST', value: g.bestTime > 0 ? `${g.bestTime.toFixed(1)}S` : '—' },
       ]
       activityState.flash = now < g.flashUntil ? g.flashText : ''
     }
 
-    // ---- feed turrets ----
-    if (inZone) {
+    // ---- feed turrets: guns are AUTOMATIC while the drill runs ----
+    if (battleRunning) {
       const targets: { position: Vector3 }[] = []
       for (let i = 0; i < torpedoes.length; i++) {
         if (torpedoes[i].alive && torpedoes[i].launched) targets.push(targetSlots[i])
       }
       turretControl.targets = targets
-      // Guns are AUTOMATIC while a drill runs — the pilot's job is flying
-      turretControl.firing = activityState.battle
+      turretControl.firing = true
     } else if (turretControl.targets.length > 0) {
       turretControl.targets = []
       turretControl.firing = false
     }
 
-    // ---- tracers: integrate EXISTING rounds first (spawn-frame rounds must
-    // render at the muzzle), then hit-test, then spawn this frame's rounds ----
+    // ---- tracers: integrate existing first, then hit-test, then spawn ----
     for (const tracer of tracers) {
       if (!tracer.active) continue
       if (tracer.fresh) {
@@ -337,12 +486,13 @@ export function GunneryRange() {
           const slot = flashState.current.reduce((a, b) => (a.start < b.start ? a : b))
           slot.at.copy(torp.position)
           slot.start = now
+          slot.scale = 1
           break
         }
       }
     }
 
-    const shooting = inZone && turretControl.firing && turretControl.spin > 0.85
+    const shooting = battleRunning && turretControl.spin > 0.85
     if (shooting) {
       const muzzles = turretControl.muzzles
       for (let ti = 0; ti < muzzles.length; ti++) {
@@ -363,10 +513,9 @@ export function GunneryRange() {
             .copy(muzzle.direction)
             .multiplyScalar(TRACER_SPEED)
             .addScaledVector(shipRig.velocityDir, Math.min(shipRig.speed, 520))
-          tracer.velocity.x += (Math.random() - 0.5) * 12
-          tracer.velocity.y += (Math.random() - 0.5) * 12
-          tracer.velocity.z += (Math.random() - 0.5) * 12
-          // tail-anchored: streak head starts half a length past the muzzle tip
+          tracer.velocity.x += (Math.random() - 0.5) * 20
+          tracer.velocity.y += (Math.random() - 0.5) * 20
+          tracer.velocity.z += (Math.random() - 0.5) * 20
           tracer.position.copy(muzzle.position).addScaledVector(muzzle.direction, TRACER_LEN / 2)
         }
       }
@@ -386,7 +535,6 @@ export function GunneryRange() {
         _dummy.scale.setScalar(1)
         _dummy.updateMatrix()
         torpMesh.setMatrixAt(n, _dummy.matrix)
-        // plume sits behind the body, pointing backward, flickering
         const flicker = 0.85 + Math.random() * 0.35
         _dummy.position.addScaledVector(_v, -3.2)
         _dummy.scale.set(flicker, flicker * (1 + Math.random() * 0.3), flicker)
@@ -412,7 +560,6 @@ export function GunneryRange() {
       tracerMesh.count = n
       tracerMesh.instanceMatrix.needsUpdate = true
     }
-    // muzzle flashes anchor every burst to the physical guns
     for (let ti = 0; ti < 6; ti++) {
       const sprite = muzzleFlashRefs.current[ti]
       if (!sprite) continue
@@ -422,6 +569,21 @@ export function GunneryRange() {
       if (on) {
         sprite.position.copy(muzzle.position)
         const s = 0.55 + Math.random() * 0.5
+        sprite.scale.set(s, s, 1)
+      }
+    }
+    // hull damage sparks: the ship trails sparks while wounded
+    const damaged = battleRunning && g.hull < 3
+    for (let i = 0; i < sparkRefs.current.length; i++) {
+      const sprite = sparkRefs.current[i]
+      if (!sprite) continue
+      const on = damaged && Math.random() < (g.hull === 1 ? 0.75 : 0.4)
+      sprite.visible = on
+      if (on) {
+        sprite.position
+          .copy(shipRig.position)
+          .add(_v.set((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 3, (Math.random() - 0.5) * 6))
+        const s = 0.5 + Math.random() * 0.9
         sprite.scale.set(s, s, 1)
       }
     }
@@ -440,7 +602,7 @@ export function GunneryRange() {
       }
       sprite.visible = true
       sprite.position.copy(flash.at)
-      const s = 5 + age * 42
+      const s = (5 + age * 42) * flash.scale
       sprite.scale.set(s, s, 1)
       ;(sprite.material as { opacity: number }).opacity = 1 - age / 0.35
     })
@@ -517,8 +679,29 @@ export function GunneryRange() {
         </sprite>
       ))}
 
-      {/* Intercept flashes */}
+      {/* Hull damage sparks */}
       {[0, 1, 2, 3].map((i) => (
+        <sprite
+          key={`spark-${i}`}
+          visible={false}
+          ref={(s) => {
+            sparkRefs.current[i] = s
+          }}
+        >
+          <spriteMaterial
+            map={flashTexture}
+            color="#ffb070"
+            transparent
+            opacity={0.8}
+            depthWrite={false}
+            blending={AdditiveBlending}
+            toneMapped={false}
+          />
+        </sprite>
+      ))}
+
+      {/* Detonation / celebration flashes */}
+      {Array.from({ length: FLASH_POOL }, (_, i) => (
         <sprite
           key={i}
           visible={false}

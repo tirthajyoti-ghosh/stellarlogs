@@ -136,6 +136,19 @@ export function Ship() {
   }
 
   useFrame((_, dt) => {
+    // Impact physics from activities: velocity kick + decaying attitude tumble
+    if (shipRig.pendingImpulse.lengthSq() > 0) {
+      state.velocity.add(shipRig.pendingImpulse)
+      shipRig.pendingImpulse.set(0, 0, 0)
+    }
+    if (Math.abs(shipRig.tumbleYaw) > 0.001 || Math.abs(shipRig.tumblePitch) > 0.001) {
+      state.yaw += shipRig.tumbleYaw * dt
+      state.pitch += shipRig.tumblePitch * dt
+      const decay = Math.exp(-2.4 * dt)
+      shipRig.tumbleYaw *= decay
+      shipRig.tumblePitch *= decay
+    }
+
     let alpha: number
     if (warp.phase === 'idle') {
       alpha = stepShip(state, shipInput, dt)

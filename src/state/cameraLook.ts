@@ -7,4 +7,6 @@ export const cameraLook = {
   orbitYaw: 0,
   orbitPitch: 0,
   dragging: false,
+  /** Impact shake 0..1 — set by activities on hits, decayed by the camera */
+  shake: 0,
 }

@@ -232,6 +232,95 @@ export function updateAudio(
   engine.servoOsc.frequency.setTargetAtTime(180 + slew * 320, t, 0.07)
 }
 
+/** One-shot: torpedo impact — deep thud + metallic ring + alarm chirp. */
+export function triggerImpact(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+
+  // Thud: filtered noise burst + dropping sine
+  const noise = ctx.createBufferSource()
+  noise.buffer = makeWhiteNoise(ctx)
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.value = 260
+  const ng = ctx.createGain()
+  ng.gain.setValueAtTime(0.55, t)
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.35)
+  noise.connect(lp).connect(ng).connect(master)
+  noise.start(t)
+  noise.stop(t + 0.4)
+
+  const boom = ctx.createOscillator()
+  boom.type = 'sine'
+  boom.frequency.setValueAtTime(110, t)
+  boom.frequency.exponentialRampToValueAtTime(38, t + 0.3)
+  const bg = ctx.createGain()
+  bg.gain.setValueAtTime(0.5, t)
+  bg.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
+  boom.connect(bg).connect(master)
+  boom.start(t)
+  boom.stop(t + 0.45)
+
+  // Metallic ring
+  const ring = ctx.createOscillator()
+  ring.type = 'triangle'
+  ring.frequency.value = 1180
+  const rg = ctx.createGain()
+  rg.gain.setValueAtTime(0.08, t + 0.02)
+  rg.gain.exponentialRampToValueAtTime(0.001, t + 0.5)
+  ring.connect(rg).connect(master)
+  ring.start(t + 0.02)
+  ring.stop(t + 0.55)
+
+  // Alarm chirp ×2
+  for (let i = 0; i < 2; i++) {
+    const a = ctx.createOscillator()
+    a.type = 'square'
+    a.frequency.value = 760
+    const ag = ctx.createGain()
+    const at = t + 0.28 + i * 0.22
+    ag.gain.setValueAtTime(0.0, at)
+    ag.gain.linearRampToValueAtTime(0.05, at + 0.02)
+    ag.gain.linearRampToValueAtTime(0.0, at + 0.13)
+    a.connect(ag).connect(master)
+    a.start(at)
+    a.stop(at + 0.15)
+  }
+}
+
+/** One-shot: drill-complete fanfare — three rising blips + sparkle. */
+export function triggerFanfare(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  const notes = [523.25, 659.25, 783.99] // C5 E5 G5
+  notes.forEach((f, i) => {
+    const o = ctx.createOscillator()
+    o.type = 'triangle'
+    o.frequency.value = f
+    const g = ctx.createGain()
+    const at = t + i * 0.13
+    g.gain.setValueAtTime(0, at)
+    g.gain.linearRampToValueAtTime(0.12, at + 0.02)
+    g.gain.exponentialRampToValueAtTime(0.001, at + 0.5)
+    o.connect(g).connect(master)
+    o.start(at)
+    o.stop(at + 0.55)
+  })
+  const sparkle = ctx.createBufferSource()
+  sparkle.buffer = makeWhiteNoise(ctx)
+  const hp = ctx.createBiquadFilter()
+  hp.type = 'highpass'
+  hp.frequency.value = 5200
+  const sg = ctx.createGain()
+  sg.gain.setValueAtTime(0.06, t + 0.35)
+  sg.gain.exponentialRampToValueAtTime(0.001, t + 1.1)
+  sparkle.connect(hp).connect(sg).connect(master)
+  sparkle.start(t + 0.35)
+  sparkle.stop(t + 1.2)
+}
+
 export function isMuted(): boolean {
   return muted
 }
