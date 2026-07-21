@@ -62,8 +62,9 @@ export function Radar() {
       const cx = SIZE / 2
       const cy = SIZE / 2
 
+      const battleTheme = activityState.battle
       // Rings + crosshairs
-      ctx.strokeStyle = 'rgba(150, 190, 225, 0.2)'
+      ctx.strokeStyle = battleTheme ? 'rgba(240, 150, 110, 0.3)' : 'rgba(150, 190, 225, 0.2)'
       ctx.lineWidth = 1
       for (const r of [R, R * 0.66, R * 0.33]) {
         ctx.beginPath()
@@ -75,7 +76,7 @@ export function Radar() {
       ctx.lineTo(cx + R, cy)
       ctx.moveTo(cx, cy - R)
       ctx.lineTo(cx, cy + R)
-      ctx.strokeStyle = 'rgba(150, 190, 225, 0.1)'
+      ctx.strokeStyle = battleTheme ? 'rgba(240, 150, 110, 0.14)' : 'rgba(150, 190, 225, 0.1)'
       ctx.stroke()
 
       // Battle mode: short-range tactical scope — threats + turret coverage
@@ -194,8 +195,8 @@ export function Radar() {
       // Sweep
       const angle = (now / 1400) % (Math.PI * 2)
       const grad = ctx.createConicGradient(angle, cx, cy)
-      grad.addColorStop(0, 'rgba(111, 211, 232, 0.25)')
-      grad.addColorStop(0.12, 'rgba(111, 211, 232, 0)')
+      grad.addColorStop(0, battleTheme ? 'rgba(240, 140, 90, 0.3)' : 'rgba(111, 211, 232, 0.25)')
+      grad.addColorStop(0.12, battleTheme ? 'rgba(240, 140, 90, 0)' : 'rgba(111, 211, 232, 0)')
       grad.addColorStop(1, 'rgba(111, 211, 232, 0)')
       ctx.fillStyle = grad
       ctx.beginPath()

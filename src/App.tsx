@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Ship } from './scene/Ship'
@@ -9,6 +10,7 @@ import { ContactStation } from './scene/ContactStation'
 import { WarpStreaks } from './scene/WarpStreaks'
 import { Asteroids } from './scene/Asteroids'
 import { GunneryRange } from './scene/activities/GunneryRange'
+import { Explosions } from './scene/fx/Explosions'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
@@ -44,7 +46,10 @@ export default function App() {
         <ContactStation />
         <WarpStreaks />
         <Asteroids />
-        <GunneryRange />
+        <Suspense fallback={null}>
+          <GunneryRange />
+          <Explosions />
+        </Suspense>
         <Ship />
         <ChaseCamera />
         <HudBridge />
