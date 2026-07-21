@@ -5,6 +5,7 @@ import {
   AdditiveBlending,
   BufferGeometry,
   CanvasTexture,
+  Color,
   Group,
   InstancedMesh,
   Material,
@@ -56,6 +57,10 @@ const TRACER_POOL = 96
 const ROUNDS_PER_SEC = 10
 const BEST_TIME_KEY = 'stellarlogs-defense-best-time'
 const TORPEDO_URL = '/models/torpedo.glb'
+const BUOY_URL = '/models/buoy.glb'
+const BUOY_COUNT = 16
+/** Local Y of the buoy's warning-light column (12u-tall normalized model) */
+const BUOY_LIGHT_Y = 3.4
 
 interface Torpedo {
   position: Vector3
@@ -140,6 +145,7 @@ function makeFlashTexture(): CanvasTexture {
 const _m = new Matrix4()
 const _q = new Quaternion()
 const _v = new Vector3()
+const _color = new Color()
 const _up = new Vector3(0, 1, 0)
 const _perp = new Vector3()
 const _dummy = new Object3D()
@@ -179,20 +185,28 @@ function useTorpedoBody(): { geometry: BufferGeometry; material: Material } {
   }, [gltf])
 }
 
-/** A lit perimeter pylon marking the practice-volume boundary. */
-function Pylon({ position }: { position: [number, number, number] }) {
-  return (
-    <group position={position}>
-      <mesh>
-        <cylinderGeometry args={[0.7, 1, 24, 6]} />
-        <meshStandardMaterial color="#2c333e" metalness={0.7} roughness={0.5} flatShading />
-      </mesh>
-      <mesh position={[0, 13.4, 0]}>
-        <sphereGeometry args={[1.3, 8, 8]} />
-        <meshBasicMaterial color={[2.2, 1.35, 0.45]} toneMapped={false} />
-      </mesh>
-    </group>
-  )
+/**
+ * Boundary buoy from "Sci-Fi Beacon/Way Point Marker Free Model" by
+ * AMMediaGames (Sketchfab, CC BY 4.0) — baked/normalized offline
+ * (scripts/build-buoy.mjs) to origin-centered, 12u tall. A ring of these at
+ * the auto-start radius IS the arena boundary, runway-light style.
+ */
+function useBuoyBody(): { geometry: BufferGeometry; material: Material } {
+  const gltf = useGLTF(BUOY_URL)
+  return useMemo(() => {
+    let found: Mesh | null = null
+    gltf.scene.traverse((obj) => {
+      const m = obj as Mesh
+      if (m.isMesh && !found) found = m
+    })
+    const source = found as unknown as Mesh
+    const material = (
+      Array.isArray(source.material) ? source.material[0] : source.material
+    ) as MeshStandardMaterial
+    // the warning-light column should read at range (and feed the bloom)
+    material.emissiveIntensity = Math.max(material.emissiveIntensity, 2.4)
+    return { geometry: source.geometry, material }
+  }, [gltf])
 }
 
 export function GunneryRange() {
@@ -203,8 +217,11 @@ export function GunneryRange() {
   const muzzleFlashRefs = useRef<(Sprite | null)[]>([])
   const sparkRefs = useRef<(Sprite | null)[]>([])
   const holoRef = useRef<Group>(null)
+  const buoyMeshRef = useRef<InstancedMesh>(null)
+  const orbMeshRef = useRef<InstancedMesh>(null)
   const flashTexture = useMemo(() => makeFlashTexture(), [])
   const torpedoBody = useTorpedoBody()
+  const buoyBody = useBuoyBody()
 
   const torpedoes = useMemo<Torpedo[]>(
     () =>
@@ -670,6 +687,16 @@ export function GunneryRange() {
       const material = strobe.material as MeshBasicMaterial
       material.color.setRGB(1 + pulse * 3.4, 0.85 + pulse * 2.4, 0.45 + pulse * 0.9)
     })
+    // boundary buoys: staggered strobe pulses running around the ring
+    const orbMesh = orbMeshRef.current
+    if (orbMesh) {
+      for (let i = 0; i < BUOY_COUNT; i++) {
+        const pulse = Math.pow(Math.max(0, Math.sin(now * 2.0 + i * 1.31)), 12)
+        _color.setRGB(0.5 + pulse * 4.2, 0.38 + pulse * 3.0, 0.18 + pulse * 1.1)
+        orbMesh.setColorAt(i, _color)
+      }
+      if (orbMesh.instanceColor) orbMesh.instanceColor.needsUpdate = true
+    }
     // giant holo sign: always face the approaching pilot (geostationary law)
     const holo = holoRef.current
     if (holo) {
@@ -680,14 +707,39 @@ export function GunneryRange() {
     }
   })
 
-  const pylons = useMemo(() => {
-    const list: [number, number, number][] = []
-    for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2
-      list.push([CENTER.x + Math.cos(a) * 870, CENTER.y - 10, CENTER.z + Math.sin(a) * 870])
-    }
-    return list
-  }, [])
+  const buoyTransforms = useMemo(
+    () =>
+      Array.from({ length: BUOY_COUNT }, (_, i) => {
+        const a = (i / BUOY_COUNT) * Math.PI * 2
+        return {
+          x: CENTER.x + Math.cos(a) * ARM_RADIUS,
+          y: CENTER.y - 6 + Math.sin(i * 2.7) * 4,
+          z: CENTER.z + Math.sin(a) * ARM_RADIUS,
+          yaw: i * 2.399,
+        }
+      }),
+    [],
+  )
+
+  // Static instance matrices for the boundary buoy ring + their strobe orbs
+  useEffect(() => {
+    const buoyMesh = buoyMeshRef.current
+    const orbMesh = orbMeshRef.current
+    if (!buoyMesh || !orbMesh) return
+    buoyTransforms.forEach((t, i) => {
+      _dummy.position.set(t.x, t.y, t.z)
+      _dummy.rotation.set(0, t.yaw, 0)
+      _dummy.scale.setScalar(1)
+      _dummy.updateMatrix()
+      buoyMesh.setMatrixAt(i, _dummy.matrix)
+      _dummy.position.y += BUOY_LIGHT_Y
+      _dummy.updateMatrix()
+      orbMesh.setMatrixAt(i, _dummy.matrix)
+    })
+    _dummy.rotation.set(0, 0, 0)
+    buoyMesh.instanceMatrix.needsUpdate = true
+    orbMesh.instanceMatrix.needsUpdate = true
+  }, [buoyTransforms])
 
   return (
     <group>
@@ -779,25 +831,20 @@ export function GunneryRange() {
             </group>
           ))}
         </group>
-        {/* The auto-start boundary, drawn honestly: glowing ring at ARM_RADIUS */}
-        <mesh rotation-x={Math.PI / 2} position={[0, -10, 0]}>
-          <torusGeometry args={[ARM_RADIUS, 1.5, 6, 160]} />
-          <meshBasicMaterial
-            color={[1.25, 0.82, 0.4]}
-            transparent
-            opacity={0.32}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
         <pointLight position={[0, 80, 0]} color="#ffd9a0" intensity={5} distance={220} decay={1.7} />
       </group>
 
-      {/* Perimeter pylons: the arena has visible edges */}
-      {pylons.map((p, i) => (
-        <Pylon key={i} position={p} />
-      ))}
+      {/* The auto-start boundary drawn with real hardware: a ring of nav
+          buoys at ARM_RADIUS, strobes chasing around it runway-light style */}
+      <instancedMesh
+        ref={buoyMeshRef}
+        args={[buoyBody.geometry, buoyBody.material, BUOY_COUNT]}
+        frustumCulled={false}
+      />
+      <instancedMesh ref={orbMeshRef} args={[undefined, undefined, BUOY_COUNT]} frustumCulled={false}>
+        <sphereGeometry args={[1.5, 8, 8]} />
+        <meshBasicMaterial toneMapped={false} />
+      </instancedMesh>
 
       {/* Torpedoes: real missile body + brilliant drive plume + path trails */}
       <instancedMesh
@@ -876,3 +923,4 @@ export function GunneryRange() {
 }
 
 useGLTF.preload(TORPEDO_URL)
+useGLTF.preload(BUOY_URL)

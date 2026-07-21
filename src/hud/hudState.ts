@@ -77,6 +77,8 @@ export const hudReadouts = {
   targetRangeEl: null as HTMLElement | null,
   targetCloseEl: null as HTMLElement | null,
   targetPurposeEl: null as HTMLElement | null,
+  /** Battle drift marker — projected at the ship's true velocity vector */
+  driftEl: null as HTMLElement | null,
   /** Jump destination for the current tactical contact (its system/station) */
   targetJump: null as { position: Vector3; standoff: number } | null,
   warpDestEl: null as HTMLElement | null,
