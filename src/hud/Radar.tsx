@@ -5,6 +5,8 @@ import { STATION_POSITION } from '../config/universe'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
+import { activityState } from '../state/activityState'
+import { turretArcsWorld } from '../scene/shipTurrets'
 import { startWarp, warp } from '../physics/warp'
 
 const SIZE = 132
@@ -76,6 +78,8 @@ export function Radar() {
       ctx.strokeStyle = 'rgba(150, 190, 225, 0.1)'
       ctx.stroke()
 
+      // Battle mode: short-range tactical scope — threats + turret coverage
+      const battle = activityState.battle
       // Range: zoomed when inside a system
       let nearSystem: (typeof ALL_SYSTEMS)[number] | null = null
       for (const system of ALL_SYSTEMS) {
@@ -85,7 +89,7 @@ export function Radar() {
           break
         }
       }
-      const range = nearSystem ? 1900 : 9000
+      const range = battle ? 700 : nearSystem ? 1900 : 9000
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
@@ -113,7 +117,41 @@ export function Radar() {
         return { px, py }
       }
 
-      if (nearSystem) {
+      if (battle) {
+        // Turret arc wedges: which sectors the guns currently cover
+        for (const arc of turretArcsWorld()) {
+          const rx = arc.dx * Math.cos(yaw) - arc.dz * Math.sin(yaw)
+          const rz = arc.dx * Math.sin(yaw) + arc.dz * Math.cos(yaw)
+          const theta = Math.atan2(rz, rx)
+          const SPREAD = 0.55 // rad, visual half-width
+          ctx.fillStyle = arc.engaged ? 'rgba(232, 120, 60, 0.2)' : 'rgba(200, 150, 90, 0.07)'
+          ctx.beginPath()
+          ctx.moveTo(cx, cy)
+          ctx.arc(cx, cy, R - 3, theta - SPREAD, theta + SPREAD)
+          ctx.closePath()
+          ctx.fill()
+        }
+        // Threat blips with short motion trails
+        for (const threat of activityState.threats) {
+          if (!threat.alive || !threat.launched) continue
+          const px = threat.position.x
+          const pz = threat.position.z
+          const p = plot(px, pz, '#ff5040', 2.6)
+          if (p) {
+            const vdx = threat.velocity.x
+            const vdz = threat.velocity.z
+            const trx = vdx * Math.cos(yaw) - vdz * Math.sin(yaw)
+            const trz = vdx * Math.sin(yaw) + vdz * Math.cos(yaw)
+            const tl = Math.hypot(trx, trz) || 1
+            ctx.strokeStyle = 'rgba(255, 80, 64, 0.5)'
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(p.px - (trx / tl) * 7, p.py - (trz / tl) * 7)
+            ctx.lineTo(p.px, p.py)
+            ctx.stroke()
+          }
+        }
+      } else if (nearSystem) {
         plot(nearSystem.position[0], nearSystem.position[2], nearSystem.starColor, 4)
         // live planet positions come from the registered planet labels
         for (const label of hudLabels) {

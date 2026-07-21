@@ -1,7 +1,9 @@
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
+import { threatEls } from './ThreatLayer'
 import { shipRig } from '../state/shipRig'
+import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
 import { warp } from '../physics/warp'
 import { getGravityBodies } from '../physics/gravity'
@@ -62,6 +64,80 @@ export function HudBridge() {
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
+    document.body.dataset.battle = activityState.battle ? '1' : ''
+
+    // Battle mode: project live threats into the pooled marker layer
+    {
+      let nearestEl: HTMLElement | null = null
+      let nearestImpact = Infinity
+      let n = 0
+      if (activityState.battle) {
+        for (const threat of activityState.threats) {
+          if (n >= threatEls.length) break
+          if (!threat.alive || !threat.launched) continue
+          const el = threatEls[n++]
+          if (!el) continue
+          _p.set(threat.position.x, threat.position.y, threat.position.z)
+          const dx = _p.x - shipRig.position.x
+          const dy = _p.y - shipRig.position.y
+          const dz = _p.z - shipRig.position.z
+          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz)
+          // closing speed along the line of sight → time to impact
+          const closing = -(threat.velocity.x * dx + threat.velocity.y * dy + threat.velocity.z * dz) / Math.max(1, dist)
+          const impact = closing > 1 ? dist / closing : Infinity
+
+          _p.project(camera)
+          const behind = _p.z > 1
+          let x = (_p.x * 0.5 + 0.5) * size.width
+          let y = (-_p.y * 0.5 + 0.5) * size.height
+          if (behind) {
+            x = size.width - x
+            y = size.height
+          }
+          const offscreen =
+            behind || x < EDGE || x > size.width - EDGE || y < EDGE || y > size.height - 235
+          let arrowDeg = 0
+          if (offscreen) {
+            const cx = size.width / 2
+            const cy = size.height / 2
+            const ox = x - cx
+            const oy = y - cy
+            const scale = Math.min(
+              (size.width / 2 - EDGE) / Math.max(1e-4, Math.abs(ox)),
+              (oy > 0 ? size.height / 2 - 235 : size.height / 2 - EDGE) / Math.max(1e-4, Math.abs(oy)),
+            )
+            x = cx + ox * scale
+            y = cy + oy * scale
+            arrowDeg = Math.round((Math.atan2(oy, ox) * 180) / Math.PI) + 90
+          }
+          el.style.opacity = '1'
+          el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+          el.dataset.off = offscreen ? '1' : ''
+          const arrow = el.querySelector<HTMLElement>('.hud-threat-arrow')
+          if (arrow) arrow.style.transform = `rotate(${arrowDeg}deg)`
+          const info = el.querySelector<HTMLElement>('.hud-threat-info')
+          if (info) info.textContent = `${Math.round(dist)}`
+          if (impact < nearestImpact) {
+            nearestImpact = impact
+            nearestEl = el
+          }
+        }
+      }
+      for (let i = n; i < threatEls.length; i++) {
+        const el = threatEls[i]
+        if (el) el.style.opacity = '0'
+      }
+      for (let i = 0; i < n; i++) {
+        const el = threatEls[i]
+        if (!el) continue
+        const isNearest = el === nearestEl && nearestImpact < 20
+        el.dataset.nearest = isNearest ? '1' : ''
+        if (isNearest) {
+          const info = el.querySelector<HTMLElement>('.hud-threat-info')
+          if (info) info.textContent = `IMPACT ${nearestImpact.toFixed(0)}S`
+        }
+      }
+    }
 
     // Position readout
     if (hudReadouts.posEl) {

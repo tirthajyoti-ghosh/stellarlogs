@@ -145,3 +145,22 @@ export function updateTurrets(dt: number): void {
 export function devAimAt(point: Vector3 | null): void {
   turretControl.targets = point ? [{ position: point }] : []
 }
+
+const _arcWorld = new Vector3()
+export interface TurretArc {
+  /** World-space horizontal direction of the arc axis */
+  dx: number
+  dz: number
+  engaged: boolean
+}
+const _arcs: TurretArc[] = []
+
+/** World-space horizontal turret coverage, for the battle radar's arc wedges. */
+export function turretArcsWorld(): TurretArc[] {
+  _arcs.length = 0
+  for (const rig of rigs) {
+    _arcWorld.copy(rig.arcDir).transformDirection(rig.pivot.matrixWorld)
+    _arcs.push({ dx: _arcWorld.x, dz: _arcWorld.z, engaged: rig.targetIndex >= 0 })
+  }
+  return _arcs
+}

@@ -563,6 +563,77 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
   text-overflow: ellipsis;
 }
 
+/* ---------- Battle stations ---------- */
+
+/* Theme shift: accents run hot, nav MFD stands down */
+body[data-battle='1'] .hud {
+  --hud-teal: #e8a13c;
+  --hud-line: rgba(232, 161, 90, 0.24);
+  --hud-edge: rgba(232, 161, 90, 0.42);
+}
+body[data-battle='1'] .hud-mfd-left {
+  opacity: 0.45;
+  transition: opacity 0.4s;
+}
+body[data-battle='1'] .hud-activity {
+  border-color: rgba(232, 120, 60, 0.4);
+  border-top-color: rgba(255, 110, 70, 0.75);
+}
+
+/* Threat markers */
+.hud-threats {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.hud-threat {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: opacity 0.15s;
+  will-change: transform;
+  color: #ff5040;
+}
+.hud-threat-diamond {
+  width: 11px;
+  height: 11px;
+  border: 1.6px solid currentColor;
+  transform: rotate(45deg);
+  box-shadow: 0 0 8px rgba(255, 80, 64, 0.55);
+}
+.hud-threat[data-off='1'] .hud-threat-diamond { display: none; }
+.hud-threat-arrow {
+  display: none;
+  font-size: 13px;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 80, 64, 0.7);
+}
+.hud-threat[data-off='1'] .hud-threat-arrow { display: block; }
+.hud-threat-info {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.hud-threat[data-nearest='1'] {
+  color: #ff7a3a;
+}
+.hud-threat[data-nearest='1'] .hud-threat-diamond {
+  width: 14px;
+  height: 14px;
+  animation: hud-threat-pulse 0.6s infinite alternate;
+}
+@keyframes hud-threat-pulse {
+  from { box-shadow: 0 0 6px rgba(255, 122, 58, 0.5); }
+  to { box-shadow: 0 0 14px rgba(255, 122, 58, 0.95); }
+}
+
 /* ---------- Activity zones (gunnery range etc.) ---------- */
 
 .hud-damage {
