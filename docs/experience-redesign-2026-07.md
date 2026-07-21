@@ -54,8 +54,31 @@ Exploration reward = you keep finding things, not earning things.
 
 Defense v3 specifics: **auto-fire while armed** (fixes the "PDCs not shooting"
 bug — hold-to-fire is deleted), arena ≥2500u with grace timer at the edge,
-3-wave standard drill (wave compositions deliberately exploit turret blind
-spots), optional harder re-run after the win.
+3-wave standard drill, optional harder re-run after the win.
+
+**Challenge guarantee (playtest verdict 2026-07-21: sitting still + space wins
+— unacceptable).** Wave compositions must make a static ship FAIL by wave 2:
+- W1: 3 torps, single forward bearing — teaches "guns handle what they face".
+- W2: split bearings including one from aft-below (fewest arcs bear) — a
+  static ship takes a leaker BY DESIGN; rotating the deliberate RCS ship is
+  the lesson.
+- W3: 6 torps, three axes + one fast runner that must be DODGED (drift +
+  counter-burn), not shot.
+Acceptance test: a stationary armed ship must be hit during W2.
+
+### Damage & feedback (playtest: "when a missile hits, nothing happens")
+
+A torpedo hit must FEEL like a torpedo hit:
+- **Physics**: impact impulse — velocity kick (~80 u/s along the torpedo's
+  vector) + attitude tumble (injected yaw/pitch rate, decaying) the pilot has
+  to recover from. Newtonian, on-brand, and itself a skill moment.
+- **Visual**: violent camera shake (~0.5s decay), strong red vignette, spark/
+  debris burst at the hull, one white flash frame.
+- **Audio**: deep impact thud + metallic ring + short alarm chirp (synth).
+- **Hull state (3 hits, not 1)**: battle strip shows HULL 100→66→33%; while
+  damaged the ship trails sparks and at 33% the HUD flickers. Third hit →
+  "HULL CRITICAL — DRILL ABORTED", gentle reset, instant retry invite. Hull
+  auto-restores when any drill ends; no persistent damage outside drills.
 
 ## Battle-mode HUD — video-game simple, not flashy
 
