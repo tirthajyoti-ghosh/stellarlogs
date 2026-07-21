@@ -17,6 +17,11 @@ export const shipRig: {
   pitch: number
   /** Normalized direction of travel (holds last heading when stopped) */
   velocityDir: Vector3
+  /** Impulse accumulator (world units/s) — activities write, Ship consumes */
+  pendingImpulse: Vector3
+  /** Injected attitude tumble rates (rad/s), decayed by Ship each frame */
+  tumbleYaw: number
+  tumblePitch: number
 } = {
   position: new Vector3(),
   quaternion: new Quaternion(),
@@ -28,6 +33,9 @@ export const shipRig: {
   yaw: 0,
   pitch: 0,
   velocityDir: new Vector3(0, 0, -1),
+  pendingImpulse: new Vector3(),
+  tumbleYaw: 0,
+  tumblePitch: 0,
 }
 
 // Dev-only inspection handle for debugging/automation

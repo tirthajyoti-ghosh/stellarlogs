@@ -78,6 +78,15 @@ export function ChaseCamera() {
       cam.position.y += Math.sin(t * 47.3 + 1.7) * amp
       cam.position.z += Math.sin(t * 53.9 + 3.1) * amp
     }
+    // Impact shake: violent, fast-decaying (torpedo hits etc.)
+    if (cameraLook.shake > 0.01) {
+      const t = performance.now() / 1000
+      const amp = cameraLook.shake * 1.3
+      cam.position.x += Math.sin(t * 87.1) * amp
+      cam.position.y += Math.sin(t * 73.7 + 2.1) * amp
+      cam.position.z += Math.sin(t * 96.3 + 4.2) * amp
+      cameraLook.shake *= Math.exp(-3.2 * dt)
+    }
 
     // While orbiting, keep the ship itself centered; when settled behind,
     // look ahead of the nose for flying
