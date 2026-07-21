@@ -28,7 +28,7 @@ import { labelsChanged } from '../../hud/LabelLayer'
  * See docs/phase-f-playground.md (v2 section).
  */
 
-const CENTER = new Vector3(2600, -140, -4800)
+const CENTER = new Vector3(-300, -60, -500)
 const ZONE_RADIUS = 900
 const TORP_POOL = 12
 const TORP_HIT_SHIP = 6 // torpedo reaches the ship

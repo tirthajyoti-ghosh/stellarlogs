@@ -22,7 +22,7 @@ const DESTINATIONS: Destination[] = [
     name: s.name,
     color: s.starColor,
     position: new Vector3(...s.position),
-    standoff: s.starRadius * 6 + 1600,
+    standoff: s.starRadius * 6 + 500,
   })),
   {
     id: 'station',

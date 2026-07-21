@@ -80,12 +80,12 @@ export function Radar() {
       let nearSystem: (typeof ALL_SYSTEMS)[number] | null = null
       for (const system of ALL_SYSTEMS) {
         _rel.set(...system.position)
-        if (_rel.distanceTo(shipRig.position) < 5800) {
+        if (_rel.distanceTo(shipRig.position) < 1800) {
           nearSystem = system
           break
         }
       }
-      const range = nearSystem ? 6200 : 40000
+      const range = nearSystem ? 1900 : 9000
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
@@ -129,7 +129,7 @@ export function Radar() {
               px: p.px,
               py: p.py,
               position: new Vector3(...system.position),
-              standoff: system.starRadius * 6 + 1600,
+              standoff: system.starRadius * 6 + 500,
             })
           }
         }

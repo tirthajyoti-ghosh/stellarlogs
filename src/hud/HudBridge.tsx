@@ -33,7 +33,7 @@ export function HudBridge() {
     for (const system of ALL_SYSTEMS) {
       _p.set(...system.position)
       const d = _p.distanceTo(shipRig.position)
-      if (d < 6000 && d < nearestDist) {
+      if (d < 1800 && d < nearestDist) {
         nearestDist = d
         nearestName = system.name.toUpperCase()
       }
@@ -205,7 +205,7 @@ export function HudBridge() {
         }
         hudReadouts.targetJump = {
           position: new Vector3(...sys.position),
-          standoff: sys.starRadius * 6 + 1600,
+          standoff: sys.starRadius * 6 + 500,
         }
       }
     }
@@ -240,7 +240,7 @@ export function HudBridge() {
       // Visibility rules per kind
       let visible: boolean
       if (label.kind === 'system') visible = dist > 1600
-      else if (label.kind === 'planet') visible = dist < 3200 && dist > 140
+      else if (label.kind === 'planet') visible = dist < 2200 && dist > 140
       else if (label.kind === 'poi') visible = dist < 4000 && dist > 700
       else visible = dist < 2600 && dist > 220
 
