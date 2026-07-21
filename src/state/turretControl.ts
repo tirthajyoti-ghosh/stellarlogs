@@ -4,8 +4,8 @@ import { Vector3 } from 'three'
  * Shared imperative state between activities and the ship's PDC turrets
  * (same pattern as shipRig/hudReadouts — written and read per frame, no React).
  *
- * An activity (e.g. the gunnery range) WRITES `targets` + reads pilot intent;
- * the ship's turret update READS targets, aims the rigs, and WRITES back lock
+ * An activity (e.g. the gunnery range) WRITES `targets` + `firing`; the
+ * ship's turret update READS targets, aims the rigs, and WRITES back lock
  * count, muzzle transforms and motion telemetry (for audio).
  */
 
@@ -21,9 +21,7 @@ export interface TurretMuzzle {
 export const turretControl = {
   /** World-space target points, written by the active activity (empty = stand down) */
   targets: [] as { position: Vector3 }[],
-  /** Raw input: FIRE held (Space / pointer / touch button) — set by input layers */
-  fireIntent: false,
-  /** Effective firing state (fireIntent gated by the active zone) */
+  /** Guns live — set by the active activity while its drill runs */
   firing: false,
 
   // ---- written back by the ship's turret update ----

@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
-import { turretControl } from '../state/turretControl'
 import { activityState } from '../state/activityState'
 import { IS_TOUCH } from '../config/quality'
 
@@ -13,11 +12,12 @@ const STICK_RADIUS = 56
 export function TouchControls() {
   const areaRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
-  // FIRE appears only inside an activity zone (polled at low frequency)
-  const [inActivity, setInActivity] = useState(false)
+  // RE-RUN appears only after a finished drill, while still in the zone
+  // (drills auto-start on entry; this is the only activity button needed)
+  const [canRestart, setCanRestart] = useState(false)
   useEffect(() => {
     if (!IS_TOUCH) return
-    const id = setInterval(() => setInActivity(activityState.active), 300)
+    const id = setInterval(() => setCanRestart(activityState.canRestart), 300)
     return () => clearInterval(id)
   }, [])
 
@@ -101,18 +101,14 @@ export function TouchControls() {
         <div className="hud-stick-knob" ref={knobRef} />
       </div>
       <div className="hud-touch-buttons">
-        {inActivity && (
+        {canRestart && (
           <button
             className="hud-touch-btn hud-touch-fire"
-            onPointerDown={(e) => {
-              e.currentTarget.setPointerCapture(e.pointerId)
-              turretControl.fireIntent = true
+            onPointerDown={() => {
+              activityState.restartRequest = true
             }}
-            onPointerUp={() => (turretControl.fireIntent = false)}
-            onPointerCancel={() => (turretControl.fireIntent = false)}
-            onLostPointerCapture={() => (turretControl.fireIntent = false)}
           >
-            ARM
+            RE-RUN
           </button>
         )}
         <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>

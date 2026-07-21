@@ -14,6 +14,8 @@ export interface Threat {
   velocity: { x: number; y: number; z: number }
   alive: boolean
   launched: boolean
+  /** A turret is currently locked onto this threat */
+  tracked?: boolean
 }
 
 export const activityState = {
@@ -34,6 +36,15 @@ export const activityState = {
   /** Damage-direction indicator: CSS degrees around screen center (0 = up) */
   hitDirDeg: 0,
   hitDirUntil: 0,
+  /** Battle vitals for the combat HUD cluster (written by the activity) */
+  hull: 3,
+  hullMax: 3,
+  wave: 0,
+  waveMax: 3,
+  /** Drill finished while the ship is still inside — offer a re-run */
+  canRestart: false,
+  /** One-shot re-run request (Space / touch button), consumed by the activity */
+  restartRequest: false,
   /** The activity's game clock (three elapsedTime), stamped each frame so the
    *  DOM layers can compare `until` fields against the same timebase */
   bannerClock: 0,

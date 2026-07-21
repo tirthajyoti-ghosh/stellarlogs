@@ -113,6 +113,7 @@ export function HudBridge() {
           el.style.opacity = '1'
           el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
           el.dataset.off = offscreen ? '1' : ''
+          el.dataset.trk = threat.tracked ? '1' : ''
           const arrow = el.querySelector<HTMLElement>('.hud-threat-arrow')
           if (arrow) arrow.style.transform = `rotate(${arrowDeg}deg)`
           const info = el.querySelector<HTMLElement>('.hud-threat-info')
@@ -182,60 +183,8 @@ export function HudBridge() {
     lit('chevD', i.pitch < 0)
     lit('flame', i.thrust > 0, shipRig.boosting)
 
-    // Battle: the tactical readout becomes a THREAT board
-    if (activityState.battle && hudReadouts.targetNameEl) {
-      let nearest: (typeof activityState.threats)[number] | null = null
-      let nearestDist = Infinity
-      let count = 0
-      for (const threat of activityState.threats) {
-        if (!threat.alive || !threat.launched) continue
-        count++
-        _p.set(threat.position.x, threat.position.y, threat.position.z)
-        const d = _p.distanceTo(shipRig.position)
-        if (d < nearestDist) {
-          nearestDist = d
-          nearest = threat
-        }
-      }
-      if (hudReadouts.targetChipEl) {
-        hudReadouts.targetChipEl.textContent = 'THREAT BOARD'
-        hudReadouts.targetChipEl.style.color = '#ff5040'
-      }
-      hudReadouts.targetNameEl.style.color = '#ff5040'
-      if (nearest) {
-        hudReadouts.targetNameEl.textContent = `TORPEDO ×${count}`
-        const dx = nearest.position.x - shipRig.position.x
-        const dy = nearest.position.y - shipRig.position.y
-        const dz = nearest.position.z - shipRig.position.z
-        const closing =
-          -(nearest.velocity.x * dx + nearest.velocity.y * dy + nearest.velocity.z * dz) /
-          Math.max(1, nearestDist)
-        if (hudReadouts.targetBearingEl) {
-          const yaw = shipRig.yaw
-          const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
-          const rz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
-          const deg = (Math.atan2(rx, -rz) * 180) / Math.PI
-          hudReadouts.targetBearingEl.style.transform = `rotate(${deg.toFixed(0)}deg)`
-        }
-        if (hudReadouts.targetRangeEl)
-          hudReadouts.targetRangeEl.textContent = `${Math.round(nearestDist)} M`
-        if (hudReadouts.targetCloseEl) {
-          hudReadouts.targetCloseEl.textContent =
-            closing > 1 ? `CLOSING ${Math.round(closing)} M/S` : 'TRACKING'
-          hudReadouts.targetCloseEl.dataset.closing = ''
-        }
-        if (hudReadouts.targetPurposeEl) {
-          const impact = closing > 1 ? nearestDist / closing : Infinity
-          hudReadouts.targetPurposeEl.textContent =
-            impact < 30 ? `NEAREST IMPACT ${impact.toFixed(0)}S` : 'GUNS ENGAGING'
-        }
-      } else {
-        hudReadouts.targetNameEl.textContent = 'NO CONTACTS'
-        if (hudReadouts.targetRangeEl) hudReadouts.targetRangeEl.textContent = '—'
-        if (hudReadouts.targetCloseEl) hudReadouts.targetCloseEl.textContent = '—'
-        if (hudReadouts.targetPurposeEl) hudReadouts.targetPurposeEl.textContent = 'STANDING BY'
-      }
-    }
+    // Battle: the contact box stands down (hidden via CSS) — threat data
+    // lives in the BattleHud warning strip + bracket markers instead.
 
     // Nearest contact: closest labeled body, with a smoothed closing rate
     let target: (typeof hudLabels)[number] | null = null
@@ -322,7 +271,8 @@ export function HudBridge() {
       if (target.kind === 'station') {
         hudReadouts.targetJump = { position: target.position, standoff: 420 }
       } else if (target.kind === 'poi') {
-        hudReadouts.targetJump = { position: target.position, standoff: 600 }
+        // Land OUTSIDE the activity's auto-start ring — see it, then enter it
+        hudReadouts.targetJump = { position: target.position, standoff: 1150 }
       } else {
         let sys = ALL_SYSTEMS[0]
         let best = Infinity
