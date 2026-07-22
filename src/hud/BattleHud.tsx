@@ -83,20 +83,29 @@ export function BattleHud() {
         lastVel = vel
       }
 
-      // PDC turret pips: lit while that turret has a lock, hot while firing
+      // PDC turret pips: lit on lock, hot while firing, red on thermal lockout
       const firing = turretControl.spin > 0.85
+      let overheatedCount = 0
       for (let i = 0; i < 6; i++) {
         const pip = pipRefs.current[i]
         if (!pip) continue
         const muzzle = turretControl.muzzles[i]
         const engaged = !!muzzle && muzzle.targetIndex >= 0
+        const ovr = !!muzzle && muzzle.overheated
+        if (ovr) overheatedCount++
         pip.dataset.on = engaged ? '1' : ''
         pip.dataset.hot = engaged && firing ? '1' : ''
+        pip.dataset.ovr = ovr ? '1' : ''
       }
-      if (turretControl.locks !== lastLocks && pdcCountRef.current) {
+      const locksNow = turretControl.locks - overheatedCount * 1000 // force refresh on ovr change
+      if (locksNow !== lastLocks && pdcCountRef.current) {
         pdcCountRef.current.textContent =
-          turretControl.locks > 0 ? `ENGAGING ×${turretControl.locks}` : 'SEARCHING'
-        lastLocks = turretControl.locks
+          overheatedCount > 0
+            ? `OVERHEAT ×${overheatedCount}`
+            : turretControl.locks > 0
+              ? `ENGAGING ×${turretControl.locks}`
+              : 'SEARCHING'
+        lastLocks = locksNow
       }
 
       // Hull segments

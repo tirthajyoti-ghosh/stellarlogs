@@ -56,7 +56,8 @@ const TRACER_LIFE = 0.45
 const TRACER_LEN = 2.6
 const TRACER_POOL = 96
 const ROUNDS_PER_SEC = 10
-const BEST_TIME_KEY = 'stellarlogs-defense-best-time'
+// v2: five-wave course — 3-wave best times are not comparable
+const BEST_TIME_KEY = 'stellarlogs-defense-best-time-v2'
 const TORPEDO_URL = '/models/torpedo.glb'
 const BUOY_URL = '/models/buoy.glb'
 const BUOY_COUNT = 22
@@ -100,7 +101,10 @@ interface LaunchSpec {
  * Wave design: saturation + evasion create the challenge (six ball turrets
  * cover the sphere, so blind spots don't exist). W1: four from ASTERN so the
  * very first act is turning the ship. W2: seven split forward/astern fans.
- * W3: ten across four axes + a fast low-turn runner that must be dodged.
+ * W3: ten across four axes + a fast low-turn runner. W4 THE STORM: twelve
+ * from every axis on a rolling stagger — and from here the PDCs OVERHEAT,
+ * so coverage develops gaps the pilot must fly around. W5 SPEARS: fast
+ * movers, vertical divers, twin runners head-on and astern.
  * A stationary ship takes hits by wave 2 (verified acceptance test).
  */
 const WAVES: LaunchSpec[][] = [
@@ -131,9 +135,37 @@ const WAVES: LaunchSpec[][] = [
     { yawOff: 0.05, elev: 0.25 },
     { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
   ],
+  [
+    // W4 — THE STORM: every axis, rolling launches, heat armed
+    { yawOff: Math.PI - 0.4, elev: 0.15 },
+    { yawOff: Math.PI, elev: -0.2 },
+    { yawOff: Math.PI + 0.4, elev: 0.3 },
+    { yawOff: -0.4, elev: 0.1 },
+    { yawOff: 0.4, elev: -0.15 },
+    { yawOff: 0.05, elev: 0.5 },
+    { yawOff: -1.6, elev: -0.1 },
+    { yawOff: 1.6, elev: 0.1 },
+    { yawOff: -2.3, elev: 0.35 },
+    { yawOff: 2.3, elev: -0.35 },
+    { yawOff: Math.PI - 0.15, elev: -0.55, speedMult: 1.3, turnMult: 0.7 },
+    { yawOff: 0.2, elev: -0.05, speedMult: 1.3, turnMult: 0.7 },
+  ],
+  [
+    // W5 — SPEARS: divers, fast flankers, twin runners
+    { yawOff: Math.PI, elev: 0.85 }, // overhead diver
+    { yawOff: Math.PI, elev: -0.85 }, // underbelly diver
+    { yawOff: -0.5, elev: 0.12, speedMult: 1.25 },
+    { yawOff: 0.5, elev: -0.12, speedMult: 1.25 },
+    { yawOff: -1.7, elev: 0.2 },
+    { yawOff: 1.7, elev: -0.2 },
+    { yawOff: Math.PI - 0.6, elev: 0 },
+    { yawOff: Math.PI + 0.6, elev: 0 },
+    { yawOff: 0, elev: 0.02, speedMult: 1.55, turnMult: 0.45 }, // head-on runner
+    { yawOff: Math.PI, elev: -0.02, speedMult: 1.55, turnMult: 0.45 }, // astern runner
+  ],
 ]
-const BASE_SPEED = [95, 165, 185]
-const BASE_TURN = [0.9, 1.0, 1.1]
+const BASE_SPEED = [95, 165, 185, 150, 175]
+const BASE_TURN = [0.9, 1.0, 1.1, 1.0, 1.15]
 
 function makeFlashTexture(): CanvasTexture {
   const size = 64
@@ -268,6 +300,8 @@ export function GunneryRange() {
     hull: 3,
     veteran: false,
     nextVeteran: false,
+    /** First-overheat coach shown this run */
+    heatWarned: false,
     /** Drill just ended inside the zone — wait for an explicit re-run */
     awaitRestart: false,
     armedAt: 0,
@@ -326,6 +360,7 @@ export function GunneryRange() {
       g.wave = 0
       g.kills = 0
       g.hull = 3
+      g.heatWarned = false
       g.veteran = g.nextVeteran
       g.armedAt = now
       g.graceUntil = 0
@@ -345,7 +380,11 @@ export function GunneryRange() {
       g.wave++
       g.phase = 'wave'
       if (g.wave > 1) triggerKlaxon()
-      activityState.banner = { text: `WAVE ${g.wave} / 3`, kind: 'battle', until: t + 1.7 }
+      activityState.banner = {
+        text: `WAVE ${g.wave} / ${WAVES.length}`,
+        kind: 'battle',
+        until: t + 1.7,
+      }
       const specs = WAVES[g.wave - 1]
       const speedBase = BASE_SPEED[g.wave - 1] * (g.veteran ? 1.35 : 1)
       const turnBase = BASE_TURN[g.wave - 1] * (g.veteran ? 1.2 : 1)
@@ -366,7 +405,8 @@ export function GunneryRange() {
         torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
         torp.alive = true
         torp.launched = i === 0
-        torp.launchAt = t + i * 0.15
+        // late waves roll in on a wider stagger — a storm, not a volley
+        torp.launchAt = t + i * (g.wave >= 4 ? 0.3 : 0.15)
         torp.tracked = false
       })
       for (let i = specs.length; i < TORP_POOL; i++) torpedoes[i].alive = false
@@ -514,7 +554,7 @@ export function GunneryRange() {
       }
     }
     if (g.phase === 'wave' && incoming === 0) {
-      if (g.wave >= 3) {
+      if (g.wave >= WAVES.length) {
         endDrill('complete')
       } else {
         g.phase = 'breather'
@@ -537,7 +577,7 @@ export function GunneryRange() {
     activityState.hull = g.hull
     activityState.hullMax = 3
     activityState.wave = battleRunning ? g.wave : 0
-    activityState.waveMax = 3
+    activityState.waveMax = WAVES.length
     activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
     if (engaged) {
       activityState.title =
@@ -559,6 +599,7 @@ export function GunneryRange() {
     }
 
     // ---- feed turrets: guns are AUTOMATIC while the drill runs ----
+    // From wave 4 the thermal model arms: sustained fire overheats mounts
     if (battleRunning) {
       const targets: { position: Vector3 }[] = []
       for (let i = 0; i < torpedoes.length; i++) {
@@ -566,9 +607,16 @@ export function GunneryRange() {
       }
       turretControl.targets = targets
       turretControl.firing = true
+      turretControl.heatEnabled = g.wave >= 4
+      // one-time coach the first time a mount cooks off
+      if (!g.heatWarned && turretControl.muzzles.some((m) => m.overheated)) {
+        g.heatWarned = true
+        activityState.banner = { text: 'PDC OVERHEAT — COVER THE GAPS', kind: 'fail', until: now + 2.2 }
+      }
     } else if (turretControl.targets.length > 0) {
       turretControl.targets = []
       turretControl.firing = false
+      turretControl.heatEnabled = false
     }
 
     // TRK tags: which torpedoes have a turret locked on right now

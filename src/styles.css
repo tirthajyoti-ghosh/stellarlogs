@@ -1000,6 +1000,12 @@ body[data-hit='1'] .hud-activity {
   background: #ffdcb0;
   box-shadow: 0 0 9px rgba(255, 175, 95, 0.95);
 }
+.hud-bh-pips i[data-ovr='1'] {
+  background: rgba(255, 60, 40, 0.55);
+  border-color: #ff5040;
+  box-shadow: 0 0 9px rgba(255, 60, 40, 0.8);
+  animation: hud-warn-blink 0.4s step-end infinite;
+}
 .hud-bh-pdc-count {
   font-size: 9.5px;
   font-weight: 700;
