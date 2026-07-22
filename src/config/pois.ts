@@ -18,3 +18,13 @@ export const BELTRUN_POI = {
   position: [310, -20, -1142] as [number, number, number],
   standoff: 380,
 }
+
+/**
+ * The wreck of the NILAK — the ice hauler the raiders took, drifting on the
+ * spawn→Projects lane. The reason the militia exists. Nothing to play;
+ * everything to understand.
+ */
+export const WRECK_POI = {
+  position: [-152, -30, -1157] as [number, number, number],
+  standoff: 320,
+}

@@ -288,7 +288,7 @@ export function GunneryRange() {
       position: CENTER,
       yOffset: 95,
       el: null,
-      detail: 'PDC DEFENSE DRILL · AUTO-ENGAGES ON ENTRY',
+      detail: 'MILITIA PDC CERT · AUTO-ENGAGES ON ENTRY',
       jumpStandoff: GUNNERY_POI.standoff,
     })
     labelsChanged()
@@ -539,7 +539,7 @@ export function GunneryRange() {
     activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
     if (engaged) {
       activityState.title =
-        g.veteran && battleRunning ? 'PDC DEFENSE — VETERAN' : 'PDC DEFENSE DRILL'
+        g.veteran && battleRunning ? 'MILITIA CERT — VETERAN' : 'MILITIA PDC CERTIFICATION'
       const coach =
         battleRunning && g.wave === 1 && g.phase === 'wave' && turretControl.locks === 0 && incoming > 0
       activityState.hint = activityState.canRestart
@@ -802,7 +802,7 @@ export function GunneryRange() {
             material-transparent
             fillOpacity={0.85}
           >
-            PDC DEFENSE DRILL · LIVE FIRE · AUTO-ENGAGE
+            INTERAMNIA MILITIA · PDC CERTIFICATION · AUTO-ENGAGE
           </Text>
         </group>
         {/* Close-up sign on the column, readable both sides */}
@@ -833,7 +833,7 @@ export function GunneryRange() {
                 anchorY="middle"
                 position={[0, -4.4, 0.2]}
               >
-                PDC DEFENSE DRILL
+                MILITIA CERTIFICATION
               </Text>
             </group>
           ))}

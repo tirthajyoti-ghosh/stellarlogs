@@ -1,9 +1,23 @@
-# The Story Layer — "A Working Belt" (July 2026, v2)
+# The Story Layer — "A Working Belt" (July 2026, v3 — NAMES LOCKED)
 
 > v2 after Tirtha's review: the named-NPC "INCOMING HAIL" cards are CUT (they
 > were the mobile-game popup pattern wearing a vac suit), the four-beat causal
 > arc is replaced by a standing SITUATION so free order and replays are
 > native, and Lang Belta is demoted to physical world signage only — never UI.
+>
+> v3: NAMES LOCKED by Tirtha (2026-07-22). Fleet rule: the Belt's ice haulers
+> carry words from Earth's ice peoples — polar languages, obscure, clipping
+> hard like "the Cant".
+>
+> - **Nilak** — the wreck. Kalaallisut (Greenlandic) for a piece of
+>   freshwater ice: literally the cargo she died hauling. `REMEMBER THE NILAK`.
+> - **Imiq** — the living hauler (F.4 escort). The root word for water.
+>   Ice froze and died; water still flows.
+> - **Interamnia Drift** — the settlement. Real asteroid 704 Interamnia,
+>   fifth-largest in the belt, dark F-type, Latin "between rivers". Locals
+>   clip it to "the Amnia".
+> - **Draugr** — the raider (F.3). Old Norse: the drowned sailor's ghost
+>   that comes back to take ships.
 
 ## Why
 
@@ -40,8 +54,8 @@ Repeats are diegetic by construction: another drill, another heat, another
 skiff, another convoy.
 
 - **THE WRECK** *(static history — build S2)*: raiders hit the ice hauler
-  **Sirocco** on approach, months back. Her hull drifts near the colony with
-  a painted beacon plaque: `REMEMBER THE SIROCCO`. Nothing to play — it is
+  **Nilak** on approach, months back. Her hull drifts near the colony with
+  a painted beacon plaque: `REMEMBER THE NILAK`. Nothing to play — it is
   the reason the militia exists, and it fulfills the old README derelict
   promise.
 - **THE DRILL** *(live today — Gunnery Range, reframed)*: the colony militia's
@@ -78,8 +92,8 @@ plain English, always.**
    to the colony. Environmental storytelling does the heavy lifting.
 2. **Names**: marquee sub-lines, POI labels, tactical-MFD detail lines
    rewritten diegetically. Zero new UI surfaces.
-3. **Painted signage**: the Sirocco plaque, the colony welcome board
-   (`OYE — DAVIDA DRIFT` + English beneath), the racing club's crooked
+3. **Painted signage**: the Nilak plaque, the colony welcome board
+   (`OYE — INTERAMNIA DRIFT` + English beneath), the racing club's crooked
    best-times board near the START gate.
 
 **Hard rule**: if a line of flavor cannot be painted on a world surface or
@@ -88,9 +102,9 @@ named characters addressing the player, no cutscenes, no portraits.
 
 ## The place: the drift-colony
 
-- **Name**: real minor planet the show never spotlighted (the show's own
-  naming logic — Ceres, Eros, Pallas are real rocks). Recommendation:
-  **511 Davida → "Davida Drift"** (alternates: Sylvia Rock, Interamnia Dock).
+- **Name (LOCKED)**: **704 Interamnia → "Interamnia Drift"**, clipped by
+  locals to "the Amnia" — real minor planet the show never spotlighted (the
+  show's own naming logic: Ceres, Eros, Pallas are real rocks).
 - **Where**: inside the Projects belt arc, ~500u off the Belt Run course.
 - **Build** (assets-first; verified downloadable CC-BY candidates): hollowed
   rock core ("Asteroid with Internal Tunnel System", 7.8k faces) + industrial
@@ -115,12 +129,12 @@ thumbnails reviewed:
 
 - **S1 — Flavor pass** *(no new assets)*: diegetic renames across marquees,
   POI details, tactical lines; racing-club board object near START.
-- **S2 — The Sirocco wreck**: **"Cargo Hauler" by NekoKuroHB**
+- **S2 — The Nilak wreck**: **"Cargo Hauler" by NekoKuroHB**
   (`cb41721a59d8485fb0a107983d054ad5`, 196k faces → offline optimize) — an
   industrial spine-frame with tank pods, THE working-Belt hauler silhouette.
   Break offline (drop pods, sever the spine, scorch), beacon + painted
   plaque.
-- **S3 — Davida Drift**: **"Asteroid with Internal Tunnel System"**
+- **S3 — Interamnia Drift**: **"Asteroid with Internal Tunnel System"**
   (`877beddf22c24ca68d45de89619114db`, 7.8k) as the hollowed core +
   **"Space Station Asteroid Mining Facility"**
   (`be146cbcc43e4049ac0236e9e269877e`, 573k → optimize) structure + our
@@ -128,15 +142,14 @@ thumbnails reviewed:
 - **S4 — F.3 THE HUNT**: raider = **"Stealth Ship - Vehicle Design"**
   (`7e2d1b5b9f0249cfb3111a00bf48237b`, 3.9k — re-verified downloadable);
   fallback "SACHSEN CLASS FRIGATE" (18.7k).
-- **S5 — F.4 THE ICE RUN**: the escorted hauler is the SAME NekoKuroHB
-  Cargo Hauler, intact — one acquisition covers S2 + S5.
+- **S5 — F.4 THE ICE RUN**: the escorted hauler is the **Imiq** — the SAME
+  NekoKuroHB Cargo Hauler, intact — one acquisition covers S2 + S5.
 - *(Future: railgun as militia armory hardware.)*
 
 Every acquisition lands on the in-world **Port Registry** boards at the
 Comms Station (live as of today) plus the SEO mirror.
 
-## Open calls for Tirtha
+## Decisions log
 
-1. Settlement name: **Davida Drift** / Sylvia Rock / Interamnia Dock / other?
-2. Wreck name **Sirocco** — keep or rename?
-3. Start with S1 (pure flavor, ships immediately) or asset-led S2/S3?
+- 2026-07-22: names locked (Nilak / Imiq / Interamnia Drift / Draugr) and
+  build started — S1 flavor pass + S2 the Nilak wreck.
