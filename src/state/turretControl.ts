@@ -16,6 +16,10 @@ export interface TurretMuzzle {
   direction: Vector3
   /** Index into `targets` this turret is tracking, or -1 */
   targetIndex: number
+  /** Barrel heat 0..1 (only accumulates while heatEnabled) */
+  heat: number
+  /** Thermal lockout: mount parked and silent until it cools */
+  overheated: boolean
 }
 
 export const turretControl = {
@@ -23,6 +27,8 @@ export const turretControl = {
   targets: [] as { position: Vector3 }[],
   /** Guns live — set by the active activity while its drill runs */
   firing: false,
+  /** Thermal model armed (late drill waves) — set by the active activity */
+  heatEnabled: false,
 
   // ---- written back by the ship's turret update ----
   /** Turrets currently tracking a target */

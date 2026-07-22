@@ -18,6 +18,9 @@ const RANGE = 300 // world units
 const MUZZLE_LEN = 34 // raw model units from pivot to muzzle tip
 const SPIN_UP = 3.2 // 1/s barrel spin-up rate
 const SPIN_DOWN = 1.4
+const HEAT_TIME = 6 // seconds of sustained fire to overheat (when enabled)
+const COOL_TIME = 3.5 // seconds from full heat back to cold
+const OVERHEAT_CLEAR = 0.35 // hysteresis: lockout ends once cooled to here
 
 interface TurretRig {
   pivot: Object3D
@@ -29,6 +32,8 @@ interface TurretRig {
   arcDir: Vector3
   spinAngle: number
   targetIndex: number
+  heat: number
+  overheated: boolean
 }
 
 let rigs: TurretRig[] = []
@@ -39,6 +44,8 @@ const _desired = new Quaternion()
 const _prev = new Quaternion()
 const _muzzleLocal = new Vector3()
 const _aimWorld = new Vector3()
+/** Fire-control scratch: how many mounts are already on each target */
+const _assignCounts = new Uint8Array(32)
 
 /** Call once after the ship GLB mounts. Safe to call again (re-discovers). */
 export function discoverTurrets(model: Object3D): void {
@@ -57,12 +64,24 @@ export function discoverTurrets(model: Object3D): void {
     if (outward.lengthSq() < 1) outward.set(0, 1, 0)
     outward.normalize()
     const arcDir = outward.add(restDir).normalize()
-    rigs.push({ pivot, ball, barrels, restDir, arcDir, spinAngle: 0, targetIndex: -1 })
+    rigs.push({
+      pivot,
+      ball,
+      barrels,
+      restDir,
+      arcDir,
+      spinAngle: 0,
+      targetIndex: -1,
+      heat: 0,
+      overheated: false,
+    })
   }
   turretControl.muzzles = rigs.map(() => ({
     position: new Vector3(),
     direction: new Vector3(),
     targetIndex: -1,
+    heat: 0,
+    overheated: false,
   }))
 }
 
@@ -75,22 +94,34 @@ export function updateTurrets(dt: number): void {
   const targets = turretControl.targets
   let locks = 0
   let traverse = 0
+  _assignCounts.fill(0, 0, Math.min(targets.length, _assignCounts.length))
 
   for (let i = 0; i < rigs.length; i++) {
     const rig = rigs[i]
     rig.pivot.getWorldPosition(_pivotWorld)
 
-    // Acquire: nearest target inside range and arc cone
+    // Fire control (TEWA): each mount takes the LEAST-COVERED valid threat,
+    // nearest first among equals — spreading six guns across the raid
+    // instead of piling every barrel on whichever torpedo leads the pack.
+    // An overheated mount is out of the fight until it cools.
     rig.targetIndex = -1
-    let bestDist = RANGE
-    for (let t = 0; t < targets.length; t++) {
-      const d = targets[t].position.distanceTo(_pivotWorld)
-      if (d >= bestDist) continue
-      _dirLocal.copy(targets[t].position)
-      rig.pivot.worldToLocal(_dirLocal).normalize()
-      if (_dirLocal.angleTo(rig.arcDir) > ARC_HALF) continue
-      bestDist = d
-      rig.targetIndex = t
+    if (!rig.overheated) {
+      let bestScore = Infinity
+      for (let t = 0; t < targets.length; t++) {
+        const d = targets[t].position.distanceTo(_pivotWorld)
+        if (d >= RANGE) continue
+        _dirLocal.copy(targets[t].position)
+        rig.pivot.worldToLocal(_dirLocal).normalize()
+        if (_dirLocal.angleTo(rig.arcDir) > ARC_HALF) continue
+        // load dominates, distance tiebreaks: an unengaged threat far out
+        // beats a double-covered one at the muzzle
+        const score = _assignCounts[t] * RANGE + d
+        if (score < bestScore) {
+          bestScore = score
+          rig.targetIndex = t
+        }
+      }
+      if (rig.targetIndex >= 0) _assignCounts[rig.targetIndex]++
     }
 
     // Desired ball orientation: rotate the parked axis onto the target dir
@@ -112,6 +143,22 @@ export function updateTurrets(dt: number): void {
       traverse += Math.min(angle, SLEW_RATE * dt) / Math.max(dt, 1e-4)
     }
 
+    // Thermal model: sustained fire cooks the mount; it locks out at full
+    // heat and rejoins once cooled past the hysteresis point
+    const firingThis =
+      turretControl.heatEnabled &&
+      turretControl.firing &&
+      rig.targetIndex >= 0 &&
+      turretControl.spin > 0.85
+    if (firingThis) {
+      rig.heat = Math.min(1, rig.heat + dt / HEAT_TIME)
+      if (rig.heat >= 1) rig.overheated = true
+    } else {
+      rig.heat = Math.max(0, rig.heat - dt / COOL_TIME)
+      if (rig.overheated && rig.heat <= OVERHEAT_CLEAR) rig.overheated = false
+    }
+    if (!turretControl.heatEnabled && rig.heat === 0) rig.overheated = false
+
     // Muzzle world transform for tracers
     const muzzle = turretControl.muzzles[i]
     if (muzzle) {
@@ -121,6 +168,8 @@ export function updateTurrets(dt: number): void {
       _aimWorld.copy(rig.restDir).applyQuaternion(rig.ball.getWorldQuaternion(_desired))
       muzzle.direction.copy(_aimWorld).normalize()
       muzzle.targetIndex = rig.targetIndex
+      muzzle.heat = rig.heat
+      muzzle.overheated = rig.overheated
     }
   }
 
