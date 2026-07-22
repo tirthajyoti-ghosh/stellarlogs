@@ -192,50 +192,43 @@ export function Ship() {
     shipQuaternion(yaw, pitch, rig.quaternion)
 
     // Epstein-style drive exhaust: layered core + glow, flicker under thrust,
-    // stretched white-hot afterburner while boosting, violet lance in warp
+    // stretched white-hot afterburner while boosting. A brachistochrone's
+    // powered legs are just that — the drive at FULL BURN, nothing exotic.
     const now = performance.now() / 1000
     const flicker = 1 + 0.05 * Math.sin(now * 43) + 0.035 * Math.sin(now * 97)
-    const jumping = warpBurning()
-    const coreTarget = jumping ? 5.2 : state.thrusting ? (state.boosting ? 3.4 : 1) : 0
-    const outerTarget = jumping ? 3.6 : state.thrusting ? (state.boosting ? 2.5 : 1) : 0
-    const coreWidth = jumping ? 1.9 : state.boosting ? 1.15 : 1
-    const outerWidth = jumping ? 2.4 : state.boosting ? 1.3 : 1
+    const burning = warpBurning()
+    const thrustingVis = state.thrusting || burning
+    const boostingVis = state.boosting || burning
+    const coreTarget = thrustingVis ? (boostingVis ? 3.4 : 1) : 0
+    const outerTarget = thrustingVis ? (boostingVis ? 2.5 : 1) : 0
+    const coreWidth = boostingVis ? 1.15 : 1
+    const outerWidth = boostingVis ? 1.3 : 1
     const core = plumeCoreRef.current
     if (core) {
       const s = MathUtils.lerp(core.scale.y, coreTarget, 0.12) * flicker
       core.scale.set(coreWidth, Math.max(0.001, s), coreWidth)
       const mat = core.material as MeshBasicMaterial
       mat.opacity = 0.95 * Math.min(1, s)
-      if (jumping) {
-        mat.color.setRGB(4.6, 3.2, 6.4)
-      } else {
-        mat.color.setRGB(
-          state.boosting ? 3.2 : 1.6,
-          state.boosting ? 4.4 : 2.6,
-          state.boosting ? 5.2 : 3.6,
-        )
-      }
+      mat.color.setRGB(boostingVis ? 3.2 : 1.6, boostingVis ? 4.4 : 2.6, boostingVis ? 5.2 : 3.6)
     }
     const outer = plumeOuterRef.current
     if (outer) {
       const s = MathUtils.lerp(outer.scale.y, outerTarget, 0.12) * flicker
       outer.scale.set(outerWidth, Math.max(0.001, s), outerWidth)
       const mat = outer.material as MeshBasicMaterial
-      mat.opacity = (jumping ? 0.6 : 0.45) * Math.min(1, s)
-      if (jumping) mat.color.setRGB(2.4, 0.9, 3.4)
-      else mat.color.setRGB(0.35, 0.66, 0.91)
+      mat.opacity = 0.45 * Math.min(1, s)
+      mat.color.setRGB(0.35, 0.66, 0.91)
     }
     const disc = engineDiscRef.current
     if (disc) {
-      const heat = jumping ? 1 : state.thrusting ? (state.boosting ? 1 : 0.6) : 0.08
+      const heat = thrustingVis ? (boostingVis ? 1 : 0.6) : 0.08
       const m = disc.material as MeshBasicMaterial
-      if (jumping) m.color.setRGB(3.4 * heat, 2.4 * heat, 5.2 * heat)
-      else m.color.setRGB(0.5 * heat, 4.0 * heat, 6.0 * heat)
+      m.color.setRGB(0.5 * heat, 4.0 * heat, 6.0 * heat)
     }
     if (glowRef.current) {
-      const target = jumping ? 80 : state.thrusting ? (state.boosting ? 60 : 16) : 0
+      const target = thrustingVis ? (boostingVis ? 60 : 16) : 0
       glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target * flicker, 0.2)
-      glowRef.current.color.set(jumping ? '#b07aff' : '#7fd4ff')
+      glowRef.current.color.set('#7fd4ff')
     }
 
     // Navigation lights: slow red/green pulse, sharp white strobe
@@ -253,9 +246,9 @@ export function Ship() {
       m.color.setRGB(1 + s * 5, 1 + s * 5, 1 + s * 5.5)
     }
 
-    // RCS puffs — during align/flip phases the autopilot's rotation drives them
+    // RCS puffs — during align/flip/turnback the autopilot's rotation drives them
     const podInput =
-      warp.phase === 'align' || warp.phase === 'flip'
+      warp.phase === 'align' || warp.phase === 'flip' || warp.phase === 'turnback'
         ? {
             thrust: 0,
             reverse: 0,

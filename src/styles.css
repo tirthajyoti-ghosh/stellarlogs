@@ -179,7 +179,8 @@ body[data-warpphase='burn'] .hud-warp-flash {
 body[data-warpphase='align'] .hud-warp-panel,
 body[data-warpphase='burn'] .hud-warp-panel,
 body[data-warpphase='flip'] .hud-warp-panel,
-body[data-warpphase='brake'] .hud-warp-panel { display: flex; }
+body[data-warpphase='brake'] .hud-warp-panel,
+body[data-warpphase='turnback'] .hud-warp-panel { display: flex; }
 .hud-warp-phase {
   font-size: 10px;
   font-weight: 700;
