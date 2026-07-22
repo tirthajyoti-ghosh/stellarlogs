@@ -138,7 +138,7 @@ export function BeltRun() {
       position: gates[0].position,
       yOffset: 110,
       el: null,
-      detail: 'TIME TRIAL · CROSS THE START GATE',
+      detail: 'SLINGSHOT CIRCUIT · CROSS THE START GATE',
       jumpStandoff: BELTRUN_POI.standoff,
     })
     labelsChanged()
@@ -273,7 +273,7 @@ export function BeltRun() {
     if (engaged) {
       activityState.owner = 'beltrun'
       activityState.active = true
-      activityState.title = 'BELT RUN — TIME TRIAL'
+      activityState.title = 'BELT RUN — SLINGSHOT CIRCUIT'
       activityState.hint =
         g.phase === 'idle' ? 'FLY THROUGH THE START GATE — THE CLOCK RUNS AT THE LINE' : ''
       activityState.lines = [
@@ -419,7 +419,7 @@ export function BeltRun() {
           material-transparent
           fillOpacity={0.85}
         >
-          TIME TRIAL · 10 GATES · CROSS START TO BEGIN
+          DRIFT RACING CLUB · SLINGSHOT CIRCUIT · CROSS START TO BEGIN
         </Text>
       </group>
     </group>
