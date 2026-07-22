@@ -30,6 +30,7 @@ export function ChaseCamera() {
   const initialized = useRef(false)
   const orbit = useRef({ yaw: 0, pitch: 0 })
   const offset = useRef(new Vector3())
+  const driveShake = useRef(0)
 
   useFrame(({ camera }, dt) => {
     const cam = camera as PerspectiveCamera
@@ -92,13 +93,15 @@ export function ChaseCamera() {
     }
     // Camera rides with the ship — position lag never scales with speed
     cam.position.copy(shipRig.position).add(offset.current)
-    // Fine high-frequency shake while the drive is punching
-    if (warpBurning() && shipRig.speed > 300) {
+    // Fine high-frequency shake while the drive is punching — amplitude
+    // EASES in and out so phase boundaries never cut it on or off
+    const shakeTarget = warpBurning() ? Math.min(1, shipRig.speed / 4000) * 0.35 : 0
+    driveShake.current += (shakeTarget - driveShake.current) * (1 - Math.exp(-3 * dt))
+    if (driveShake.current > 0.005) {
       const t = performance.now() / 1000
-      const amp = Math.min(1, shipRig.speed / 4000) * 0.35
-      cam.position.x += Math.sin(t * 61.7) * amp
-      cam.position.y += Math.sin(t * 47.3 + 1.7) * amp
-      cam.position.z += Math.sin(t * 53.9 + 3.1) * amp
+      cam.position.x += Math.sin(t * 61.7) * driveShake.current
+      cam.position.y += Math.sin(t * 47.3 + 1.7) * driveShake.current
+      cam.position.z += Math.sin(t * 53.9 + 3.1) * driveShake.current
     }
     // Impact shake: violent, fast-decaying (torpedo hits etc.)
     if (cameraLook.shake > 0.01) {
@@ -117,7 +120,10 @@ export function ChaseCamera() {
     cam.up.set(0, 1, 0)
     cam.lookAt(_look)
 
-    const targetFov = warpBurning() || shipRig.boosting ? BOOST_FOV : BASE_FOV
+    // One lens for the whole transit — the FOV must not pump between the
+    // burn, the coast-flip, and the brake; it eases back only on arrival
+    const midTransit = warp.phase === 'burn' || warp.phase === 'flip' || warp.phase === 'brake'
+    const targetFov = midTransit || shipRig.boosting ? BOOST_FOV : BASE_FOV
     if (Math.abs(cam.fov - targetFov) > 0.05) {
       cam.fov = MathUtils.lerp(cam.fov, targetFov, 1 - Math.exp(-4 * dt))
       cam.updateProjectionMatrix()

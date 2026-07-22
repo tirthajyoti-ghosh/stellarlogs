@@ -157,17 +157,20 @@ export function stepWarp(state: WarpableShip, dt: number): void {
 
   if (warp.phase === 'align') {
     // Deliberate RCS turn onto the outbound vector, bleeding residual drift
-    const settled = slewTo(
-      state,
-      Math.atan2(-_dir.x, -_dir.z),
-      Math.asin(Math.max(-1, Math.min(1, _dir.y))),
-      1.15,
-      dt,
-    )
+    const yawTarget = Math.atan2(-_dir.x, -_dir.z)
+    const pitchTarget = Math.asin(Math.max(-1, Math.min(1, _dir.y)))
+    const settled = slewTo(state, yawTarget, pitchTarget, 1.15, dt)
     state.velocity.multiplyScalar(Math.exp(-2.5 * dt))
     state.speed = state.velocity.length()
     state.position.addScaledVector(state.velocity, dt)
     if (settled) {
+      // Settle EXACTLY onto the travel line (prev too): the ship's attitude
+      // and the camera's locked travel frame must be identical at both ends
+      // of the transit, or the hand-offs pop by the residual
+      state.yaw = yawTarget
+      state.pitch = pitchTarget
+      state.prevYaw = yawTarget
+      state.prevPitch = pitchTarget
       warpTurn.yaw = 0
       warpTurn.pitch = 0
       // Plot the profile: equal powered legs around a fixed-length flip coast
