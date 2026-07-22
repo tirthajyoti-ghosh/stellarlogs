@@ -4,7 +4,9 @@
  * far enough that a fresh visitor never spawns inside the auto-start ring.
  */
 export const GUNNERY_POI = {
-  position: [-1600, -60, -1600] as [number, number, number],
+  /** Open space west of spawn: the LIVE arena (2600) clears every system
+   *  star by 400+ so a drifting battle can never reach readable billboards */
+  position: [-2500, -80, 100] as [number, number, number],
   /** Warp/jump arrival distance — lands OUTSIDE the auto-start ring (1400) */
   standoff: 1700,
 }
@@ -25,6 +27,8 @@ export const BELTRUN_POI = {
  * everything to understand.
  */
 export const WRECK_POI = {
-  position: [-152, -30, -1157] as [number, number, number],
+  /** 350u off the spawn→Projects lane, clear of planet gravity wells so a
+   *  visitor can sit with her without drifting */
+  position: [-350, -35, -1100] as [number, number, number],
   standoff: 320,
 }
