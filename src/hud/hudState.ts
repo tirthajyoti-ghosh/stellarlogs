@@ -28,6 +28,8 @@ export interface HudLabel {
   detail?: string
   /** Distance (world units) at which this body's boards become readable */
   readRange?: number
+  /** POIs: warp arrival distance (lands clear of auto-start triggers) */
+  jumpStandoff?: number
 }
 
 export const hudLabels: HudLabel[] = [

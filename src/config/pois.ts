@@ -8,3 +8,13 @@ export const GUNNERY_POI = {
   /** Warp/jump arrival distance — lands OUTSIDE the auto-start ring (1400) */
   standoff: 1700,
 }
+
+/**
+ * BELT RUN time trial — the START gate on the near edge of the Projects
+ * asteroid belt. Jump arrival lands short of the gate; the clock only
+ * starts when the ship actually crosses the START ring.
+ */
+export const BELTRUN_POI = {
+  position: [310, -20, -1142] as [number, number, number],
+  standoff: 380,
+}

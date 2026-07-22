@@ -817,6 +817,51 @@ body[data-hit='1'] .hud-activity {
   text-shadow: 0 0 10px rgba(255, 180, 84, 0.45), 0 1px 3px rgba(0, 0, 0, 0.9);
 }
 
+/* ---------- Race guidance marker ---------- */
+
+.hud-race {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: #7fe0f0;
+  transition: opacity 0.2s;
+  will-change: transform;
+  pointer-events: none;
+}
+.hud-race-ring {
+  width: 30px;
+  height: 30px;
+  border: 1.7px solid currentColor;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(111, 211, 232, 0.45), inset 0 0 8px rgba(111, 211, 232, 0.25);
+}
+.hud-race[data-off='1'] .hud-race-ring { display: none; }
+.hud-race-arrow {
+  display: none;
+  font-size: 14px;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(111, 211, 232, 0.7);
+}
+.hud-race[data-off='1'] .hud-race-arrow { display: block; }
+.hud-race-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.hud-race-dist {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: #b8e4ee;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+
 /* ---------- Combat HUD cluster (battle only) ---------- */
 
 .hud-battlehud {

@@ -21,6 +21,8 @@ export interface Threat {
 export const activityState = {
   /** Ship is inside an activity zone */
   active: false,
+  /** Which activity currently owns the shared panel/banner state */
+  owner: '',
   /** A combat drill is running — HUD goes to battle stations */
   battle: false,
   title: '',
@@ -45,6 +47,10 @@ export const activityState = {
   canRestart: false,
   /** One-shot re-run request (Space / touch button), consumed by the activity */
   restartRequest: false,
+  /** Race guidance: world position of the next gate (null = no marker) */
+  raceTarget: null as { x: number; y: number; z: number } | null,
+  /** Label shown on the race marker ("START", "GATE 4", "FINISH") */
+  raceTargetLabel: '',
   /** The activity's game clock (three elapsedTime), stamped each frame so the
    *  DOM layers can compare `until` fields against the same timebase */
   bannerClock: 0,

@@ -315,6 +315,25 @@ export function triggerImpact(): void {
   }
 }
 
+/** One-shot: race gate chirp — a clean rising ping; pitch climbs with step. */
+export function triggerGatePing(step: number): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  const f = 620 + step * 26
+  const o = ctx.createOscillator()
+  o.type = 'sine'
+  o.frequency.setValueAtTime(f, t)
+  o.frequency.exponentialRampToValueAtTime(f * 1.5, t + 0.07)
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0, t)
+  g.gain.linearRampToValueAtTime(0.14, t + 0.015)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.28)
+  o.connect(g).connect(master)
+  o.start(t)
+  o.stop(t + 0.3)
+}
+
 /** One-shot: drill-complete fanfare — three rising blips + sparkle. */
 export function triggerFanfare(): void {
   if (!engine) return
