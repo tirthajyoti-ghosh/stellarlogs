@@ -108,17 +108,32 @@ named characters addressing the player, no cutscenes, no portraits.
 - Realism bar: acquired assets through the offline pipeline; functional UI.
 - Finite wins per run; the WORLD is what persists, not player state.
 
-## Build order (each ships alone)
+## Build order (each ships alone) + LOCKED asset candidates
+
+All candidates verified downloadable + CC-BY on Sketchfab (2026-07-22),
+thumbnails reviewed:
 
 - **S1 — Flavor pass** *(no new assets)*: diegetic renames across marquees,
   POI details, tactical lines; racing-club board object near START.
-- **S2 — The Sirocco wreck**: acquire a freighter-class model, break it
-  offline, beacon + painted plaque.
-- **S3 — Davida Drift**: acquire/optimize settlement assets, place, signage.
-- **S4 — F.3 THE HUNT** as the standing interdiction.
-- **S5 — F.4 THE ICE RUN** as the standing escort (same hauler class as the
-  Sirocco — one asset, both uses).
+- **S2 — The Sirocco wreck**: **"Cargo Hauler" by NekoKuroHB**
+  (`cb41721a59d8485fb0a107983d054ad5`, 196k faces → offline optimize) — an
+  industrial spine-frame with tank pods, THE working-Belt hauler silhouette.
+  Break offline (drop pods, sever the spine, scorch), beacon + painted
+  plaque.
+- **S3 — Davida Drift**: **"Asteroid with Internal Tunnel System"**
+  (`877beddf22c24ca68d45de89619114db`, 7.8k) as the hollowed core +
+  **"Space Station Asteroid Mining Facility"**
+  (`be146cbcc43e4049ac0236e9e269877e`, 573k → optimize) structure + our
+  buoys/lights.
+- **S4 — F.3 THE HUNT**: raider = **"Stealth Ship - Vehicle Design"**
+  (`7e2d1b5b9f0249cfb3111a00bf48237b`, 3.9k — re-verified downloadable);
+  fallback "SACHSEN CLASS FRIGATE" (18.7k).
+- **S5 — F.4 THE ICE RUN**: the escorted hauler is the SAME NekoKuroHB
+  Cargo Hauler, intact — one acquisition covers S2 + S5.
 - *(Future: railgun as militia armory hardware.)*
+
+Every acquisition lands on the in-world **Port Registry** boards at the
+Comms Station (live as of today) plus the SEO mirror.
 
 ## Open calls for Tirtha
 
