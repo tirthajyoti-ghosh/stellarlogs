@@ -6,7 +6,7 @@ import { raceEls } from './RaceLayer'
 import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
-import { warp } from '../physics/warp'
+import { warp, warpBurning, timeToFlip, timeToArrival } from '../physics/warp'
 import { getGravityBodies } from '../physics/gravity'
 import { updateAudio } from '../audio/engine'
 import { ALL_SYSTEMS } from '../config/systems'
@@ -51,18 +51,38 @@ export function HudBridge() {
     }
     if (hudReadouts.driveEl) {
       hudReadouts.driveEl.textContent = shipRig.warping
-        ? 'WARP'
-        : shipRig.boosting
-          ? 'BURN'
-          : shipRig.thrusting
-            ? 'THRUST'
-            : 'IDLE'
-      hudReadouts.driveEl.dataset.mode = hudReadouts.driveEl.textContent.toLowerCase()
+        ? warp.phase === 'flip'
+          ? 'FLIP'
+          : warp.phase === 'align'
+            ? 'ALIGN'
+            : 'BURN'
+        : shipRig.flipping
+          ? 'FLIP'
+          : shipRig.boosting
+            ? 'BURN'
+            : shipRig.thrusting
+              ? 'THRUST'
+              : 'IDLE'
+      hudReadouts.driveEl.dataset.mode = shipRig.warping
+        ? 'warp'
+        : hudReadouts.driveEl.textContent.toLowerCase()
     }
 
     const rcsFiring =
-      shipInput.yaw !== 0 || shipInput.pitch !== 0 || shipInput.strafeX !== 0 || shipInput.reverse > 0
-    updateAudio(shipRig.thrusting, shipRig.boosting, warp.phase, rcsFiring)
+      shipInput.yaw !== 0 ||
+      shipInput.pitch !== 0 ||
+      shipInput.strafeX !== 0 ||
+      shipInput.reverse > 0 ||
+      shipRig.flipping
+    // Brachistochrone audio: powered legs sound like a hard afterburner run,
+    // align + flip are pure RCS work — the old FTL whoosh is retired
+    const burning = warpBurning()
+    updateAudio(
+      shipRig.thrusting || burning,
+      shipRig.boosting || burning,
+      warp.phase === 'align' || warp.phase === 'flip' ? 'align' : 'idle',
+      rcsFiring,
+    )
 
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
@@ -368,7 +388,7 @@ export function HudBridge() {
       }
     }
 
-    // Jump-drive panel
+    // Jump-drive panel — the brachistochrone readouts, TIME TO FLIP included
     if (warp.phase !== 'idle' && hudReadouts.warpDestEl && hudReadouts.warpDistEl && hudReadouts.warpPhaseEl) {
       let destName = 'COMMS STATION'
       for (const system of ALL_SYSTEMS) {
@@ -377,10 +397,22 @@ export function HudBridge() {
       }
       const remaining = warp.arrival.distanceTo(shipRig.position)
       hudReadouts.warpDestEl.textContent = destName
-      hudReadouts.warpPhaseEl.textContent = warp.phase === 'align' ? 'ALIGNING' : 'JUMPING'
-      const eta = warp.phase === 'jump' ? remaining / Math.max(1, shipRig.speed) : 0
+      hudReadouts.warpPhaseEl.textContent =
+        warp.phase === 'align'
+          ? 'ALIGNING'
+          : warp.phase === 'burn'
+            ? 'BURN'
+            : warp.phase === 'flip'
+              ? 'FLIP'
+              : 'BRAKE BURN'
+      const flipEta = timeToFlip()
+      const arriveEta = timeToArrival()
       hudReadouts.warpDistEl.textContent =
-        warp.phase === 'jump' ? `${formatDistance(remaining)} M · ETA ${eta.toFixed(1)}S` : `${formatDistance(remaining)} M`
+        warp.phase === 'burn'
+          ? `${formatDistance(remaining)} M · FLIP IN ${flipEta.toFixed(1)}S`
+          : warp.phase === 'brake'
+            ? `${formatDistance(remaining)} M · ARRIVAL ${arriveEta.toFixed(1)}S`
+            : `${formatDistance(remaining)} M`
     }
 
     // Greedy overlap culling: nearer labels claim screen space first
@@ -409,8 +441,8 @@ export function HudBridge() {
         visible = dist < 4000 && dist > 700 && !activityState.raceTarget
       else visible = dist < 2600 && dist > 220
 
-      // Mid-jump, focus the HUD: only the destination marker stays up
-      if (warp.phase === 'jump') {
+      // Mid-transit, focus the HUD: only the destination marker stays up
+      if (warp.phase === 'burn' || warp.phase === 'flip' || warp.phase === 'brake') {
         visible = label.kind === 'system' && label.position.distanceTo(warp.target) < 200
       }
 

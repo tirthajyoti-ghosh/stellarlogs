@@ -442,7 +442,9 @@ export function GunneryRange() {
     }
 
     // ---- drill state machine: entering the ring IS the start ----
-    if (g.phase === 'idle') {
+    // (never while warping — a brachistochrone transit through the ring is
+    // passage, not consent; torpedoes spawning on a ship mid-burn is a mugging)
+    if (g.phase === 'idle' && !shipRig.warping) {
       if (!inArmZone) {
         g.awaitRestart = false
       } else if (!g.awaitRestart) {

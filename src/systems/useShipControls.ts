@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { shipInput } from '../physics/shipInput'
+import { requestFlip } from '../physics/flip'
 import { cameraLook } from '../state/cameraLook'
 import { startAudio } from '../audio/engine'
 
@@ -29,6 +30,7 @@ export function useShipControls(): void {
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return
       startAudio() // browsers require a gesture before audio can play
+      if (e.code === 'KeyX') requestFlip()
       keys.add(e.code)
       applyKeys()
     }

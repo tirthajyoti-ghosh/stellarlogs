@@ -69,7 +69,7 @@ export function WarpStreaks() {
     const lines = lineRef.current
     if (!group || !lines) return
 
-    const jumping = warp.phase === 'jump'
+    const jumping = warp.phase === 'burn' || warp.phase === 'flip' || warp.phase === 'brake'
     opacity.current += ((jumping ? 1 : 0) - opacity.current) * (1 - Math.exp(-(jumping ? 6 : 10) * dt))
     const material = lines.material as LineBasicMaterial
     material.opacity = opacity.current * 0.85

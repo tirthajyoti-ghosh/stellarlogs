@@ -13,6 +13,8 @@ export const shipRig: {
   thrusting: boolean
   boostCharge: number
   warping: boolean
+  /** Pilot-commanded FLIP maneuver in progress */
+  flipping: boolean
   yaw: number
   pitch: number
   /** Normalized direction of travel (holds last heading when stopped) */
@@ -30,6 +32,7 @@ export const shipRig: {
   thrusting: false,
   boostCharge: 1,
   warping: false,
+  flipping: false,
   yaw: 0,
   pitch: 0,
   velocityDir: new Vector3(0, 0, -1),

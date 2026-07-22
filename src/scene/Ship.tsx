@@ -15,7 +15,8 @@ import {
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
 import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
 import { turretControl } from '../state/turretControl'
-import { warp, warpTurn, stepWarp } from '../physics/warp'
+import { warp, warpTurn, stepWarp, warpBurning } from '../physics/warp'
+import { flip, flipStick, cancelFlip } from '../physics/flip'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
@@ -36,6 +37,16 @@ interface RcsPod {
   dir: [number, number, number]
   fire: (input: ShipInput) => number
 }
+/** Reused container for the FLIP autopilot's synthetic stick (no per-frame alloc) */
+const flipInputObj: ShipInput = {
+  thrust: 0,
+  reverse: 0,
+  strafeX: 0,
+  yaw: 0,
+  pitch: 0,
+  boost: false,
+}
+
 const RCS_PODS: RcsPod[] = [
   // Yaw couple: bow pods + stern pods
   { pos: [0.3, 2.3, 0], dir: [1, 0, 0], fire: (i) => Math.max(0, i.yaw) },
@@ -149,9 +160,25 @@ export function Ship() {
       shipRig.tumblePitch *= decay
     }
 
+    // FLIP autopilot: the computer holds the stick, the pilot's hands win
+    if (flip.active && (warp.phase !== 'idle' || shipInput.yaw !== 0 || shipInput.pitch !== 0)) {
+      cancelFlip()
+    }
+    let activeInput: ShipInput = shipInput
+    if (flip.active) {
+      const stick = flipStick(state.yaw, state.pitch)
+      flipInputObj.thrust = shipInput.thrust
+      flipInputObj.reverse = shipInput.reverse
+      flipInputObj.strafeX = shipInput.strafeX
+      flipInputObj.boost = shipInput.boost
+      flipInputObj.yaw = stick.yaw
+      flipInputObj.pitch = stick.pitch
+      activeInput = flipInputObj
+    }
+
     let alpha: number
     if (warp.phase === 'idle') {
-      alpha = stepShip(state, shipInput, dt)
+      alpha = stepShip(state, activeInput, dt)
     } else {
       stepWarp(state, Math.min(dt, 0.05))
       alpha = 1
@@ -168,7 +195,7 @@ export function Ship() {
     // stretched white-hot afterburner while boosting, violet lance in warp
     const now = performance.now() / 1000
     const flicker = 1 + 0.05 * Math.sin(now * 43) + 0.035 * Math.sin(now * 97)
-    const jumping = warp.phase === 'jump'
+    const jumping = warpBurning()
     const coreTarget = jumping ? 5.2 : state.thrusting ? (state.boosting ? 3.4 : 1) : 0
     const outerTarget = jumping ? 3.6 : state.thrusting ? (state.boosting ? 2.5 : 1) : 0
     const coreWidth = jumping ? 1.9 : state.boosting ? 1.15 : 1
@@ -226,9 +253,9 @@ export function Ship() {
       m.color.setRGB(1 + s * 5, 1 + s * 5, 1 + s * 5.5)
     }
 
-    // RCS puffs — during warp alignment the autopilot's rotation drives them
+    // RCS puffs — during align/flip phases the autopilot's rotation drives them
     const podInput =
-      warp.phase === 'align'
+      warp.phase === 'align' || warp.phase === 'flip'
         ? {
             thrust: 0,
             reverse: 0,
@@ -237,7 +264,7 @@ export function Ship() {
             pitch: MathUtils.clamp(warpTurn.pitch * 3, -1, 1),
             boost: false,
           }
-        : shipInput
+        : activeInput
     RCS_PODS.forEach((pod, i) => {
       const mesh = rcsRefs.current[i]
       if (!mesh) return
@@ -256,6 +283,7 @@ export function Ship() {
     shipRig.thrusting = state.thrusting
     shipRig.boostCharge = state.boostCharge
     shipRig.warping = warp.phase !== 'idle'
+    shipRig.flipping = flip.active
     shipRig.yaw = yaw
     shipRig.pitch = pitch
     if (state.speed > 1) {
