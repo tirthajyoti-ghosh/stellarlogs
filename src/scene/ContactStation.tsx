@@ -5,6 +5,7 @@ import { Group, MathUtils, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import { Billboard } from './boards/Billboard'
 import { buildBoards } from './boards/boardSpecs'
 import { CONTACT } from '../content/contact'
+import { REGISTRY, REGISTRY_ACCENT } from '../content/credits'
 import { STATION_POSITION } from '../config/universe'
 import { shipRig } from '../state/shipRig'
 
@@ -48,6 +49,12 @@ export function ContactStation() {
   const boardScale = useRef(0)
   const position = useMemo(() => new Vector3(...STATION_POSITION), [])
   const specs = useMemo(() => buildBoards(CONTACT.items[0], ACCENT), [])
+  // The Hull & Hardware Registry: asset attributions as dockmaster's ledger
+  // boards, orbiting with the contact boards (out of the welcome popup)
+  const registrySpecs = useMemo(
+    () => REGISTRY.flatMap((item) => buildBoards(item, REGISTRY_ACCENT)),
+    [],
+  )
 
   useFrame(({ clock }) => {
     if (beaconRef.current) {
@@ -84,13 +91,22 @@ export function ContactStation() {
       {/* Local floodlights so the station reads against space */}
       <pointLight position={[60, 70, 70]} color="#dde8ff" intensity={6} distance={320} decay={1.6} />
       <pointLight position={[-70, -40, -50]} color="#ffe8cc" intensity={4} distance={280} decay={1.7} />
-      {/* Contact boards */}
+      {/* Contact boards + the asset registry, sharing the geostationary ring */}
       <group ref={boardsRef}>
         {specs.map((spec, i) => (
           <Billboard
             key={i}
             spec={spec}
             accentColor={ACCENT}
+            position={[0, 0, 0]}
+            planetWorldPos={position}
+          />
+        ))}
+        {registrySpecs.map((spec, i) => (
+          <Billboard
+            key={`reg-${i}`}
+            spec={spec}
+            accentColor={REGISTRY_ACCENT}
             position={[0, 0, 0]}
             planetWorldPos={position}
           />

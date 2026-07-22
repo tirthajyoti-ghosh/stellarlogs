@@ -65,65 +65,8 @@ export function Welcome() {
           {IS_TOUCH ? 'Start flying' : 'Press W to fly'}
         </button>
         <p className="hud-welcome-credit">
-          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">
-            CC BY
-          </a>{' '}
-          assets:{' '}
-          <a
-            href="https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf"
-            target="_blank"
-            rel="noreferrer"
-          >
-            "MCRN Tachi"
-          </a>{' '}
-          by Jakub.Vildomec ·{' '}
-          <a
-            href="https://sketchfab.com/3d-models/gateway-57c6a27313794618a299ebe9ec8c2afd"
-            target="_blank"
-            rel="noreferrer"
-          >
-            "Gateway"
-          </a>{' '}
-          by andreas9343 ·{' '}
-          <a
-            href="https://sketchfab.com/3d-models/asteroids-pack-metallic-version-eff495d9315c47dbb2777ec80bef40d8"
-            target="_blank"
-            rel="noreferrer"
-          >
-            "Asteroids Pack"
-          </a>{' '}
-          by SebastianSosnowski ·{' '}
-          <a
-            href="https://sketchfab.com/3d-models/low-poly-missiles-and-torpedos-99783c90ce904951a3c71e851a527d35"
-            target="_blank"
-            rel="noreferrer"
-          >
-            "Missiles"
-          </a>{' '}
-          by sakigakefuruzawa ·{' '}
-          <a
-            href="https://sketchfab.com/3d-models/sci-fi-beaconway-point-marker-free-model-a1d91ebb3e2d41bba31c02b11423d97f"
-            target="_blank"
-            rel="noreferrer"
-          >
-            "Beacon"
-          </a>{' '}
-          by AMMediaGames ·{' '}
-          <a
-            href="https://opengameart.org/content/wgstudio-explosion-animation"
-            target="_blank"
-            rel="noreferrer"
-          >
-            explosion FX
-          </a>{' '}
-          by WrathGames Studio · nebulae by{' '}
-          <a href="https://esahubble.org" target="_blank" rel="noreferrer">
-            ESA/Hubble
-          </a>{' '}
-          · star map by{' '}
-          <a href="https://svs.gsfc.nasa.gov/4851" target="_blank" rel="noreferrer">
-            NASA/SVS
-          </a>
+          Built on generously shared CC assets — see the <strong>Port Registry</strong> boards at
+          the Comms Station.
         </p>
       </div>
     </div>
