@@ -100,7 +100,7 @@ body[data-warp='1'] .hud-warp-tint { opacity: 1; }
   background: radial-gradient(ellipse at center, rgba(220, 230, 255, 0.95), rgba(150, 170, 255, 0.5) 55%, transparent 80%);
   opacity: 0;
 }
-body[data-warpphase='jump'] .hud-warp-flash {
+body[data-warpphase='burn'] .hud-warp-flash {
   animation: hud-warpflash 0.7s ease-out forwards;
 }
 @keyframes hud-warpflash {
@@ -177,7 +177,9 @@ body[data-warpphase='jump'] .hud-warp-flash {
   box-shadow: inset 0 1px 0 rgba(168, 196, 255, 0.55);
 }
 body[data-warpphase='align'] .hud-warp-panel,
-body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
+body[data-warpphase='burn'] .hud-warp-panel,
+body[data-warpphase='flip'] .hud-warp-panel,
+body[data-warpphase='brake'] .hud-warp-panel { display: flex; }
 .hud-warp-phase {
   font-size: 10px;
   font-weight: 700;
@@ -388,6 +390,10 @@ body[data-warpphase='jump'] .hud-warp-panel { display: flex; }
 .hud-drive[data-mode='warp'] {
   color: #a8c4ff;
   text-shadow: 0 0 10px rgba(140, 170, 255, 0.7);
+}
+.hud-drive[data-mode='flip'] {
+  color: #7fd4ff;
+  text-shadow: 0 0 10px rgba(111, 211, 232, 0.6);
 }
 .hud-grav {
   font-size: 10px;
@@ -1145,6 +1151,7 @@ body[data-hit='1'] .hud-activity {
 }
 .hud-touch-btn:active { background: rgba(111, 211, 232, 0.3); }
 .hud-touch-boost { border-color: rgba(232, 161, 60, 0.6); color: #f2c98a; }
+.hud-touch-flip { border-color: rgba(111, 211, 232, 0.55); color: #a8e4f2; }
 
 /* Mobile layout: compact cockpit */
 @media (max-width: 900px), (max-height: 560px) {

@@ -44,8 +44,8 @@ export function Welcome() {
             <div>
               <span className="hud-key">STICK</span> steer · <span className="hud-key">BURN</span>{' '}
               thrust · <span className="hud-key">BOOST</span> afterburner ·{' '}
-              <span className="hud-key">REV</span> reverse · <span className="hud-key">JUMP DRIVE</span>{' '}
-              fast travel
+              <span className="hud-key">REV</span> reverse · <span className="hud-key">FLIP</span>{' '}
+              180° · <span className="hud-key">JUMP DRIVE</span> fast travel
             </div>
           ) : (
             <>
@@ -55,8 +55,9 @@ export function Welcome() {
               </div>
               <div>
                 <span className="hud-key">Q/E</span> strafe · <span className="hud-key">SHIFT</span>{' '}
-                afterburner · <span className="hud-key">N</span> jump ·{' '}
-                <span className="hud-key">drag</span> admire the ship
+                afterburner · <span className="hud-key">X</span> flip ·{' '}
+                <span className="hud-key">N</span> jump · <span className="hud-key">drag</span> admire
+                the ship
               </div>
             </>
           )}

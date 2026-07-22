@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
+import { requestFlip } from '../physics/flip'
 import { activityState } from '../state/activityState'
 import { IS_TOUCH } from '../config/quality'
 
@@ -111,6 +112,9 @@ export function TouchControls() {
             RE-RUN
           </button>
         )}
+        <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>
+          FLIP
+        </button>
         <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
           BOOST
         </button>
