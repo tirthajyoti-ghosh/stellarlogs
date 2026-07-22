@@ -8,8 +8,9 @@
  * SPLIT the aft tank pod off the tank/valve/support meshes (triangle filter
  * along the long axis) into a separate 'pod' node — the severed section that
  * drifts beside the hull; DARKEN every material to a cold dead palette;
- * simplify; normalize to origin-centered, long axis = X, length 42u;
- * compress textures. Output nodes: 'hull' + 'pod'.
+ * simplify; normalize to origin-centered, long axis = X, length 72u —
+ * Canterbury-class: ~11× the player's gunship, the way an ice hauler
+ * should dwarf a corvette. Output nodes: 'hull' + 'pod'.
  */
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions'
@@ -137,8 +138,8 @@ await doc.transform(
   simplify({ simplifier: MeshoptSimplifier, ratio: 0.15, error: 0.008 }),
 )
 
-// ---- normalize: center origin, long axis → X, length 42 ----
-const scale = 42 / size[axis]
+// ---- normalize: center origin, long axis → X, length 72 ----
+const scale = 72 / size[axis]
 const center = [0, 1, 2].map((a) => (min[a] + max[a]) / 2)
 const rot =
   axis === 0

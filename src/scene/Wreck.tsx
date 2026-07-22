@@ -53,7 +53,7 @@ function WreckBody() {
         <primitive object={hull} />
       </group>
       {/* The severed aft section, drifting apart ever so slowly */}
-      <group ref={podRef} position={[19, 6.5, -9]} rotation={[0.9, 0.2, 0.5]}>
+      <group ref={podRef} position={[33, 11, -15]} rotation={[0.9, 0.2, 0.5]}>
         <primitive object={pod} />
       </group>
     </>
@@ -74,7 +74,7 @@ function VigilBuoy() {
     material.color.setRGB(on ? 3.4 : 0.4, on ? 1.4 : 0.18, on ? 0.9 : 0.12)
   })
   return (
-    <group position={[-16, 10, 6]} scale={0.85}>
+    <group position={[-28, 16, 11]} scale={0.85}>
       <primitive object={gltf.scene} />
       <mesh position={[0, 3.4, 0]} ref={strobeRef}>
         <sphereGeometry args={[1.1, 8, 8]} />
@@ -94,7 +94,7 @@ export function Wreck() {
       color: '#a8b8c8',
       kind: 'poi',
       position: POSITION,
-      yOffset: 55,
+      yOffset: 90,
       el: null,
       detail: 'WRECK · ICE HAULER · LOST TO RAIDERS',
       jumpStandoff: WRECK_POI.standoff,
@@ -125,7 +125,7 @@ export function Wreck() {
       </Suspense>
 
       {/* The painted plaque, hung slightly crooked over the hull */}
-      <group ref={plaqueRef} position={[0, 26, 0]}>
+      <group ref={plaqueRef} position={[0, 44, 0]}>
         <group rotation-z={-0.045}>
           <Text
             font={FONT_BOLD}
@@ -158,7 +158,7 @@ export function Wreck() {
       </group>
 
       {/* Cold, faint working light from the vigil buoy's floodlamp */}
-      <pointLight position={[-14, 16, 8]} color="#aab8cc" intensity={2.2} distance={90} decay={1.8} />
+      <pointLight position={[-24, 24, 12]} color="#aab8cc" intensity={3} distance={160} decay={1.8} />
     </group>
   )
 }
