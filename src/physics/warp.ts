@@ -11,7 +11,7 @@ import { Vector3 } from 'three'
 
 export type WarpPhase = 'idle' | 'align' | 'burn' | 'flip' | 'brake' | 'turnback'
 
-const FLIP_SECONDS = 1.35
+const FLIP_SECONDS = 1.7
 
 interface WarpState {
   phase: WarpPhase
@@ -26,6 +26,11 @@ interface WarpState {
   legT: number
   accel: number
   peakSpeed: number
+  /** Transient roll (rad, about the hull's long axis) during the swimmer turn */
+  roll: number
+  /** Attitude snapshot at the start of a flip/turnback maneuver */
+  flipY0: number
+  flipP0: number
 }
 
 export const warp: WarpState = {
@@ -37,6 +42,9 @@ export const warp: WarpState = {
   legT: 0,
   accel: 0,
   peakSpeed: 0,
+  roll: 0,
+  flipY0: 0,
+  flipP0: 0,
 }
 
 /** Remaining auto-rotation, radians — drives the RCS thruster visuals. */
@@ -73,6 +81,7 @@ export function startWarp(destination: Vector3, shipPosition: Vector3, standoff:
 
 export function cancelWarp(): void {
   warp.phase = 'idle'
+  warp.roll = 0
   warpTurn.yaw = 0
   warpTurn.pitch = 0
 }
@@ -103,6 +112,37 @@ function slewTo(state: WarpableShip, yawTarget: number, pitchTarget: number, rat
   state.yaw += Math.sign(dy) * Math.min(Math.abs(dy) * 3 * dt, rate * dt)
   state.pitch += Math.sign(dp) * Math.min(Math.abs(dp) * 3 * dt, rate * dt)
   return Math.abs(dy) < 0.04 && Math.abs(dp) < 0.04
+}
+
+/**
+ * The swimmer's tumble turn: a vertical end-over-end pitch (the somersault)
+ * with a half-twist roll folded in. The algebra is exact — R_y(y)·R_x(p+π)·
+ * R_roll(π) ≡ R_y(y+π)·R_x(−p) — so the path lands PRECISELY on the
+ * retrograde yaw/pitch attitude with zero residual roll, and the state can
+ * snap to that clean parametrization at the end without a visible pop.
+ * Returns true when the maneuver completes.
+ */
+function stepTumbleTurn(state: WarpableShip, dt: number): boolean {
+  warp.t += dt
+  const s = Math.min(1, warp.t / FLIP_SECONDS)
+  const e = s * s * (3 - 2 * s) // smoothstep: gentle start, gentle settle
+  state.yaw = warp.flipY0
+  state.pitch = warp.flipP0 + Math.PI * e
+  warp.roll = Math.PI * e
+  warpTurn.yaw = 0
+  warpTurn.pitch = Math.PI * (1 - e)
+  if (s >= 1) {
+    // Snap to the equivalent clean attitude (visually identical), prev too,
+    // so the renderer's interpolation never sees the representation jump
+    state.yaw = wrapAngle(warp.flipY0 + Math.PI)
+    state.pitch = -warp.flipP0
+    state.prevYaw = state.yaw
+    state.prevPitch = state.pitch
+    warp.roll = 0
+    warpTurn.pitch = 0
+    return true
+  }
+  return false
 }
 
 /** Drive the ship through a warp frame. Replaces the normal physics step. */
@@ -148,26 +188,18 @@ export function stepWarp(state: WarpableShip, dt: number): void {
     state.position.addScaledVector(warp.dir, state.speed * dt)
     if (warp.t >= warp.legT) {
       warp.t = 0
+      warp.flipY0 = state.yaw
+      warp.flipP0 = state.pitch
       warp.phase = 'flip'
     }
     return
   }
 
   if (warp.phase === 'flip') {
-    // Thrust cut: coast at peak speed while the hull swings end-over-end
-    warp.t += dt
+    // Thrust cut: coast at peak speed through the swimmer turn
     state.speed = warp.peakSpeed
     state.position.addScaledVector(warp.dir, state.speed * dt)
-    const settled = slewTo(
-      state,
-      Math.atan2(warp.dir.x, warp.dir.z),
-      Math.asin(Math.max(-1, Math.min(1, -warp.dir.y))),
-      Math.PI / FLIP_SECONDS + 0.6,
-      dt,
-    )
-    if (settled && warp.t >= FLIP_SECONDS * 0.7) {
-      warpTurn.yaw = 0
-      warpTurn.pitch = 0
+    if (stepTumbleTurn(state, dt)) {
       warp.t = 0
       warp.phase = 'brake'
     }
@@ -183,24 +215,18 @@ export function stepWarp(state: WarpableShip, dt: number): void {
       state.velocity.set(0, 0, 0)
       state.speed = 0
       warp.t = 0
+      warp.flipY0 = state.yaw
+      warp.flipP0 = state.pitch
       warp.phase = 'turnback'
     }
     return
   }
 
-  // turnback: at rest, come about — nose swings from retrograde back onto
-  // the destination so the pilot is handed the ship pointed the right way
+  // turnback: at rest, come about — the same tumble turn swings the nose
+  // from retrograde back onto the destination, handing the pilot a ship
+  // pointed the way they're going
   state.speed = 0
-  const settled = slewTo(
-    state,
-    Math.atan2(-warp.dir.x, -warp.dir.z),
-    Math.asin(Math.max(-1, Math.min(1, warp.dir.y))),
-    2.4,
-    dt,
-  )
-  if (settled) {
-    warpTurn.yaw = 0
-    warpTurn.pitch = 0
+  if (stepTumbleTurn(state, dt)) {
     warp.phase = 'idle'
   }
 }

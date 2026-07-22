@@ -37,6 +37,9 @@ interface RcsPod {
   dir: [number, number, number]
   fire: (input: ShipInput) => number
 }
+const _rollQuat = new Quaternion()
+const _rollAxis = new Vector3(0, 0, 1)
+
 /** Reused container for the FLIP autopilot's synthetic stick (no per-frame alloc) */
 const flipInputObj: ShipInput = {
   thrust: 0,
@@ -190,6 +193,11 @@ export function Ship() {
     const yaw = MathUtils.lerp(state.prevYaw, state.yaw, alpha)
     const pitch = MathUtils.lerp(state.prevPitch, state.pitch, alpha)
     shipQuaternion(yaw, pitch, rig.quaternion)
+    // Swimmer-turn half-twist: transient roll about the hull's long axis
+    // while the jump autopilot tumbles the ship end-over-end
+    if (warp.roll !== 0) {
+      rig.quaternion.multiply(_rollQuat.setFromAxisAngle(_rollAxis, warp.roll))
+    }
 
     // Epstein-style drive exhaust: layered core + glow, flicker under thrust,
     // stretched white-hot afterburner while boosting. A brachistochrone's
