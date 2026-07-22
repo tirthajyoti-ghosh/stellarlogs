@@ -7,7 +7,6 @@ import { ChaseCamera } from './scene/ChaseCamera'
 import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
-import { WarpStreaks } from './scene/WarpStreaks'
 import { Asteroids } from './scene/Asteroids'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -46,7 +45,6 @@ export default function App() {
           <StarSystem key={system.id} config={system} />
         ))}
         <ContactStation />
-        <WarpStreaks />
         <Asteroids />
         <Suspense fallback={null}>
           <GunneryRange />

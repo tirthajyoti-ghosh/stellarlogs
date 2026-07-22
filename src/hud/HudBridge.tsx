@@ -51,7 +51,7 @@ export function HudBridge() {
     }
     if (hudReadouts.driveEl) {
       hudReadouts.driveEl.textContent = shipRig.warping
-        ? warp.phase === 'flip'
+        ? warp.phase === 'flip' || warp.phase === 'turnback'
           ? 'FLIP'
           : warp.phase === 'align'
             ? 'ALIGN'
@@ -404,7 +404,9 @@ export function HudBridge() {
             ? 'BURN'
             : warp.phase === 'flip'
               ? 'FLIP'
-              : 'BRAKE BURN'
+              : warp.phase === 'brake'
+                ? 'BRAKE BURN'
+                : 'COMING ABOUT'
       const flipEta = timeToFlip()
       const arriveEta = timeToArrival()
       hudReadouts.warpDistEl.textContent =

@@ -3,12 +3,13 @@ import { useFrame } from '@react-three/fiber'
 import { Euler, MathUtils, PerspectiveCamera, Quaternion, Vector3 } from 'three'
 import { shipRig } from '../state/shipRig'
 import { cameraLook } from '../state/cameraLook'
+import { warp, warpBurning } from '../physics/warp'
+import { shipQuaternion } from '../physics/integrator'
 
 const OFFSET = new Vector3(0, 3.6, 13) // behind and above, in ship space
 const LOOK_AHEAD = new Vector3(0, 1.2, -14)
 const BASE_FOV = 62
 const BOOST_FOV = 76
-const WARP_FOV = 98
 // Extra camera pull-back per unit of ship speed (sense of velocity)
 const SPEED_PULLBACK = 0.012
 
@@ -17,6 +18,7 @@ const _look = new Vector3()
 const _lookAhead = new Vector3()
 const _orbitQuat = new Quaternion()
 const _orbitEuler = new Euler()
+const _travelQuat = new Quaternion()
 
 /**
  * Smoothed third-person chase camera. The camera rides WITH the ship (offset
@@ -51,15 +53,35 @@ export function ChaseCamera() {
     _orbitEuler.set(orbit.current.pitch, orbit.current.yaw, 0, 'YXZ')
     _orbitQuat.setFromEuler(_orbitEuler)
 
+    // During a brachistochrone transit the CAMERA holds the travel frame:
+    // it keeps flying toward the destination while the SHIP flips inside the
+    // shot — nose swinging around to face the lens at midpoint, and swinging
+    // back on arrival. The camera itself never flips.
+    const transit =
+      warp.phase === 'burn' ||
+      warp.phase === 'flip' ||
+      warp.phase === 'brake' ||
+      warp.phase === 'turnback'
+    let frameQuat = shipRig.quaternion
+    if (transit) {
+      const d = warp.dir
+      shipQuaternion(
+        Math.atan2(-d.x, -d.z),
+        Math.asin(Math.max(-1, Math.min(1, d.y))),
+        _travelQuat,
+      )
+      frameQuat = _travelQuat
+    }
+
     // Desired offset in world space: pulled in while orbiting (hero shot),
     // pushed out slightly with speed
-    // Pullback caps at sub-light speeds so warp doesn't shrink the ship away
+    // Pullback caps at sub-light speeds so a hard burn doesn't shrink the ship away
     const pullback = 1 + Math.min(shipRig.speed, 520) * SPEED_PULLBACK * 0.1
     _desiredOffset
       .copy(OFFSET)
       .multiplyScalar((1 - orbitAmount * 0.45) * pullback)
       .applyQuaternion(_orbitQuat)
-      .applyQuaternion(shipRig.quaternion)
+      .applyQuaternion(frameQuat)
 
     if (!initialized.current) {
       offset.current.copy(_desiredOffset)
@@ -71,9 +93,9 @@ export function ChaseCamera() {
     // Camera rides with the ship — position lag never scales with speed
     cam.position.copy(shipRig.position).add(offset.current)
     // Fine high-frequency shake while the drive is punching
-    if (shipRig.warping && shipRig.speed > 2000) {
+    if (warpBurning() && shipRig.speed > 300) {
       const t = performance.now() / 1000
-      const amp = Math.min(1, shipRig.speed / 14000) * 0.5
+      const amp = Math.min(1, shipRig.speed / 4000) * 0.35
       cam.position.x += Math.sin(t * 61.7) * amp
       cam.position.y += Math.sin(t * 47.3 + 1.7) * amp
       cam.position.z += Math.sin(t * 53.9 + 3.1) * amp
@@ -89,13 +111,13 @@ export function ChaseCamera() {
     }
 
     // While orbiting, keep the ship itself centered; when settled behind,
-    // look ahead of the nose for flying
-    _lookAhead.copy(LOOK_AHEAD).applyQuaternion(shipRig.quaternion).add(shipRig.position)
+    // look ahead of the nose (or down the travel line during a transit)
+    _lookAhead.copy(LOOK_AHEAD).applyQuaternion(frameQuat).add(shipRig.position)
     _look.copy(shipRig.position).lerp(_lookAhead, 1 - orbitAmount)
     cam.up.set(0, 1, 0)
     cam.lookAt(_look)
 
-    const targetFov = shipRig.warping ? WARP_FOV : shipRig.boosting ? BOOST_FOV : BASE_FOV
+    const targetFov = warpBurning() || shipRig.boosting ? BOOST_FOV : BASE_FOV
     if (Math.abs(cam.fov - targetFov) > 0.05) {
       cam.fov = MathUtils.lerp(cam.fov, targetFov, 1 - Math.exp(-4 * dt))
       cam.updateProjectionMatrix()

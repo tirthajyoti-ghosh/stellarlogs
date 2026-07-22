@@ -9,7 +9,7 @@ import { Vector3 } from 'three'
  * most iconic readout: TIME TO FLIP.
  */
 
-export type WarpPhase = 'idle' | 'align' | 'burn' | 'flip' | 'brake'
+export type WarpPhase = 'idle' | 'align' | 'burn' | 'flip' | 'brake' | 'turnback'
 
 const FLIP_SECONDS = 1.35
 
@@ -174,13 +174,33 @@ export function stepWarp(state: WarpableShip, dt: number): void {
     return
   }
 
-  // brake: retro burn all the way down to rest
-  warp.t += dt
-  state.speed = Math.max(0, warp.peakSpeed - warp.accel * warp.t)
-  state.position.addScaledVector(warp.dir, state.speed * dt)
-  if (state.speed <= 2 || dist < 30) {
+  if (warp.phase === 'brake') {
+    // retro burn all the way down to rest
+    warp.t += dt
+    state.speed = Math.max(0, warp.peakSpeed - warp.accel * warp.t)
+    state.position.addScaledVector(warp.dir, state.speed * dt)
+    if (state.speed <= 2 || dist < 30) {
+      state.velocity.set(0, 0, 0)
+      state.speed = 0
+      warp.t = 0
+      warp.phase = 'turnback'
+    }
+    return
+  }
+
+  // turnback: at rest, come about — nose swings from retrograde back onto
+  // the destination so the pilot is handed the ship pointed the right way
+  state.speed = 0
+  const settled = slewTo(
+    state,
+    Math.atan2(-warp.dir.x, -warp.dir.z),
+    Math.asin(Math.max(-1, Math.min(1, warp.dir.y))),
+    2.4,
+    dt,
+  )
+  if (settled) {
+    warpTurn.yaw = 0
+    warpTurn.pitch = 0
     warp.phase = 'idle'
-    state.velocity.set(0, 0, 0)
-    state.speed = 0
   }
 }
