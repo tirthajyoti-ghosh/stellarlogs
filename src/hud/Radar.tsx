@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
-import { GUNNERY_POI } from '../config/pois'
+import { BELTRUN_POI, GUNNERY_POI } from '../config/pois'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
@@ -182,7 +182,7 @@ export function Radar() {
             standoff: 420,
           })
         }
-        // Gunnery range POI — jump lands outside its auto-start ring
+        // Activity POIs — jumps land outside their auto-start triggers
         const gp = plot(GUNNERY_POI.position[0], GUNNERY_POI.position[2], '#ffb454', 2.2)
         if (gp) {
           blips.current.push({
@@ -190,6 +190,15 @@ export function Radar() {
             py: gp.py,
             position: new Vector3(...GUNNERY_POI.position),
             standoff: GUNNERY_POI.standoff,
+          })
+        }
+        const bp = plot(BELTRUN_POI.position[0], BELTRUN_POI.position[2], '#7fe0f0', 2.2)
+        if (bp) {
+          blips.current.push({
+            px: bp.px,
+            py: bp.py,
+            position: new Vector3(...BELTRUN_POI.position),
+            standoff: BELTRUN_POI.standoff,
           })
         }
       }

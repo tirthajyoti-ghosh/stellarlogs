@@ -289,6 +289,7 @@ export function GunneryRange() {
       yOffset: 95,
       el: null,
       detail: 'PDC DEFENSE DRILL · AUTO-ENGAGES ON ENTRY',
+      jumpStandoff: GUNNERY_POI.standoff,
     })
     labelsChanged()
     return () => {
@@ -520,16 +521,23 @@ export function GunneryRange() {
       }
     }
 
-    // ---- HUD state ----
+    // ---- HUD state (claim the shared panel only while engaged) ----
     activityState.battle = battleRunning
     activityState.threats = battleRunning ? torpedoes : []
-    activityState.active = inArmZone || battleRunning || g.phase === 'over'
+    const engaged = inArmZone || battleRunning || g.phase === 'over'
+    if (engaged) {
+      activityState.owner = 'gunnery'
+      activityState.active = true
+    } else if (activityState.owner === 'gunnery') {
+      activityState.owner = ''
+      activityState.active = false
+    }
     activityState.hull = g.hull
     activityState.hullMax = 3
     activityState.wave = battleRunning ? g.wave : 0
     activityState.waveMax = 3
     activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
-    if (activityState.active) {
+    if (engaged) {
       activityState.title =
         g.veteran && battleRunning ? 'PDC DEFENSE — VETERAN' : 'PDC DEFENSE DRILL'
       const coach =

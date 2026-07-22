@@ -2,6 +2,7 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
 import { threatEls } from './ThreatLayer'
+import { raceEls } from './RaceLayer'
 import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
@@ -187,6 +188,54 @@ export function HudBridge() {
     // Battle: the contact box stands down (hidden via CSS) — threat data
     // lives in the BattleHud warning strip + bracket markers instead.
 
+    // Race marker: bracket the next gate, edge chevron when off-screen
+    {
+      const el = raceEls.root
+      if (el) {
+        const target = activityState.raceTarget
+        if (target && !activityState.battle) {
+          _p.set(target.x, target.y, target.z)
+          const dist = _p.distanceTo(shipRig.position)
+          _p.project(camera)
+          const behind = _p.z > 1
+          let x = (_p.x * 0.5 + 0.5) * size.width
+          let y = (-_p.y * 0.5 + 0.5) * size.height
+          if (behind) {
+            x = size.width - x
+            y = size.height
+          }
+          const offscreen =
+            behind || x < EDGE || x > size.width - EDGE || y < EDGE || y > size.height - 235
+          let arrowDeg = 0
+          if (offscreen) {
+            const cx = size.width / 2
+            const cy = size.height / 2
+            const ox = x - cx
+            const oy = y - cy
+            const scale = Math.min(
+              (size.width / 2 - EDGE) / Math.max(1e-4, Math.abs(ox)),
+              (oy > 0 ? size.height / 2 - 235 : size.height / 2 - EDGE) / Math.max(1e-4, Math.abs(oy)),
+            )
+            x = cx + ox * scale
+            y = cy + oy * scale
+            arrowDeg = Math.round((Math.atan2(oy, ox) * 180) / Math.PI) + 90
+          }
+          el.style.opacity = '1'
+          el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+          el.dataset.off = offscreen ? '1' : ''
+          const arrow = el.querySelector<HTMLElement>('.hud-race-arrow')
+          if (arrow) arrow.style.transform = `rotate(${arrowDeg}deg)`
+          const label = el.querySelector<HTMLElement>('.hud-race-label')
+          if (label && label.textContent !== activityState.raceTargetLabel)
+            label.textContent = activityState.raceTargetLabel
+          const distEl = el.querySelector<HTMLElement>('.hud-race-dist')
+          if (distEl) distEl.textContent = `${Math.round(dist)}`
+        } else {
+          el.style.opacity = '0'
+        }
+      }
+    }
+
     // Drift marker: project where the ship is ACTUALLY traveling. In
     // Newtonian flight nose ≠ velocity; this is the counter-burn datum.
     {
@@ -296,8 +345,11 @@ export function HudBridge() {
       if (target.kind === 'station') {
         hudReadouts.targetJump = { position: target.position, standoff: 420 }
       } else if (target.kind === 'poi') {
-        // Land OUTSIDE the activity's auto-start ring — see it, then enter it
-        hudReadouts.targetJump = { position: target.position, standoff: GUNNERY_POI.standoff }
+        // Land OUTSIDE the activity's auto-start trigger — see it, then enter
+        hudReadouts.targetJump = {
+          position: target.position,
+          standoff: target.jumpStandoff ?? GUNNERY_POI.standoff,
+        }
       } else {
         let sys = ALL_SYSTEMS[0]
         let best = Infinity
@@ -352,7 +404,9 @@ export function HudBridge() {
       let visible: boolean
       if (label.kind === 'system') visible = dist > 1600
       else if (label.kind === 'planet') visible = dist < 2200 && dist > 140
-      else if (label.kind === 'poi') visible = dist < 4000 && dist > 700
+      else if (label.kind === 'poi')
+        // POI labels stand down while race guidance is on screen
+        visible = dist < 4000 && dist > 700 && !activityState.raceTarget
       else visible = dist < 2600 && dist > 220
 
       // Mid-jump, focus the HUD: only the destination marker stays up

@@ -4,6 +4,7 @@ import { HeadingTape } from './HeadingTape'
 import { WarpPanel } from './WarpPanel'
 import { ActivityPanel } from './ActivityPanel'
 import { ThreatLayer } from './ThreatLayer'
+import { RaceLayer } from './RaceLayer'
 import { BattleFx } from './BattleFx'
 import { BattleHud } from './BattleHud'
 import { Welcome } from './Welcome'
@@ -20,6 +21,7 @@ export function HUD() {
       <div className="hud-damage" />
       <LabelLayer />
       <ThreatLayer />
+      <RaceLayer />
       <BattleHud />
       <BattleFx />
       <HeadingTape />
