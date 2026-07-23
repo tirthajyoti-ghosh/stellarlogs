@@ -79,19 +79,18 @@ interface SystemPlacement {
 }
 
 /**
- * Dense, glanceable neighborhood (experience redesign 2026-07): all systems
- * 3.5–6.5k from spawn, cruisable in 30–60s of boost, warp for hops. Projects
- * burns dead ahead of spawn; activities live in the seams between systems.
- * Minimum inter-system spacing 3.2k (> 2× the 1400 outermost orbit).
+ * The neighborhood, opened up (2026-07-23): systems 4.2–9.1k from spawn with
+ * ≥3.8k between neighbors — breathing room between the ports, activities in
+ * the seams. Projects still burns dead ahead of spawn; warp for the hops.
  */
 const PLACEMENTS: SystemPlacement[] = [
-  { content: PROJECTS, position: [0, 0, -2900], seedBase: 1 },
-  { content: WORK, position: [-3600, 300, -2700], seedBase: 11 },
-  { content: BLOG, position: [4800, -250, -1800], seedBase: 21 },
-  { content: RECOMMENDATIONS, position: [-6300, 200, -300], seedBase: 31 },
-  { content: READING, position: [5600, 500, 2900], seedBase: 41 },
-  { content: SHOWS, position: [3000, -500, 4400], seedBase: 51 },
-  { content: TRAVEL, position: [-4400, -350, 3800], seedBase: 61 },
+  { content: PROJECTS, position: [0, 0, -4200], seedBase: 1 },
+  { content: WORK, position: [-5200, 430, -3900], seedBase: 11 },
+  { content: BLOG, position: [7000, -360, -2600], seedBase: 21 },
+  { content: RECOMMENDATIONS, position: [-9100, 290, -450], seedBase: 31 },
+  { content: READING, position: [8100, 720, 4200], seedBase: 41 },
+  { content: SHOWS, position: [4350, -720, 6400], seedBase: 51 },
+  { content: TRAVEL, position: [-6400, -500, 5500], seedBase: 61 },
 ]
 
 function buildSystem({ content, position, seedBase }: SystemPlacement): SystemConfig {
@@ -121,4 +120,56 @@ function buildSystem({ content, position, seedBase }: SystemPlacement): SystemCo
   }
 }
 
-export const ALL_SYSTEMS: SystemConfig[] = PLACEMENTS.map(buildSystem)
+/**
+ * THE TRACK — the Drift Racing Club's slingshot circuit: a dim red dwarf
+ * with two heavy, nearly-parked gas giants whose gravity wells ARE the
+ * course. Not a content system; the giants' boards belong to the club.
+ * (Racing migrated here from the Projects belt — see story-layer doc.)
+ */
+const RACE_CONTROL: ContentItem = {
+  title: 'Race Control — The Track',
+  subtitle: 'Drift Racing Club · slingshot circuit',
+  overview:
+    'Ten gates, two gravity wells, one clock. Cross the START ring and fly the line — the giants will bend it for you if you dare them close. Kids from the Amnia run this in 80 flat.',
+}
+const THE_BOARD: ContentItem = {
+  title: 'The Board',
+  subtitle: 'Fast times · Drift Racing Club',
+  overview:
+    'The club keeps the times. The line between a fast lap and a scattering of debris is how deep you cut the wells. Fly sasa, beratna.',
+}
+
+const TRACK_SYSTEM: SystemConfig = {
+  id: 'track',
+  name: 'The Track',
+  starColor: '#ff6a50',
+  starRadius: 120,
+  position: [5200, 200, -6000],
+  overview: "The Drift Racing Club's slingshot circuit.",
+  planets: [
+    {
+      type: 'gasGiant',
+      rings: true,
+      radius: 70,
+      orbitRadius: 500,
+      orbitSpeed: 0.0009,
+      phase: 0,
+      seed: 71,
+      inclination: 0.03,
+      item: RACE_CONTROL,
+    },
+    {
+      type: 'gasGiant',
+      rings: false,
+      radius: 60,
+      orbitRadius: 900,
+      orbitSpeed: 0.0007,
+      phase: Math.PI,
+      seed: 72,
+      inclination: -0.04,
+      item: THE_BOARD,
+    },
+  ],
+}
+
+export const ALL_SYSTEMS: SystemConfig[] = [...PLACEMENTS.map(buildSystem), TRACK_SYSTEM]
