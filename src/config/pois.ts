@@ -40,5 +40,5 @@ export const WRECK_POI = {
  */
 export const DRIFT_POI = {
   position: [-731, -25, -1092] as [number, number, number],
-  standoff: 420,
+  standoff: 540,
 }
