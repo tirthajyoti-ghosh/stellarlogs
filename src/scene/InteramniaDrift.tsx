@@ -56,7 +56,8 @@ function DriftBody() {
       const material = (
         Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
       ) as MeshStandardMaterial
-      material.envMapIntensity = 1.1
+      // dusty regolith, not a showroom: keep reflections nearly off
+      material.envMapIntensity = 0.35
       // the windows are the life of the place
       material.emissiveIntensity = Math.max(material.emissiveIntensity, 1.7)
     })

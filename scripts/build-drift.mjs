@@ -17,10 +17,10 @@ import {
   transformPrimitive,
   joinPrimitives,
   weld,
-  simplify,
   textureCompress,
   reorder,
   quantize,
+  normals,
 } from '@gltf-transform/functions'
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer'
 import { Matrix4 } from 'three'
@@ -70,7 +70,7 @@ for (const prim of outMesh.listPrimitives()) {
   const srcIdx = prim.getIndices().getArray()
   const targetCount = Math.min(
     Math.floor(srcIdx.length / 3) * 3,
-    Math.max(600, Math.floor((srcIdx.length * 0.08) / 3) * 3),
+    Math.max(600, Math.floor((srcIdx.length * 0.16) / 3) * 3),
   )
   const [sloppyIdx] = MeshoptSimplifier.simplifySloppy(
     new Uint32Array(srcIdx),
@@ -125,7 +125,21 @@ const bake = new Matrix4()
   .multiply(new Matrix4().makeTranslation(-center[0], -center[1], -center[2]))
 for (const prim of outMesh.listPrimitives()) transformPrimitive(prim, bake.toArray())
 
+// A rock is REGOLITH, not chrome: the big FBX materials ship metal=1 with an
+// MR texture that smears to gloss at prop resolution. Strip them matte; the
+// window/glow materials keep their emissive life untouched.
+for (const material of root.listMaterials()) {
+  if (material.getMetallicRoughnessTexture()) {
+    material.setMetallicRoughnessTexture(null)
+    material.setMetallicFactor(0.12)
+    material.setRoughnessFactor(0.96)
+  }
+}
+
 await doc.transform(
+  // Sloppy decimation leaves stale vertex normals on giant new facets —
+  // recompute so the shading matches the actual geometry
+  normals({ overwrite: true }),
   prune(),
   dedup(),
   textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [384, 384] }),
