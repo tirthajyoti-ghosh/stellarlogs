@@ -18,44 +18,44 @@ import { activityState } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerFanfare, triggerGatePing } from '../../audio/engine'
-import { BELTRUN_POI } from '../../config/pois'
+import { TRACK_POI } from '../../config/pois'
 import { FONT_BOLD } from '../boards/font'
 
 /**
- * F.2 — BELT RUN. A time trial threading the Projects asteroid belt: fly
- * through the START ring and the clock runs; pass ten gates IN ORDER; the
- * finish line stops it. Pure friction-is-fun — the whole challenge is
- * wrestling Newtonian momentum through a curve (drift wide, counter-burn,
- * dive through the band). Finite win = finish the run; beat PAR / your best
- * for the retry loop. Gates are buoy hardware + holographic guidance rings;
- * crossing START again mid-run restarts (racing convention, no menus).
+ * F.2 — THE TRACK. The Drift Racing Club's slingshot circuit, the canon
+ * Belter sport: ten gates around a dim red dwarf whose two heavy gas giants
+ * BEND your line — the fast lap cuts deep into their wells and lets gravity
+ * do the turning (racing migrated here from the Projects belt). Cross the
+ * START ring and the clock runs; gates IN ORDER; the finish line stops it.
+ * Crossing START again mid-run restarts. Gates are buoy hardware + holo
+ * guidance rings.
  */
 
-const CENTER = new Vector3(0, 0, -2900) // Projects system / belt center
-const BASE_R = 1800 // belt ring radius (band is ±150)
+const CENTER = new Vector3(5200, 200, -6000) // the Track system core
+const BASE_R = 750 // circuit radius threading between the giants' orbits
 const APERTURE = 60
-const PAR = 75
+const PAR = 80
 const PANEL_RANGE = 850 // idle panel + START marker wake-up distance
 const CORRIDOR = 1300 // max distance from the next gate before DNF grace
 const GRACE_SECONDS = 8
-const BEST_KEY = 'stellarlogs-beltrun-best'
+const BEST_KEY = 'stellarlogs-track-best'
 const BUOY_URL = '/models/buoy.glb'
 const POSTS_PER_GATE = 4
 
-/** Course: (θ° around the belt, radial offset, height). Weaves through the
- *  rock band — outside lane, dive inside, a hairpin kink, climb back out. */
+/** Course: (θ° around the star, radial offset, height). Giant A parks at
+ *  θ0°/r500, giant B at θ180°/r900 — gates 2 and 6 cut INTO their wells so
+ *  gravity bends the line between gates; the rest of the lap swings wide. */
 const COURSE: [number, number, number][] = [
-  [80, -15, -20], // START
-  [70, 0, 40],
-  [61, 140, 90],
-  [52, -120, 20],
-  [43, -160, -70],
-  [35, 40, -110],
-  [28, -260, -30], // the kink: brake, turn hard
-  [19, 120, 60],
-  [10, 170, 110],
-  [1, 0, 30],
-  [-8, -40, -10], // FINISH
+  [-90, 150, -20], // START — south side, facing the approach
+  [-50, -30, 30],
+  [-10, -180, 60], // the A-dive: 47u off the giant's cloud tops
+  [30, -80, -40],
+  [75, 40, 80],
+  [120, 100, 20],
+  [170, 170, -60], // the B-hairpin: through the far giant's well
+  [215, 30, 60],
+  [250, -20, 0],
+  [285, 150, -10], // FINISH beside the start line
 ]
 const LAST = COURSE.length - 1
 
@@ -131,15 +131,15 @@ export function BeltRun() {
 
   useEffect(() => {
     const unregister = registerHudLabel({
-      id: 'poi-beltrun',
-      name: 'BELT RUN',
+      id: 'poi-track',
+      name: 'THE TRACK',
       color: '#7fe0f0',
       kind: 'poi',
       position: gates[0].position,
       yOffset: 110,
       el: null,
       detail: 'SLINGSHOT CIRCUIT · CROSS THE START GATE',
-      jumpStandoff: BELTRUN_POI.standoff,
+      jumpStandoff: TRACK_POI.standoff,
     })
     labelsChanged()
     return () => {
@@ -201,7 +201,7 @@ export function BeltRun() {
       g.graceUntil = 0
       triggerGatePing(0)
       activityState.banner = {
-        text: restart ? 'RESTART — GATE 1' : 'GO — 10 GATES',
+        text: restart ? 'RESTART — GATE 1' : `GO — ${LAST} GATES`,
         kind: 'info',
         until: now + 1.8,
       }
@@ -273,7 +273,7 @@ export function BeltRun() {
     if (engaged) {
       activityState.owner = 'beltrun'
       activityState.active = true
-      activityState.title = 'BELT RUN — SLINGSHOT CIRCUIT'
+      activityState.title = 'THE TRACK — SLINGSHOT CIRCUIT'
       activityState.hint =
         g.phase === 'idle' ? 'FLY THROUGH THE START GATE — THE CLOCK RUNS AT THE LINE' : ''
       activityState.lines = [
@@ -405,7 +405,7 @@ export function BeltRun() {
           material-transparent
           fillOpacity={0.9}
         >
-          BELT RUN
+          THE TRACK
         </Text>
         <Text
           font={FONT_BOLD}

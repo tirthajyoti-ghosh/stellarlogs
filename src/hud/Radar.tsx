@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
-import { BELTRUN_POI, DRIFT_POI, GUNNERY_POI, WRECK_POI } from '../config/pois'
+import { DRIFT_POI, GUNNERY_POI, TRACK_POI, WRECK_POI } from '../config/pois'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
@@ -91,7 +91,7 @@ export function Radar() {
           break
         }
       }
-      const range = battle ? 900 : nearSystem ? 1900 : 9000
+      const range = battle ? 900 : nearSystem ? 1900 : 12000
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
@@ -192,13 +192,13 @@ export function Radar() {
             standoff: GUNNERY_POI.standoff,
           })
         }
-        const bp = plot(BELTRUN_POI.position[0], BELTRUN_POI.position[2], '#7fe0f0', 2.2)
+        const bp = plot(TRACK_POI.position[0], TRACK_POI.position[2], '#7fe0f0', 2.2)
         if (bp) {
           blips.current.push({
             px: bp.px,
             py: bp.py,
-            position: new Vector3(...BELTRUN_POI.position),
-            standoff: BELTRUN_POI.standoff,
+            position: new Vector3(...TRACK_POI.position),
+            standoff: TRACK_POI.standoff,
           })
         }
         const wp = plot(WRECK_POI.position[0], WRECK_POI.position[2], '#8a97a5', 2)

@@ -130,12 +130,12 @@ function Belt({ position, radius, width, thickness, seed }: BeltProps) {
 function Belts() {
   return (
     <>
-      {/* Projects system outer belt (future race course threads through it) */}
-      <Belt position={[0, 0, -2900]} radius={1800} width={300} thickness={110} seed={3} />
+      {/* Projects system outer belt */}
+      <Belt position={[0, 0, -4200]} radius={1800} width={300} thickness={110} seed={3} />
       {/* Work system outer belt */}
-      <Belt position={[-3600, 300, -2700]} radius={1750} width={280} thickness={100} seed={7} />
+      <Belt position={[-5200, 430, -3900]} radius={1750} width={280} thickness={100} seed={7} />
       {/* Drifting rocks around the defense-drill site */}
-      <Belt position={[-2500, -80, 100]} radius={550} width={450} thickness={240} seed={11} />
+      <Belt position={[-3400, -100, 200]} radius={550} width={450} thickness={240} seed={11} />
     </>
   )
 }

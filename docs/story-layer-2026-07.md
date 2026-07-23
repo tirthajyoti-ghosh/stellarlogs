@@ -153,6 +153,13 @@ Comms Station (live as of today) plus the SEO mirror.
 
 - 2026-07-22: names locked (Nilak / Imiq / Interamnia Drift / Draugr) and
   build started — S1 flavor pass + S2 the Nilak wreck.
+- 2026-07-23 (later): THE TRACK SHIPPED — dedicated racing system at
+  [5200,200,-6000]: dim red dwarf (r120) + two near-parked gas giants
+  whose wells the course cuts through (gates 2 and 6 dive the wells).
+  Racing migrated off the Projects belt; same activity machinery, new
+  identity (THE TRACK — SLINGSHOT CIRCUIT, PAR 80). Map spread 2026-07-23:
+  systems now 4.2–9.1k from spawn, ≥3.8k apart; station/wreck/colony/
+  gunnery pushed out for breathing room.
 - 2026-07-23: S3 SHIPPED — Interamnia Drift built from "Space Station
   Asteroid Mining Facility" by Inditrion Dradnon (a complete colony in one
   asset; the separate tunnel-rock was unnecessary). 573k faces

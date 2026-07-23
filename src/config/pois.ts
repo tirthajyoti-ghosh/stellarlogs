@@ -6,18 +6,18 @@
 export const GUNNERY_POI = {
   /** Open space west of spawn: the LIVE arena (2600) clears every system
    *  star by 400+ so a drifting battle can never reach readable billboards */
-  position: [-2500, -80, 100] as [number, number, number],
+  position: [-3400, -100, 200] as [number, number, number],
   /** Warp/jump arrival distance — lands OUTSIDE the auto-start ring (1400) */
   standoff: 1700,
 }
 
 /**
- * BELT RUN time trial — the START gate on the near edge of the Projects
- * asteroid belt. Jump arrival lands short of the gate; the clock only
- * starts when the ship actually crosses the START ring.
+ * THE TRACK — the racing club's slingshot circuit START gate, south side of
+ * the Track system (racing migrated here from the Projects belt). Jump
+ * arrival lands short of the gate; the clock starts at the line.
  */
-export const BELTRUN_POI = {
-  position: [310, -20, -1142] as [number, number, number],
+export const TRACK_POI = {
+  position: [5200, 180, -6900] as [number, number, number],
   standoff: 380,
 }
 
@@ -29,7 +29,7 @@ export const BELTRUN_POI = {
 export const WRECK_POI = {
   /** 350u off the spawn→Projects lane, clear of planet gravity wells so a
    *  visitor can sit with her without drifting */
-  position: [-350, -35, -1100] as [number, number, number],
+  position: [-420, -40, -1500] as [number, number, number],
   standoff: 320,
 }
 
@@ -39,6 +39,6 @@ export const WRECK_POI = {
  * lies between the colony and the lane: she died on approach.
  */
 export const DRIFT_POI = {
-  position: [-731, -25, -1092] as [number, number, number],
+  position: [-1050, -30, -1650] as [number, number, number],
   standoff: 540,
 }
