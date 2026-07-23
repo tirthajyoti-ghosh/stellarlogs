@@ -5,6 +5,7 @@ import { Group, Mesh, MeshBasicMaterial, Object3D, Vector3 } from 'three'
 import { shipRig } from '../state/shipRig'
 import { registerHudLabel } from '../hud/hudState'
 import { labelsChanged } from '../hud/LabelLayer'
+import { registerCollider } from '../physics/gravity'
 import { WRECK_POI } from '../config/pois'
 import { FONT_BOLD } from './boards/font'
 
@@ -86,6 +87,18 @@ function VigilBuoy() {
 
 export function Wreck() {
   const plaqueRef = useRef<Group>(null)
+
+  // Her hull is still solid, even dead
+  useEffect(() => {
+    const unregisters = [
+      registerCollider({ position: POSITION.clone(), radius: 18 }),
+      registerCollider({
+        position: POSITION.clone().add(new Vector3(33, 11, -15)),
+        radius: 9,
+      }),
+    ]
+    return () => unregisters.forEach((u) => u())
+  }, [])
 
   useEffect(() => {
     const unregister = registerHudLabel({

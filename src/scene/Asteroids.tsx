@@ -15,7 +15,7 @@ import { QUALITY } from '../config/quality'
 
 const MODEL_URL = '/models/asteroids.glb'
 
-interface RockVariant {
+export interface RockVariant {
   geometry: BufferGeometry
   material: Material
   /** Rotation/scale of the source node (carries meshopt dequantization) plus
@@ -31,7 +31,7 @@ interface RockVariant {
  * Quantized geometry: transforms must stay in matrices, never be baked into
  * attributes. Credit in the welcome card, SEO mirror and README.
  */
-function useRockVariants(): RockVariant[] {
+export function useRockVariants(): RockVariant[] {
   const gltf = useGLTF(MODEL_URL)
   return useMemo(() => {
     gltf.scene.updateMatrixWorld(true)

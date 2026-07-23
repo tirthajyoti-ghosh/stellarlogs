@@ -14,7 +14,9 @@ import {
 import { shipRig } from '../state/shipRig'
 import { registerHudLabel } from '../hud/hudState'
 import { labelsChanged } from '../hud/LabelLayer'
+import { registerCollider } from '../physics/gravity'
 import { DRIFT_POI } from '../config/pois'
+import { useRockVariants } from './Asteroids'
 import { FONT_BOLD } from './boards/font'
 
 /**
@@ -30,9 +32,16 @@ import { FONT_BOLD } from './boards/font'
 
 const MODEL_URL = '/models/drift.glb'
 const BUOY_URL = '/models/buoy.glb'
-const SPIN = 0.008 // rad/s — alive on a long look, imperceptible in passing
 /** Stable Vector3 for the HUD label registry */
 const LABEL_POSITION = new Vector3(...DRIFT_POI.position)
+
+/** The colony's rock cluster: photoreal asteroid-pack variants (the Ceres
+ *  pattern — the rock dominates, the industry is bolted on). Local offsets,
+ *  world-unit sizes, stable variant picks. */
+const ROCKS = [
+  { variant: 3, offset: [-28, -18, -16] as const, size: 185, spin: [0.3, 1.7, 0.9] as const },
+  { variant: 7, offset: [86, 4, 58] as const, size: 108, spin: [2.1, 0.4, 2.8] as const },
+]
 
 function useBuoyBody(): { geometry: BufferGeometry; material: Material } {
   const gltf = useGLTF(BUOY_URL)
@@ -71,7 +80,41 @@ export function InteramniaDrift() {
   const colonyRef = useRef<Group>(null)
   const marqueeRef = useRef<Group>(null)
   const buoyMeshRef = useRef<InstancedMesh>(null)
+  const rockRefs = useRef<(InstancedMesh | null)[]>([])
   const buoyBody = useBuoyBody()
+  const rockVariants = useRockVariants()
+
+  // The rocks themselves: one instance per variant, composed with the
+  // pack's base matrix (quantized geometry — transforms stay in matrices)
+  useEffect(() => {
+    ROCKS.forEach((rock, i) => {
+      const mesh = rockRefs.current[i]
+      const variant = rockVariants[rock.variant % rockVariants.length]
+      if (!mesh || !variant) return
+      _dummy.position.set(rock.offset[0], rock.offset[1], rock.offset[2])
+      _dummy.rotation.set(rock.spin[0], rock.spin[1], rock.spin[2])
+      _dummy.scale.setScalar(rock.size * variant.norm)
+      _dummy.updateMatrix()
+      mesh.setMatrixAt(0, _dummy.matrix.clone().multiply(variant.base))
+      mesh.instanceMatrix.needsUpdate = true
+    })
+    _dummy.rotation.set(0, 0, 0)
+  }, [rockVariants])
+
+  // Solid: the ship bounces off the rocks instead of phasing through
+  useEffect(() => {
+    const unregisters = ROCKS.map((rock) =>
+      registerCollider({
+        position: new Vector3(
+          DRIFT_POI.position[0] + rock.offset[0],
+          DRIFT_POI.position[1] + rock.offset[1],
+          DRIFT_POI.position[2] + rock.offset[2],
+        ),
+        radius: rock.size * 0.4,
+      }),
+    )
+    return () => unregisters.forEach((u) => u())
+  }, [])
 
   useEffect(() => {
     const unregister = registerHudLabel({
@@ -108,11 +151,9 @@ export function InteramniaDrift() {
     mesh.instanceMatrix.needsUpdate = true
   }, [])
 
-  useFrame((_, dt) => {
-    // Drift-gravity spin
-    const colony = colonyRef.current
-    if (colony) colony.rotation.y += dt * SPIN
-    // Marquee faces the pilot (geostationary law)
+  useFrame(() => {
+    // Marquee faces the pilot (geostationary law). The colony itself holds
+    // still — her rocks are SOLID now, and colliders don't chase rotations.
     const marquee = marqueeRef.current
     if (marquee) {
       marquee.rotation.y = Math.atan2(
@@ -127,6 +168,20 @@ export function InteramniaDrift() {
       <group ref={colonyRef}>
         <Suspense fallback={null}>
           <DriftBody />
+          {ROCKS.map((rock, i) => (
+            <instancedMesh
+              key={i}
+              ref={(m) => {
+                rockRefs.current[i] = m
+              }}
+              args={[
+                rockVariants[rock.variant % rockVariants.length]?.geometry,
+                rockVariants[rock.variant % rockVariants.length]?.material,
+                1,
+              ]}
+              frustumCulled={false}
+            />
+          ))}
         </Suspense>
       </group>
 
