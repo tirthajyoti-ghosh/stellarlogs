@@ -153,3 +153,9 @@ Comms Station (live as of today) plus the SEO mirror.
 
 - 2026-07-22: names locked (Nilak / Imiq / Interamnia Drift / Draugr) and
   build started — S1 flavor pass + S2 the Nilak wreck.
+- 2026-07-23: S3 SHIPPED — Interamnia Drift built from "Space Station
+  Asteroid Mining Facility" by Inditrion Dradnon (a complete colony in one
+  asset; the separate tunnel-rock was unnecessary). 573k faces
+  sloppy-simplified to 22k (674KB, 9 draw calls). Placed at
+  (-731,-25,-1092): the Nilak's wreck lies between the colony and the
+  lane — she died on approach.
