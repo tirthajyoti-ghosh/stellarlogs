@@ -15,49 +15,45 @@ import {
 } from 'three'
 import { shipRig } from '../../state/shipRig'
 import { activityState } from '../../state/activityState'
-import { registerHudLabel } from '../../hud/hudState'
+import { registerHudLabel, hudLabels } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerFanfare, triggerGatePing } from '../../audio/engine'
+import { driveLock } from '../../physics/driveLock'
 import { TRACK_POI } from '../../config/pois'
 import { FONT_BOLD } from '../boards/font'
 
 /**
- * F.2 — THE TRACK. The Drift Racing Club's slingshot circuit, the canon
- * Belter sport: ten gates around a dim red dwarf whose two heavy gas giants
- * BEND your line — the fast lap cuts deep into their wells and lets gravity
- * do the turning (racing migrated here from the Projects belt). Cross the
- * START ring and the clock runs; gates IN ORDER; the finish line stops it.
- * Crossing START again mid-run restarts. Gates are buoy hardware + holo
- * guidance rings.
+ * F.2 — THE TRACK, drive-dark. The canon sport, flown the canon way: build
+ * your speed in the LAUNCH CORRIDOR under full burn, and at the START line
+ * the main drive LOCKS — from there it is gravity and attitude thrusters
+ * only. Five gates across an entire outer system: sling KAAT (a gate that
+ * RIDES the moving moon), dive the Jovian's cloud tops, take the trailing
+ * boost off VEYU, and coast the long cold leg to the finish off the ice
+ * giant. Every meter per second after the line is stolen from the planets.
  */
 
-const CENTER = new Vector3(5200, 200, -6000) // the Track system core
-const BASE_R = 750 // circuit radius threading between the giants' orbits
-const APERTURE = 60
-const PAR = 80
-const PANEL_RANGE = 850 // idle panel + START marker wake-up distance
-const CORRIDOR = 1300 // max distance from the next gate before DNF grace
-const GRACE_SECONDS = 8
-const BEST_KEY = 'stellarlogs-track-best'
+const SYSTEM = new Vector3(10500, 300, -10500) // the Track system core
+const APERTURE = 95
+const PAR = 90
+const PANEL_RANGE = 1300 // idle panel + START marker wake-up distance
+const CORRIDOR = 2600 // max distance from the next gate before DNF grace
+const GRACE_SECONDS = 10
+const DEAD_DRIFT_SPEED = 20 // below this for DEAD_DRIFT_SECONDS → run void
+const DEAD_DRIFT_SECONDS = 6
+const BEST_KEY = 'stellarlogs-track-best-v2'
 const BUOY_URL = '/models/buoy.glb'
 const POSTS_PER_GATE = 4
 
-/** Course: (θ° around the star, radial offset, height). Giant A parks at
- *  θ0°/r500, giant B at θ180°/r900 — gates 2 and 6 cut INTO their wells so
- *  gravity bends the line between gates; the rest of the lap swings wide. */
-const COURSE: [number, number, number][] = [
-  [-90, 150, -20], // START — south side, facing the approach
-  [-50, -30, 30],
-  [-10, -180, 60], // the A-dive: 47u off the giant's cloud tops
-  [30, -80, -40],
-  [75, 40, 80],
-  [120, 100, 20],
-  [170, 170, -60], // the B-hairpin: through the far giant's well
-  [215, 30, 60],
-  [250, -20, 0],
-  [285, 150, -10], // FINISH beside the start line
-]
-const LAST = COURSE.length - 1
+/** Planets' parked local positions (must match config/systems TRACK_SYSTEM) */
+const SATURN_L = new Vector3(2600 * Math.cos((240 * Math.PI) / 180), 0, 2600 * Math.sin((240 * Math.PI) / 180))
+const JOVIAN_L = new Vector3(4600 * Math.cos((320 * Math.PI) / 180), 0, 4600 * Math.sin((320 * Math.PI) / 180))
+const ICE_L = new Vector3(7400 * Math.cos((335 * Math.PI) / 180), 0, 7400 * Math.sin((335 * Math.PI) / 180))
+
+/** Course anchors, system-local. Gates 1 and 3 RIDE the moons (live). */
+const STAGING_L = new Vector3(-4400, 0, -900)
+const START_L = new Vector3(-2800, 0, -1250)
+const G2_L = new Vector3(JOVIAN_L.x, 40, JOVIAN_L.z + 340) // Jovian periapsis: 130u off the cloud tops
+const FINISH_L = new Vector3(ICE_L.x - 600, 20, ICE_L.z + 30)
 
 interface Gate {
   position: Vector3
@@ -65,26 +61,8 @@ interface Gate {
   up: Vector3
   right: Vector3
   scale: number
-}
-
-function buildGates(): Gate[] {
-  const positions = COURSE.map(([deg, dr, y]) => {
-    const a = (deg * Math.PI) / 180
-    return new Vector3(
-      CENTER.x + Math.cos(a) * (BASE_R + dr),
-      CENTER.y + y,
-      CENTER.z + Math.sin(a) * (BASE_R + dr),
-    )
-  })
-  const worldUp = new Vector3(0, 1, 0)
-  return positions.map((position, i) => {
-    const prev = positions[Math.max(0, i - 1)]
-    const next = positions[Math.min(LAST, i + 1)]
-    const normal = next.clone().sub(prev).normalize()
-    const right = new Vector3().crossVectors(worldUp, normal).normalize()
-    const up = new Vector3().crossVectors(normal, right).normalize()
-    return { position, normal, up, right, scale: i === 0 || i === LAST ? 1.18 : 1 }
-  })
+  /** HUD label name of the moon this gate rides, if any */
+  rides?: string
 }
 
 type Phase = 'idle' | 'running' | 'over'
@@ -92,6 +70,7 @@ type Phase = 'idle' | 'running' | 'over'
 const _v = new Vector3()
 const _q = new Quaternion()
 const _zAxis = new Vector3(0, 0, 1)
+const _worldUp = new Vector3(0, 1, 0)
 const _dummy = new Object3D()
 const _color = new Color()
 
@@ -109,11 +88,32 @@ function useBuoyBody(): { geometry: BufferGeometry; material: Material } {
 }
 
 export function BeltRun() {
-  const gates = useMemo(() => buildGates(), [])
+  const gates = useMemo<Gate[]>(() => {
+    const mk = (local: Vector3, scale: number, rides?: string): Gate => ({
+      position: local.clone().add(SYSTEM),
+      normal: new Vector3(1, 0, 0),
+      up: new Vector3(0, 1, 0),
+      right: new Vector3(0, 0, 1),
+      scale,
+      rides,
+    })
+    return [
+      mk(START_L, 1.26),
+      mk(SATURN_L, 1.0, 'KAAT'), // live position patched per frame
+      mk(G2_L, 1.0),
+      mk(JOVIAN_L, 1.0, 'VEYU'), // live position patched per frame
+      mk(FINISH_L, 1.26),
+    ]
+  }, [])
+  const LAST = gates.length - 1
+  const staging = useMemo(() => STAGING_L.clone().add(SYSTEM), [])
+  const moonRefs = useRef<(Vector3 | null)[]>([])
   const ringMeshRef = useRef<InstancedMesh>(null)
   const postMeshRef = useRef<InstancedMesh>(null)
+  const stagingRingRef = useRef<Mesh>(null)
   const textRefs = useRef<(Group | null)[]>([])
   const marqueeRef = useRef<Group>(null)
+  const buoyMeshRef = useRef<InstancedMesh>(null)
   const buoyBody = useBuoyBody()
 
   const game = useRef({
@@ -122,6 +122,7 @@ export function BeltRun() {
     startAt: 0,
     phaseUntil: 0,
     graceUntil: 0,
+    deadSince: 0,
     flashUntil: 0,
     flashText: '',
     best: Number(localStorage.getItem(BEST_KEY) ?? 0),
@@ -135,55 +136,68 @@ export function BeltRun() {
       name: 'THE TRACK',
       color: '#7fe0f0',
       kind: 'poi',
-      position: gates[0].position,
-      yOffset: 110,
+      position: staging,
+      yOffset: 130,
       el: null,
-      detail: 'SLINGSHOT CIRCUIT · CROSS THE START GATE',
+      detail: 'DRIVE-DARK SLINGSHOT RACING · BUILD SPEED IN THE CORRIDOR',
       jumpStandoff: TRACK_POI.standoff,
     })
     labelsChanged()
     return () => {
       unregister()
       labelsChanged()
+      driveLock.locked = false
     }
-  }, [gates])
+  }, [staging])
 
-  // Static gate hardware: guidance rings + buoy posts at each ring's edge
+  // Launch-corridor buoys: the runway from STAGING to the START line
   useEffect(() => {
-    const ringMesh = ringMeshRef.current
-    const postMesh = postMeshRef.current
-    if (!ringMesh || !postMesh) return
-    gates.forEach((gate, i) => {
-      _q.setFromUnitVectors(_zAxis, gate.normal)
-      _dummy.position.copy(gate.position)
-      _dummy.quaternion.copy(_q)
-      _dummy.scale.setScalar(gate.scale)
+    const mesh = buoyMeshRef.current
+    if (!mesh) return
+    for (let i = 0; i < 6; i++) {
+      const t = i / 5
+      _dummy.position.lerpVectors(staging, gates[0].position, t)
+      _dummy.position.y += i % 2 === 0 ? 70 : -70
+      _dummy.rotation.set(0, i * 1.3, 0)
+      _dummy.scale.setScalar(0.85)
       _dummy.updateMatrix()
-      ringMesh.setMatrixAt(i, _dummy.matrix)
-      const r = APERTURE * gate.scale + 6
-      for (let p = 0; p < POSTS_PER_GATE; p++) {
-        const a = (p / POSTS_PER_GATE) * Math.PI * 2 + Math.PI / 4
-        _dummy.position
-          .copy(gate.position)
-          .addScaledVector(gate.right, Math.cos(a) * r)
-          .addScaledVector(gate.up, Math.sin(a) * r)
-        _dummy.quaternion.set(0, 0, 0, 1)
-        _dummy.rotation.set(0, i * 1.7 + p, 0)
-        _dummy.scale.setScalar(0.7)
-        _dummy.updateMatrix()
-        postMesh.setMatrixAt(i * POSTS_PER_GATE + p, _dummy.matrix)
-      }
-    })
+      mesh.setMatrixAt(i, _dummy.matrix)
+    }
     _dummy.rotation.set(0, 0, 0)
-    ringMesh.instanceMatrix.needsUpdate = true
-    postMesh.instanceMatrix.needsUpdate = true
-  }, [gates])
+    mesh.instanceMatrix.needsUpdate = true
+  }, [gates, staging])
 
   useFrame(({ clock }) => {
     const now = clock.elapsedTime
     const g = game.current
-    const distToStart = shipRig.position.distanceTo(gates[0].position)
     const running = g.phase === 'running'
+
+    // Moon-riding gates chase their moons (live label positions from the
+    // system registry); normals re-derive from the live chain each frame
+    for (let i = 0; i <= LAST; i++) {
+      const gate = gates[i]
+      if (!gate.rides) continue
+      let ref = moonRefs.current[i]
+      if (!ref) {
+        const label = hudLabels.find((l) => l.name === gate.rides)
+        if (label) {
+          ref = label.position
+          moonRefs.current[i] = ref
+        }
+      }
+      if (ref) gate.position.copy(ref)
+    }
+    for (let i = 0; i <= LAST; i++) {
+      const gate = gates[i]
+      const prev = gates[Math.max(0, i - 1)]
+      const next = gates[Math.min(LAST, i + 1)]
+      gate.normal.copy(next.position).sub(prev.position).normalize()
+      gate.right.crossVectors(_worldUp, gate.normal).normalize()
+      gate.up.crossVectors(gate.normal, gate.right).normalize()
+    }
+
+    const distToStart = shipRig.position.distanceTo(gates[0].position)
+    const distToStaging = shipRig.position.distanceTo(staging)
 
     function crossed(gate: Gate): boolean {
       const s0 = _v.copy(g.prevShip).sub(gate.position).dot(gate.normal)
@@ -194,16 +208,28 @@ export function BeltRun() {
       return _v.distanceTo(gate.position) < APERTURE * gate.scale
     }
 
+    function endRun(banner: string, kind: 'info' | 'fail') {
+      g.phase = 'idle'
+      g.graceUntil = 0
+      g.deadSince = 0
+      driveLock.locked = false
+      activityState.banner = { text: banner, kind, until: now + 2.4 }
+    }
+
     function startRun(restart: boolean) {
       g.phase = 'running'
       g.next = 1
       g.startAt = now
       g.graceUntil = 0
+      g.deadSince = 0
+      driveLock.locked = true
       triggerGatePing(0)
       activityState.banner = {
-        text: restart ? 'RESTART — GATE 1' : `GO — ${LAST} GATES`,
-        kind: 'info',
-        until: now + 1.8,
+        text: restart
+          ? 'RESTART — DRIVE DARK'
+          : `DRIVE DARK — ${Math.round(shipRig.speed)} M/S ENTRY`,
+        kind: 'battle',
+        until: now + 2.2,
       }
       g.flashText = ''
       g.flashUntil = 0
@@ -231,6 +257,7 @@ export function BeltRun() {
             g.flashText = text
             g.flashUntil = now + 4
             triggerFanfare()
+            driveLock.locked = false
             activityState.banner = {
               text: `RUN COMPLETE — ${time.toFixed(1)}S`,
               kind: 'win',
@@ -248,8 +275,8 @@ export function BeltRun() {
     }
     if (g.phase === 'over' && now >= g.phaseUntil) g.phase = 'idle'
 
-    // Course corridor: wandering off the line warns, then abandons
     if (running) {
+      // Course corridor: wandering off the line warns, then voids the run
       if (shipRig.position.distanceTo(gates[g.next].position) > CORRIDOR) {
         if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
         const left = Math.max(0, g.graceUntil - now)
@@ -258,24 +285,30 @@ export function BeltRun() {
           kind: 'fail',
           until: now + 0.4,
         }
-        if (now >= g.graceUntil) {
-          g.phase = 'idle'
-          g.graceUntil = 0
-          activityState.banner = { text: 'RUN ABANDONED', kind: 'info', until: now + 2.2 }
-        }
+        if (now >= g.graceUntil) endRun('RUN ABANDONED', 'info')
       } else if (g.graceUntil !== 0) {
         g.graceUntil = 0
+      }
+      // Dead drift: too slow to finish with the drive dark — void the run
+      if (shipRig.speed < DEAD_DRIFT_SPEED) {
+        if (g.deadSince === 0) g.deadSince = now
+        else if (now - g.deadSince > DEAD_DRIFT_SECONDS) endRun('DEAD DRIFT — RUN VOID', 'fail')
+      } else {
+        g.deadSince = 0
       }
     }
 
     // ---- shared HUD state (claim the panel only while engaged) ----
-    const engaged = running || g.phase === 'over' || distToStart < PANEL_RANGE
+    const engaged = running || g.phase === 'over' || distToStart < PANEL_RANGE || distToStaging < PANEL_RANGE
     if (engaged) {
-      activityState.owner = 'beltrun'
+      activityState.owner = 'track'
       activityState.active = true
-      activityState.title = 'THE TRACK — SLINGSHOT CIRCUIT'
-      activityState.hint =
-        g.phase === 'idle' ? 'FLY THROUGH THE START GATE — THE CLOCK RUNS AT THE LINE' : ''
+      activityState.title = 'THE TRACK — DRIVE-DARK SLINGSHOT'
+      activityState.hint = running
+        ? ''
+        : g.phase === 'idle'
+          ? 'FULL BURN THROUGH THE CORRIDOR — THE DRIVE LOCKS AT THE START LINE'
+          : ''
       activityState.lines = [
         { label: 'TIME', value: running ? `${(now - g.startAt).toFixed(1)}S` : '—' },
         { label: 'GATE', value: running ? `${g.next}/${LAST}` : '—' },
@@ -292,17 +325,39 @@ export function BeltRun() {
       } else {
         activityState.raceTarget = null
       }
-    } else if (activityState.owner === 'beltrun') {
+    } else if (activityState.owner === 'track') {
       activityState.owner = ''
       activityState.active = false
       activityState.raceTarget = null
     }
 
-    // ---- gate ring colors: passed / NEXT (pulsing) / upcoming ----
+    // ---- gate hardware follows the moving course ----
     const ringMesh = ringMeshRef.current
-    if (ringMesh) {
+    const postMesh = postMeshRef.current
+    if (ringMesh && postMesh) {
       const pulse = 0.65 + Math.sin(now * 5) * 0.35
-      for (let i = 0; i < gates.length; i++) {
+      for (let i = 0; i <= LAST; i++) {
+        const gate = gates[i]
+        _q.setFromUnitVectors(_zAxis, gate.normal)
+        _dummy.position.copy(gate.position)
+        _dummy.quaternion.copy(_q)
+        _dummy.scale.setScalar(gate.scale)
+        _dummy.updateMatrix()
+        ringMesh.setMatrixAt(i, _dummy.matrix)
+        const r = APERTURE * gate.scale + 6
+        for (let p = 0; p < POSTS_PER_GATE; p++) {
+          const a = (p / POSTS_PER_GATE) * Math.PI * 2 + Math.PI / 4
+          _dummy.position
+            .copy(gate.position)
+            .addScaledVector(gate.right, Math.cos(a) * r)
+            .addScaledVector(gate.up, Math.sin(a) * r)
+          _dummy.quaternion.set(0, 0, 0, 1)
+          _dummy.rotation.set(0, i * 1.7 + p, 0)
+          _dummy.scale.setScalar(0.7)
+          _dummy.updateMatrix()
+          postMesh.setMatrixAt(i * POSTS_PER_GATE + p, _dummy.matrix)
+        }
+        // colors: passed / NEXT pulsing / upcoming
         if (running) {
           if (i === g.next) {
             if (i === LAST) _color.setRGB(0.4 * pulse + 0.3, 2.1 * pulse, 0.9 * pulse)
@@ -320,24 +375,34 @@ export function BeltRun() {
           _color.setRGB(0.3, 0.24, 0.12)
         }
         ringMesh.setColorAt(i, _color)
+        // gate labels track their gates
+        const text = textRefs.current[i]
+        if (text) {
+          text.position.set(
+            gate.position.x,
+            gate.position.y + APERTURE * gate.scale + 26,
+            gate.position.z,
+          )
+          text.rotation.y = Math.atan2(
+            shipRig.position.x - gate.position.x,
+            shipRig.position.z - gate.position.z,
+          )
+        }
       }
+      ringMesh.instanceMatrix.needsUpdate = true
+      postMesh.instanceMatrix.needsUpdate = true
       if (ringMesh.instanceColor) ringMesh.instanceColor.needsUpdate = true
     }
+    // staging ring: steady white-green invitation
+    const stag = stagingRingRef.current
+    if (stag) stag.rotation.z = now * 0.05
 
-    // Gate labels + marquee face the pilot (geostationary law)
-    textRefs.current.forEach((group, i) => {
-      if (!group) return
-      const gate = gates[i]
-      group.rotation.y = Math.atan2(
-        shipRig.position.x - gate.position.x,
-        shipRig.position.z - gate.position.z,
-      )
-    })
+    // Marquee faces the pilot
     const marquee = marqueeRef.current
     if (marquee) {
       marquee.rotation.y = Math.atan2(
-        shipRig.position.x - gates[0].position.x,
-        shipRig.position.z - gates[0].position.z,
+        shipRig.position.x - staging.x,
+        shipRig.position.z - staging.z,
       )
     }
 
@@ -347,56 +412,73 @@ export function BeltRun() {
 
   return (
     <group>
-      {/* Holo guidance rings (per-instance status colors) */}
-      <instancedMesh
-        ref={ringMeshRef}
-        args={[undefined, undefined, COURSE.length]}
-        frustumCulled={false}
-      >
-        <torusGeometry args={[APERTURE, 1.5, 8, 64]} />
+      {/* Holo guidance rings (per-instance status colors, live positions) */}
+      <instancedMesh ref={ringMeshRef} args={[undefined, undefined, gates.length]} frustumCulled={false}>
+        <torusGeometry args={[APERTURE, 2.2, 8, 64]} />
         <meshBasicMaterial toneMapped={false} transparent opacity={0.9} />
       </instancedMesh>
 
-      {/* Buoy posts marking each gate (same hardware as the gunnery boundary) */}
+      {/* Buoy posts at each ring's edge */}
       <instancedMesh
         ref={postMeshRef}
-        args={[buoyBody.geometry, buoyBody.material, COURSE.length * POSTS_PER_GATE]}
+        args={[buoyBody.geometry, buoyBody.material, gates.length * POSTS_PER_GATE]}
         frustumCulled={false}
       />
 
+      {/* STAGING: the corridor mouth — full burn from here to the line */}
+      <group position={staging.toArray()}>
+        <mesh
+          ref={stagingRingRef}
+          quaternion={new Quaternion().setFromUnitVectors(
+            new Vector3(0, 0, 1),
+            gates[0].position.clone().sub(staging).normalize(),
+          )}
+        >
+          <torusGeometry args={[130, 2, 8, 64]} />
+          <meshBasicMaterial
+            color={[0.5, 1.6, 0.8]}
+            toneMapped={false}
+            transparent
+            opacity={0.55}
+          />
+        </mesh>
+      </group>
+
+      {/* Corridor buoys */}
+      <instancedMesh ref={buoyMeshRef} args={[buoyBody.geometry, buoyBody.material, 6]} frustumCulled={false} />
+
       {/* Gate labels */}
-      {gates.map((gate, i) => (
+      {gates.map((_gate, i) => (
         <group
           key={i}
-          position={[gate.position.x, gate.position.y + APERTURE * gate.scale + 22, gate.position.z]}
           ref={(el) => {
             textRefs.current[i] = el
           }}
         >
           <Text
             font={FONT_BOLD}
-            fontSize={i === 0 || i === LAST ? 17 : 24}
+            fontSize={i === 0 || i === gates.length - 1 ? 22 : 30}
             letterSpacing={0.14}
-            color={i === 0 || i === LAST ? '#7fe8b8' : '#7fd9e8'}
+            color={i === 0 || i === gates.length - 1 ? '#7fe8b8' : '#7fd9e8'}
             anchorX="center"
             anchorY="middle"
             material-toneMapped={false}
             material-transparent
             fillOpacity={0.85}
           >
-            {i === 0 ? 'START' : i === LAST ? 'FINISH' : String(i)}
+            {i === 0 ? 'START' : i === gates.length - 1 ? 'FINISH' : String(i)}
           </Text>
         </group>
       ))}
 
-      {/* Marquee above the START gate — the landmark */}
+      {/* Marquee above the staging mouth — the landmark */}
       <group
         ref={marqueeRef}
-        position={[gates[0].position.x, gates[0].position.y + 165, gates[0].position.z]}
+        position={[staging.x, staging.y + 220, staging.z]}
       >
         <Text
           font={FONT_BOLD}
-          fontSize={40}
+          fontSize={44}
           letterSpacing={0.16}
           color="#7fe0f0"
           anchorX="center"
@@ -409,17 +491,17 @@ export function BeltRun() {
         </Text>
         <Text
           font={FONT_BOLD}
-          fontSize={10}
+          fontSize={11}
           letterSpacing={0.42}
           color="#9fc4de"
           anchorX="center"
           anchorY="middle"
-          position={[0, -33, 0]}
+          position={[0, -35, 0]}
           material-toneMapped={false}
           material-transparent
           fillOpacity={0.85}
         >
-          DRIFT RACING CLUB · SLINGSHOT CIRCUIT · CROSS START TO BEGIN
+          DRIVE-DARK SLINGSHOT RACING · BUILD SPEED · CROSS THE LINE
         </Text>
       </group>
     </group>

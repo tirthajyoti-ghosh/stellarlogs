@@ -24,12 +24,22 @@ interface OrbitingPlanetProps {
   sunPosition: Vector3
   accentColor: string
   systemName: string
+  /** Shared live world position (owned by StarSystem so moons can read parents) */
+  worldPos: Vector3
+  /** Live world position of the parent planet, when this body is a MOON */
+  parentWorldPos?: Vector3
 }
 
-function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor, systemName }: OrbitingPlanetProps) {
+function OrbitingPlanet({
+  config,
+  systemPosition,
+  sunPosition,
+  accentColor,
+  systemName,
+  worldPos,
+  parentWorldPos,
+}: OrbitingPlanetProps) {
   const groupRef = useRef<Group>(null)
-  // Shared, mutated in place — gravity body and boards track the orbit
-  const worldPos = useMemo(() => new Vector3(), [])
   const tilt = useMemo(
     () => new Quaternion().setFromEuler(new Euler(config.inclination ?? 0, 0, (config.inclination ?? 0) * 0.5)),
     [config.inclination],
@@ -40,11 +50,12 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor, syst
     () =>
       registerGravityBody({
         position: worldPos,
-        strength: 16,
+        strength: config.gravity?.strength ?? 16,
         radius: config.radius,
-        influenceRadius: config.radius * 4,
+        influenceRadius: config.gravity?.influence ?? config.radius * 4,
+        maxPull: config.gravity?.maxPull,
       }),
-    [config.radius, worldPos],
+    [config.gravity, config.radius, worldPos],
   )
 
   useEffect(() => {
@@ -71,19 +82,27 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor, syst
     localPos
       .set(Math.cos(angle) * config.orbitRadius, 0, Math.sin(angle) * config.orbitRadius)
       .applyQuaternion(tilt)
-    groupRef.current?.position.copy(localPos)
-    worldPos.copy(systemPosition).add(localPos)
+    // Moons orbit their parent's LIVE position; planets orbit the star
+    if (parentWorldPos) {
+      worldPos.copy(parentWorldPos).add(localPos)
+      groupRef.current?.position.copy(worldPos).sub(systemPosition)
+    } else {
+      groupRef.current?.position.copy(localPos)
+      worldPos.copy(systemPosition).add(localPos)
+    }
   })
 
   return (
     <group ref={groupRef}>
       <Planet config={config} sunPosition={sunPosition} />
-      <PlanetBoards
-        item={config.item}
-        planetRadius={config.radius}
-        worldPos={worldPos}
-        accentColor={accentColor}
-      />
+      {!config.noBoards && (
+        <PlanetBoards
+          item={config.item}
+          planetRadius={config.radius}
+          worldPos={worldPos}
+          accentColor={accentColor}
+        />
+      )}
     </group>
   )
 }
@@ -91,6 +110,11 @@ function OrbitingPlanet({ config, systemPosition, sunPosition, accentColor, syst
 /** A star with orbiting content planets, faint orbit guides, gravity wells. */
 export function StarSystem({ config }: { config: SystemConfig }) {
   const systemPosition = useMemo(() => new Vector3(...config.position), [config.position])
+  // Live world positions per planet, so moons can chase their parents
+  const planetWorldPositions = useMemo(
+    () => config.planets.map(() => new Vector3()),
+    [config.planets],
+  )
 
   useEffect(
     () =>
@@ -119,9 +143,14 @@ export function StarSystem({ config }: { config: SystemConfig }) {
           sunPosition={systemPosition}
           accentColor={config.starColor}
           systemName={config.name}
+          worldPos={planetWorldPositions[i]}
+          parentWorldPos={
+            planet.parent !== undefined ? planetWorldPositions[planet.parent] : undefined
+          }
         />
       ))}
       {orbitGeometries.map((geo, i) => {
+        if (config.planets[i].parent !== undefined) return null // moons: no star-centered guide
         const inc = config.planets[i].inclination ?? 0
         return (
           <lineLoop key={i} geometry={geo} rotation={[inc, 0, inc * 0.5]}>

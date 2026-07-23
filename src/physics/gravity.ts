@@ -12,6 +12,8 @@ export interface GravityBody {
   radius: number
   /** No pull beyond this distance. */
   influenceRadius: number
+  /** Per-body pull cap override — racing venue wells are NOT polite. */
+  maxPull?: number
 }
 
 const bodies: GravityBody[] = []
@@ -56,7 +58,10 @@ export function applyGravity(position: Vector3, velocity: Vector3, dt: number): 
     const dist = _toBody.length()
     if (dist > body.influenceRadius || dist < 1e-3) continue
     // strength is defined at the body surface, inverse-square beyond it
-    const pull = Math.min(MAX_PULL, body.strength * (body.radius * body.radius) / (dist * dist))
+    const pull = Math.min(
+      body.maxPull ?? MAX_PULL,
+      body.strength * (body.radius * body.radius) / (dist * dist),
+    )
     // fade to zero near the influence edge so entry isn't a visible "step"
     const edgeFade = Math.min(1, (body.influenceRadius - dist) / (body.influenceRadius * 0.15))
     velocity.addScaledVector(_toBody.normalize(), pull * edgeFade * dt)

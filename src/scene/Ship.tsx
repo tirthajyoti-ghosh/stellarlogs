@@ -17,6 +17,7 @@ import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
 import { turretControl } from '../state/turretControl'
 import { warp, warpTurn, stepWarp, warpBurning } from '../physics/warp'
 import { flip, flipStick, cancelFlip } from '../physics/flip'
+import { driveLock } from '../physics/driveLock'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
@@ -42,6 +43,15 @@ const _rollAxis = new Vector3(0, 0, 1)
 
 /** Reused container for the FLIP autopilot's synthetic stick (no per-frame alloc) */
 const flipInputObj: ShipInput = {
+  thrust: 0,
+  reverse: 0,
+  strafeX: 0,
+  yaw: 0,
+  pitch: 0,
+  boost: false,
+}
+/** Reused container for the drive-dark racing lock (no per-frame alloc) */
+const lockInputObj: ShipInput = {
   thrust: 0,
   reverse: 0,
   strafeX: 0,
@@ -177,6 +187,16 @@ export function Ship() {
       flipInputObj.yaw = stick.yaw
       flipInputObj.pitch = stick.pitch
       activeInput = flipInputObj
+    }
+    // Drive-dark racing: main drive dead, translation RCS at trim authority
+    if (driveLock.locked) {
+      lockInputObj.thrust = 0
+      lockInputObj.boost = false
+      lockInputObj.reverse = activeInput.reverse * driveLock.trim
+      lockInputObj.strafeX = activeInput.strafeX * driveLock.trim
+      lockInputObj.yaw = activeInput.yaw
+      lockInputObj.pitch = activeInput.pitch
+      activeInput = lockInputObj
     }
 
     let alpha: number

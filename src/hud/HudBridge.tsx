@@ -7,6 +7,7 @@ import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
 import { warp, warpBurning, timeToFlip, timeToArrival } from '../physics/warp'
+import { driveLock } from '../physics/driveLock'
 import { getGravityBodies } from '../physics/gravity'
 import { updateAudio } from '../audio/engine'
 import { ALL_SYSTEMS } from '../config/systems'
@@ -58,14 +59,18 @@ export function HudBridge() {
             : 'BURN'
         : shipRig.flipping
           ? 'FLIP'
-          : shipRig.boosting
-            ? 'BURN'
-            : shipRig.thrusting
-              ? 'THRUST'
-              : 'IDLE'
+          : driveLock.locked
+            ? 'RCS ONLY'
+            : shipRig.boosting
+              ? 'BURN'
+              : shipRig.thrusting
+                ? 'THRUST'
+                : 'IDLE'
       hudReadouts.driveEl.dataset.mode = shipRig.warping
         ? 'warp'
-        : hudReadouts.driveEl.textContent.toLowerCase()
+        : driveLock.locked && !shipRig.flipping
+          ? 'rcs'
+          : hudReadouts.driveEl.textContent.toLowerCase()
     }
 
     const rcsFiring =

@@ -30,6 +30,12 @@ export interface PlanetConfig {
   inclination?: number
   /** The portfolio content this planet carries on its billboards */
   item: ContentItem
+  /** Orbit around this planet (by index) instead of the star — a MOON */
+  parent?: number
+  /** Skip content boards (racing moons carry names, not resumes) */
+  noBoards?: boolean
+  /** Well override — the Track's wells are heavy where content wells are polite */
+  gravity?: { strength: number; influence: number; maxPull: number }
 }
 
 export interface SystemConfig {
@@ -121,53 +127,110 @@ function buildSystem({ content, position, seedBase }: SystemPlacement): SystemCo
 }
 
 /**
- * THE TRACK — the Drift Racing Club's slingshot circuit: a dim red dwarf
- * with two heavy, nearly-parked gas giants whose gravity wells ARE the
- * course. Not a content system; the giants' boards belong to the club.
- * (Racing migrated here from the Projects belt — see story-layer doc.)
+ * THE TRACK — the Drift Racing Club's slingshot venue: a TRUE OUTER SYSTEM
+ * at the far edge of the map (the sport lives beyond the belt in canon).
+ * A dim red dwarf, a ringed Saturn-class giant, a colossal Jovian, and a
+ * pale ice giant — with MOONS on visibly moving orbits. The wells here are
+ * HEAVY (per-body gravity overrides): the race is flown drive-dark on
+ * attitude thrusters, stealing every meter per second from these bodies.
+ * Moons are named, boardless, and carry the gates.
  */
 const RACE_CONTROL: ContentItem = {
   title: 'Race Control — The Track',
-  subtitle: 'Drift Racing Club · slingshot circuit',
+  subtitle: 'Drift Racing Club · slingshot circuit · drive-dark racing',
   overview:
-    'Ten gates, two gravity wells, one clock. Cross the START ring and fly the line — the giants will bend it for you if you dare them close. Kids from the Amnia run this in 80 flat.',
+    'Build speed in the launch corridor — the main drive LOCKS at the start line. After that it is gravity and attitude thrusters only: dive the wells, sling the moons, steal your speed from the giants. Kids from the Amnia run this in 90 flat.',
 }
 const THE_BOARD: ContentItem = {
   title: 'The Board',
   subtitle: 'Fast times · Drift Racing Club',
   overview:
-    'The club keeps the times. The line between a fast lap and a scattering of debris is how deep you cut the wells. Fly sasa, beratna.',
+    'The club keeps the times. The line between a fast lap and a long cold drift is how deep you dare the wells with your drive dark. Fly sasa, beratna.',
 }
+const moonItem = (name: string): ContentItem => ({ title: name })
 
 const TRACK_SYSTEM: SystemConfig = {
   id: 'track',
   name: 'The Track',
   starColor: '#ff6a50',
   starRadius: 120,
-  position: [5200, 200, -6000],
-  overview: "The Drift Racing Club's slingshot circuit.",
+  position: [10500, 300, -10500],
+  overview: "The Drift Racing Club's slingshot venue — an outer system flown drive-dark.",
   planets: [
     {
+      // 0 — the Saturn-class: first sling of the run
       type: 'gasGiant',
       rings: true,
-      radius: 70,
-      orbitRadius: 500,
-      orbitSpeed: 0.0009,
-      phase: 0,
+      radius: 150,
+      orbitRadius: 2600,
+      orbitSpeed: 0.00004,
+      phase: (240 * Math.PI) / 180,
       seed: 71,
-      inclination: 0.03,
       item: RACE_CONTROL,
+      gravity: { strength: 120, influence: 2400, maxPull: 200 },
     },
     {
+      // 1 — the Jovian: the great fall at the middle of the run
       type: 'gasGiant',
       rings: false,
-      radius: 60,
-      orbitRadius: 900,
-      orbitSpeed: 0.0007,
-      phase: Math.PI,
+      radius: 210,
+      orbitRadius: 4600,
+      orbitSpeed: 0.00003,
+      phase: (320 * Math.PI) / 180,
       seed: 72,
-      inclination: -0.04,
       item: THE_BOARD,
+      gravity: { strength: 150, influence: 3200, maxPull: 260 },
+    },
+    {
+      // 2 — the ice giant: the long cold coast to the finish
+      type: 'ice',
+      radius: 110,
+      orbitRadius: 7400,
+      orbitSpeed: 0.000025,
+      phase: (335 * Math.PI) / 180,
+      seed: 73,
+      item: moonItem('Deepwater'),
+      noBoards: true,
+      gravity: { strength: 80, influence: 1800, maxPull: 150 },
+    },
+    {
+      // 3 — KAAT, the Saturn-class moon: gate 1 rides her
+      type: 'barren',
+      radius: 30,
+      orbitRadius: 420,
+      orbitSpeed: 0.03,
+      phase: 0.8,
+      seed: 74,
+      item: moonItem('Kaat'),
+      parent: 0,
+      noBoards: true,
+      gravity: { strength: 60, influence: 650, maxPull: 160 },
+    },
+    {
+      // 4 — VEYU, inner Jovian moon: gate 3 rides her (the trailing boost)
+      type: 'ice',
+      radius: 34,
+      orbitRadius: 540,
+      orbitSpeed: 0.024,
+      phase: 2.4,
+      seed: 75,
+      item: moonItem('Veyu'),
+      parent: 1,
+      noBoards: true,
+      gravity: { strength: 70, influence: 760, maxPull: 180 },
+    },
+    {
+      // 5 — OSO, outer Jovian moon: hazard and free boost for the brave
+      type: 'barren',
+      radius: 26,
+      orbitRadius: 860,
+      orbitSpeed: 0.014,
+      phase: 4.9,
+      seed: 76,
+      item: moonItem('Oso'),
+      parent: 1,
+      noBoards: true,
+      gravity: { strength: 55, influence: 620, maxPull: 150 },
     },
   ],
 }
