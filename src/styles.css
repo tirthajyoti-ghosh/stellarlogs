@@ -396,6 +396,10 @@ body[data-warpphase='turnback'] .hud-warp-panel { display: flex; }
   color: #7fd4ff;
   text-shadow: 0 0 10px rgba(111, 211, 232, 0.6);
 }
+.hud-drive[data-mode='rcs'] {
+  color: #ffc06e;
+  text-shadow: 0 0 10px rgba(255, 180, 110, 0.55);
+}
 .hud-grav {
   font-size: 10px;
   font-weight: 700;

@@ -153,7 +153,16 @@ Comms Station (live as of today) plus the SEO mirror.
 
 - 2026-07-22: names locked (Nilak / Imiq / Interamnia Drift / Draugr) and
   build started — S1 flavor pass + S2 the Nilak wreck.
-- 2026-07-23 (later): THE TRACK SHIPPED — dedicated racing system at
+- 2026-07-23 (v2): THE TRACK REBUILT as true outer-system drive-dark
+  slingshot racing (Tirtha: the ring circuit didn't feel like stealing
+  energy from heavy bodies). New venue at [10500,300,-10500]: dim dwarf +
+  Saturn-class + colossal Jovian + ice giant, with MOONS (Kaat, Veyu, Oso)
+  on visibly moving orbits. Per-body gravity overrides (heavy wells, loose
+  overlap); launch corridor under full burn; the main drive LOCKS at the
+  START line (driveLock — attitude thrusters + trim RCS only, the
+  Manéo/Alex rule from S2E11); gates 1 and 3 RIDE the moons; dead-drift
+  safety voids stranded runs. Five gates across ~11k of route.
+- 2026-07-23 (v1, superseded): THE TRACK SHIPPED — dedicated racing system at
   [5200,200,-6000]: dim red dwarf (r120) + two near-parked gas giants
   whose wells the course cuts through (gates 2 and 6 dive the wells).
   Racing migrated off the Projects belt; same activity machinery, new

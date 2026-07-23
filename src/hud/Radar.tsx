@@ -91,7 +91,7 @@ export function Radar() {
           break
         }
       }
-      const range = battle ? 900 : nearSystem ? 1900 : 12000
+      const range = battle ? 900 : nearSystem ? 1900 : 15500
 
       const yaw = shipRig.yaw
       const plot = (wx: number, wz: number, color: string, size: number) => {
