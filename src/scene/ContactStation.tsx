@@ -7,7 +7,9 @@ import { buildBoards } from './boards/boardSpecs'
 import { CONTACT } from '../content/contact'
 import { REGISTRY, REGISTRY_ACCENT } from '../content/credits'
 import { STATION_POSITION } from '../config/universe'
+import { registerCollider } from '../physics/gravity'
 import { shipRig } from '../state/shipRig'
+import { useEffect } from 'react'
 
 const ACCENT = CONTACT.starColor
 const MODEL_URL = '/models/gateway.glb'
@@ -49,6 +51,8 @@ export function ContactStation() {
   const boardScale = useRef(0)
   const position = useMemo(() => new Vector3(...STATION_POSITION), [])
   const specs = useMemo(() => buildBoards(CONTACT.items[0], ACCENT), [])
+  // Solid hull: no more phasing through the station
+  useEffect(() => registerCollider({ position: new Vector3(...STATION_POSITION), radius: 68 }), [])
   // The Hull & Hardware Registry: asset attributions as dockmaster's ledger
   // boards, orbiting with the contact boards (out of the welcome popup)
   const registrySpecs = useMemo(

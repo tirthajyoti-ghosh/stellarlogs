@@ -36,13 +36,19 @@ const doc = await io.read(SRC)
 const root = doc.getRoot()
 const scene = root.getDefaultScene() ?? root.listScenes()[0]
 
-// Bake to world space, group by material
+// Bake to world space, group by material. Material *779 is the artist's
+// crystal/frost formation — fantasy-mineral, not Expanse. We keep only the
+// INDUSTRIAL structures (880-family paneling + all the glow/window
+// materials) and mount them on our own photoreal asteroid rocks in the
+// scene component: the Ceres pattern, real rock + bolted-on industry.
 const byMaterial = new Map()
 for (const node of root.listNodes()) {
   const mesh = node.getMesh()
   if (!mesh) continue
   const wm = node.getWorldMatrix()
   for (const prim of mesh.listPrimitives()) {
+    const matName = prim.getMaterial()?.getName() ?? ''
+    if (matName.includes('779')) continue
     const clone = prim.clone()
     transformPrimitive(clone, wm)
     const key = prim.getMaterial()
