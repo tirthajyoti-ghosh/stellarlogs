@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
-import { BELTRUN_POI, GUNNERY_POI, WRECK_POI } from '../config/pois'
+import { BELTRUN_POI, DRIFT_POI, GUNNERY_POI, WRECK_POI } from '../config/pois'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
@@ -208,6 +208,15 @@ export function Radar() {
             py: wp.py,
             position: new Vector3(...WRECK_POI.position),
             standoff: WRECK_POI.standoff,
+          })
+        }
+        const dp = plot(DRIFT_POI.position[0], DRIFT_POI.position[2], '#ffc06e', 2.6)
+        if (dp) {
+          blips.current.push({
+            px: dp.px,
+            py: dp.py,
+            position: new Vector3(...DRIFT_POI.position),
+            standoff: DRIFT_POI.standoff,
           })
         }
       }

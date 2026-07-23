@@ -32,3 +32,13 @@ export const WRECK_POI = {
   position: [-350, -35, -1100] as [number, number, number],
   standoff: 320,
 }
+
+/**
+ * INTERAMNIA DRIFT — the Belter colony that owns this neighborhood: the
+ * militia, the racing club, the docks the ice runs to. The Nilak's wreck
+ * lies between the colony and the lane: she died on approach.
+ */
+export const DRIFT_POI = {
+  position: [-731, -25, -1092] as [number, number, number],
+  standoff: 420,
+}

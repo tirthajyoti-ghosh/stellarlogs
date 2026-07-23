@@ -70,7 +70,11 @@ export function SeoContent() {
         <a href="https://sketchfab.com/3d-models/cargo-hauler-cb41721a59d8485fb0a107983d054ad5">
           "Cargo Hauler"
         </a>{' '}
-        by NekoKuroHB (CC BY 4.0). Boundary buoy from{' '}
+        by NekoKuroHB (CC BY 4.0). Drift-colony from{' '}
+        <a href="https://sketchfab.com/3d-models/space-station-asteroid-mining-facility-be146cbcc43e4049ac0236e9e269877e">
+          "Space Station Asteroid Mining Facility"
+        </a>{' '}
+        by Inditrion Dradnon (CC BY 4.0). Boundary buoy from{' '}
         <a href="https://sketchfab.com/3d-models/sci-fi-beaconway-point-marker-free-model-a1d91ebb3e2d41bba31c02b11423d97f">
           "Sci-Fi Beacon/Way Point Marker Free Model"
         </a>{' '}

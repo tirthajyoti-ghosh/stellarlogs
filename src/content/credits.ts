@@ -20,6 +20,7 @@ export const REGISTRY: ContentItem[] = [
       { label: 'MCRN Tachi — Jakub.Vildomec', url: 'https://sketchfab.com/3d-models/mcrn-tachi-expanse-tv-show-76fc983ab08c449b9042491a00e621cf' },
       { label: 'Gateway — andreas9343', url: 'https://sketchfab.com/3d-models/gateway-57c6a27313794618a299ebe9ec8c2afd' },
       { label: 'Cargo Hauler (the Nilak) — NekoKuroHB', url: 'https://sketchfab.com/3d-models/cargo-hauler-cb41721a59d8485fb0a107983d054ad5' },
+      { label: 'Interamnia Drift — Inditrion Dradnon', url: 'https://sketchfab.com/3d-models/space-station-asteroid-mining-facility-be146cbcc43e4049ac0236e9e269877e' },
     ],
   },
   {

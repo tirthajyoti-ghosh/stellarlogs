@@ -11,6 +11,7 @@ import { Asteroids } from './scene/Asteroids'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { BeltRun } from './scene/activities/BeltRun'
 import { Wreck } from './scene/Wreck'
+import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
@@ -50,6 +51,7 @@ export default function App() {
           <GunneryRange />
           <BeltRun />
           <Wreck />
+          <InteramniaDrift />
           <Explosions />
         </Suspense>
         <Ship />
