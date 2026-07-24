@@ -1,6 +1,7 @@
 import { Euler, Quaternion, Vector3 } from 'three'
 import type { ShipInput } from './shipInput'
 import { applyGravity, resolveCollisions } from './gravity'
+import { flightAssist } from './flightAssist'
 import { FLIGHT } from '../config/flight'
 
 export const FIXED_DT = 1 / 120
@@ -79,8 +80,17 @@ function substep(state: ShipState, input: ShipInput, dt: number): void {
 
   applyGravity(state.position, state.velocity, dt)
 
-  state.velocity.multiplyScalar(Math.exp(-FLIGHT.linearDamping * dt))
-  const targetCeiling = state.boosting ? FLIGHT.boostMaxSpeed : FLIGHT.maxSpeed
+  // FLIGHT ASSIST: the computer retro-burns residual velocity toward zero.
+  // With assist off (drive-dark) nothing decays — speed is conserved and
+  // only gravity, RCS, and collisions change it.
+  if (flightAssist.enabled) {
+    state.velocity.multiplyScalar(Math.exp(-FLIGHT.linearDamping * dt))
+  }
+  const targetCeiling = !flightAssist.enabled
+    ? FLIGHT.assistOffMaxSpeed
+    : state.boosting
+      ? FLIGHT.boostMaxSpeed
+      : FLIGHT.maxSpeed
   if (targetCeiling >= state.speedCeiling) {
     state.speedCeiling = targetCeiling // ignition: limit rises instantly
   } else {

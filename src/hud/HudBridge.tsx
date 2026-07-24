@@ -60,7 +60,7 @@ export function HudBridge() {
         : shipRig.flipping
           ? 'FLIP'
           : driveLock.locked
-            ? 'RCS ONLY'
+            ? 'RCS ONLY · ASSIST OFF'
             : shipRig.boosting
               ? 'BURN'
               : shipRig.thrusting

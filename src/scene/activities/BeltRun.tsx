@@ -19,6 +19,7 @@ import { registerHudLabel, hudLabels } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerFanfare, triggerGatePing } from '../../audio/engine'
 import { driveLock } from '../../physics/driveLock'
+import { flightAssist } from '../../physics/flightAssist'
 import { TRACK_POI } from '../../config/pois'
 import { FONT_BOLD } from '../boards/font'
 
@@ -147,6 +148,7 @@ export function BeltRun() {
       unregister()
       labelsChanged()
       driveLock.locked = false
+      flightAssist.enabled = true
     }
   }, [staging])
 
@@ -213,6 +215,7 @@ export function BeltRun() {
       g.graceUntil = 0
       g.deadSince = 0
       driveLock.locked = false
+      flightAssist.enabled = true
       activityState.banner = { text: banner, kind, until: now + 2.4 }
     }
 
@@ -223,6 +226,7 @@ export function BeltRun() {
       g.graceUntil = 0
       g.deadSince = 0
       driveLock.locked = true
+      flightAssist.enabled = false
       triggerGatePing(0)
       activityState.banner = {
         text: restart
@@ -258,6 +262,7 @@ export function BeltRun() {
             g.flashUntil = now + 4
             triggerFanfare()
             driveLock.locked = false
+            flightAssist.enabled = true
             activityState.banner = {
               text: `RUN COMPLETE — ${time.toFixed(1)}S`,
               kind: 'win',
@@ -276,25 +281,30 @@ export function BeltRun() {
     if (g.phase === 'over' && now >= g.phaseUntil) g.phase = 'idle'
 
     if (running) {
-      // Course corridor: wandering off the line warns, then voids the run
-      if (shipRig.position.distanceTo(gates[g.next].position) > CORRIDOR) {
-        if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
-        const left = Math.max(0, g.graceUntil - now)
-        activityState.banner = {
-          text: `RETURN TO COURSE — ${Math.ceil(left)}S`,
-          kind: 'fail',
-          until: now + 0.4,
-        }
-        if (now >= g.graceUntil) endRun('RUN ABANDONED', 'info')
-      } else if (g.graceUntil !== 0) {
-        g.graceUntil = 0
-      }
-      // Dead drift: too slow to finish with the drive dark — void the run
-      if (shipRig.speed < DEAD_DRIFT_SPEED) {
-        if (g.deadSince === 0) g.deadSince = now
-        else if (now - g.deadSince > DEAD_DRIFT_SECONDS) endRun('DEAD DRIFT — RUN VOID', 'fail')
+      if (shipRig.warping) {
+        // Jumping away mid-run voids it immediately — no dangling lock
+        endRun('RUN VOID — LEFT THE COURSE', 'info')
       } else {
-        g.deadSince = 0
+        // Course corridor: wandering off the line warns, then voids the run
+        if (shipRig.position.distanceTo(gates[g.next].position) > CORRIDOR) {
+          if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
+          const left = Math.max(0, g.graceUntil - now)
+          activityState.banner = {
+            text: `RETURN TO COURSE — ${Math.ceil(left)}S`,
+            kind: 'fail',
+            until: now + 0.4,
+          }
+          if (now >= g.graceUntil) endRun('RUN ABANDONED', 'info')
+        } else if (g.graceUntil !== 0) {
+          g.graceUntil = 0
+        }
+        // Dead drift: too slow to finish with the drive dark — void the run
+        if (shipRig.speed < DEAD_DRIFT_SPEED) {
+          if (g.deadSince === 0) g.deadSince = now
+          else if (now - g.deadSince > DEAD_DRIFT_SECONDS) endRun('DEAD DRIFT — RUN VOID', 'fail')
+        } else {
+          g.deadSince = 0
+        }
       }
     }
 
@@ -307,7 +317,7 @@ export function BeltRun() {
       activityState.hint = running
         ? ''
         : g.phase === 'idle'
-          ? 'FULL BURN THROUGH THE CORRIDOR — THE DRIVE LOCKS AT THE START LINE'
+          ? 'FULL BURN THROUGH THE CORRIDOR — DRIVE AND AUTO-BRAKE CUT AT THE LINE'
           : ''
       activityState.lines = [
         { label: 'TIME', value: running ? `${(now - g.startAt).toFixed(1)}S` : '—' },
@@ -501,7 +511,7 @@ export function BeltRun() {
           material-transparent
           fillOpacity={0.85}
         >
-          DRIVE-DARK SLINGSHOT RACING · BUILD SPEED · CROSS THE LINE
+          DRIVE-DARK SLINGSHOT RACING · BUILD SPEED · NO BRAKES PAST THE LINE
         </Text>
       </group>
     </group>

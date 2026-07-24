@@ -8,8 +8,14 @@ export const FLIGHT = {
   maxSpeed: 210,
   boostMaxSpeed: 520,
   boostAccelMult: 3.2,
-  /** s^-1, exponential velocity decay (space "drag" for game feel) */
+  /** s^-1, exponential velocity decay while FLIGHT ASSIST is on */
   linearDamping: 0.35,
+  /**
+   * Sanity ceiling with flight assist OFF (drive-dark runs). High enough to
+   * never touch honest slingshot speeds; exists only so an integrator edge
+   * case can't fling the ship to infinity.
+   */
+  assistOffMaxSpeed: 2000,
   /**
    * s^-1 strength of the pull back toward maxSpeed when over it (e.g. after
    * boost ends). Keep LOW — high values feel like slamming the brakes.
