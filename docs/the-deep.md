@@ -366,3 +366,86 @@ drift — scope bombs, and live-actor energy we've outlawed.
    light-lagged frontier, the no-live-ships law, probes reporting while
    you're away, conjectures answered across weeks by strangers — medium,
    fiction, and social design all agree. We never fight our medium.
+
+---
+
+# Fourth pass — pacing, targeting, cold start, probes, temperature (2026-07-26)
+
+*Supersedes the third pass's travel timings. Tirtha's critiques drove all of
+this.*
+
+## Travel: the 15–40s transit is dead
+Watching the ship coast for 15+ seconds per jump, every jump, is dead time
+wearing a costume — at exploration cadence it breaks Bruno's
+reward-every-20-seconds law. Fix:
+- **Deep jumps reuse the EXISTING brachistochrone cinematic (~8–11s)** —
+  align → burn → flip → brake, already built, already loved. Generation
+  needs 2–3s worst case; it hides inside comfortably.
+- **"Weeks out" stays on the chart, not the clock** — distance is stamped
+  on surveys and epitaphs, never experienced as waiting.
+- **Drama is reserved for thresholds, not repeated**: crossing the rim the
+  FIRST time gets a one-time long ceremony (the Deep's audio fading in over
+  a drive-dark coast). Every jump after is snappy.
+- **Pacing budget (the balance Tirtha asked for)**: pick target ~10s →
+  jump ~10s → arrival reveal ~10s → probe or hop. Full loop ≈ 30–40s per
+  system, faster when skimming. Hundreds of "light-years" per hour of play;
+  depth comes from the survey activity, never from the wait.
+
+## "Jump to WHERE?" — remote sensing makes the choice real
+Blind bearings are meaningless choices. The real-astronomy answer: you can
+*see* stars before you visit them. The chart shows unvisited nodes with
+**scope data** — an information gradient:
+1. Naked chart: position, color, class guess.
+2. Scope sweep: star class, transiting-body count.
+3. Deep scan (from an adjacent system): atmosphere hints, water lines,
+   **biosignature-candidate flags** — most of which will be false positives,
+   because that heartbreak is real astronomy.
+Choosing a jump becomes informed betting on spectra — exactly how real
+astronomers pick targets. (New HUD surface eventually: the Chart screen —
+the jump interface past the rim.)
+
+## Cold start: the Archive, and explorer zero
+The site launches with no crowd; Tirtha will be the only explorer for a
+while. Design consequences, embraced:
+- **The rim launches pre-charted by "FSC ARCHIVE"** — institutional scope
+  surveys (star class, body counts, candidate flags), zero flown surveys.
+  No fake pilots, no fabricated credits — catalogued-never-visited is how
+  real star charts work. The map at launch is a to-do list, not a void.
+- **Everything is single-player-complete**: adjacency grows from YOUR OWN
+  surveys (the crowd merely accelerates it); conjectures are
+  self-confirmable (the agent credits whoever proves it, including the
+  theorist's own pilot); Cartographer bulletins work at n=1 ("One pilot
+  flew this week. She flew far.").
+- **Explorer zero is honest**: the creator's own first-survey credits
+  seeding the Atlas is true, and a good story — no seeding theater needed.
+
+## Probes: two classes, tuned to absence, never to fake realism
+Tirtha's reductio was correct — a light-crawling probe reports in decades;
+useless. The mechanic's PURPOSE is making returns rewarding, so its clock
+is **player-absence time**, justified by the same fictional physics as the
+jump drive (torch drones + tightbeam via the co-op relay net — The Expanse
+hand-waves Epstein; our bar is internal consistency, not Einstein):
+- **Survey probe** (in-system, unchanged): real projectile, seconds,
+  gravity bends it.
+- **Ranger probe** (async): launched at a scope-charted, unsurveyed node a
+  few hops out. Reports in **2–24 real hours** (scales with hops, hard cap
+  ~a day — matched to next-day visit cadence). Return greeting: "PROBE 7
+  REPORTED FROM KX-2001 · BIOSIGNATURE POSITIVE." Backend generates the
+  survey lazily any time before pickup — async latency is free.
+- **Rangers can be lost** (small chance): the probe never reports… and
+  becomes a findable wreck node — "RANGER 7 — LAUNCHED BY [callsign].
+  NEVER REPORTED." Your failures leave named traces too. The memory theme
+  keeps paying.
+
+## Temperature: diversity from the dice, discipline from the contract
+Tirtha's instinct (high temperature for diverse stories, hard physics
+constraint) refined into the working rule:
+- **Diversity is the procgen's job** — the fact sheet (founder, bauplan,
+  history, niche graph) is where variety is manufactured, deterministically.
+  If two worlds read alike, fix the dice, not the sampler.
+- **Discipline is the contract's job** — facts are inputs the LLM may not
+  contradict; schema-forced output; a validator pass (banned-magic list,
+  units sanity) rejects unscientific prose.
+- **Temperature only seasons the prose** — moderate-high for survey voice;
+  hotter allowed for Cartographer bulletins and conjecture phrasing (they
+  are speculation, labeled as such); cooler for body physical descriptions.
