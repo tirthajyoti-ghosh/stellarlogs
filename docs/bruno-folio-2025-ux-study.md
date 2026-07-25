@@ -171,6 +171,17 @@ skins) and they demonstrably work for his audience; our standing law is NO meta-
 (badges/leaderboards rejected 2026-07). His daily-reset in-world top-10 is the closest thing that
 might fit our laws (ephemeral, in-world, no account) — the Track already has a local best.
 
+### Tirtha's first reactions (2026-07-25, brainstorm open — nothing locked)
+
+- **Full rethink declared:** every prior assumption and ban is back on the table; rebuild the
+  mental model from these lessons.
+- **Liveness:** agreed.
+- **Travel time:** partially disputed — Bruno bunches *content* but lets the *sport* sprawl (his
+  circuit is long on the minimap). Revisit with that split in mind.
+- **Rescue:** yes, but diegetic — jump/brachistochrone to the nearest POI, not teleportation.
+- **Toys in the systems:** yes.
+- **Achievements/unlocks:** saw them, open question how (or whether) to approach for us.
+
 ## Sources
 
 - Hands-on Playwright session, bruno-simon.com (2026-07-25) — 20 field screenshots
