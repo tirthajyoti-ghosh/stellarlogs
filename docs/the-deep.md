@@ -263,3 +263,106 @@ testable NOW with template text. A weekend spike validates the
 oatmeal-defense before any infrastructure exists. If the fact sheets read
 as distinct and alive in plain templates, the LLM layer only adds voice —
 we'll know the bones are good.
+
+---
+
+# Third pass — the Registry graph, agents, travel, Bobiverse, synthesis (2026-07-26)
+
+## The Registry is a graph and the surveyor is an agent (Tirtha's reframe)
+Correcting the second pass: don't stuff neighbor summaries into a prompt —
+model the Registry as what it actually is, a **growing knowledge graph**:
+- **Nodes**: systems, bodies, species, wrecks, relays, conjectures,
+  pilots (callsigns), bulletins.
+- **Edges**: spatial adjacency; spectral/biosignature similarity; causal
+  (nova → irradiated neighbors); provenance (pilot → discovery);
+  **conjecture edges** (LLM-proposed links: "possible panspermia corridor",
+  status: open / confirmed / refuted).
+The survey writer is then an **agent that walks the graph via tools**
+(`get_node`, `walk_edges`, `find_similar_surveys`, `open_conjectures_near`,
+`propose_conjecture`) before writing. Our backend runs an AI agent; the
+cooperative *is* the agent plus the crowd feeding it.
+
+**Tiered execution (cost discipline):**
+- Tier 1 (most systems): no agent — backend computes the neighborhood
+  subgraph deterministically and hands it to a single generation call.
+- Tier 2 (wonder tier + anomalies + weekly Cartographer pass): the full
+  tool-walking agent, multiple turns, deeper graph reads. Depth where the
+  tokens earn wonder.
+
+**The conjecture lifecycle is an emergent quest system (no quests):** a
+conjecture is a *prediction about unexplored nodes* ("if the corridor is
+real, KX-1240 should show the same spores"). Open conjectures render on the
+chart as marked bearings. When a later pilot's probe returns facts that
+match, the agent resolves it: CONFIRMED — **credit to both pilots**: the
+one whose discovery spawned the theory and the one who flew out and proved
+it. Goals emerge from the science itself; nobody authored a quest.
+
+## Law: no live multiplayer
+No other ships moving around — not now. All human presence is
+**asynchronous trace**: hails, credits, candles, relays, conjectures,
+bulletins. (Revisit only if Tirtha reopens it.)
+
+## Visitors
+First-time vs returning + counts come free with the backend. Identity stays
+privacy-light: anonymous id + optional callsign in localStorage; no
+accounts, ever, unless he says otherwise.
+
+## Travel design (the light-years problem)
+Real scale is unusable; the answer is fiction-true compression:
+- **The long jump reuses the flip-and-burn** — same verb, bigger gesture.
+  Transit runs ~15s to a hard cap of ~40s scaling with chart distance;
+  drive-dark coast in the middle where the Deep's audio layer fades in
+  (the contemplative beat).
+- **Transit is the generation window**: during the burn, the client builds
+  the system and the backend round-trips the cache. The cinematic hides all
+  latency; loading screens never exist.
+- **Distance is diegetic, not experienced**: charts and surveys stamp
+  fictional durations — "6 WEEKS OUT" — matching the epitaph voice ("11
+  weeks out"). Deep-time flavor, zero real waiting. No fuel mechanics ever
+  (friction yes, bureaucracy no).
+- **Frontier-adjacency routing**: you can jump to charted space + ONE hop
+  past the surveyed edge (that hop IS surveying). Deeper sectors become
+  reachable as the community's chart grows — relay coverage extends with
+  completed surveys. **The crowd literally opens the map.** Individual
+  courage pushes the edge; collective work deepens it.
+
+## Bobiverse minings (We Are Legion / Dennis E. Taylor)
+Take:
+- **Autonomous long-range probes** — the Von Neumann spirit, portfolio-
+  sized: launch a probe toward a sector beyond your reach; it travels in
+  REAL time (hours–days); its report is waiting on your NEXT visit ("YOUR
+  PROBE REACHED KX-2001 · BIOSIGNATURE POSITIVE"). A return-visit engine
+  that is pure Bobiverse: your machines working for you while you're away.
+- **The Cartographer as persona** — the co-op's collator writes the weekly
+  bulletins in a dry Belter voice; a voice, never a face, never a popup
+  (story-layer laws hold; no AGI fiction, just an institutional pen).
+- The tone: joyful engineering competence.
+Leave: replication trees, industry/autofactory sim, multi-Bob personality
+drift — scope bombs, and live-actor energy we've outlawed.
+
+## Synthesis — what the passes revealed (Tirtha asked "what do you gather?")
+1. **Everything is one data structure.** Port Registry boards, survey
+   credits, conjectures, wreck epitaphs, relays, candles, hails, bulletins,
+   the Atlas — every feature reads/writes the same shape: *places + events
+   + attributions, with prose attached*. There is no pile of features;
+   there is ONE Registry graph wearing different painted faces. Build it
+   once, honestly, and every future feature is a new face on it.
+2. **The theme has been memory all along.** The Nilak vigil (remember the
+   dead), the Port Registry (remember the makers), first-survey credit
+   (remember who found it), candles, epitaphs, relays as marks of passage —
+   and the night this vision crystallized began with its owner unfindable
+   on Google. The site's fiction and its function are the same statement:
+   **being remembered in a vast indifferent space is earned by what you
+   contribute to the shared record.** A portfolio is exactly that machine.
+   Design tiebreaker from now on: when unsure, choose the option that
+   leaves a trace with a name on it.
+3. **Fiction = infrastructure (law).** Our best designs are the ones where
+   the technical thing and the fictional thing are identical: co-op =
+   backend, transit cinematic = loading screen, orbital-only ethic = engine
+   constraint, relay coverage = routing table, drive-dark = physics flag.
+   When fiction and architecture disagree, redesign until they are the same
+   thing.
+4. **Async is the native mode of everything here.** The web visit, the
+   light-lagged frontier, the no-live-ships law, probes reporting while
+   you're away, conjectures answered across weeks by strangers — medium,
+   fiction, and social design all agree. We never fight our medium.
