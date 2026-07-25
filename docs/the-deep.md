@@ -168,3 +168,98 @@ Consequences, in order of importance:
   content pipeline — design their keys/shapes with `seed@version` in mind.
 - Radio-hail callsigns become discovery credits — one identity primitive,
   two features.
+
+---
+
+# Second pass — further directions (2026-07-26, late)
+
+## A universe that theorizes about itself
+The meaning layer doesn't have to write each system in isolation. When
+generating a new survey, include 2–3 *neighboring systems'* cached summaries
+in the prompt. The LLM may then write connective tissue: "the same silicate
+spore signature as KX-1121, two jumps rimward — a panspermia corridor?" The
+registry accumulates **conjectures** that later discoveries confirm or
+refute. The frontier stops being a catalog and starts doing *science about
+itself* — emergent meta-narrative for the cost of a longer prompt.
+Companion piece: **the Cartographer's Notes** — a weekly cron pass reads the
+week's discoveries and writes a short state-of-the-frontier bulletin, posted
+in-world on a painted board at the Drift and on the Atlas. The world
+discusses what its visitors did.
+
+## Deep time — the frontier has a heartbeat
+- **Live celestial mechanics on real clocks**: variable stars that dim on
+  multi-day periods; eclipsing binaries; a comet that only visits the inner
+  system two real-world weeks a year. "Come back in March" — ephemeral
+  astronomy creates return visits and shared moments (a transit *tonight*).
+- **Growing surveys**: biosphere worlds get seasonal field entries (a
+  quarterly LLM pass, versioned) — the Atlas shows a world's science
+  *thickening over months*.
+- **Propagating events**: a nova in one sector tints neighboring skies for
+  real-time weeks. Everyone in the Deep shares the same sky news.
+
+## Sound as an instrument (survey by ear)
+Each system gets a procedural audio signature derived from its seed: pulsar
+clicks at true rotation rate, magnetosphere hum, aurora static — and on
+biosphere worlds, a faint biological channel when the antenna points at
+them. Anomalies are *audible as wrongness* before instruments resolve them.
+Listening to the dark is peak Expanse, costs no assets (procedural synth
+from seed params), and gives the Deep its own sensory identity distinct
+from the charted core.
+
+## Rendering life without modeling creatures
+We cannot model 10,000 species. We don't need to — **orbital survey sees
+life at planetary scale**, which is scientifically honest and fully
+procedural: bioluminescent ocean blooms (shader), reef-bands coloring
+coastlines, migratory swarm-shadows crossing cloud decks, spore hazes in
+the airglow. Life is texture, light, and motion on the planet shader; the
+*species* live in the prose. Experiment for later: a **field-sketch
+generator** — parametric line-art silhouettes derived from the bauplan spec
+(survey-notebook style), procedural and consistent, explicitly NOT
+image-model output (slop risk).
+
+## The fiction of surveying: a Belter commons
+Who are you out there? The **Frontier Survey Cooperative** — volunteer
+pilots, pooled data, Belter-run. No claims, no ownership, no strip-mining:
+orbital observation only (our engine's constraint IS the ethic — a
+prime-directive flavor without preaching). "The chart belongs to the Belt
+because the Belt built it." First-survey credit is honor, not property —
+which is exactly why it stays warm.
+
+## Multiplayer texture beyond credit
+- **Relay buoys**: each explorer may place ONE numbered relay in the Deep
+  (moderated name). The frontier slowly grows visible infrastructure the
+  way real frontiers do — and a dead relay is a future small-Nilak.
+- **Loose ends**: the Atlas lists systems *pinged but never fully probed* —
+  open invitations to finish a stranger's survey.
+- **Expeditions**: a monthly announced target sector (shared-clock synced);
+  that weekend's discoveries push one chart-front together. (Elite's
+  Distant Worlds, miniaturized.)
+
+## Naming policy (law-consistent)
+Procedural Belter-flavored designations for everything ("KX-1189 c").
+Only the wonder tier *earns a name* — LLM-proposed from Lang Belta
+name-grammar (world-signage law: Belta lives in names, HUD stays plain
+English). Visitor naming rights, if ever, go through the hail-moderation
+pipe and apply only to relays, not worlds.
+
+## The danger law
+**The Deep doesn't kill you; it outlasts you.** Hazards are texture, not
+punishment: a flare star may whiteout instruments mid-survey (wait or
+return), a pulsar forces a longer standoff (slower resolve). Combat and
+dying belong to the Ice Route; the Deep is the contemplative register. Two
+moods, one game.
+
+## The Deep as the portfolio's strongest exhibit
+Quietly the whole feature *is* the resume: a production LLM pipeline with
+schema-forcing, caching, versioning, moderation, cost bounds, and graceful
+degradation — running live in front of the recruiter. Publish the
+engineering notes (blog post + a registry board at the Comms Station:
+"HOW THE SURVEY WORKS"). The portfolio piece about AI engineering is made
+OF AI engineering.
+
+## Immediate spike (zero backend, zero LLM)
+The founder/bauplan/history → niche-graph generator is pure TypeScript and
+testable NOW with template text. A weekend spike validates the
+oatmeal-defense before any infrastructure exists. If the fact sheets read
+as distinct and alive in plain templates, the LLM layer only adds voice —
+we'll know the bones are good.
