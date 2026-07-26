@@ -428,7 +428,14 @@ export function GunneryRange() {
         startDrill()
       }
     }
-    if (activityState.restartRequest && (g.phase !== 'idle' || !inArmZone)) {
+    // Only consume a stale re-run request if it was OURS to consume — another
+    // activity's Space press must survive this frame (owner-gated, or the
+    // range silently eats every other zone's restart).
+    if (
+      activityState.restartRequest &&
+      (activityState.owner === 'gunnery' || activityState.owner === '') &&
+      (g.phase !== 'idle' || !inArmZone)
+    ) {
       activityState.restartRequest = false
     }
     if (g.phase === 'countdown' && now >= g.phaseUntil) launchWave(now)
@@ -498,22 +505,21 @@ export function GunneryRange() {
     }
 
     // ---- HUD state (claim the shared panel only while engaged) ----
-    activityState.battle = battleRunning
-    activityState.threats = battleRunning ? torpedoes : []
+    // EVERY write below is owner-gated: the range and the escort both feed
+    // the same battle HUD, and an idle activity that keeps writing `battle`
+    // and `threats` every frame silently blanks whichever one is live.
     const engaged = inArmZone || battleRunning || g.phase === 'over'
     if (engaged) {
       activityState.owner = 'gunnery'
       activityState.active = true
-    } else if (activityState.owner === 'gunnery') {
-      activityState.owner = ''
-      activityState.active = false
-    }
-    activityState.hull = g.hull
-    activityState.hullMax = 3
-    activityState.wave = battleRunning ? g.wave : 0
-    activityState.waveMax = WAVES.length
-    activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
-    if (engaged) {
+      activityState.battle = battleRunning
+      activityState.threats = battleRunning ? torpedoes : []
+      activityState.hull = g.hull
+      activityState.hullMax = 3
+      activityState.wave = battleRunning ? g.wave : 0
+      activityState.waveMax = WAVES.length
+      activityState.waveLabel = 'WAVE'
+      activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
       activityState.title =
         g.veteran && battleRunning ? 'MILITIA CERT — VETERAN' : 'MILITIA PDC CERTIFICATION'
       const coach =
@@ -530,6 +536,12 @@ export function GunneryRange() {
         { label: 'KILLS', value: String(g.kills) },
       ]
       activityState.flash = now < g.flashUntil ? g.flashText : ''
+    } else if (activityState.owner === 'gunnery') {
+      activityState.owner = ''
+      activityState.active = false
+      activityState.battle = false
+      activityState.threats = []
+      activityState.canRestart = false
     }
 
     // ---- feed turrets: guns are AUTOMATIC while the drill runs ----

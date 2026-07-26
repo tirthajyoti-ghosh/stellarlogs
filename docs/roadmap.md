@@ -34,20 +34,46 @@ return, drills repeat). The wreck stops being scenery and becomes the
 route's history — you pass the memorial on the working route that killed
 her.
 
-### F.4 — THE ICE RUN (escort) — build first
-The Imiq departs a staging point and flies the route toward the Drift, past
-the Nilak. Mid-route — right as she flips to brake — the strike comes:
-torpedoes targeting *her*, not you. Core mechanic: **you are not the gun,
-you are the shield's position.** Turret arcs only protect what's behind
-them — the skill is stationing: reading torpedo bearings and physically
-flying your ship between the threat axis and the hauler's hull, holding the
-screen while she burns. Her hull bar is the mission; yours is your problem
-too. Win: the Imiq docks at the Amnia. Lose: you watch a second ice hauler
-die in the same black as the first.
-*Asset ready: NekoKuroHB Cargo Hauler (same model as the Nilak, intact,
-72u — sister ships is the point).*
+### F.4 — THE ICE ROUTE (escort) — SHIPPED 2026-07-26
+**A scripted escort felt "mechanical and artificial" (Tirtha's verdict on
+the first build). It was rebuilt as a route that lives whether you fly it
+or not** — the law this produced: *the world runs its jobs; the player
+joins them.* No staging point, no set-piece, no memorisable pattern.
 
-### F.3 — THE HUNT (interdiction) — build second
+- **Traffic.** A hauler is always inbound to the Amnia, from a **different
+  random bearing every time** (bearings that would cut close to the Nilak
+  are rejected — the lane always gives the grave its room). The fleet are
+  the Nilak's sisters, named for kinds of ice: IMIQ, SIKU, QINU, AUNIQ,
+  MASAK. She flies accel→cruise→flip→brake, docks, offloads, and departs
+  outbound; the next one is scheduled behind her.
+- **The job is picked up at the colony.** The **ICE DOCK board** at the
+  Drift posts what is inbound. Closing on an inbound hauler while she is
+  still out in the dark IS accepting the escort (auto-start law holds).
+- **Ambient defence — you can just watch.** An unescorted convoy on final
+  gets attacked anyway, and either the **colony's batteries** or **the
+  hauler's own gunner** (alternating per run) puts streams of rounds up and
+  kills the ordnance. The route defends itself; you are allowed to be a
+  spectator.
+- **The raid is not a script.** While escorting, salvos come at **random
+  times on random bearings**, launched from beyond visual range — you get
+  trails and a direction, never a shooter.
+- **The reveal.** At her flip — drive cold, no dodge left in her — the
+  **DRAUGR** finally shows herself at knife range, fires the last salvo
+  from where you can SEE it, holds, and burns away. HUD brackets her:
+  "RAIDER · NO TRANSPONDER · WEAPONS FREE".
+- **You do not chase her.** The hauler is the job. When the ice is in, the
+  dockmaster posts the follow-up on the same board: *INTERDICTION POSTED ·
+  DRAUGR · LAST BEARING nnn°* — which is F.3.
+- Core mechanic unchanged and verified: **you are not the gun, you are the
+  shield's position** (PDCs reach 300u). Measured: on station → delivered
+  hurt but alive; in the convoy but 690u back → **0 intercepts, hauler
+  dead**.
+*Assets: NekoKuroHB Cargo Hauler (the Imiq, sister of the Nilak, 72u);
+"Stealth Ship - Vehicle Design" (the Draugr, 14u, runs dark), both CC-BY.*
+
+### F.3 — THE HUNT (interdiction) — build next; already posted in-world
+*The dock board posts this job with the Draugr's last bearing the moment an
+escort succeeds, so the hand-off exists before the mission does.*
 The inverse geometry: the Draugr runs, you chase. She fires torpedoes back
 down her wake; your PDCs defend *you* while you fly the intercept, managing
 closure (overshoot and she breaks away). Win without a kill: **close inside

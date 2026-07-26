@@ -49,6 +49,8 @@ export const activityState = {
   hullMax: 3,
   wave: 0,
   waveMax: 3,
+  /** What the battle HUD calls a wave — drills run WAVEs, raiders fire SALVOs */
+  waveLabel: 'WAVE',
   /** Drill finished while the ship is still inside — offer a re-run */
   canRestart: false,
   /** One-shot re-run request (Space / touch button), consumed by the activity */

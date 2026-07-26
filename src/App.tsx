@@ -9,7 +9,7 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
 import { GunneryRange } from './scene/activities/GunneryRange'
-import { IceRun } from './scene/activities/IceRun'
+import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
 import { Wreck } from './scene/Wreck'
 import { InteramniaDrift } from './scene/InteramniaDrift'
@@ -51,7 +51,7 @@ export default function App() {
         <Asteroids />
         <Suspense fallback={null}>
           <GunneryRange />
-          <IceRun />
+          <IceRoute />
           <BeltRun />
           <Wreck />
           <InteramniaDrift />

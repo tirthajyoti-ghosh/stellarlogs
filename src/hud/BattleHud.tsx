@@ -72,7 +72,10 @@ export function BattleHud() {
       }
       const wave = waveRef.current
       if (wave) {
-        const text = activityState.wave > 0 ? `WAVE ${activityState.wave} / ${activityState.waveMax}` : ''
+        const text =
+          activityState.wave > 0
+            ? `${activityState.waveLabel} ${activityState.wave} / ${activityState.waveMax}`
+            : ''
         if (wave.textContent !== text) wave.textContent = text
       }
 
