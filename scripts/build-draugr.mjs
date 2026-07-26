@@ -8,7 +8,7 @@
  * cross-section profiling. We rotate Y by -90° so the bow lands on +X, the
  * convention every ship in this project renders with. Hull darkened hard:
  * a ship that works this lane runs dark and is seen by her drive, not her
- * paint. Normalized origin-centered, length 14u (~2× the player's gunship).
+ * paint. Normalized origin-centered, length 20u (~3x the player's gunship).
  */
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions'
@@ -27,7 +27,7 @@ import sharp from 'sharp'
 import { statSync } from 'node:fs'
 
 const [, , SRC, OUT] = process.argv
-const LENGTH = 14
+const LENGTH = 20
 
 await MeshoptEncoder.ready
 await MeshoptDecoder.ready
@@ -72,7 +72,7 @@ scene.addChild(doc.createNode('hull').setMesh(hullMesh))
 // ---- a ship that does not want to be seen ----
 for (const material of root.listMaterials()) {
   const base = material.getBaseColorFactor()
-  material.setBaseColorFactor([base[0] * 0.3, base[1] * 0.32, base[2] * 0.36, base[3]])
+  material.setBaseColorFactor([base[0] * 0.55, base[1] * 0.58, base[2] * 0.66, base[3]])
   material.setRoughnessFactor(0.92)
   material.setMetallicFactor(0.18)
   material.setEmissiveFactor([0, 0, 0])

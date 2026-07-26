@@ -40,14 +40,23 @@ the first build). It was rebuilt as a route that lives whether you fly it
 or not** — the law this produced: *the world runs its jobs; the player
 joins them.* No staging point, no set-piece, no memorisable pattern.
 
-- **Traffic.** A hauler is always inbound to the Amnia, from a **different
-  random bearing every time** (bearings that would cut close to the Nilak
+- **Traffic (multi-ship).** Up to FOUR ships work the lanes at once, on
+  three different hull classes (ice hauler, heavy container freighter, mid
+  container freighter) carrying ice, water, ore, fuel, parts, volatiles,
+  grain or steel. Each arrives from a **different random bearing** (bearings that would cut close to the Nilak
   are rejected — the lane always gives the grave its room). The fleet are
   the Nilak's sisters, named for kinds of ice: IMIQ, SIKU, QINU, AUNIQ,
-  MASAK. She flies accel→cruise→flip→brake, docks, offloads, and departs
-  outbound; the next one is scheduled behind her.
-- **The job is picked up at the colony.** The **ICE DOCK board** at the
-  Drift posts what is inbound. Closing on an inbound hauler while she is
+  MASAK; freight hulls carry BREKKA, TALVI, KOSMO, SAMAK, VANAJA, OYADEH.
+  Each flies accel→cruise→flip→brake, docks, offloads, then **boosts away
+  under a swelling plume to 1100 m/s** — the player tops out at 520, so a
+  departing ship simply cannot be caught, which is how she leaves the
+  frame. Nothing is ever scripted: bearings, classes, cargo, names, arrival
+  gaps, dock holds, salvo counts and timings are all rolled at runtime.
+- **The board is never empty.** If no escortable ship is in the lanes, one
+  spawns immediately — finish a job and the next is already inbound.
+- **The job is picked up at the colony.** The **AMNIA DOCKS board** at the
+  Drift lists live traffic (three rows: name · cargo · status) and the HUD
+  points at whichever ship is currently escortable. Closing on an inbound hauler while she is
   still out in the dark IS accepting the escort (auto-start law holds).
 - **Ambient defence — you can just watch.** An unescorted convoy on final
   gets attacked anyway, and either the **colony's batteries** or **the

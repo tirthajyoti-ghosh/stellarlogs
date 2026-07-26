@@ -30,42 +30,54 @@ import { DRIFT_POI, WRECK_POI } from '../../config/pois'
 import { FONT_BOLD } from '../boards/font'
 
 /**
- * THE ICE ROUTE — the standing situation, running whether you fly it or not.
+ * THE AMNIA LANES — the colony's traffic, running whether you fly it or not.
  *
- * The Amnia drinks; haulers bring it. So a hauler is always inbound from
- * somewhere out in the dark — a different bearing every time, because ice
- * comes from wherever the last claim was cut — and the colony's dock board
- * says who is coming. Raiders work this lane. When a convoy comes in
- * undefended you can sit off the docks and watch the colony's own batteries
- * put rounds up for her; when YOU fly out to meet her, the job is yours.
+ * The Drift is a working port: several ships are always in the lanes at once,
+ * arriving from random bearings out of the dark, docking, offloading and
+ * boosting away hard enough that nobody catches them. Ice keeps a rock alive
+ * so ice is most of it, but water, ore, fuel and parts come too, on three
+ * different classes of hull. The dockmaster's board always has work on it —
+ * finish an escort and the next ship is already inbound.
  *
- * The escort: torpedoes arrive on random bearings at random times, launched
- * from beyond anything you can see — you get trails and a direction, never a
- * shooter. Until she flips. Drive cold, no dodge left in her, that is when
- * the DRAUGR shows herself and fires the last salvo from where you can
- * finally SEE it. You do not chase her — the hauler is the job. The chase is
- * the next one, and the dockmaster posts it when the ice is in.
+ * Raiders work these lanes. An unescorted ship on final gets hit anyway and
+ * either the colony's batteries or her own gunner answers, which you can sit
+ * off the docks and simply watch. Take the job and the raid becomes yours:
+ * salvos at random times on random bearings, launched from beyond anything
+ * you can see — trails and a direction, never a shooter. Until she flips.
+ * Drive cold, no dodge left in her, that is when the DRAUGR shows herself
+ * and fires from where you can finally SEE it.
  *
- * You are not the gun; you are the shield's position (PDCs only reach 300u).
+ * You do not chase her. The freighter is the job; the chase is the next one,
+ * and the dockmaster posts it when the cargo is in.
  */
 
-const HAULER_URL = '/models/imiq.glb'
 const RAIDER_URL = '/models/draugr.glb'
 const TORPEDO_URL = '/models/torpedo.glb'
+
+/** The three classes working these lanes. Bow is +X on all of them. */
+const CLASSES = [
+  { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6 },
+  { url: '/models/freighter-a.glb', halfLen: 40, radius: 15, collider: 32, plumeX: -50, plume: 3.4 },
+  { url: '/models/freighter-b.glb', halfLen: 24, radius: 9, collider: 20, plumeX: -31, plume: 2.1 },
+]
+/** Ice hulls carry the cold cargo and wear the old ice names. */
+const ICE_NAMES = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
+const FREIGHT_NAMES = ['BREKKA', 'TALVI', 'KOSMO', 'SAMAK', 'VANAJA', 'OYADEH']
+const ICE_CARGO = ['ICE', 'ICE', 'WATER']
+const FREIGHT_CARGO = ['ORE', 'FUEL', 'PARTS', 'VOLATILES', 'GRAIN', 'STEEL']
 
 const DRIFT = new Vector3(...DRIFT_POI.position)
 const WRECK = new Vector3(...WRECK_POI.position)
 
-/** The fleet: the Nilak's sisters, named for kinds of ice and water. */
-const FLEET = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
-
-const SPAWN_DIST = 2000 // where a hauler appears out of the dark
-const DOCK_DIST = 330 // her parking standoff off the colony
-const WRECK_BERTH = 220 // no lane is ever cut closer than this to the Nilak
-const JOIN_RADIUS = 450 // close on an inbound hauler → the job is yours
-const JOIN_MIN_RANGE = 900 // ...but only while she is still out in the dark
-const CONVOY_RADIUS = 1000 // wander further and she turns back
-const WATCH_RANGE = 2600 // close enough to witness the colony defend a convoy
+const MAX_SHIPS = 4
+const SPAWN_DIST = 2400
+const DOCK_DIST = 330
+const WRECK_BERTH = 220
+const JOIN_RADIUS = 450
+const JOIN_MIN_RANGE = 900
+const CONVOY_RADIUS = 1000
+const WATCH_RANGE = 2600
+const DESPAWN_DIST = 3400
 const GRACE_SECONDS = 10
 
 const CRUISE = 62
@@ -73,32 +85,57 @@ const ACCEL = 8
 const BRAKE = 12
 const FLIP_SECONDS = 2.6
 const TURN_RATE = 0.35
+/** Departure: she lights the drive and is simply gone. Player boost is 520. */
+const BOOST_ACCEL = 95
+const BOOST_MAX = 1100
 
-const HAULER_HULL_MAX = 8
-const HAULER_HALF_LEN = 30
-const HAULER_RADIUS = 10.5
-const HAULER_COLLIDER = 24
+const HULL_MAX = 8
 const PLAYER_HIT_RADIUS = 6.5
 
 const TORP_POOL = 18
 const TORP_SPEED = 105
 const TORP_TURN = 0.85
 const TORP_WEAVE = 20
-const RAID_FIRST = 4 // seconds after joining before the first salvo
-const RAID_GAP = 7 // minimum gap between salvos
-const RAID_JITTER = 5 // + up to this much, randomly
-const HIDDEN_LAUNCH = 1400 // salvos come from beyond sight: trails, no shooter
+const RAID_FIRST = 4
+const RAID_GAP = 7
+const RAID_JITTER = 5
+const HIDDEN_LAUNCH = 1400
 
-const RAIDER_REVEAL_DIST = 240 // knife range: close enough to read her hull
-const RAIDER_LINGER = 13 // seconds on the board before she is gone for good
-const DEFENSE_RANGE = 420 // colony/hauler battery reach on an ambient run
+const RAIDER_REVEAL_DIST = 240
+const RAIDER_LINGER = 13
+const DEFENSE_RANGE = 420
 const DEFENSE_STREAKS = 30
 
-const DOCK_HOLD = 16
-const NEXT_ARRIVAL_MIN = 22
-const NEXT_ARRIVAL_JITTER = 26
+const DOCK_HOLD_MIN = 12
+const DOCK_HOLD_JITTER = 14
+const SPAWN_GAP_MIN = 9
+const SPAWN_GAP_JITTER = 18
 
 const BEST_KEY = 'stellarlogs-iceroute-best-v1'
+
+interface Ship {
+  active: boolean
+  name: string
+  cargo: string
+  cls: number
+  phase: 'inbound' | 'docked' | 'outbound'
+  flight: 'accel' | 'cruise' | 'flip' | 'brake' | 'stopped'
+  bearing: Vector3
+  origin: Vector3
+  dock: Vector3
+  position: Vector3
+  dir: Vector3
+  s: number
+  legLength: number
+  v: number
+  flipT: number
+  hull: number
+  holdUntil: number
+  ambientNextAt: number
+  defender: number
+  labelOff: (() => void) | null
+  collider: { position: Vector3; radius: number }
+}
 
 interface Torpedo {
   position: Vector3
@@ -110,17 +147,11 @@ interface Torpedo {
   launchAt: number
   launched: boolean
   tracked: boolean
-  /** Ambient traffic gets shot down by the colony, not by you */
   ambient: boolean
+  /** which ship it is hunting */
+  target: number
   targetPos: Vector3
 }
-
-/** The route's own life, independent of the player */
-type RoutePhase = 'void' | 'inbound' | 'docked' | 'outbound'
-/** The hauler's flight profile on an inbound leg */
-type FlightPhase = 'accel' | 'cruise' | 'flip' | 'brake' | 'stopped'
-/** The player's involvement */
-type JobPhase = 'none' | 'escort' | 'over'
 
 const _v = new Vector3()
 const _v2 = new Vector3()
@@ -134,17 +165,23 @@ const _dummy = new Object3D()
 const _scaleOne = new Vector3(1, 1, 1)
 const _m = new Matrix4()
 
-/** Random unit bearing whose straight lane never crosses the Nilak's grave. */
-function pickBearing(out: Vector3): void {
-  for (let attempt = 0; attempt < 24; attempt++) {
+const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
+
+/** Random bearing whose lane never crosses the Nilak, nor pops in your face. */
+function pickBearing(out: Vector3, avoidPlayer: boolean): void {
+  for (let attempt = 0; attempt < 30; attempt++) {
     const az = Math.random() * Math.PI * 2
     const el = (Math.random() - 0.5) * 0.44
     out.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).normalize()
-    // distance from the wreck to the lane segment [DRIFT + out*SPAWN, DRIFT + out*DOCK]
     _v.copy(WRECK).sub(DRIFT)
     const along = Math.max(DOCK_DIST, Math.min(SPAWN_DIST, _v.dot(out)))
     _v2.copy(DRIFT).addScaledVector(out, along)
-    if (_v2.distanceTo(WRECK) > WRECK_BERTH) return
+    if (_v2.distanceTo(WRECK) < WRECK_BERTH) continue
+    if (avoidPlayer) {
+      _v2.copy(DRIFT).addScaledVector(out, SPAWN_DIST)
+      if (_v2.distanceTo(shipRig.position) < 900) continue // never pop in on the pilot
+    }
+    return
   }
 }
 
@@ -164,11 +201,12 @@ function useTorpedoBody(): { geometry: BufferGeometry; material: Material } {
     const center = geometry.boundingBox!.getCenter(new Vector3())
     const size = geometry.boundingBox!.getSize(new Vector3())
     const scale = 4.6 / Math.max(size.x, size.y, size.z)
-    const bake = new Matrix4()
-      .makeRotationX(-Math.PI / 2)
-      .multiply(new Matrix4().makeScale(scale, scale, scale))
-      .multiply(new Matrix4().makeTranslation(-center.x, -center.y, -center.z))
-    geometry.applyMatrix4(bake)
+    geometry.applyMatrix4(
+      new Matrix4()
+        .makeRotationX(-Math.PI / 2)
+        .multiply(new Matrix4().makeScale(scale, scale, scale))
+        .multiply(new Matrix4().makeTranslation(-center.x, -center.y, -center.z)),
+    )
     const material = (
       Array.isArray(source.material) ? source.material[0] : source.material
     ) as MeshStandardMaterial
@@ -177,28 +215,59 @@ function useTorpedoBody(): { geometry: BufferGeometry; material: Material } {
 }
 
 export function IceRoute() {
-  const haulerGltf = useGLTF(HAULER_URL)
+  const hullA = useGLTF(CLASSES[0].url)
+  const hullB = useGLTF(CLASSES[1].url)
+  const hullC = useGLTF(CLASSES[2].url)
   const raiderGltf = useGLTF(RAIDER_URL)
-  const haulerHull = useMemo(
-    () => haulerGltf.scene.getObjectByName('hull') as Object3D,
-    [haulerGltf],
-  )
   const raiderHull = useMemo(() => raiderGltf.scene.getObjectByName('hull') as Object3D, [raiderGltf])
   const torpedoBody = useTorpedoBody()
   const pdcFire = useMemo(() => createPdcFire(), [])
 
-  const haulerRef = useRef<Group>(null)
-  const plumeRef = useRef<Mesh>(null)
+  /** One clone of every class per slot — geometry and materials are shared. */
+  const slotModels = useMemo(() => {
+    const sources = [hullA, hullB, hullC].map(
+      (g) => g.scene.getObjectByName('hull') as Object3D,
+    )
+    return Array.from({ length: MAX_SHIPS }, () => sources.map((o) => o.clone()))
+  }, [hullA, hullB, hullC])
+
+  const slotRefs = useRef<(Group | null)[]>([])
+  const plumeRefs = useRef<(Mesh | null)[]>([])
   const raiderRef = useRef<Group>(null)
   const raiderPlumeRef = useRef<Mesh>(null)
   const torpMeshRef = useRef<InstancedMesh>(null)
   const torpPlumeRef = useRef<InstancedMesh>(null)
   const defenseMeshRef = useRef<InstancedMesh>(null)
   const boardRef = useRef<Group>(null)
-  const boardTextRef = useRef<{ text: string; sync?: () => void }>(null)
+  const boardRows = useRef<({ text: string; sync?: () => void } | null)[]>([])
 
-  const haulerPos = useMemo(() => DRIFT.clone().addScaledVector(new Vector3(1, 0, 0), SPAWN_DIST), [])
-  const haulerDir = useMemo(() => new Vector3(-1, 0, 0), [])
+  const ships = useMemo<Ship[]>(
+    () =>
+      Array.from({ length: MAX_SHIPS }, () => ({
+        active: false,
+        name: '',
+        cargo: '',
+        cls: 0,
+        phase: 'inbound' as const,
+        flight: 'accel' as const,
+        bearing: new Vector3(1, 0, 0),
+        origin: new Vector3(),
+        dock: new Vector3(),
+        position: new Vector3(0, -99999, 0),
+        dir: new Vector3(1, 0, 0),
+        s: 0,
+        legLength: 1,
+        v: 0,
+        flipT: 0,
+        hull: HULL_MAX,
+        holdUntil: 0,
+        ambientNextAt: 0,
+        defender: 0,
+        labelOff: null,
+        collider: { position: new Vector3(0, -99999, 0), radius: 0 },
+      })),
+    [],
+  )
   const raiderPos = useMemo(() => new Vector3(), [])
   const raiderDir = useMemo(() => new Vector3(1, 0, 0), [])
 
@@ -215,65 +284,47 @@ export function IceRoute() {
         launched: false,
         tracked: false,
         ambient: false,
-        targetPos: haulerPos,
+        target: 0,
+        targetPos: new Vector3(),
       })),
-    [haulerPos],
+    [],
   )
   const targetSlots = useMemo(() => torpedoes.map((t) => ({ position: t.position })), [torpedoes])
 
   const g = useRef({
-    route: 'void' as RoutePhase,
-    flight: 'accel' as FlightPhase,
-    job: 'none' as JobPhase,
-    name: FLEET[0],
-    bearing: new Vector3(1, 0, 0),
-    origin: new Vector3(),
-    dock: new Vector3(),
-    s: 0,
-    legLength: SPAWN_DIST - DOCK_DIST,
-    v: 0,
-    flipT: 0,
-    hull: HAULER_HULL_MAX,
+    escort: -1, // slot index of the ship whose escort is ours, or -1
+    job: 'none' as 'none' | 'escort' | 'over',
     playerHull: 3,
     intercepts: 0,
     salvos: 0,
     nextSalvoAt: 0,
-    nextArrivalAt: 6, // the first convoy comes soon after the world loads
-    holdUntil: 0,
+    nextSpawnAt: 2,
     graceUntil: 0,
+    holdUntil: 0,
     flashUntil: 0,
     flashText: '',
-    /** Draugr reveal */
     raiderUntil: 0,
     raiderFiring: false,
-    /** Ambient defenders: 0 = colony batteries, 1 = the hauler's own guns */
-    defender: 0,
-    ambientNextAt: 0,
-    /** Posted follow-up job after a successful escort */
     huntPostedUntil: 0,
     huntBearing: 0,
     best: Number(localStorage.getItem(BEST_KEY) ?? 0),
-    labelName: '',
   })
-
-  // The hauler's HUD label carries her name, so it is re-registered when the
-  // fleet rotates. The collider rides her live position.
-  const labelHandle = useRef<(() => void) | null>(null)
   const raiderLabel = useRef<(() => void) | null>(null)
+
+  // every slot owns a collider that rides its live position (radius 0 = idle)
   useEffect(() => {
-    const unregisterCollider = registerCollider({
-      position: haulerPos,
-      radius: HAULER_COLLIDER,
-    })
+    const offs = ships.map((s) => registerCollider(s.collider))
     return () => {
-      labelHandle.current?.()
-      labelHandle.current = null
+      offs.forEach((off) => off())
+      ships.forEach((s) => {
+        s.labelOff?.()
+        s.labelOff = null
+      })
       raiderLabel.current?.()
       raiderLabel.current = null
-      unregisterCollider()
       labelsChanged()
     }
-  }, [haulerPos])
+  }, [ships])
 
   useEffect(() => {
     pdcFire.sources = torpedoes
@@ -286,73 +337,81 @@ export function IceRoute() {
     }
     if (import.meta.env.DEV) {
       const w = window as unknown as Record<string, unknown>
-      w.__hauler = haulerPos
-      w.__iceroute = g
+      w.__lanes = g
+      w.__ships = ships
       w.__raider = raiderPos
       w.__torps = torpedoes
     }
-  }, [pdcFire, torpedoes, haulerPos, raiderPos])
+  }, [pdcFire, torpedoes, ships, raiderPos])
 
   useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
     const s = g.current
-    const distToHauler = shipRig.position.distanceTo(haulerPos)
     const distToDrift = shipRig.position.distanceTo(DRIFT)
-    const haulerRange = haulerPos.distanceTo(DRIFT) // how far out she still is
-    const escorting = s.job === 'escort'
+    const escorted = s.escort >= 0 ? ships[s.escort] : null
+    const escorting = s.job === 'escort' && !!escorted
 
-    // ---------- the route's own life ----------
-    function beginArrival() {
-      s.route = 'inbound'
-      s.flight = 'accel'
-      s.name = FLEET[Math.floor(Math.random() * FLEET.length)]
-      pickBearing(s.bearing)
-      s.origin.copy(DRIFT).addScaledVector(s.bearing, SPAWN_DIST)
-      s.dock.copy(DRIFT).addScaledVector(s.bearing, DOCK_DIST)
-      s.legLength = s.origin.distanceTo(s.dock)
-      s.s = 0
-      s.v = 0
-      s.flipT = 0
-      s.hull = HAULER_HULL_MAX
-      s.salvos = 0
-      s.defender = Math.random() < 0.5 ? 0 : 1
-      s.ambientNextAt = now + 6 + Math.random() * 10
-      haulerPos.copy(s.origin)
-      haulerDir.copy(s.dock).sub(s.origin).normalize()
-      // her name changes with the ship: re-register the label
-      labelHandle.current?.()
-      labelHandle.current = registerHudLabel({
-        id: 'ship-hauler',
-        name: s.name,
+    // ---------- traffic ----------
+    function spawn() {
+      const ship = ships.find((sh) => !sh.active)
+      if (!ship) return
+      ship.active = true
+      ship.cls = Math.floor(Math.random() * CLASSES.length)
+      const ice = ship.cls === 0
+      ship.name = pick(ice ? ICE_NAMES : FREIGHT_NAMES)
+      ship.cargo = pick(ice ? ICE_CARGO : FREIGHT_CARGO)
+      ship.phase = 'inbound'
+      ship.flight = 'accel'
+      pickBearing(ship.bearing, true)
+      ship.origin.copy(DRIFT).addScaledVector(ship.bearing, SPAWN_DIST)
+      ship.dock.copy(DRIFT).addScaledVector(ship.bearing, DOCK_DIST)
+      ship.legLength = ship.origin.distanceTo(ship.dock)
+      ship.position.copy(ship.origin)
+      ship.dir.copy(ship.dock).sub(ship.origin).normalize()
+      ship.collider.position = ship.position
+      ship.collider.radius = CLASSES[ship.cls].collider
+      ship.s = 0
+      ship.v = 0
+      ship.flipT = 0
+      ship.hull = HULL_MAX
+      ship.defender = Math.random() < 0.5 ? 0 : 1
+      ship.ambientNextAt = now + 5 + Math.random() * 12
+      ship.labelOff?.()
+      ship.labelOff = registerHudLabel({
+        id: `ship-${ships.indexOf(ship)}`,
+        name: ship.name,
         color: '#9fd8ef',
         kind: 'poi',
-        position: haulerPos,
+        position: ship.position,
         yOffset: 26,
         el: null,
-        detail: 'ICE HAULER · INTERAMNIA REGISTRY · INBOUND',
+        detail: `${ship.cargo} · INTERAMNIA REGISTRY · INBOUND`,
       })
       labelsChanged()
     }
 
-    function endArrival() {
-      s.route = 'void'
-      s.nextArrivalAt = now + NEXT_ARRIVAL_MIN + Math.random() * NEXT_ARRIVAL_JITTER
-      labelHandle.current?.()
-      labelHandle.current = null
+    function despawn(ship: Ship) {
+      const idx = ships.indexOf(ship)
+      ship.active = false
+      ship.collider.radius = 0
+      ship.position.set(0, -99999, 0)
+      ship.labelOff?.()
+      ship.labelOff = null
       labelsChanged()
-      for (const t of torpedoes) t.alive = false
+      for (const t of torpedoes) if (t.target === idx) t.alive = false
+      if (s.escort === idx) s.escort = -1
     }
 
-    // ---------- salvos ----------
-    function fireSalvo(count: number, from: Vector3 | null, ambient: boolean) {
-      let spawned = 0
-      // a bearing nobody can see, unless the Draugr has shown herself
+    function fireSalvo(count: number, from: Vector3 | null, ambient: boolean, target: number) {
+      const ship = ships[target]
+      if (!ship?.active) return
       if (!from) {
-        pickBearing(_side)
-        _v2.copy(haulerPos).addScaledVector(_side, HIDDEN_LAUNCH)
+        pickBearing(_side, false)
+        _v2.copy(ship.position).addScaledVector(_side, HIDDEN_LAUNCH)
       } else {
         _v2.copy(from)
       }
+      let spawned = 0
       for (const torp of torpedoes) {
         if (torp.alive || spawned >= count) continue
         torp.position.copy(_v2)
@@ -360,36 +419,33 @@ export function IceRoute() {
         torp.position.y += (Math.random() - 0.5) * 60
         torp.position.z += (Math.random() - 0.5) * 90
         torp.aimOffset
-          .copy(haulerDir)
-          .multiplyScalar((Math.random() - 0.5) * 2 * HAULER_HALF_LEN * 0.8)
+          .copy(ship.dir)
+          .multiplyScalar((Math.random() - 0.5) * 2 * CLASSES[ship.cls].halfLen * 0.8)
         torp.speed = TORP_SPEED * (0.92 + Math.random() * 0.16)
         torp.weavePhase = Math.random() * 6.28
-        torp.velocity.copy(haulerPos).sub(torp.position).normalize().multiplyScalar(torp.speed)
+        torp.velocity.copy(ship.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
         torp.alive = true
         torp.launched = false
         torp.launchAt = now + spawned * 0.3
         torp.tracked = false
         torp.ambient = ambient
+        torp.target = target
         spawned++
       }
-      return spawned
     }
 
-    function raiderSalvo() {
-      // She decloaks off a random bearing at knife range — and this time the
-      // torpedoes come from somewhere you can SEE.
-      pickBearing(_side)
-      raiderPos.copy(haulerPos).addScaledVector(_side, RAIDER_REVEAL_DIST)
-      raiderDir.copy(haulerPos).sub(raiderPos).normalize()
+    function raiderSalvo(target: number) {
+      const ship = ships[target]
+      pickBearing(_side, false)
+      raiderPos.copy(ship.position).addScaledVector(_side, RAIDER_REVEAL_DIST)
+      raiderDir.copy(ship.position).sub(raiderPos).normalize()
       s.raiderUntil = now + RAIDER_LINGER
       s.raiderFiring = true
       s.huntBearing = Math.round(((Math.atan2(_side.x, _side.z) * 180) / Math.PI + 360) % 360)
-      fireSalvo(4, raiderPos, false)
+      fireSalvo(4, raiderPos, false, target)
       s.salvos++
       triggerKlaxon()
       activityState.banner = { text: 'THERE — THE DRAUGR', kind: 'battle', until: now + 2.6 }
-      // A ship that runs dark is found by her transponder-less contact box,
-      // not by her paint: bracket her so the pilot can actually SEE who did it.
       raiderLabel.current?.()
       raiderLabel.current = registerHudLabel({
         id: 'ship-draugr',
@@ -404,42 +460,35 @@ export function IceRoute() {
       labelsChanged()
     }
 
-    function endJob(result: 'delivered' | 'hauler-lost' | 'crippled' | 'abandoned') {
-      if (result === 'delivered') {
-        const kept = s.hull
-        let text = `${s.name} HULL ${kept}/${HAULER_HULL_MAX}`
-        if (kept > s.best) {
-          s.best = kept
-          localStorage.setItem(BEST_KEY, String(kept))
+    function endJob(result: 'delivered' | 'lost' | 'crippled' | 'abandoned') {
+      const ship = escorted
+      const name = ship?.name ?? 'SHE'
+      if (result === 'delivered' && ship) {
+        let text = `${name} HULL ${ship.hull}/${HULL_MAX}`
+        if (ship.hull > s.best) {
+          s.best = ship.hull
+          localStorage.setItem(BEST_KEY, String(ship.hull))
           text += ' · CLEANEST RUN'
         }
         s.flashText = text
         triggerFanfare()
         activityState.banner = {
-          text: 'ICE DELIVERED — THE AMNIA DRINKS',
+          text: `${ship.cargo} DELIVERED — THE AMNIA DRINKS`,
           kind: 'win',
           until: now + 3.2,
         }
-        // the dockmaster posts the follow-up: somebody should go get her
-        s.huntPostedUntil = now + 240
-      } else if (result === 'hauler-lost') {
-        s.flashText = 'THE ROUTE TAKES ANOTHER'
+        s.huntPostedUntil = now + 300
+      } else if (result === 'lost') {
+        s.flashText = 'THE LANE TAKES ANOTHER'
         activityState.banner = {
-          text: `${s.name} IS GONE — ANOTHER HAULER LOST ON THIS LANE`,
+          text: `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`,
           kind: 'fail',
           until: now + 3.6,
-        }
-        for (let i = 0; i < 5; i++) {
-          _v.copy(haulerDir)
-            .multiplyScalar((i - 2) * 14)
-            .add(haulerPos)
-          _v.y += (Math.random() - 0.5) * 8
-          spawnExplosion(_v, 1.5, i * 0.22)
         }
       } else if (result === 'crippled') {
         s.flashText = 'ESCORT DOWN'
         activityState.banner = {
-          text: `SHIP CRIPPLED — ${s.name} FLIES ALONE`,
+          text: `SHIP CRIPPLED — ${name} FLIES ALONE`,
           kind: 'fail',
           until: now + 3,
         }
@@ -456,11 +505,9 @@ export function IceRoute() {
       s.holdUntil = now + 3.4
       s.graceUntil = 0
       s.raiderFiring = false
-      // She is NOT cleared when the ice lands: you get to watch her burn away
-      // clean, which is the whole reason the next job exists.
       if (result !== 'delivered') s.raiderUntil = 0
-      for (const t of torpedoes) t.alive = false
-      if (result === 'hauler-lost') endArrival()
+      s.escort = -1
+      for (const t of torpedoes) if (!t.ambient) t.alive = false
     }
 
     function playerHit(torp: Torpedo) {
@@ -488,137 +535,160 @@ export function IceRoute() {
         activityState.banner = { text: 'YOU TOOK THAT ONE FOR HER', kind: 'info', until: now + 1.8 }
     }
 
-    function haulerHit(torp: Torpedo, hitPoint: Vector3) {
+    function shipHit(ship: Ship, torp: Torpedo, hitPoint: Vector3) {
       torp.alive = false
-      s.hull--
+      ship.hull--
       spawnExplosion(hitPoint, 1.4)
       triggerImpact()
-      if (s.hull === 3 && escorting) {
+      if (ship.hull === 3 && ships.indexOf(ship) === s.escort) {
         activityState.banner = { text: 'HULL FAILING — CLOSE UP', kind: 'fail', until: now + 2 }
       }
-      if (s.hull <= 0) {
-        if (escorting) endJob('hauler-lost')
-        else endArrival()
+      if (ship.hull <= 0) {
+        for (let i = 0; i < 5; i++) {
+          _v.copy(ship.dir)
+            .multiplyScalar((i - 2) * 14)
+            .add(ship.position)
+          spawnExplosion(_v, 1.5, i * 0.22)
+        }
+        if (ships.indexOf(ship) === s.escort) endJob('lost')
+        despawn(ship)
       }
     }
 
-    // ---------- route scheduler ----------
-    if (s.route === 'void' && now >= s.nextArrivalAt) beginArrival()
+    // ---------- scheduler: the board is NEVER empty ----------
+    let joinable = 0
+    let activeCount = 0
+    for (const ship of ships) {
+      if (!ship.active) continue
+      activeCount++
+      if (ship.phase === 'inbound' && ship.position.distanceTo(DRIFT) > JOIN_MIN_RANGE) joinable++
+    }
+    if (joinable === 0 && activeCount < MAX_SHIPS) {
+      spawn()
+      s.nextSpawnAt = now + SPAWN_GAP_MIN + Math.random() * SPAWN_GAP_JITTER
+    } else if (activeCount < MAX_SHIPS && now >= s.nextSpawnAt) {
+      spawn()
+      s.nextSpawnAt = now + SPAWN_GAP_MIN + Math.random() * SPAWN_GAP_JITTER
+    }
 
-    if (s.route === 'inbound') {
-      const brakeDist = (s.v * s.v) / (2 * BRAKE)
-      const remaining = s.legLength - s.s
-      if (s.flight === 'accel') {
-        s.v = Math.min(CRUISE, s.v + ACCEL * dt)
-        if (s.v >= CRUISE) s.flight = 'cruise'
-      }
-      if (
-        (s.flight === 'cruise' || s.flight === 'accel') &&
-        remaining <= brakeDist + s.v * FLIP_SECONDS + 30
-      ) {
-        s.flight = 'flip'
-        s.flipT = 0
-        // drive cold, no dodge left in her: the moment the raider waits for
-        if (escorting) raiderSalvo()
-      }
-      if (s.flight === 'flip') {
-        s.flipT += dt
-        if (s.flipT >= FLIP_SECONDS) s.flight = 'brake'
-      }
-      if (s.flight === 'brake') {
-        s.v = Math.max(0, s.v - BRAKE * dt)
-        if (remaining <= 2 || s.v <= 0.2) {
-          s.flight = 'stopped'
-          s.v = 0
-          s.route = 'docked'
-          s.holdUntil = now + DOCK_HOLD
-          for (const t of torpedoes) {
-            if (t.alive) spawnExplosion(t.position, 0.7)
-            t.alive = false
+    // ---------- fly every ship ----------
+    for (let i = 0; i < ships.length; i++) {
+      const ship = ships[i]
+      if (!ship.active) continue
+      const isEscort = i === s.escort && escorting
+
+      if (ship.phase === 'inbound') {
+        const brakeDist = (ship.v * ship.v) / (2 * BRAKE)
+        const remaining = ship.legLength - ship.s
+        if (ship.flight === 'accel') {
+          ship.v = Math.min(CRUISE, ship.v + ACCEL * dt)
+          if (ship.v >= CRUISE) ship.flight = 'cruise'
+        }
+        if (
+          (ship.flight === 'cruise' || ship.flight === 'accel') &&
+          remaining <= brakeDist + ship.v * FLIP_SECONDS + 30
+        ) {
+          ship.flight = 'flip'
+          ship.flipT = 0
+          if (isEscort) raiderSalvo(i) // drive cold — the moment they wait for
+        }
+        if (ship.flight === 'flip') {
+          ship.flipT += dt
+          if (ship.flipT >= FLIP_SECONDS) ship.flight = 'brake'
+        }
+        if (ship.flight === 'brake') {
+          ship.v = Math.max(0, ship.v - BRAKE * dt)
+          if (remaining <= 2 || ship.v <= 0.2) {
+            ship.flight = 'stopped'
+            ship.v = 0
+            ship.phase = 'docked'
+            ship.holdUntil = now + DOCK_HOLD_MIN + Math.random() * DOCK_HOLD_JITTER
+            for (const t of torpedoes) {
+              if (t.alive && t.target === i) {
+                spawnExplosion(t.position, 0.7)
+                t.alive = false
+              }
+            }
+            if (isEscort) endJob('delivered')
           }
-          if (escorting) endJob('delivered')
         }
-      }
-      if (s.flight !== 'stopped') {
-        s.s = Math.min(s.legLength, s.s + s.v * dt)
-        haulerPos.copy(s.origin).addScaledVector(s.bearing, -s.s)
-        // heading follows, rate-limited: a loaded hauler never snaps
-        _v.copy(s.dock).sub(haulerPos)
-        if (_v.lengthSq() > 1) {
-          _v.normalize()
-          const ang = haulerDir.angleTo(_v)
-          if (ang > 1e-4) haulerDir.lerp(_v, Math.min(1, (TURN_RATE * dt) / ang)).normalize()
+        if (ship.flight !== 'stopped') {
+          ship.s = Math.min(ship.legLength, ship.s + ship.v * dt)
+          ship.position.copy(ship.origin).addScaledVector(ship.bearing, -ship.s)
+          _v.copy(ship.dock).sub(ship.position)
+          if (_v.lengthSq() > 1) {
+            _v.normalize()
+            const ang = ship.dir.angleTo(_v)
+            if (ang > 1e-4) ship.dir.lerp(_v, Math.min(1, (TURN_RATE * dt) / ang)).normalize()
+          }
         }
+        // ambient: the lane is dangerous with or without you
+        if (
+          !isEscort &&
+          distToDrift < WATCH_RANGE &&
+          ship.position.distanceTo(DRIFT) < 1500 &&
+          now >= ship.ambientNextAt
+        ) {
+          fireSalvo(2, null, true, i)
+          ship.ambientNextAt = now + 16 + Math.random() * 14
+        }
+      } else if (ship.phase === 'docked') {
+        if (now >= ship.holdUntil) {
+          ship.phase = 'outbound'
+          ship.v = 0
+          ship.dir.copy(ship.bearing)
+          ship.labelOff?.()
+          ship.labelOff = registerHudLabel({
+            id: `ship-${i}`,
+            name: ship.name,
+            color: '#7f93a6',
+            kind: 'poi',
+            position: ship.position,
+            yOffset: 26,
+            el: null,
+            detail: `${ship.cargo} · OUTBOUND · MAKING WAY`,
+          })
+          labelsChanged()
+        }
+      } else {
+        // OUTBOUND: she lights the drive and is simply gone. Nobody catches her.
+        ship.v = Math.min(BOOST_MAX, ship.v + BOOST_ACCEL * dt)
+        ship.position.addScaledVector(ship.bearing, ship.v * dt)
+        if (ship.position.distanceTo(DRIFT) > DESPAWN_DIST) despawn(ship)
       }
+    }
 
-      // ---- the raid, while the job is yours: random bearings, random times
-      if (escorting && now >= s.nextSalvoAt && s.flight !== 'flip' && s.flight !== 'brake') {
-        fireSalvo(2 + Math.floor(Math.random() * 3), null, false)
-        s.salvos++
-        s.nextSalvoAt = now + RAID_GAP + Math.random() * RAID_JITTER
+    // ---------- joining a job ----------
+    if (s.job === 'none' && !shipRig.warping) {
+      for (let i = 0; i < ships.length; i++) {
+        const ship = ships[i]
+        if (!ship.active || ship.phase !== 'inbound') continue
+        if (ship.position.distanceTo(DRIFT) <= JOIN_MIN_RANGE) continue
+        if (shipRig.position.distanceTo(ship.position) > JOIN_RADIUS) continue
+        s.escort = i
+        s.job = 'escort'
+        s.playerHull = 3
+        s.intercepts = 0
+        s.salvos = 0
+        s.nextSalvoAt = now + RAID_FIRST + Math.random() * 3
+        for (const t of torpedoes) if (t.alive && t.target === i) t.ambient = false
+        damageFx.clear()
         triggerKlaxon()
         activityState.banner = {
-          text: 'TORPEDOES INBOUND — BEARING UNKNOWN',
+          text: `ESCORT ACCEPTED — ${ship.name}, ${ship.cargo}`,
           kind: 'battle',
-          until: now + 2.2,
+          until: now + 3,
         }
+        s.flashText = ''
+        s.flashUntil = 0
+        break
       }
-      // ---- ambient traffic: the lane is dangerous with or without you.
-      // Close enough to watch, and she is coming in alone → the colony
-      // (or her own gunner) puts rounds up, and you get to just witness it.
-      if (
-        !escorting &&
-        s.job !== 'over' &&
-        distToDrift < WATCH_RANGE &&
-        haulerRange < 1500 &&
-        now >= s.ambientNextAt
-      ) {
-        fireSalvo(2, null, true)
-        s.ambientNextAt = now + 14 + Math.random() * 12
-      }
-    }
-
-    if (s.route === 'docked' && now >= s.holdUntil) {
-      s.route = 'outbound'
-      s.flight = 'accel'
-      s.v = 0
-      haulerDir.copy(s.bearing) // nose back out the way she came
-    }
-    if (s.route === 'outbound') {
-      s.v = Math.min(CRUISE, s.v + ACCEL * dt)
-      haulerPos.addScaledVector(s.bearing, s.v * dt)
-      if (haulerPos.distanceTo(DRIFT) > SPAWN_DIST) endArrival()
-    }
-
-    // ---------- joining the job ----------
-    if (
-      s.job === 'none' &&
-      s.route === 'inbound' &&
-      !shipRig.warping &&
-      distToHauler < JOIN_RADIUS &&
-      haulerRange > JOIN_MIN_RANGE
-    ) {
-      s.job = 'escort'
-      s.playerHull = 3
-      s.intercepts = 0
-      s.nextSalvoAt = now + RAID_FIRST + Math.random() * 3
-      // anything already in the air is yours to stop now
-      for (const t of torpedoes) if (t.alive) t.ambient = false
-      damageFx.clear()
-      triggerKlaxon()
-      activityState.banner = {
-        text: `ESCORT ACCEPTED — ${s.name} INBOUND`,
-        kind: 'battle',
-        until: now + 3,
-      }
-      s.flashText = ''
-      s.flashUntil = 0
     }
     if (s.job === 'over' && now >= s.holdUntil) s.job = 'none'
 
-    // convoy discipline
-    if (escorting) {
-      if (distToHauler > CONVOY_RADIUS) {
+    if (escorting && escorted) {
+      const d = shipRig.position.distanceTo(escorted.position)
+      if (d > CONVOY_RADIUS) {
         if (s.graceUntil === 0) s.graceUntil = now + GRACE_SECONDS
         activityState.banner = {
           text: `RETURN TO THE CONVOY — ${Math.ceil(Math.max(0, s.graceUntil - now))}S`,
@@ -630,6 +700,18 @@ export function IceRoute() {
         s.graceUntil = 0
       }
       damageFx.severity = Math.min(1, (3 - s.playerHull) / 2)
+      // the raid: random times, random bearings, unseen launches
+      if (now >= s.nextSalvoAt && escorted.flight !== 'flip' && escorted.flight !== 'brake') {
+        fireSalvo(2 + Math.floor(Math.random() * 3), null, false, s.escort)
+        s.salvos++
+        s.nextSalvoAt = now + RAID_GAP + Math.random() * RAID_JITTER
+        triggerKlaxon()
+        activityState.banner = {
+          text: 'TORPEDOES INBOUND — BEARING UNKNOWN',
+          kind: 'battle',
+          until: now + 2.2,
+        }
+      }
     }
 
     // ---------- the Draugr ----------
@@ -641,22 +723,25 @@ export function IceRoute() {
         raiderLabel.current = null
         labelsChanged()
       } else if (now >= s.raiderUntil - RAIDER_LINGER + 3) {
-        // she has fired; now she runs, hard, on her own bearing
         s.raiderFiring = false
-        raiderPos.addScaledVector(raiderDir, -190 * dt)
+        raiderPos.addScaledVector(raiderDir, -220 * dt)
       }
     }
 
     // ---------- torpedoes ----------
-    let ambientLive = 0
     for (const torp of torpedoes) {
       if (!torp.alive) continue
+      const ship = ships[torp.target]
+      if (!ship?.active) {
+        torp.alive = false
+        continue
+      }
+      torp.targetPos.copy(ship.position)
       if (!torp.launched) {
         if (now >= torp.launchAt) torp.launched = true
         else continue
       }
-      if (torp.ambient) ambientLive++
-      _v.copy(haulerPos).add(torp.aimOffset).sub(torp.position).normalize()
+      _v.copy(ship.position).add(torp.aimOffset).sub(torp.position).normalize()
       const wob = Math.sin(now * 2.1 + torp.weavePhase) * TORP_WEAVE
       _side.set(-_v.z, 0, _v.x).normalize()
       _v.multiplyScalar(torp.speed).addScaledVector(_side, wob)
@@ -667,22 +752,21 @@ export function IceRoute() {
       torp.velocity.add(_v).setLength(torp.speed)
       torp.position.addScaledVector(torp.velocity, dt)
 
-      // capsule test against the hauler
-      _seg.copy(haulerDir).multiplyScalar(HAULER_HALF_LEN)
-      _v2.copy(torp.position).sub(haulerPos)
+      const cls = CLASSES[ship.cls]
+      _seg.copy(ship.dir).multiplyScalar(cls.halfLen)
+      _v2.copy(torp.position).sub(ship.position)
       const t = Math.max(-1, Math.min(1, _v2.dot(_seg) / _seg.lengthSq()))
-      _v2.copy(haulerPos).addScaledVector(_seg, t)
-      if (torp.position.distanceTo(_v2) < HAULER_RADIUS) {
-        haulerHit(torp, _v2)
+      _v2.copy(ship.position).addScaledVector(_seg, t)
+      if (torp.position.distanceTo(_v2) < cls.radius) {
+        shipHit(ship, torp, _v2)
         continue
       }
       if (escorting && torp.position.distanceTo(shipRig.position) < PLAYER_HIT_RADIUS) {
         playerHit(torp)
         continue
       }
-      // ambient rounds get taken down by whoever is covering her today
       if (torp.ambient) {
-        _v2.copy(s.defender === 0 ? DRIFT : haulerPos)
+        _v2.copy(ship.defender === 0 ? DRIFT : ship.position)
         if (torp.position.distanceTo(_v2) < DEFENSE_RANGE * 0.55) {
           torp.alive = false
           spawnExplosion(torp.position, 0.8)
@@ -692,8 +776,21 @@ export function IceRoute() {
 
     // ---------- HUD ----------
     activityState.bannerClock = now
-    const battle = escorting && torpedoes.some((t) => t.alive)
-    const engaged = escorting || s.job === 'over' || distToDrift < WATCH_RANGE || distToHauler < 900
+    const battle = escorting && torpedoes.some((t) => t.alive && !t.ambient)
+    // nearest ship still out in the dark: what the marker points at
+    let nearestJoin = -1
+    let nearestD = Infinity
+    for (let i = 0; i < ships.length; i++) {
+      const ship = ships[i]
+      if (!ship.active || ship.phase !== 'inbound') continue
+      if (ship.position.distanceTo(DRIFT) <= JOIN_MIN_RANGE) continue
+      const d = shipRig.position.distanceTo(ship.position)
+      if (d < nearestD) {
+        nearestD = d
+        nearestJoin = i
+      }
+    }
+    const engaged = escorting || s.job === 'over' || distToDrift < WATCH_RANGE || nearestD < 900
     if (engaged) {
       activityState.owner = 'iceroute'
       activityState.active = true
@@ -705,35 +802,39 @@ export function IceRoute() {
       activityState.waveMax = Math.max(s.salvos, 4)
       activityState.waveLabel = 'SALVO'
       activityState.canRestart = false
-      activityState.title = escorting ? `ESCORT — ${s.name}` : 'THE ICE ROUTE'
+      activityState.title = escorting && escorted ? `ESCORT — ${escorted.name}` : 'THE AMNIA LANES'
       activityState.hint = battle
         ? 'STATION BETWEEN THE TORPEDOES AND HER HULL'
         : escorting
-          ? 'HOLD FORMATION — RAIDERS WORK THIS LANE'
-          : s.route === 'inbound' && haulerRange > JOIN_MIN_RANGE
-            ? `${s.name} IS INBOUND — CLOSE ON HER TO TAKE THE ESCORT`
-            : s.route === 'inbound'
-              ? `${s.name} IS ON FINAL — THE COLONY HAS HER`
-              : s.route === 'docked'
-                ? `${s.name} IS ALONGSIDE — NEXT CONVOY SHORTLY`
-                : 'NO CONVOY INBOUND — THE ROUTE NEVER STAYS QUIET LONG'
-      activityState.lines = escorting
-        ? [
-            { label: s.name, value: `${s.hull}/${HAULER_HULL_MAX}` },
-            { label: 'INTERCEPTS', value: String(s.intercepts) },
-            { label: 'BEST', value: s.best > 0 ? `${s.best}/${HAULER_HULL_MAX}` : '—' },
-          ]
-        : [
-            { label: 'INBOUND', value: s.route === 'inbound' ? s.name : '—' },
-            {
-              label: 'RANGE',
-              value: s.route === 'inbound' ? `${(haulerRange / 1000).toFixed(1)}K` : '—',
-            },
-            { label: 'BEST', value: s.best > 0 ? `${s.best}/${HAULER_HULL_MAX}` : '—' },
-          ]
+          ? 'HOLD FORMATION — RAIDERS WORK THESE LANES'
+          : nearestJoin >= 0
+            ? `${ships[nearestJoin].name} IS INBOUND — CLOSE ON HER TO TAKE THE ESCORT`
+            : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
+      activityState.lines =
+        escorting && escorted
+          ? [
+              { label: escorted.name, value: `${escorted.hull}/${HULL_MAX}` },
+              { label: 'INTERCEPTS', value: String(s.intercepts) },
+              { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
+            ]
+          : [
+              { label: 'IN LANE', value: String(activeCount) },
+              {
+                label: 'ESCORT',
+                value: nearestJoin >= 0 ? `${(nearestD / 1000).toFixed(1)}K` : '—',
+              },
+              { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
+            ]
       activityState.flash = now < s.flashUntil ? s.flashText : ''
-      activityState.raceTarget = s.route === 'inbound' ? haulerPos : null
-      activityState.raceTargetLabel = s.name
+      if (escorting && escorted) {
+        activityState.raceTarget = escorted.position
+        activityState.raceTargetLabel = escorted.name
+      } else if (nearestJoin >= 0) {
+        activityState.raceTarget = ships[nearestJoin].position
+        activityState.raceTargetLabel = ships[nearestJoin].name
+      } else {
+        activityState.raceTarget = null
+      }
     } else if (activityState.owner === 'iceroute') {
       activityState.owner = ''
       activityState.active = false
@@ -769,30 +870,43 @@ export function IceRoute() {
       }
     }
 
-    // ---------- render: hauler ----------
-    const hauler = haulerRef.current
-    if (hauler) {
-      hauler.visible = s.route !== 'void'
-      hauler.position.copy(haulerPos)
-      _q.setFromUnitVectors(_xAxis, haulerDir)
-      if (s.route === 'inbound' && (s.flight === 'flip' || s.flight === 'brake')) {
-        const k = s.flight === 'flip' ? Math.min(1, s.flipT / FLIP_SECONDS) : 1
+    // ---------- render: the traffic ----------
+    for (let i = 0; i < ships.length; i++) {
+      const ship = ships[i]
+      const group = slotRefs.current[i]
+      if (!group) continue
+      group.visible = ship.active
+      if (!ship.active) continue
+      const models = slotModels[i]
+      for (let m = 0; m < models.length; m++) models[m].visible = m === ship.cls
+      group.position.copy(ship.position)
+      _q.setFromUnitVectors(_xAxis, ship.dir)
+      if (ship.phase === 'inbound' && (ship.flight === 'flip' || ship.flight === 'brake')) {
+        const k = ship.flight === 'flip' ? Math.min(1, ship.flipT / FLIP_SECONDS) : 1
         const smooth = k * k * (3 - 2 * k)
-        _side.crossVectors(haulerDir, _up).normalize()
+        _side.crossVectors(ship.dir, _up).normalize()
         _qFlip.setFromAxisAngle(_side, Math.PI * smooth)
         _q.premultiply(_qFlip)
       }
-      hauler.quaternion.copy(_q)
-      const plume = plumeRef.current
+      group.quaternion.copy(_q)
+      const plume = plumeRefs.current[i]
       if (plume) {
+        const cls = CLASSES[ship.cls]
         const burning =
-          (s.route === 'inbound' && s.flight !== 'flip' && s.flight !== 'stopped') ||
-          s.route === 'outbound'
+          (ship.phase === 'inbound' && ship.flight !== 'flip' && ship.flight !== 'stopped') ||
+          ship.phase === 'outbound'
         plume.visible = burning
         if (burning) {
-          const power = s.flight === 'cruise' ? 0.45 : 1
+          plume.position.x = cls.plumeX
+          // departure is a hard burn: the plume swells as she runs away
+          const boost = ship.phase === 'outbound' ? 1 + (ship.v / BOOST_MAX) * 3.4 : 1
+          const power = (ship.flight === 'cruise' && ship.phase === 'inbound' ? 0.45 : 1) * boost
           const flicker = power * (0.85 + Math.random() * 0.3)
-          plume.scale.set(flicker, flicker * (1 + Math.random() * 0.25), flicker)
+          plume.scale.set(
+            (flicker * cls.plume) / 2.6,
+            (flicker * (1 + Math.random() * 0.25) * cls.plume) / 2.6,
+            (flicker * cls.plume) / 2.6,
+          )
         }
       }
     }
@@ -811,8 +925,8 @@ export function IceRoute() {
           const burn = !s.raiderFiring
           rp.visible = burn
           if (burn) {
-            const f = 0.9 + Math.random() * 0.4
-            rp.scale.set(f, f * 1.2, f)
+            const f = 0.9 + Math.random() * 0.3
+            rp.scale.set(f, f * 1.25, f)
           }
         }
       }
@@ -846,36 +960,32 @@ export function IceRoute() {
     }
 
     // ---------- render: somebody else's guns ----------
-    // Streams of rounds from the colony (or the hauler's own mount) walking
-    // onto ambient traffic — the route defending itself while you watch.
     const defense = defenseMeshRef.current
     if (defense) {
       let n = 0
-      if (ambientLive > 0) {
-        _v2.copy(s.defender === 0 ? DRIFT : haulerPos)
-        for (const torp of torpedoes) {
-          if (!torp.alive || !torp.launched || !torp.ambient) continue
-          if (torp.position.distanceTo(_v2) > DEFENSE_RANGE) continue
-          _v.copy(torp.position).sub(_v2)
-          const len = _v.length()
-          _v.divideScalar(len)
-          _q.setFromUnitVectors(_up, _v)
-          for (let k = 0; k < 5 && n < DEFENSE_STREAKS; k++) {
-            const along = Math.random() * len
-            _dummy.position.copy(_v2).addScaledVector(_v, along)
-            _dummy.position.x += (Math.random() - 0.5) * 6
-            _dummy.position.y += (Math.random() - 0.5) * 6
-            _dummy.position.z += (Math.random() - 0.5) * 6
-            _m.compose(_dummy.position, _q, _scaleOne)
-            defense.setMatrixAt(n++, _m)
-          }
+      for (const torp of torpedoes) {
+        if (!torp.alive || !torp.launched || !torp.ambient) continue
+        const ship = ships[torp.target]
+        if (!ship?.active) continue
+        _v2.copy(ship.defender === 0 ? DRIFT : ship.position)
+        const len = torp.position.distanceTo(_v2)
+        if (len > DEFENSE_RANGE) continue
+        _v.copy(torp.position).sub(_v2).divideScalar(len)
+        _q.setFromUnitVectors(_up, _v)
+        for (let k = 0; k < 5 && n < DEFENSE_STREAKS; k++) {
+          _dummy.position.copy(_v2).addScaledVector(_v, Math.random() * len)
+          _dummy.position.x += (Math.random() - 0.5) * 6
+          _dummy.position.y += (Math.random() - 0.5) * 6
+          _dummy.position.z += (Math.random() - 0.5) * 6
+          _m.compose(_dummy.position, _q, _scaleOne)
+          defense.setMatrixAt(n++, _m)
         }
       }
       defense.count = n
       defense.instanceMatrix.needsUpdate = true
     }
 
-    // ---------- the dock board ----------
+    // ---------- the dockmaster's board ----------
     const board = boardRef.current
     if (board) {
       board.rotation.y = Math.atan2(
@@ -883,60 +993,87 @@ export function IceRoute() {
         shipRig.position.z - (DRIFT.z + 210),
       )
     }
-    const boardText = boardTextRef.current
-    if (boardText) {
-      const line =
-        now < s.huntPostedUntil
-          ? `INTERDICTION POSTED · DRAUGR · LAST BEARING ${s.huntBearing}°`
-          : s.route === 'inbound'
-            ? `INBOUND · ${s.name} · ICE · ESCORT WANTED`
-            : s.route === 'docked'
-              ? `ALONGSIDE · ${s.name} · OFFLOADING`
-              : 'NO TRAFFIC · NEXT CONVOY PENDING'
-      if (boardText.text !== line) {
-        boardText.text = line
-        boardText.sync?.()
+    const rows: string[] = []
+    if (now < s.huntPostedUntil)
+      rows.push(`INTERDICTION · DRAUGR · LAST BEARING ${s.huntBearing}°`)
+    for (const ship of ships) {
+      if (!ship.active || rows.length >= 3) continue
+      const range = ship.position.distanceTo(DRIFT)
+      const status =
+        ship.phase === 'docked'
+          ? 'ALONGSIDE'
+          : ship.phase === 'outbound'
+            ? 'DEPARTING'
+            : range > JOIN_MIN_RANGE
+              ? `INBOUND ${(range / 1000).toFixed(1)}K · ESCORT WANTED`
+              : 'ON FINAL'
+      rows.push(`${ship.name} · ${ship.cargo} · ${status}`)
+    }
+    while (rows.length < 3) rows.push('')
+    for (let r = 0; r < 3; r++) {
+      const el = boardRows.current[r]
+      if (el && el.text !== rows[r]) {
+        el.text = rows[r]
+        el.sync?.()
       }
     }
   })
 
   return (
     <group>
-      {/* The hauler on today's run */}
-      <group ref={haulerRef} visible={false}>
-        <primitive object={haulerHull} />
-        <mesh ref={plumeRef} position={[-38, 0, 0]} rotation={[0, 0, Math.PI / 2]} visible={false}>
-          <coneGeometry args={[2.6, 14, 8, 1, true]} />
-          <meshBasicMaterial
-            color={[2.4, 1.7, 0.9]}
-            transparent
-            opacity={0.85}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-        <pointLight position={[-42, 0, 0]} color="#ffd9a0" intensity={3} distance={90} decay={1.8} />
-      </group>
+      {/* Traffic: one slot per hull in the lanes, every class pre-cloned */}
+      {slotModels.map((models, i) => (
+        <group
+          key={`slot-${i}`}
+          visible={false}
+          ref={(el) => {
+            slotRefs.current[i] = el
+          }}
+        >
+          {models.map((obj, m) => (
+            <primitive key={m} object={obj} visible={false} />
+          ))}
+          <mesh
+            ref={(el: Mesh | null) => {
+              plumeRefs.current[i] = el
+            }}
+            position={[-38, 0, 0]}
+            rotation={[0, 0, Math.PI / 2]}
+            visible={false}
+          >
+            <coneGeometry args={[2.6, 14, 8, 1, true]} />
+            <meshBasicMaterial
+              color={[2.4, 1.7, 0.9]}
+              transparent
+              opacity={0.85}
+              blending={AdditiveBlending}
+              depthWrite={false}
+              toneMapped={false}
+            />
+          </mesh>
+        </group>
+      ))}
 
       {/* THE DRAUGR — seen only at the flip, and only for a moment */}
       <group ref={raiderRef} visible={false}>
         <primitive object={raiderHull} />
-        <mesh ref={raiderPlumeRef} position={[-9, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <coneGeometry args={[1.5, 9, 8, 1, true]} />
+        {/* Sized to the hull, not over it: she is a ship you can read, lit
+            by her own drive rather than erased by it. */}
+        <mesh ref={raiderPlumeRef} position={[-12.5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <coneGeometry args={[0.9, 6, 8, 1, true]} />
           <meshBasicMaterial
-            color={[2.6, 1.2, 2.2]}
+            color={[1.9, 0.9, 1.7]}
             transparent
-            opacity={0.9}
+            opacity={0.75}
             blending={AdditiveBlending}
             depthWrite={false}
             toneMapped={false}
           />
         </mesh>
-        <pointLight color="#c07adf" intensity={2.4} distance={60} decay={1.7} />
+        <pointLight position={[-14, 0, 0]} color="#c07adf" intensity={2} distance={48} decay={1.8} />
       </group>
 
-      {/* Torpedoes + their trails + our rounds */}
+      {/* Torpedoes + trails + our rounds */}
       <instancedMesh
         ref={torpMeshRef}
         args={[torpedoBody.geometry, torpedoBody.material, TORP_POOL]}
@@ -973,11 +1110,11 @@ export function IceRoute() {
         />
       </instancedMesh>
 
-      {/* THE ICE DOCK board at the colony — where the work is posted */}
-      <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 96, DRIFT.z + 210]}>
+      {/* AMNIA DOCKS — the dockmaster's board. There is always work on it. */}
+      <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210]}>
         <mesh>
-          <boxGeometry args={[92, 26, 2]} />
-          <meshStandardMaterial color="#1a212c" metalness={0.55} roughness={0.6} flatShading />
+          <boxGeometry args={[104, 36, 2]} />
+          <meshStandardMaterial color="#161d27" metalness={0.55} roughness={0.6} flatShading />
         </mesh>
         <Text
           font={FONT_BOLD}
@@ -986,29 +1123,36 @@ export function IceRoute() {
           color="#9fd8ef"
           anchorX="center"
           anchorY="middle"
-          position={[0, 6.5, 1.3]}
+          position={[0, 12, 1.3]}
           material-toneMapped={false}
         >
-          ICE DOCK
+          AMNIA DOCKS
         </Text>
-        <Text
-          ref={boardTextRef as never}
-          font={FONT_BOLD}
-          fontSize={4.2}
-          letterSpacing={0.2}
-          color="#ffc06e"
-          anchorX="center"
-          anchorY="middle"
-          position={[0, -4.5, 1.3]}
-          material-toneMapped={false}
-        >
-          NO TRAFFIC · NEXT CONVOY PENDING
-        </Text>
+        {[0, 1, 2].map((r) => (
+          <Text
+            key={r}
+            ref={((el: { text: string; sync?: () => void } | null) => {
+              boardRows.current[r] = el
+            }) as never}
+            font={FONT_BOLD}
+            fontSize={4}
+            letterSpacing={0.18}
+            color={r === 0 ? '#ffc06e' : '#8fb8d8'}
+            anchorX="center"
+            anchorY="middle"
+            position={[0, 1 - r * 7.5, 1.3]}
+            material-toneMapped={false}
+          >
+            {''}
+          </Text>
+        ))}
       </group>
     </group>
   )
 }
 
-useGLTF.preload(HAULER_URL)
+useGLTF.preload(CLASSES[0].url)
+useGLTF.preload(CLASSES[1].url)
+useGLTF.preload(CLASSES[2].url)
 useGLTF.preload(RAIDER_URL)
 useGLTF.preload(TORPEDO_URL)
