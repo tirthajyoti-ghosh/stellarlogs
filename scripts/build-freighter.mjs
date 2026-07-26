@@ -33,6 +33,8 @@ const LENGTH = Number(LENGTH_ARG ?? 60)
 const RATIO = Number(RATIO_ARG ?? 0.2)
 /** Disconnected-greeble hulls need sloppy decimation to shed anything */
 const SLOPPY = process.argv.includes('--sloppy')
+/** Raiders run dark: knock the albedo down so she reads as a predator */
+const DARK = process.argv.includes('--dark')
 
 await MeshoptEncoder.ready
 await MeshoptDecoder.ready
@@ -104,6 +106,11 @@ for (const prim of baked) hullMesh.addPrimitive(prim)
 scene.addChild(doc.createNode('hull').setMesh(hullMesh))
 
 for (const material of root.listMaterials()) {
+  if (DARK) {
+    const b = material.getBaseColorFactor()
+    material.setBaseColorFactor([b[0] * 0.42, b[1] * 0.45, b[2] * 0.52, b[3]])
+    material.setEmissiveFactor([0, 0, 0])
+  }
   material.setRoughnessFactor(Math.max(0.7, material.getRoughnessFactor()))
   material.setMetallicFactor(Math.min(0.4, material.getMetallicFactor()))
   material.setNormalTexture(null)
