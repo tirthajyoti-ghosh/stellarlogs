@@ -333,6 +333,67 @@ This turns "does it still feel the same" from an opinion into a test.
 
 ---
 
+---
+
+## P1 RESULT — measured after implementing belt culling (2026-07-26)
+
+**Shipped:** `InstancedMesh.computeBoundingSphere()` on every belt mesh, then
+frustum culling re-enabled. The bounds now enclose the real instances rather
+than the phantom rock at the origin that made culling look broken.
+
+**No-pop verification — passed.** Captured A/B pairs from the same live scene
+by toggling `window.__perf.beltCulling`, plus a control pair where *nothing*
+changed but time passed:
+
+| | pixels changed | mean delta |
+|---|---|---|
+| culling toggled ON | 1.695 % | 0.29 |
+| **nothing changed, just waited** | **1.531 %** | **0.29** |
+
+Identical mean; the difference is within capture-timing drift. The amplified
+difference images show red/cyan *pairs* (an object that moved) and never an
+unpaired red region (an object that vanished) — the same signature appears in
+the control. **Nothing disappears.**
+
+**Triangles removed:**
+
+| location | before | after | change |
+|---|---|---|---|
+| spawn / Comms Station | 3,076,626 | 1,324,188 | **−57 %** |
+| inside the Projects belt | 3,262,028 | 2,392,222 | −27 % |
+| deep space facing the cluster | 4,470,959 | 3,575,204 | −20 % |
+
+**GPU time saved — and the surprise:**
+
+| location | GPU off | GPU on | saved |
+|---|---|---|---|
+| spawn | 35.47 ms | 31.82 ms | **−10 %** |
+| Amnia docks | 23.52 ms | 24.07 ms | ~0 |
+| inside belt | 26.71 ms | 27.70 ms | ~0 |
+| deep space | 25.57 ms | 24.43 ms | −4 % |
+
+**Deleting 1.75 million triangles bought only 3.65 ms.** That is the most
+useful number in this whole audit: **we are not vertex-bound, we are
+fill-bound.** The GPU is not struggling to transform geometry, it is
+struggling to shade pixels.
+
+### What that means for the order of work
+
+The remaining plan is re-ranked by this evidence:
+
+1. **Fill-rate first** — adaptive resolution (was P6) and hunting expensive
+   fragment work: transparent overdraw from nebulae, atmosphere shells and
+   glow shells stacked over large screen areas, plus the procedural planet
+   shaders. This is where the 51 ms actually lives.
+2. **Payload / startup** (was P5, P0) — 19 MB and 546 ms of blocking decode
+   is a real, separate, user-visible problem regardless of frame rate.
+3. **Geometry work** (ship LOD, body LOD) — still correct, still worth doing,
+   but now understood as second-order: it buys headroom rather than frames.
+
+P1 stays in: it is verified invisible, it removes 1.75 M triangles of pure
+waste, and it is a prerequisite for the LOD work to pay off. It simply is not
+the headline fix, and the measurement says so.
+
 ## Caveats
 
 - All numbers are one machine (M3, DPR 2, Chromium under automation).

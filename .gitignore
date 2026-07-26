@@ -3,3 +3,7 @@ node_modules
 dist
 .playwright-mcp
 *.jpeg
+
+# visual-regression captures (large PNGs, regenerated on demand)
+vr/
+vr2/

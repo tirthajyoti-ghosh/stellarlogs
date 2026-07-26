@@ -5,6 +5,7 @@ import {
   BufferGeometry,
   Euler,
   Group,
+  InstancedMesh,
   Material,
   Matrix4,
   Mesh,
@@ -12,6 +13,7 @@ import {
   Vector3,
 } from 'three'
 import { QUALITY } from '../config/quality'
+import { perfFlags } from '../config/perfFlags'
 
 const MODEL_URL = '/models/asteroids.glb'
 
@@ -100,8 +102,14 @@ function Belt({ position, radius, width, thickness, seed }: BeltProps) {
     return buckets
   }, [count, radius, width, thickness, seed, variants])
 
+  const meshes = useRef<(InstancedMesh | null)[]>([])
+
   useFrame((_, dt) => {
     if (groupRef.current) groupRef.current.rotation.y += dt * 0.004
+    // The flag is honoured every frame so an A/B toggle takes effect live.
+    for (const mesh of meshes.current) {
+      if (mesh) mesh.frustumCulled = perfFlags.beltCulling
+    }
   })
 
   return (
@@ -112,14 +120,26 @@ function Belt({ position, radius, width, thickness, seed }: BeltProps) {
             <instancedMesh
               key={v}
               ref={(mesh) => {
+                meshes.current[v] = mesh
                 if (mesh && !mesh.userData.filled) {
                   matrices.forEach((m, i) => mesh.setMatrixAt(i, m))
                   mesh.instanceMatrix.needsUpdate = true
                   mesh.userData.filled = true
+                  /**
+                   * Culling was previously disabled here, and for a real
+                   * reason: an InstancedMesh inherits its bounds from the
+                   * SOURCE geometry — one rock sitting at the origin — so
+                   * three would cull an entire 1,800-unit belt the moment
+                   * that phantom rock left the frustum. The fix is to give
+                   * it honest bounds, not to stop culling: this walks every
+                   * instance matrix and grows a sphere that actually
+                   * contains the belt. Off-screen belts now cost nothing,
+                   * and nothing on screen changes by a single pixel.
+                   */
+                  mesh.computeBoundingSphere()
                 }
               }}
               args={[variants[v].geometry, variants[v].material, matrices.length]}
-              frustumCulled={false}
             />
           ),
       )}
