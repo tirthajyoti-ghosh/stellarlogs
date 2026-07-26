@@ -26,6 +26,7 @@ import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
+import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { DRIFT_POI, WRECK_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
 import { FONT_BOLD } from '../boards/font'
@@ -237,7 +238,7 @@ export function IceRoute() {
   const slotRefs = useRef<(Group | null)[]>([])
   const plumeRefs = useRef<(Mesh | null)[]>([])
   const raiderRef = useRef<Group>(null)
-  const raiderPlumeRef = useRef<Mesh>(null)
+  const raiderDrive = useMemo(() => createDrivePower(), [])
   const torpMeshRef = useRef<InstancedMesh>(null)
   const torpPlumeRef = useRef<InstancedMesh>(null)
   const defenseMeshRef = useRef<InstancedMesh>(null)
@@ -949,15 +950,10 @@ export function IceRoute() {
         raider.position.copy(raiderPos)
         _q.setFromUnitVectors(_xAxis, raiderDir)
         raider.quaternion.copy(_q)
-        const rp = raiderPlumeRef.current
-        if (rp) {
-          const burn = !s.raiderFiring
-          rp.visible = burn
-          if (burn) {
-            const f = 0.9 + Math.random() * 0.3
-            rp.scale.set(f, f * 1.25, f)
-          }
-        }
+        // holding to shoot = station-keeping only; running = all four lit
+        raiderDrive.power = s.raiderFiring ? 0.22 : 1
+      } else {
+        raiderDrive.power = 0
       }
     }
 
@@ -1086,20 +1082,7 @@ export function IceRoute() {
       {/* THE DRAUGR — seen only at the flip, and only for a moment */}
       <group ref={raiderRef} visible={false}>
         <primitive object={raiderHull} />
-        {/* Sized to the hull, not over it: she is a ship you can read, lit
-            by her own drive rather than erased by it. */}
-        <mesh ref={raiderPlumeRef} position={[-12.5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-          <coneGeometry args={[0.9, 6, 8, 1, true]} />
-          <meshBasicMaterial
-            color={[1.9, 0.9, 1.7]}
-            transparent
-            opacity={0.75}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-        <pointLight position={[-14, 0, 0]} color="#c07adf" intensity={2} distance={48} decay={1.8} />
+        <DraugrPlumes drive={raiderDrive} />
       </group>
 
       {/* Torpedoes + trails + our rounds */}

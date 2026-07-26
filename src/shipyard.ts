@@ -30,13 +30,15 @@ interface Candidate {
   note: string
 }
 
+// Now an asset-review bench for the ships actually in the world. Add a
+// candidate here whenever a new hull is being considered.
 const CANDIDATES: Candidate[] = [
-  { key: 'a', url: '/models/cand-a.glb', name: 'BADGER', note: 'gunship · four nacelles · 132 KB' },
-  { key: 'b', url: '/models/cand-b.glb', name: 'OMEGA', note: 'destroyer · heavy spine · 597 KB' },
-  { key: 'c', url: '/models/cand-c.glb', name: 'VTOL', note: 'heavy gunship · 690 KB' },
-  { key: 'd', url: '/models/cand-d.glb', name: 'LANCE', note: 'strike fighter · 242 KB' },
-  { key: 'e', url: '/models/cand-e.glb', name: 'HARRIER', note: 'swing-wing fighter · 619 KB' },
-  { key: 'x', url: '/models/draugr.glb', name: 'CURRENT', note: 'the one in the game now · 1044 KB' },
+  { key: 'd', url: '/models/draugr.glb', name: 'DRAUGR', note: 'raider · Omega class · 597 KB' },
+  { key: 'i', url: '/models/imiq.glb', name: 'IMIQ', note: 'ice hauler · 1567 KB' },
+  { key: 'a', url: '/models/freighter-a.glb', name: 'GS-100', note: 'salvage hauler · 2200 KB' },
+  { key: 'b', url: '/models/freighter-b.glb', name: 'STAR FREIGHTER', note: 'long-haul · 1016 KB' },
+  { key: 'n', url: '/models/nilak.glb', name: 'NILAK', note: 'the wreck · 1224 KB' },
+  { key: 't', url: '/models/tachi.glb', name: 'YOUR SHIP', note: 'the player · 2282 KB' },
 ]
 
 const renderer = new WebGLRenderer({ antialias: true })
@@ -148,4 +150,4 @@ renderer.setAnimationLoop(() => {
   renderer.render(scene, camera)
 })
 
-show('a')
+show('d')

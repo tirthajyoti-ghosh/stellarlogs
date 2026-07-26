@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
-import { AdditiveBlending, Group, Mesh, Object3D, Vector3 } from 'three'
+import { Group, Object3D, Vector3 } from 'three'
 import { shipRig } from '../state/shipRig'
 import { registerHudLabel } from '../hud/hudState'
 import { labelsChanged } from '../hud/LabelLayer'
+import { DraugrPlumes, createDrivePower } from './fx/DraugrPlumes'
 
 /**
  * THE DRAUGR, SIGHTED. She works the Amnia's lanes, and between raids she
@@ -26,7 +27,7 @@ export function DraugrSighting() {
   const gltf = useGLTF(MODEL_URL)
   const hull = useMemo(() => (gltf.scene.getObjectByName('hull') as Object3D).clone(), [gltf])
   const groupRef = useRef<Group>(null)
-  const plumeRef = useRef<Mesh>(null)
+  const drive = useMemo(() => createDrivePower(), [])
 
   useEffect(() => {
     const off = registerHudLabel({
@@ -59,32 +60,16 @@ export function DraugrSighting() {
       group.rotation.y = t * 0.02
       group.rotation.z = Math.sin(t * 0.11) * 0.05
     }
-    const plume = plumeRef.current
-    if (plume) {
-      // station-keeping thrust only: an idle flicker, not a burn
-      const f = 0.24 + Math.abs(Math.sin(t * 0.8)) * 0.12
-      plume.scale.set(f, f, f)
-      // she notices you: the drive comes up a little when somebody closes in
-      const close = shipRig.position.distanceTo(POSITION) < 320
-      plume.scale.multiplyScalar(close ? 2.2 : 1)
-    }
+    // station-keeping thrust only — until somebody closes in, and then all
+    // four bells come up a little, which is the only warning you get
+    const idle = 0.16 + Math.abs(Math.sin(t * 0.8)) * 0.08
+    drive.power = shipRig.position.distanceTo(POSITION) < 320 ? idle * 2.6 : idle
   })
 
   return (
     <group ref={groupRef} position={POSITION.toArray()}>
       <primitive object={hull} />
-      <mesh ref={plumeRef} position={[-12.5, 0, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <coneGeometry args={[0.9, 6, 8, 1, true]} />
-        <meshBasicMaterial
-          color={[1.9, 0.9, 1.7]}
-          transparent
-          opacity={0.75}
-          blending={AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </mesh>
-      <pointLight position={[-14, 0, 0]} color="#c07adf" intensity={1.4} distance={44} decay={1.8} />
+      <DraugrPlumes drive={drive} />
     </group>
   )
 }
