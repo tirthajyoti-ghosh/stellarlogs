@@ -137,6 +137,10 @@ a handful of ships and a few dozen torpedoes; that is 1.84 ms of work.
 
 Ordered by measured payoff per unit of risk.
 
+**P0 — The boot sequence + tiered loading.** *Ships first: it is the first
+impression, and it is what makes every later optimisation safe to land.*
+See the section above.
+
 **P1 — Cull and LOD the asteroid belts.** *Biggest single win.*
 Re-enable frustum culling with correct bounding volumes; distance-gate whole
 belts (a belt 8 km away is not drawn); swap rocks to a low-poly LOD beyond a
@@ -175,12 +179,84 @@ the frame is already late.
 
 ### Targets
 
-| | now | after P1–P4 | after P1–P6 |
+| | now | after P1–P4 | after P0–P6 |
 |---|---|---|---|
 | triangles/frame | 3.0–4.4 M | ~400 k | ~400 k |
 | GPU ms/frame | 51.5 | ~15 | < 12 |
 | fps | 29 | 60 | 60 locked |
 | payload | 21.5 MB | 21.5 MB | ~7 MB |
+| time to fly | instant, then 546 ms of jank | same | boot screen, then smooth |
+
+---
+
+## Two specific questions from Tirtha
+
+### "Distant systems are visible from spawn. How do you keep that?"
+
+They keep being visible. What changes is only what they are *made of*.
+
+Measured screen sizes at our field of view (62°, 780 px tall):
+
+| body | distance | covers |
+|---|---|---|
+| a planet (r≈100) | 500 u | 285 px |
+| a planet | 2,000 u | 72 px |
+| a planet | 5,000 u | 29 px |
+| **a planet** | **9,000 u** | **16 px** |
+| a star (r≈200) | 9,000 u | 32 px |
+| an asteroid (r≈15) | 3,000 u | **7 px** |
+
+Today a planet is drawn as a **64×64-segment sphere (~8,200 triangles)**
+plus an atmosphere shell at 48 segments (~4,600) plus a glow shell at 32
+(~2,000) — roughly **15,000 triangles**. At 9,000 units that is **~900
+triangles per visible pixel**.
+
+The fix is not to hide it. It is to stop spending 15,000 triangles to
+paint 16 pixels:
+
+- **Screen-size LOD.** At ~70 px an 8× cheaper sphere is indistinguishable;
+  at ~16 px a low-segment sphere is pixel-identical; below ~6 px a sprite
+  with the same colour and glow is pixel-identical. The star's glow is
+  already a cheap shader/sprite.
+- **The system never disappears, never dims, never moves.** Same position,
+  same colour, same brightness, same HUD label (labels are DOM and cost
+  nothing). A visitor at spawn sees exactly the sky they see today.
+- Proof: the pixel-diff harness. If a frame changes measurably, the LOD
+  threshold was wrong and it does not ship.
+
+Measured cost of what this buys: from one viewpoint, turning toward the
+cluster of systems costs **+229 draw calls and +1.2 M triangles** versus
+looking away. That is the budget we recover while the sky looks the same.
+
+### "There is no loading — it throws the visitor in raw."
+
+Correct, and it is a measurable part of the sluggishness:
+
+- `DOMContentLoaded` at **154 ms** — the visitor is dropped into the world
+  almost immediately…
+- …while **19 MB of models across 11 files are still downloading and
+  decoding**, because every `useGLTF.preload` fires on module import.
+- That decode produces **8 long tasks totalling 546 ms** of blocked main
+  thread *during the first seconds of flying*.
+
+So the first impression is a stuttering world, and nothing explains why.
+
+**Proposal — P0, a diegetic boot sequence.** Not a spinner: the ship's
+preflight, which is on-brand for a site that is entirely a cockpit.
+
+- Lines tick off against *real* load progress — reactor, nav computer,
+  transponder, PDC calibration, drive — with a bar tied to actual bytes.
+- It doubles as the **audio-unlock gesture** every browser requires
+  (Bruno's "CLICK TO START" solves exactly this problem). Ours reads as
+  IGNITION / BEGIN PREFLIGHT. Today's welcome card neither gates rendering
+  nor loading.
+- **Tiered loading**: only the spawn neighbourhood gates the boot screen —
+  the ship, the station, immediate surroundings (a few MB). Everything
+  else streams during play, ordered by proximity, with the jump drive's
+  8–11 s cinematic as the load window for anything distant.
+- This *serves* the no-pop contract rather than fighting it: content
+  arrives long before the pilot can reach it, and the boot screen means the
+  world is never shown half-built.
 
 ---
 
