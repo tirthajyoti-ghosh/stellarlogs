@@ -43,3 +43,14 @@ export const DRIFT_POI = {
   position: [-1050, -30, -1650] as [number, number, number],
   standoff: 540,
 }
+
+/**
+ * THE ICE RUN — escort staging point on the ice route into the Drift. The
+ * lane runs staging → past the Nilak's wreck → the Amnia's docks; the Imiq
+ * departs from here when an escort forms on her. Jump arrival lands outside
+ * the auto-start ride-along ring (420).
+ */
+export const ICERUN_POI = {
+  position: [950, -60, -1180] as [number, number, number],
+  standoff: 520,
+}

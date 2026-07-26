@@ -16,6 +16,12 @@ export interface Threat {
   launched: boolean
   /** A turret is currently locked onto this threat */
   tracked?: boolean
+  /**
+   * What this torpedo is homing on when it is NOT the player (escort work:
+   * the hauler's live position ref). The battle radar draws the threat axis
+   * to it — stationing reads as "put my dot on those lines".
+   */
+  targetPos?: { x: number; y: number; z: number }
 }
 
 export const activityState = {

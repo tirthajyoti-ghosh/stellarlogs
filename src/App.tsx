@@ -9,10 +9,12 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
 import { GunneryRange } from './scene/activities/GunneryRange'
+import { IceRun } from './scene/activities/IceRun'
 import { BeltRun } from './scene/activities/BeltRun'
 import { Wreck } from './scene/Wreck'
 import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
+import { HullDamage } from './scene/fx/HullDamage'
 import { Effects } from './scene/Effects'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
@@ -49,10 +51,13 @@ export default function App() {
         <Asteroids />
         <Suspense fallback={null}>
           <GunneryRange />
+          <IceRun />
           <BeltRun />
           <Wreck />
           <InteramniaDrift />
           <Explosions />
+          {/* Player hull breaches: shared across all combat activities */}
+          <HullDamage />
         </Suspense>
         <Ship />
         <ChaseCamera />

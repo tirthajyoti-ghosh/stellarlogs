@@ -4,7 +4,6 @@ import { Text, useGLTF } from '@react-three/drei'
 import {
   AdditiveBlending,
   BufferGeometry,
-  CanvasTexture,
   Color,
   Group,
   InstancedMesh,
@@ -15,7 +14,6 @@ import {
   MeshStandardMaterial,
   Object3D,
   Quaternion,
-  Sprite,
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
@@ -27,20 +25,21 @@ import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerImpact, triggerFanfare, triggerKlaxon } from '../../audio/engine'
 import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
-import { HullDamage, damageFx } from '../fx/HullDamage'
+import { damageFx } from '../fx/HullDamage'
+import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
 import { GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
 import { FONT_BOLD } from '../boards/font'
 
 /**
- * F.1 — PDC DEFENSE DRILL. Finite 3-wave defense exercise you WIN. Guns are
- * automatic; the pilot's job is flying. The drill AUTO-STARTS when the ship
- * crosses the marked boundary ring — no arming step; re-runs need Space /
- * the touch button or an exit-and-return. Wave design forces action from the
- * first second: W1 attacks from ASTERN (turn the ship — the coach line says
- * so), W2 splits axes, W3 saturates three axes plus a runner you dodge.
- * Torpedoes (real missile model) weave evasively and drag white path trails.
- * 3-hit hull with full impact feedback. See docs/experience-redesign-2026-07.
+ * F.1 — PDC CERTIFICATION, escort duty standard. The militia drills gunners
+ * BECAUSE the ice route is dangerous (see docs/roadmap.md, The Ice Route):
+ * a finite 3-wave exercise you WIN, teaching the systems the real escort
+ * job (IceRun) then demands. Guns are automatic; the pilot's job is flying.
+ * AUTO-STARTS on crossing the boundary ring. W1 attacks from ASTERN (turn
+ * the ship), W2 splits axes, W3 saturates + a runner you dodge — with the
+ * thermal model ARMED, because escort duty runs guns hot. Torpedoes weave
+ * and drag white path trails; 3-hit hull with full impact feedback.
  */
 
 const CENTER = new Vector3(...GUNNERY_POI.position)
@@ -49,15 +48,9 @@ const LIVE_RADIUS = 2600
 const GRACE_SECONDS = 10
 const TORP_POOL = 12
 const TORP_HIT_SHIP = 6.5
-const TORP_KILL_RADIUS = 3.4
 const SPAWN_DISTANCE = 600
-const TRACER_SPEED = 800
-const TRACER_LIFE = 0.45
-const TRACER_LEN = 2.6
-const TRACER_POOL = 96
-const ROUNDS_PER_SEC = 10
-// v2: five-wave course — 3-wave best times are not comparable
-const BEST_TIME_KEY = 'stellarlogs-defense-best-time-v2'
+// v3: certification trimmed to 3 waves (escort duty standard, heat armed W3)
+const BEST_TIME_KEY = 'stellarlogs-defense-best-time-v3'
 const TORPEDO_URL = '/models/torpedo.glb'
 const BUOY_URL = '/models/buoy.glb'
 const BUOY_COUNT = 22
@@ -78,16 +71,6 @@ interface Torpedo {
   tracked: boolean
 }
 
-interface Tracer {
-  position: Vector3
-  velocity: Vector3
-  life: number
-  fresh: boolean
-  active: boolean
-  /** Torpedo index this round was fired at — dumb rounds miss everything else */
-  targetIdx: number
-}
-
 type Phase = 'idle' | 'countdown' | 'wave' | 'breather' | 'over'
 
 interface LaunchSpec {
@@ -101,10 +84,8 @@ interface LaunchSpec {
  * Wave design: saturation + evasion create the challenge (six ball turrets
  * cover the sphere, so blind spots don't exist). W1: four from ASTERN so the
  * very first act is turning the ship. W2: seven split forward/astern fans.
- * W3: ten across four axes + a fast low-turn runner. W4 THE STORM: twelve
- * from every axis on a rolling stagger — and from here the PDCs OVERHEAT,
- * so coverage develops gaps the pilot must fly around. W5 SPEARS: fast
- * movers, vertical divers, twin runners head-on and astern.
+ * W3: ten across four axes + a fast low-turn runner — with the thermal
+ * model ARMED (escort duty standard: guns run hot, gaps must be flown).
  * A stationary ship takes hits by wave 2 (verified acceptance test).
  */
 const WAVES: LaunchSpec[][] = [
@@ -135,53 +116,10 @@ const WAVES: LaunchSpec[][] = [
     { yawOff: 0.05, elev: 0.25 },
     { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
   ],
-  [
-    // W4 — THE STORM: every axis, rolling launches, heat armed
-    { yawOff: Math.PI - 0.4, elev: 0.15 },
-    { yawOff: Math.PI, elev: -0.2 },
-    { yawOff: Math.PI + 0.4, elev: 0.3 },
-    { yawOff: -0.4, elev: 0.1 },
-    { yawOff: 0.4, elev: -0.15 },
-    { yawOff: 0.05, elev: 0.5 },
-    { yawOff: -1.6, elev: -0.1 },
-    { yawOff: 1.6, elev: 0.1 },
-    { yawOff: -2.3, elev: 0.35 },
-    { yawOff: 2.3, elev: -0.35 },
-    { yawOff: Math.PI - 0.15, elev: -0.55, speedMult: 1.3, turnMult: 0.7 },
-    { yawOff: 0.2, elev: -0.05, speedMult: 1.3, turnMult: 0.7 },
-  ],
-  [
-    // W5 — SPEARS: divers, fast flankers, twin runners
-    { yawOff: Math.PI, elev: 0.85 }, // overhead diver
-    { yawOff: Math.PI, elev: -0.85 }, // underbelly diver
-    { yawOff: -0.5, elev: 0.12, speedMult: 1.25 },
-    { yawOff: 0.5, elev: -0.12, speedMult: 1.25 },
-    { yawOff: -1.7, elev: 0.2 },
-    { yawOff: 1.7, elev: -0.2 },
-    { yawOff: Math.PI - 0.6, elev: 0 },
-    { yawOff: Math.PI + 0.6, elev: 0 },
-    { yawOff: 0, elev: 0.02, speedMult: 1.55, turnMult: 0.45 }, // head-on runner
-    { yawOff: Math.PI, elev: -0.02, speedMult: 1.55, turnMult: 0.45 }, // astern runner
-  ],
 ]
-const BASE_SPEED = [95, 165, 185, 150, 175]
-const BASE_TURN = [0.9, 1.0, 1.1, 1.0, 1.15]
+const BASE_SPEED = [95, 165, 185]
+const BASE_TURN = [0.9, 1.0, 1.1]
 
-function makeFlashTexture(): CanvasTexture {
-  const size = 64
-  const canvas = document.createElement('canvas')
-  canvas.width = canvas.height = size
-  const ctx = canvas.getContext('2d')!
-  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2)
-  g.addColorStop(0, 'rgba(255,240,200,1)')
-  g.addColorStop(0.3, 'rgba(255,180,90,0.8)')
-  g.addColorStop(1, 'rgba(255,120,40,0)')
-  ctx.fillStyle = g
-  ctx.fillRect(0, 0, size, size)
-  return new CanvasTexture(canvas)
-}
-
-const _m = new Matrix4()
 const _q = new Quaternion()
 const _v = new Vector3()
 const _color = new Color()
@@ -251,15 +189,13 @@ function useBuoyBody(): { geometry: BufferGeometry; material: Material } {
 export function GunneryRange() {
   const torpMeshRef = useRef<InstancedMesh>(null)
   const plumeMeshRef = useRef<InstancedMesh>(null)
-  const tracerMeshRef = useRef<InstancedMesh>(null)
   const strobeRefs = useRef<(Mesh | null)[]>([])
-  const muzzleFlashRefs = useRef<(Sprite | null)[]>([])
   const holoRef = useRef<Group>(null)
   const buoyMeshRef = useRef<InstancedMesh>(null)
   const orbMeshRef = useRef<InstancedMesh>(null)
-  const flashTexture = useMemo(() => makeFlashTexture(), [])
   const torpedoBody = useTorpedoBody()
   const buoyBody = useBuoyBody()
+  const pdcFire = useMemo(() => createPdcFire(), [])
 
   const torpedoes = useMemo<Torpedo[]>(
     () =>
@@ -279,19 +215,6 @@ export function GunneryRange() {
   )
   const targetSlots = useMemo(() => torpedoes.map((t) => ({ position: t.position })), [torpedoes])
 
-  const tracers = useMemo<Tracer[]>(
-    () =>
-      Array.from({ length: TRACER_POOL }, () => ({
-        position: new Vector3(),
-        velocity: new Vector3(),
-        life: 0,
-        fresh: false,
-        active: false,
-        targetIdx: -1,
-      })),
-    [],
-  )
-
   const game = useRef({
     phase: 'idle' as Phase,
     lastPhase: 'idle' as Phase,
@@ -310,7 +233,6 @@ export function GunneryRange() {
     graceUntil: 0,
     flashUntil: 0,
     flashText: '',
-    fireAccum: [0, 0, 0, 0, 0, 0],
   })
 
   useEffect(() => {
@@ -322,7 +244,7 @@ export function GunneryRange() {
       position: CENTER,
       yOffset: 95,
       el: null,
-      detail: 'MILITIA PDC CERT · AUTO-ENGAGES ON ENTRY',
+      detail: 'PDC CERTIFICATION · ESCORT DUTY STANDARD · AUTO-ENGAGES',
       jumpStandoff: GUNNERY_POI.standoff,
     })
     labelsChanged()
@@ -346,6 +268,18 @@ export function GunneryRange() {
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
   }, [])
+
+  // Wire the shared PDC fire module to this drill's torpedo pool
+  useEffect(() => {
+    pdcFire.sources = torpedoes
+    pdcFire.onKill = (idx, position) => {
+      const torp = torpedoes[idx]
+      if (!torp.alive) return
+      torp.alive = false
+      game.current.kills++
+      spawnExplosion(position, 0.9)
+    }
+  }, [pdcFire, torpedoes])
 
   useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
@@ -405,8 +339,8 @@ export function GunneryRange() {
         torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
         torp.alive = true
         torp.launched = i === 0
-        // late waves roll in on a wider stagger — a storm, not a volley
-        torp.launchAt = t + i * (g.wave >= 4 ? 0.3 : 0.15)
+        // the final wave rolls in on a wider stagger — a storm, not a volley
+        torp.launchAt = t + i * (g.wave >= 3 ? 0.25 : 0.15)
         torp.tracked = false
       })
       for (let i = specs.length; i < TORP_POOL; i++) torpedoes[i].alive = false
@@ -599,15 +533,20 @@ export function GunneryRange() {
     }
 
     // ---- feed turrets: guns are AUTOMATIC while the drill runs ----
-    // From wave 4 the thermal model arms: sustained fire overheats mounts
+    // The final wave arms the thermal model: escort duty runs guns hot
+    pdcFire.firing = battleRunning
     if (battleRunning) {
       const targets: { position: Vector3 }[] = []
+      pdcFire.slotSource.length = 0
       for (let i = 0; i < torpedoes.length; i++) {
-        if (torpedoes[i].alive && torpedoes[i].launched) targets.push(targetSlots[i])
+        if (torpedoes[i].alive && torpedoes[i].launched) {
+          targets.push(targetSlots[i])
+          pdcFire.slotSource.push(i)
+        }
       }
       turretControl.targets = targets
       turretControl.firing = true
-      turretControl.heatEnabled = g.wave >= 4
+      turretControl.heatEnabled = g.wave >= 3
       // one-time coach the first time a mount cooks off
       if (!g.heatWarned && turretControl.muzzles.some((m) => m.overheated)) {
         g.heatWarned = true
@@ -628,61 +567,6 @@ export function GunneryRange() {
         if (!slot) continue
         const idx = targetSlots.indexOf(slot as (typeof targetSlots)[number])
         if (idx >= 0) torpedoes[idx].tracked = true
-      }
-    }
-
-    // ---- tracers: integrate existing first, then hit-test, then spawn ----
-    for (const tracer of tracers) {
-      if (!tracer.active) continue
-      if (tracer.fresh) {
-        tracer.fresh = false
-      } else {
-        tracer.position.addScaledVector(tracer.velocity, dt)
-        tracer.life -= dt
-      }
-      if (tracer.life <= 0) {
-        tracer.active = false
-        continue
-      }
-      const torp = torpedoes[tracer.targetIdx]
-      if (torp && torp.alive && torp.launched) {
-        if (tracer.position.distanceTo(torp.position) < TORP_KILL_RADIUS) {
-          torp.alive = false
-          tracer.active = false
-          g.kills++
-          spawnExplosion(torp.position, 0.9)
-        }
-      }
-    }
-
-    const shooting = battleRunning && turretControl.spin > 0.85
-    if (shooting) {
-      const muzzles = turretControl.muzzles
-      for (let ti = 0; ti < muzzles.length; ti++) {
-        const muzzle = muzzles[ti]
-        if (muzzle.targetIndex < 0) {
-          g.fireAccum[ti] = 0
-          continue
-        }
-        g.fireAccum[ti] += dt * ROUNDS_PER_SEC
-        while (g.fireAccum[ti] >= 1) {
-          g.fireAccum[ti] -= 1
-          const tracer = tracers.find((t) => !t.active)
-          if (!tracer) break
-          const slot = turretControl.targets[muzzle.targetIndex]
-          tracer.targetIdx = targetSlots.findIndex((ts) => ts === slot)
-          tracer.active = true
-          tracer.fresh = true
-          tracer.life = TRACER_LIFE
-          tracer.velocity
-            .copy(muzzle.direction)
-            .multiplyScalar(TRACER_SPEED)
-            .addScaledVector(shipRig.velocityDir, Math.min(shipRig.speed, 520))
-          tracer.velocity.x += (Math.random() - 0.5) * 20
-          tracer.velocity.y += (Math.random() - 0.5) * 20
-          tracer.velocity.z += (Math.random() - 0.5) * 20
-          tracer.position.copy(muzzle.position).addScaledVector(muzzle.direction, TRACER_LEN / 2)
-        }
       }
     }
 
@@ -711,31 +595,6 @@ export function GunneryRange() {
       plumeMesh.count = n
       torpMesh.instanceMatrix.needsUpdate = true
       plumeMesh.instanceMatrix.needsUpdate = true
-    }
-    const tracerMesh = tracerMeshRef.current
-    if (tracerMesh) {
-      let n = 0
-      for (const tracer of tracers) {
-        if (!tracer.active) continue
-        _v.copy(tracer.velocity).normalize()
-        _q.setFromUnitVectors(_up, _v)
-        _m.compose(tracer.position, _q, _dummy.scale.set(1, 1, 1))
-        tracerMesh.setMatrixAt(n++, _m)
-      }
-      tracerMesh.count = n
-      tracerMesh.instanceMatrix.needsUpdate = true
-    }
-    for (let ti = 0; ti < 6; ti++) {
-      const sprite = muzzleFlashRefs.current[ti]
-      if (!sprite) continue
-      const muzzle = turretControl.muzzles[ti]
-      const on = shooting && muzzle && muzzle.targetIndex >= 0
-      sprite.visible = !!on
-      if (on) {
-        sprite.position.copy(muzzle.position)
-        const s = 0.28 + Math.random() * 0.22
-        sprite.scale.set(s, s, 1)
-      }
     }
     // beacon strobes: staggered blink up the column
     strobeRefs.current.forEach((strobe, i) => {
@@ -852,7 +711,7 @@ export function GunneryRange() {
             material-transparent
             fillOpacity={0.85}
           >
-            INTERAMNIA MILITIA · PDC CERTIFICATION · AUTO-ENGAGE
+            PDC CERTIFICATION — ESCORT DUTY STANDARD · AUTO-ENGAGE
           </Text>
         </group>
         {/* Close-up sign on the column, readable both sides */}
@@ -922,41 +781,8 @@ export function GunneryRange() {
       </instancedMesh>
       <TorpedoTrails sources={torpedoes} />
 
-      {/* Tracer streaks — thin PDC rounds, sized to the turret barrels */}
-      <instancedMesh ref={tracerMeshRef} args={[undefined, undefined, TRACER_POOL]} frustumCulled={false}>
-        <cylinderGeometry args={[0.045, 0.045, TRACER_LEN, 4, 1, true]} />
-        <meshBasicMaterial
-          color={[0.98, 0.82, 0.5]}
-          transparent
-          opacity={0.85}
-          blending={AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </instancedMesh>
-
-      {/* Muzzle flashes (one per turret) */}
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <sprite
-          key={`mf-${i}`}
-          visible={false}
-          ref={(s) => {
-            muzzleFlashRefs.current[i] = s
-          }}
-        >
-          <spriteMaterial
-            map={flashTexture}
-            transparent
-            opacity={0.7}
-            depthWrite={false}
-            blending={AdditiveBlending}
-            toneMapped={false}
-          />
-        </sprite>
-      ))}
-
-      {/* Hull breaches: pinned venting vapor + embers + arc flicker */}
-      <HullDamage />
+      {/* PDC rounds: real projectiles, converging spray, visible misses */}
+      <PdcRounds fire={pdcFire} />
     </group>
   )
 }

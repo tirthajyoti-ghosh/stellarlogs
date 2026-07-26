@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Vector3 } from 'three'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
-import { DRIFT_POI, GUNNERY_POI, TRACK_POI, WRECK_POI } from '../config/pois'
+import { DRIFT_POI, GUNNERY_POI, ICERUN_POI, TRACK_POI, WRECK_POI } from '../config/pois'
 import { CONTACT } from '../content/contact'
 import { hudLabels } from './hudState'
 import { shipRig } from '../state/shipRig'
@@ -133,25 +133,87 @@ export function Radar() {
           ctx.closePath()
           ctx.fill()
         }
-        // Threat blips with short motion trails
+        // 3D tactical plot: bare canvas coords + elevation stem for a point
+        const toXY = (wx: number, wz: number) => {
+          const dx = wx - shipRig.position.x
+          const dz = wz - shipRig.position.z
+          const rx = dx * Math.cos(yaw) - dz * Math.sin(yaw)
+          const rz = dx * Math.sin(yaw) + dz * Math.cos(yaw)
+          let px = cx + (rx / range) * R
+          let py = cy + (rz / range) * R
+          const d = Math.hypot(px - cx, py - cy)
+          if (d > R - 3) {
+            const s = (R - 3) / d
+            px = cx + (px - cx) * s
+            py = cy + (py - cy) * s
+          }
+          return { px, py }
+        }
+        const stemFor = (wy: number) =>
+          Math.max(-24, Math.min(24, ((wy - shipRig.position.y) / range) * R * 3))
+
+        // Escortee (the hauler the torpedoes are hunting): cyan square + stem
+        let escortee: { x: number; y: number; z: number } | null = null
+        for (const threat of activityState.threats) {
+          if (threat.alive && threat.launched && threat.targetPos) {
+            escortee = threat.targetPos
+            break
+          }
+        }
+        let ex = 0
+        let ey = 0
+        if (escortee) {
+          const e = toXY(escortee.x, escortee.z)
+          const stem = stemFor(escortee.y)
+          ex = e.px
+          ey = e.py - stem
+          ctx.strokeStyle = 'rgba(111, 232, 200, 0.5)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(e.px, e.py)
+          ctx.lineTo(e.px, ey)
+          ctx.stroke()
+          ctx.fillStyle = '#6fe8c8'
+          ctx.fillRect(ex - 3, ey - 3, 6, 6)
+        }
+
+        // Threats: base dot on the plane, contact at the stem tip, motion
+        // trail + (escort) the threat AXIS it is riding toward its target —
+        // stationing = putting your center dot on those lines
         for (const threat of activityState.threats) {
           if (!threat.alive || !threat.launched) continue
-          const px = threat.position.x
-          const pz = threat.position.z
-          const p = plot(px, pz, '#ff5040', 2.6)
-          if (p) {
-            const vdx = threat.velocity.x
-            const vdz = threat.velocity.z
-            const trx = vdx * Math.cos(yaw) - vdz * Math.sin(yaw)
-            const trz = vdx * Math.sin(yaw) + vdz * Math.cos(yaw)
-            const tl = Math.hypot(trx, trz) || 1
-            ctx.strokeStyle = 'rgba(255, 80, 64, 0.5)'
-            ctx.lineWidth = 1
+          const p = toXY(threat.position.x, threat.position.z)
+          const stem = stemFor(threat.position.y)
+          const tipY = p.py - stem
+          ctx.fillStyle = 'rgba(255, 90, 70, 0.45)'
+          ctx.fillRect(p.px - 1, p.py - 1, 2, 2)
+          ctx.strokeStyle = 'rgba(255, 110, 90, 0.45)'
+          ctx.lineWidth = 1
+          ctx.beginPath()
+          ctx.moveTo(p.px, p.py)
+          ctx.lineTo(p.px, tipY)
+          ctx.stroke()
+          if (escortee) {
+            ctx.strokeStyle = 'rgba(255, 80, 64, 0.28)'
             ctx.beginPath()
-            ctx.moveTo(p.px - (trx / tl) * 7, p.py - (trz / tl) * 7)
-            ctx.lineTo(p.px, p.py)
+            ctx.moveTo(p.px, tipY)
+            ctx.lineTo(ex, ey)
             ctx.stroke()
           }
+          ctx.fillStyle = '#ff5040'
+          ctx.beginPath()
+          ctx.arc(p.px, tipY, 2.6, 0, Math.PI * 2)
+          ctx.fill()
+          const vdx = threat.velocity.x
+          const vdz = threat.velocity.z
+          const trx = vdx * Math.cos(yaw) - vdz * Math.sin(yaw)
+          const trz = vdx * Math.sin(yaw) + vdz * Math.cos(yaw)
+          const tl = Math.hypot(trx, trz) || 1
+          ctx.strokeStyle = 'rgba(255, 80, 64, 0.5)'
+          ctx.beginPath()
+          ctx.moveTo(p.px - (trx / tl) * 7, tipY - (trz / tl) * 7)
+          ctx.lineTo(p.px, tipY)
+          ctx.stroke()
         }
       } else if (nearSystem) {
         plot(nearSystem.position[0], nearSystem.position[2], nearSystem.starColor, 4)
@@ -217,6 +279,15 @@ export function Radar() {
             py: dp.py,
             position: new Vector3(...DRIFT_POI.position),
             standoff: DRIFT_POI.standoff,
+          })
+        }
+        const ip = plot(ICERUN_POI.position[0], ICERUN_POI.position[2], '#9fd8ef', 2.2)
+        if (ip) {
+          blips.current.push({
+            px: ip.px,
+            py: ip.py,
+            position: new Vector3(...ICERUN_POI.position),
+            standoff: ICERUN_POI.standoff,
           })
         }
       }
