@@ -27,6 +27,7 @@ import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
 import { DRIFT_POI, WRECK_POI } from '../../config/pois'
+import { IS_TOUCH } from '../../config/quality'
 import { FONT_BOLD } from '../boards/font'
 
 /**
@@ -57,8 +58,10 @@ const TORPEDO_URL = '/models/torpedo.glb'
 /** The three classes working these lanes. Bow is +X on all of them. */
 const CLASSES = [
   { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6 },
-  { url: '/models/freighter-a.glb', halfLen: 40, radius: 15, collider: 32, plumeX: -50, plume: 3.4 },
-  { url: '/models/freighter-b.glb', halfLen: 24, radius: 9, collider: 20, plumeX: -31, plume: 2.1 },
+  // GS-100 salvage hauler — the battered industrial type
+  { url: '/models/freighter-a.glb', halfLen: 27, radius: 10, collider: 22, plumeX: -34, plume: 2.4 },
+  // long-haul star freighter — the big one
+  { url: '/models/freighter-b.glb', halfLen: 37, radius: 12, collider: 27, plumeX: -46, plume: 3.0 },
 ]
 /** Ice hulls carry the cold cargo and wear the old ice names. */
 const ICE_NAMES = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
@@ -293,6 +296,8 @@ export function IceRoute() {
 
   const g = useRef({
     escort: -1, // slot index of the ship whose escort is ours, or -1
+    offer: -1, // a job standing in front of us, waiting on an answer
+    accept: false, // one-shot: the pilot pressed accept
     job: 'none' as 'none' | 'escort' | 'over',
     playerHull: 3,
     intercepts: 0,
@@ -325,6 +330,17 @@ export function IceRoute() {
       labelsChanged()
     }
   }, [ships])
+
+  // Accepting a contract is a decision, so it takes a keypress. G — the only
+  // letter near the flight keys that nothing else has claimed.
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'KeyG' || e.repeat) return
+      if (g.current.offer >= 0) g.current.accept = true
+    }
+    window.addEventListener('keydown', down)
+    return () => window.removeEventListener('keydown', down)
+  }, [])
 
   useEffect(() => {
     pdcFire.sources = torpedoes
@@ -658,13 +674,24 @@ export function IceRoute() {
       }
     }
 
-    // ---------- joining a job ----------
+    // ---------- taking a job: the pilot SAYS YES ----------
+    // Flying near a freighter is not a contract. Close on one and the offer
+    // stands on the panel until you accept it or leave.
+    s.offer = -1
     if (s.job === 'none' && !shipRig.warping) {
       for (let i = 0; i < ships.length; i++) {
         const ship = ships[i]
         if (!ship.active || ship.phase !== 'inbound') continue
         if (ship.position.distanceTo(DRIFT) <= JOIN_MIN_RANGE) continue
         if (shipRig.position.distanceTo(ship.position) > JOIN_RADIUS) continue
+        s.offer = i
+        break
+      }
+    }
+    if (s.offer >= 0 && s.accept) {
+      {
+        const i = s.offer
+        const ship = ships[i]
         s.escort = i
         s.job = 'escort'
         s.playerHull = 3
@@ -681,9 +708,9 @@ export function IceRoute() {
         }
         s.flashText = ''
         s.flashUntil = 0
-        break
       }
     }
+    s.accept = false
     if (s.job === 'over' && now >= s.holdUntil) s.job = 'none'
 
     if (escorting && escorted) {
@@ -807,9 +834,11 @@ export function IceRoute() {
         ? 'STATION BETWEEN THE TORPEDOES AND HER HULL'
         : escorting
           ? 'HOLD FORMATION — RAIDERS WORK THESE LANES'
-          : nearestJoin >= 0
-            ? `${ships[nearestJoin].name} IS INBOUND — CLOSE ON HER TO TAKE THE ESCORT`
-            : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
+          : s.offer >= 0
+            ? `${ships[s.offer].name} REQUESTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO ACCEPT`
+            : nearestJoin >= 0
+              ? `${ships[nearestJoin].name} IS INBOUND — CLOSE ON HER IF YOU WANT THE JOB`
+              : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
       activityState.lines =
         escorting && escorted
           ? [

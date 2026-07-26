@@ -12,6 +12,7 @@ import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
 import { Wreck } from './scene/Wreck'
+import { DraugrSighting } from './scene/DraugrSighting'
 import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
 import { HullDamage } from './scene/fx/HullDamage'
@@ -54,6 +55,7 @@ export default function App() {
           <IceRoute />
           <BeltRun />
           <Wreck />
+          <DraugrSighting />
           <InteramniaDrift />
           <Explosions />
           {/* Player hull breaches: shared across all combat activities */}
