@@ -182,6 +182,72 @@ the frame is already late.
 | fps | 29 | 60 | 60 locked |
 | payload | 21.5 MB | 21.5 MB | ~7 MB |
 
+---
+
+## THE NO-POP CONTRACT (binding on every optimisation above)
+
+*Tirtha's constraint, 2026-07-26: "whenever the user drives the ship
+somewhere else, things must not be popping into existence randomly because
+things are going slow somewhere."* Nothing ships unless it satisfies this.
+Frame rate is worth nothing if the world flickers.
+
+**1. Only ever remove what cannot contribute a pixel.**
+Two removals are provably invisible and they are where nearly all the win
+is:
+- **Frustum culling** — the object is *off-screen*. By definition it cannot
+  pop, because you were not looking at it. (This alone is most of the 3.0 M
+  wasted triangles.)
+- **Sub-pixel geometry** — a rock whose whole silhouette covers less than
+  ~1.5 px. Swapping 2,308 triangles for 40 changes nothing a screen can
+  show.
+
+**2. Thresholds are measured in SCREEN SIZE, not world distance.**
+An LOD switch keyed to "how many pixels does this cover" is automatically
+correct at every field of view and resolution. Keyed to raw distance, it is
+a guess that breaks when you zoom or change monitor.
+
+**3. Every switch gets hysteresis.**
+Drop to the cheaper level at 1.0× the threshold, restore at 0.85×. Without
+this, a ship hovering exactly at the boundary flickers between levels —
+which is the worst possible artifact and the one people actually notice.
+
+**4. No hard swaps — dithered cross-fade.**
+Across a transition band the two levels blend (screen-door / alpha dither
+over ~0.3 s). You get a dissolve, not a jump. Applied to LODs and to any
+impostor substitution.
+
+**5. Distant things are REPLACED, never deleted.**
+A belt 8 km out is not culled to nothing — its rocks become a cheap
+impostor (points/sprites) that preserves the same visual mass and colour.
+The band of dust you can see out the window stays exactly where it was. The
+rule: *the silhouette of the world never changes, only its cost.*
+
+**6. Loading happens BEFORE arrival, never on it.**
+Nothing is fetched or decoded at the moment you need it. Proximity
+prefetch, plus the jump drive's 8–11 s flip-and-burn cinematic as the
+load window (the same trick the Deep design already relies on). If an
+asset is not ready, we keep the current one on screen — we never show a
+hole.
+
+**7. Nothing pops IN either.**
+Anything that must legitimately appear (a new hauler entering the lanes)
+spawns out of view and fades up over ~1 s. Already partly done: traffic
+refuses to spawn within 900 units of the player.
+
+### How this gets proven, not asserted
+
+A **visual regression harness**: fly a fixed camera path (spawn → station →
+colony → wreck → gunnery → Track → deep space), capture N frames at fixed
+positions, and diff the images pixel-by-pixel against the same path on the
+pre-optimisation build.
+
+- **Acceptance: no frame differs by more than a small perceptual threshold**,
+  and no frame contains a region that changed from "object" to "empty".
+- Every optimisation lands only if the diff passes *and* the frame time
+  improved. Both, or it does not ship.
+
+This turns "does it still feel the same" from an opinion into a test.
+
 ### Explicitly not proposed
 
 - Rewriting simulation in WASM (saves 1.84 ms of a 51.5 ms frame).
