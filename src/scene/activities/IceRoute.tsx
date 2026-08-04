@@ -45,21 +45,21 @@ import { FONT_BOLD } from '../boards/font'
  * THE DORMANT SPREAD (canon, Tirtha 2026-08-04): the Draugr seeds the dark
  * around the lane with cold torpedoes — drives off, transponders dead,
  * invisible at any range — and wakes them by tightbeam when a marked hull
- * commits to final. That is why salvos can come from ANY bearing while the
- * launches still trace back to one drifting origin: the origin is where the
- * spread was sown, not where she is now. It is also why nobody ever sees a
- * launch flash.
+ * commits to final. Each wake-up comes from wherever that part of the
+ * spread was sown — a mix of bearings by construction — and nobody ever
+ * sees a launch flash. The only live launch in the lane is the Draugr's
+ * own finale.
  *
  * THE MARK. The Draugr chooses. Roughly a third of the hulls that enter
  * these lanes are marked at spawn — weighted by cargo, because volatiles are
  * worth boarding and ice barely is — and the rest cross in peace, every
- * time. A marked ship takes one to three salvos at random moments in her
- * transit, every torpedo in a salvo from ONE hidden origin, and that origin
- * drifts a few degrees between salvos: shots fired seconds apart come from
- * one place, and a place that moves is a ship. Plot the bearings and you are
- * plotting HER. When a marked ship starts her braking burn — drive blazing
- * at the docks, no dodge left in her — the Draugr shows herself exactly
- * where those bearings said she would be.
+ * time. A marked ship takes her salvos at bounded-random moments of her
+ * transit, every torpedo in a salvo from one hidden origin — but each SALVO
+ * wakes a different part of the spread, so waves arrive from a MIX of
+ * bearings. When a marked ship COMMITS TO FINAL — the approach corridor
+ * owns her now; any burn she makes is the docking burn — the Draugr shows
+ * herself a kilometre off the lane and fires the finale herself: the one
+ * launch anyone ever sees, and a fight the escort can actually win.
  *
  * THE APPROACH (Tirtha, 2026-08-04): a ship that has burned for days flips
  * at midpoint, days out and far off anyone's screen — so everything inbound
@@ -130,7 +130,7 @@ const HULL_MAX = 8
 const PLAYER_HIT_RADIUS = 6.5
 
 const TORP_POOL = 18
-const TORP_SPEED = 105
+const TORP_SPEED = 165
 const TORP_TURN = 0.85
 const TORP_WEAVE = 20
 const HIDDEN_LAUNCH = 1700
@@ -156,12 +156,15 @@ const CONTRACT_FIRST_MIN = 6
 const CONTRACT_FIRST_JITTER = 5
 const CONTRACT_GAP_MIN = 13
 const CONTRACT_GAP_JITTER = 8
-/** waves the contract guarantees before the braking-burn finale */
+/** waves the contract guarantees before the finale */
 const CONTRACT_WAVES_MIN = 2
-/** how far the hidden origin swings between salvos — a hunter repositioning */
-const BEARING_DRIFT = 0.42
+/** The finale fires with this much flight-time before her braking burn,
+ *  from the Draugr's own position ~1 km off. The old version launched from
+ *  240 units — 2.3 seconds, an execution at the dock, nothing to fight.
+ *  This gives ~6 seconds of terminal PDC work while she hangs on screen. */
+const FINALE_LEAD_SECONDS = 7
 
-const RAIDER_REVEAL_DIST = 240
+const RAIDER_REVEAL_DIST = 1000
 const RAIDER_LINGER = 13
 const DEFENSE_RANGE = 420
 const DEFENSE_STREAKS = 30
@@ -194,7 +197,7 @@ interface Ship {
   marked: boolean
   salvosLeft: number
   nextAttackAt: number
-  /** the hidden origin of her salvos — ONE bearing, drifting between them */
+  /** where her LAST wake-up came from (kept for the hunt posting) */
   attackBearing: Vector3
   defender: number
   labelOff: (() => void) | null
@@ -374,6 +377,7 @@ export function IceRoute() {
     playerHull: 3,
     intercepts: 0,
     salvos: 0,
+    finaleDone: false,
     lastRange: 0, // for the closing-rate readout on the intercept leg
     nextSpawnAt: 2,
     graceUntil: 0,
@@ -499,20 +503,15 @@ export function IceRoute() {
       if (s.escort === idx) s.escort = -1
     }
 
-    /** One salvo from the hunter's CURRENT position: every torpedo in it
-     *  shares one hidden origin on the ship's attack bearing, and that
-     *  bearing drifts a few degrees afterwards — she is repositioning. */
+    /** One wake-up call: every torpedo in a salvo shares one hidden origin,
+     *  but each SALVO wakes a different part of the spread — a fresh random
+     *  bearing every time. Waves arrive from a mix of directions. */
     function fireSalvo(count: number, from: Vector3 | null, ambient: boolean, target: number) {
       const ship = ships[target]
       if (!ship?.active) return
       if (!from) {
+        pickBearing(ship.attackBearing, false)
         _v2.copy(ship.position).addScaledVector(ship.attackBearing, HIDDEN_LAUNCH)
-        // drift for the NEXT salvo: rotate the bearing about the vertical
-        _v.copy(ship.attackBearing)
-        const drift = (Math.random() - 0.5) * BEARING_DRIFT
-        const cos = Math.cos(drift)
-        const sin = Math.sin(drift)
-        ship.attackBearing.set(_v.x * cos - _v.z * sin, _v.y, _v.x * sin + _v.z * cos).normalize()
       } else {
         _v2.copy(from)
       }
@@ -541,9 +540,9 @@ export function IceRoute() {
 
     function raiderSalvo(target: number) {
       const ship = ships[target]
-      // She appears exactly where her salvos have been coming from — anyone
-      // who plotted the torpedo bearings knew where to look before she showed.
-      _side.copy(ship.attackBearing)
+      // Her own launch — the only one anyone ever sees. A kilometre off the
+      // lane, drives lit, label burning: fight her birds while she watches.
+      pickBearing(_side, false)
       raiderPos.copy(ship.position).addScaledVector(_side, RAIDER_REVEAL_DIST)
       raiderDir.copy(ship.position).sub(raiderPos).normalize()
       s.raiderUntil = now + RAIDER_LINGER
@@ -693,14 +692,18 @@ export function IceRoute() {
           ship.v = Math.min(CRUISE, ship.v + ACCEL * dt)
           if (ship.v >= CRUISE) ship.flight = 'cruise'
         }
+        // The finale window opens as she commits to final: far enough out
+        // that the salvo is a fight, close enough that the corridor owns her.
+        const finaleAt = brakeDist + ship.v * FINALE_LEAD_SECONDS
+        if (isEscort && !s.finaleDone && remaining <= finaleAt) {
+          s.finaleDone = true
+          raiderSalvo(i)
+        }
         if (
           (ship.flight === 'cruise' || ship.flight === 'accel') &&
           remaining <= brakeDist + 30
         ) {
-          // The braking burn: her drive blazes toward the docks and every
-          // gram of thrust is spoken for — no dodge left in her. Her moment.
           ship.flight = 'brake'
-          if (isEscort) raiderSalvo(i)
         }
         if (ship.flight === 'brake') {
           ship.v = Math.max(0, ship.v - BRAKE * dt)
@@ -741,6 +744,7 @@ export function IceRoute() {
           ship.salvosLeft > 0 &&
           now >= ship.nextAttackAt &&
           ship.flight !== 'brake' &&
+          remaining > finaleAt + 80 &&
           witnessed
         ) {
           const isContract = i === s.escort && s.job === 'escort'
@@ -816,6 +820,7 @@ export function IceRoute() {
       s.job = 'intercept'
       s.intercepts = 0
       s.salvos = 0
+      s.finaleDone = false
       s.lastRange = shipRig.position.distanceTo(ship.position)
       activityState.banner = {
         text: `CONTRACT LOGGED — INTERCEPT ${ship.name}`,

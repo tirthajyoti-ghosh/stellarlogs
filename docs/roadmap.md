@@ -96,11 +96,14 @@ The attacker chooses; the world does not shoot at everything.
   Some sessions the lane just works; that silence is worldbuilding too.
 - **Salvo schedule:** a marked ship gets 1–3 attack events at random times
   inside its transit window. Each salvo: 1–2 torpedoes from one bearing.
-- **The hunter implied:** within a salvo, all torpedoes share one origin
-  bearing (shots fired seconds apart come from one place — a ship). Between
-  salvos the bearing drifts a few degrees — the attacker is repositioning.
-  An attentive pilot could plot those bearings and infer the Draugr's track:
-  free foreshadowing of F.3 THE HUNT, cost zero.
+- **The hunter implied — SUPERSEDED 2026-08-05:** the drifting-bearing
+  track was replaced at Tirtha's direction by a MIX of directions: each
+  salvo wakes a different part of the dormant spread, i.e. a fresh random
+  bearing per wave (within a salvo, one shared origin still). The only live
+  launch anyone ever sees is the Draugr's own finale, fired from ~1 km off
+  as the freighter commits to final — moved there from 240 units, where it
+  was a 2.3-second execution nobody could fight. Torpedo speed 105 → 165
+  (the "lazily watching it come by" complaint).
 - **Outcomes stay random:** station arcs intercept some, freighter
   self-defense some, some leak through and hit — visible venting/damage on
   the ambient ship. (Optional drama, flagged for later decision: a rare
