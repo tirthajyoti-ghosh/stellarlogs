@@ -23,6 +23,70 @@ situational, not drill-shaped**.*
 
 ---
 
+## PLAYTEST FEEDBACK — 2026-08-04 (live site)
+
+Verdict on what shipped: *"things are looking much better… the Drift
+station traffic is live, it is dynamic, so that's good."* The corrections
+below are all from that session and take priority over new features.
+
+### 1. Billboard reveal freezes the frame — BUG, ships with the perf work
+Flying near a planet or the Comms Station, **the whole game freezes for
+one to two seconds** just before the boards appear; afterwards everything
+is fine. `PlanetBoards` flips `activated` once and mounts the entire board
+subtree in a single frame — every troika `<Text>` builds its SDF, every
+image decodes and uploads, and every new material compiles its shader,
+all on the main thread at once. Suspects to be measured *before* fixing,
+in this order: shader compile on first draw, troika SDF generation,
+texture decode/upload. Directions: async texture decode
+(`createImageBitmap`), `renderer.compileAsync()` before reveal, and
+staggering the mount across frames instead of one big commit. This is a
+no-pop-contract violation as much as a perf bug — the freeze *is* the pop.
+
+### 2. PDC tracers are still wrong (three separate faults)
+The design was written; the build does not match it yet.
+- **The rounds fly straight to the torpedo.** They read as hit-beams
+  aimed at the target, not as ballistics. Rounds must leave the muzzle and
+  *keep going* on the heading they were fired at, whether or not they hit.
+- **The misses must be visible and must form the hose pattern.** Tirtha's
+  image, restated: *the PDC follows the torpedo's trajectory and walks its
+  aim onto it; the rounds already fired are still out there, so sweeping
+  the gun leaves curved, wavy streams — like swinging a running hose.* The
+  wave is the record of where the gun was pointing a moment ago.
+- **The streaks are too long.** Shorten them so they read as small
+  individual rounds leaving the cannon, not as beams.
+
+### 3. Torpedoes must be paired to specific ships, at random
+The Draugr's story is that she fires on shipments inbound to the Amnia —
+so torpedoes come from an attacker who picks targets, not from the world
+firing at everything. Requirements: the attacker chooses **which** ship to
+shoot at **randomly**, at **random times**, and **not every ship and not
+every run**. Some convoys are attacked; some are not. Torpedo bearings stay
+random and unheralded (confirmed keeper) — you never see the launch, only
+the flip.
+
+### 4. Escort must start at the board, not by flying near a freighter
+Current behaviour (accept when near the lane) is wrong. The flow must be:
+1. Fly to the Drift station board and **accept the job there**.
+2. Get a **heading to intercept** — the freighter is inbound from a
+   direction, and the ship must fly out to meet it. Guidance required:
+   at minimum a direction indicator to the intercept, ideally a closing
+   readout.
+3. **The escort begins at the rendezvous** — when the two ships meet.
+The job is a commitment made at the station and then flown to, not a thing
+you stumble into.
+
+### 5. Radar becomes a 3D cylinder in attack mode — DESIGN DISCUSSION OWED
+Confirmed and sharpened: in combat the minimap must show **three-
+dimensional** information, as a **cylindrical volume**, not a flat plane.
+It must answer, at a glance: *which direction is that torpedo coming from,
+above or below me, and is that bearing covered by my PDCs?* Described as a
+"moving, intelligent, cylindrical radar." PDC coverage arcs are a new
+requirement — the display shows defended vs undefended bearings, not just
+contacts. Tirtha wants to talk this through before it is built; the
+reference-frame question below (own-ship vs hauler-centred vs threat-axis
+lines) is part of that conversation.
+
+
 ## NOW — The Ice Route (the combat layer becomes one situation)
 
 **The situation.** The Amnia needs ice — that's what keeps a rock colony
@@ -98,7 +162,10 @@ signage: "PDC CERTIFICATION — ESCORT DUTY STANDARD." No gating (free order
 is law); the fiction now explains the drill, and it remains the
 teach-the-systems space.
 
-### 3D radar (combat-support, wanted for F.4)
+### 3D radar (combat-support) — now a cylinder, with PDC coverage
+*See PLAYTEST FEEDBACK #5: confirmed as a cylindrical volume display that
+also shows which bearings the PDCs cover. Design discussion owed before
+build.*
 Today's radar is a 2D plane; we fly in 3D and torpedoes corkscrew. Replace
 the battle scope with a **3D volume display** (Expanse CIC / Elite-scanner
 family): a reference disc + per-contact vertical stems showing elevation
@@ -111,7 +178,10 @@ above/below the plane, so corkscrewing ordnance visibly climbs and dives.
  those lines." Positioning info without changing the pilot's frame.
 Decide in playtest.
 
-### PDC tracer spray with visible misses (combat-support, wanted for F.4)
+### PDC tracer spray with visible misses (combat-support) — NOT YET RIGHT
+*See PLAYTEST FEEDBACK #2: shipped behaviour still reads as straight lines
+to the target, with streaks too long. The design below stands; the build
+has to be brought to it.*
 Reference: the show — streams of rounds that persist in space, most rounds
 *missing*, the gun visibly walking onto the target. Tirtha's image: a water
 hose being swept — the stream leaves in curves that lag the motion. Design:
@@ -210,8 +280,11 @@ Architecture sketch (the two-layer split that makes it feasible):
 
 ## Build order
 
-1. **F.4 THE ICE RUN** + cert trim (+ 3D radar and tracer spray as its
-   support work — they're what make escort combat readable and gorgeous)
+0. **Performance passes** (all of them) + the **billboard freeze** —
+   agreed 2026-08-04 as the thing to do next, before any new feature.
+1. **The 2026-08-04 corrections**: escort-from-the-board with an intercept
+   heading, torpedo/ship pairing, PDC tracer rework, cylindrical radar
+   (after the design conversation).
 2. **F.3 THE HUNT**
 3. Debris storm + slag skeet + density/toys pass
 4. Liveness backend (hails, counters, daily boards) — procgen-compatible

@@ -16,6 +16,7 @@ import {
 import type { BoardSpec } from './boardSpecs'
 import { FONT, FONT_BOLD } from './font'
 import { shipRig } from '../../state/shipRig'
+import { perfFlags } from '../../config/perfFlags'
 
 const PANEL_BG = '#050d1c'
 
@@ -269,6 +270,21 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
     if (!initialized.current) {
       spin.rotation.y = phase
       initialized.current = true
+      /**
+       * Everything inside the spinning group — frame, panels, text, jets — is
+       * bolted in place and never moves relative to the board. three does not
+       * know that, so it rebuilt each of their local matrices every frame:
+       * 146 ms in `updateMatrix` and 293 ms in `updateMatrixWorld` on one
+       * approach, across all the boards on screen. Computing them once and
+       * turning the automatic update off keeps the world matrices correct
+       * (those still follow the parent) while dropping the per-frame rebuild.
+       */
+      if (perfFlags.boardWarmup) {
+        spin.updateMatrixWorld(true)
+        spin.traverse((child) => {
+          if (child !== spin) child.matrixAutoUpdate = false
+        })
+      }
     }
 
     // Board world position = planet position + this board's fixed local offset

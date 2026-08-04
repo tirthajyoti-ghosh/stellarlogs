@@ -402,3 +402,48 @@ the headline fix, and the measurement says so.
 - Frame times quantise to vsync (16.7 / 33.3 / 50 ms), which is why the
   GPU-timer figure (51.5 ms) is the honest one and the rAF figure (34 ms)
   understates the cost.
+
+
+## THE BILLBOARD FREEZE — measured and fixed (2026-08-04)
+
+Reported from the live site: *"when I go close to a planet or the comms
+station… the game completely freezes for maybe one or two seconds, and then
+the boards appear."*
+
+Reproduced with `__teleport` straight into board range, worst single frame:
+
+| arriving at | before | after |
+|---|---|---|
+| Work Experience | **1618 ms** | 229 ms |
+| Comms Station | 482 ms | 279 ms |
+| Projects | 302 ms | 290 ms |
+
+A CPU profile of the hitch (50 µs sampling) attributed it to:
+
+    500 ms  (program)            GPU driver linking new shader programs
+     68 ms  getProgramInfoLog    three asking, which forces the wait
+    190 ms  updateMatrixWorld    the whole board subtree, in one frame
+    146 ms  updateMatrix         static board parts, rebuilt every frame
+     48 ms  projectObject
+
+Both of the obvious suspects were wrong: texture upload measured ~0 ms, and
+troika builds its SDF atlases in a worker. It was shader compilation and the
+scene graph.
+
+**The fix**, all behind `perfFlags.boardWarmup` so it can be A/B'd live:
+- boards mount **one per frame** instead of all at once;
+- activation starts at **3× the reveal distance**, so the work is finished
+  before anything is wanted on screen;
+- `renderer.compileAsync()` links the subtree's programs through
+  `KHR_parallel_shader_compile` (confirmed available on ANGLE/Metal), and the
+  reveal waits on it;
+- static board parts get `matrixAutoUpdate = false` after their first
+  placement — a steady-state win, not just a hitch win.
+
+`renderer.debug.checkShaderErrors` is also disabled in builds. One profile put
+253 ms inside `getProgramInfoLog`, but an A/B of that flag alone did **not**
+isolate a repeatable win, so it is not claimed as part of the fix.
+
+Screenshots before/after at the Comms Station are pixel-comparable: same
+boards, same layout, same legibility. The remaining ~250 ms on arrival is a
+stutter rather than a freeze, and is next.

@@ -17,6 +17,12 @@ export const perfFlags = {
   bodyLod: true,
   /** Distance/screen-size LOD on ship hulls */
   shipLod: true,
+  /**
+   * Compile board shaders before the boards are revealed, and mount them a
+   * few at a time. Off = the old behaviour, which froze the frame for ~700 ms
+   * on approach. Kept switchable so the fix can be A/B'd on a live scene.
+   */
+  boardWarmup: true,
 }
 
 export type PerfFlag = keyof typeof perfFlags

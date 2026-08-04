@@ -33,6 +33,24 @@ export default function App() {
         gl={{ logarithmicDepthBuffer: true, antialias: true }}
         camera={{ fov: 62, near: 0.5, far: 60000 }}
         dpr={QUALITY.dpr}
+        onCreated={({ gl }) => {
+          /**
+           * three asks the driver for the shader info log straight after
+           * linking, and that question cannot be answered until linking has
+           * finished — one profile showed 253 ms sitting inside
+           * `getProgramInfoLog` on an approach to the Comms Station. An A/B of
+           * this flag alone did NOT isolate a repeatable win, so it is not
+           * claimed as the fix; it is kept because the cost is real when it
+           * lands and there is nothing to gain from asking in a build whose
+           * shaders are already known to compile. Checks stay on in dev, where
+           * a broken shader should be loud.
+           */
+          gl.debug.checkShaderErrors = import.meta.env.DEV
+          if (import.meta.env.DEV) {
+            // so the flag above can be flipped on a live scene when measuring
+            ;(window as unknown as Record<string, unknown>).__gl = gl
+          }
+        }}
       >
         <color attach="background" args={['#020814']} />
         <ambientLight intensity={0.12} />

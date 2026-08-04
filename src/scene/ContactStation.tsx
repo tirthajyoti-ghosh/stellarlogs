@@ -3,12 +3,14 @@ import { useFrame } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import { Group, MathUtils, Mesh, MeshStandardMaterial, Vector3 } from 'three'
 import { Billboard } from './boards/Billboard'
+import { useShaderWarmup } from './boards/useShaderWarmup'
 import { buildBoards } from './boards/boardSpecs'
 import { CONTACT } from '../content/contact'
 import { REGISTRY, REGISTRY_ACCENT } from '../content/credits'
 import { STATION_POSITION } from '../config/universe'
 import { registerCollider } from '../physics/gravity'
 import { shipRig } from '../state/shipRig'
+import { perfFlags } from '../config/perfFlags'
 import { useEffect } from 'react'
 
 const ACCENT = CONTACT.starColor
@@ -49,6 +51,11 @@ export function ContactStation() {
   const beaconRef = useRef<Group>(null)
   const boardsRef = useRef<Group>(null)
   const boardScale = useRef(0)
+  // These boards are mounted from the start but never drawn until you arrive,
+  // so their shaders would otherwise compile in the frame that first reveals
+  // them — the same ~700 ms freeze measured at the planets. Warm them now,
+  // while the loader is still up and nobody is flying.
+  const boardsWarm = useShaderWarmup(boardsRef, true)
   const position = useMemo(() => new Vector3(...STATION_POSITION), [])
   const specs = useMemo(() => buildBoards(CONTACT.items[0], ACCENT), [])
   // Solid hull: no more phasing through the station
@@ -68,7 +75,8 @@ export function ContactStation() {
     const boards = boardsRef.current
     if (boards) {
       const d = position.distanceTo(shipRig.position)
-      boardScale.current = MathUtils.lerp(boardScale.current, d < 700 ? 1 : 0, 0.08)
+      const wanted = d < 700 && (!perfFlags.boardWarmup || boardsWarm) ? 1 : 0
+      boardScale.current = MathUtils.lerp(boardScale.current, wanted, 0.08)
       boards.visible = boardScale.current > 0.02
       boards.scale.setScalar(boardScale.current)
       // Geostationary ring; each board turns to face the ship (see Billboard)
