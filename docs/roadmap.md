@@ -82,6 +82,13 @@ the black until lifetime ends.
   mute.
 
 ### 3. Torpedoes paired to chosen ships — BUILT 2026-08-04
+*Canon added (Tirtha): the Draugr seeds the dark with DORMANT torpedoes and
+wakes them by tightbeam — which is why salvos come from any bearing, why no
+launch is ever seen, and why the origins still plot back to one drifting
+track. Retuned same day for playability: traffic spawns at 6.2k and arrives
+AT CRUISE (no more bubble where the world begins), the board job is the
+farthest hull, first contract salvo waits up to ~24 s after the handshake
+and is always small, later waves ramp, launches start 1.7k out.*
 The attacker chooses; the world does not shoot at everything.
 - **The mark:** each traffic ship rolls once at spawn — roughly a third are
   *marked* (weightable by cargo: volatiles and fuel worth more than ice —

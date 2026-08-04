@@ -42,6 +42,14 @@ import { FONT_BOLD } from '../boards/font'
  * different classes of hull. The dockmaster's board always has work on it —
  * finish an escort and the next ship is already inbound.
  *
+ * THE DORMANT SPREAD (canon, Tirtha 2026-08-04): the Draugr seeds the dark
+ * around the lane with cold torpedoes — drives off, transponders dead,
+ * invisible at any range — and wakes them by tightbeam when a marked hull
+ * commits to final. That is why salvos can come from ANY bearing while the
+ * launches still trace back to one drifting origin: the origin is where the
+ * spread was sown, not where she is now. It is also why nobody ever sees a
+ * launch flash.
+ *
  * THE MARK. The Draugr chooses. Roughly a third of the hulls that enter
  * these lanes are marked at spawn — weighted by cargo, because volatiles are
  * worth boarding and ice barely is — and the rest cross in peace, every
@@ -88,7 +96,7 @@ const DRIFT = new Vector3(...DRIFT_POI.position)
 const WRECK = new Vector3(...WRECK_POI.position)
 
 const MAX_SHIPS = 4
-const SPAWN_DIST = 2400
+const SPAWN_DIST = 6200
 const DOCK_DIST = 330
 const WRECK_BERTH = 220
 /** you take jobs standing at the dockmaster's board, nowhere else */
@@ -99,7 +107,7 @@ const JOIN_MIN_RANGE = 900
 const RENDEZVOUS_RADIUS = 260
 const CONVOY_RADIUS = 1000
 const WATCH_RANGE = 2600
-const DESPAWN_DIST = 3400
+const DESPAWN_DIST = 7000
 const GRACE_SECONDS = 10
 
 const CRUISE = 62
@@ -118,7 +126,7 @@ const TORP_POOL = 18
 const TORP_SPEED = 105
 const TORP_TURN = 0.85
 const TORP_WEAVE = 20
-const HIDDEN_LAUNCH = 1400
+const HIDDEN_LAUNCH = 1700
 /** the mark: how likely the Draugr wants a given cargo */
 const MARK_ODDS: Record<string, number> = {
   VOLATILES: 0.6,
@@ -133,8 +141,12 @@ const MARK_ODDS: Record<string, number> = {
 /** salvo scheduling for a marked hull (seconds into / between) */
 const MARK_FIRST_MIN = 8
 const MARK_FIRST_JITTER = 18
-const MARK_GAP_MIN = 13
-const MARK_GAP_JITTER = 16
+const MARK_GAP_MIN = 17
+const MARK_GAP_JITTER = 17
+/** after the handshake the pilot gets a moment to settle into formation
+ *  before the first wake-up call */
+const CONTRACT_FIRST_MIN = 10
+const CONTRACT_FIRST_JITTER = 6
 /** how far the hidden origin swings between salvos — a hunter repositioning */
 const BEARING_DRIFT = 0.42
 
@@ -209,9 +221,15 @@ const _m = new Matrix4()
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
-/** Random bearing whose lane never crosses the Nilak, nor pops in your face. */
+const _fwd = new Vector3()
+
+/** Random bearing whose lane never crosses the Nilak, nor pops in your face —
+ *  and whose SPAWN POINT is outside the pilot's view cone whenever it is
+ *  close enough that a ship appearing there could be seen appearing. The
+ *  no-pop contract, applied to traffic. */
 function pickBearing(out: Vector3, avoidPlayer: boolean): void {
-  for (let attempt = 0; attempt < 30; attempt++) {
+  _fwd.set(0, 0, -1).applyQuaternion(shipRig.quaternion)
+  for (let attempt = 0; attempt < 40; attempt++) {
     const az = Math.random() * Math.PI * 2
     const el = (Math.random() - 0.5) * 0.44
     out.set(Math.cos(az) * Math.cos(el), Math.sin(el), Math.sin(az) * Math.cos(el)).normalize()
@@ -221,7 +239,11 @@ function pickBearing(out: Vector3, avoidPlayer: boolean): void {
     if (_v2.distanceTo(WRECK) < WRECK_BERTH) continue
     if (avoidPlayer) {
       _v2.copy(DRIFT).addScaledVector(out, SPAWN_DIST)
-      if (_v2.distanceTo(shipRig.position) < 900) continue // never pop in on the pilot
+      const toSpawn = _v2.sub(shipRig.position)
+      const d = toSpawn.length()
+      if (d < 900) continue // never in the pilot's lap
+      // within seeing range and inside the forward cone: try elsewhere
+      if (d < 4500 && toSpawn.divideScalar(d).dot(_fwd) > 0.45) continue
     }
     return
   }
@@ -431,7 +453,10 @@ export function IceRoute() {
       ship.collider.position = ship.position
       ship.collider.radius = CLASSES[ship.cls].collider
       ship.s = 0
-      ship.v = 0
+      // She has been under way for days — nobody accelerates from zero at the
+      // edge of a lane. Arrives at cruise, drive lit.
+      ship.v = CRUISE
+      ship.flight = 'cruise'
       ship.flipT = 0
       ship.hull = HULL_MAX
       ship.defender = Math.random() < 0.5 ? 0 : 1
@@ -716,7 +741,9 @@ export function IceRoute() {
           witnessed
         ) {
           const isContract = i === s.escort && s.job === 'escort'
-          fireSalvo(2 + Math.floor(Math.random() * 3), null, !isContract, i)
+          // the first wake-up is a probe, not a wall — playability rules here
+          const count = isContract && s.salvos === 0 ? 2 : 2 + Math.floor(Math.random() * 3)
+          fireSalvo(count, null, !isContract, i)
           ship.salvosLeft--
           ship.nextAttackAt = now + MARK_GAP_MIN + Math.random() * MARK_GAP_JITTER
           if (isContract) {
@@ -825,7 +852,11 @@ export function IceRoute() {
           damageFx.clear()
           for (const t of torpedoes) if (t.alive && t.target === s.escort) t.ambient = false
           if (escorted.marked && escorted.salvosLeft > 0) {
-            escorted.nextAttackAt = Math.min(escorted.nextAttackAt, now + 5 + Math.random() * 4)
+            // settle-in time: formation first, fight after
+            escorted.nextAttackAt = Math.max(
+              now + CONTRACT_FIRST_MIN + Math.random() * CONTRACT_FIRST_JITTER,
+              Math.min(escorted.nextAttackAt, now + 24),
+            )
           }
           activityState.banner = {
             text: `${escorted.name}: "GLAD FOR THE COMPANY, BOSMANG"`,
