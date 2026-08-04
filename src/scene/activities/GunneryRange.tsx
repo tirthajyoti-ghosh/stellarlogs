@@ -46,7 +46,7 @@ const CENTER = new Vector3(...GUNNERY_POI.position)
 const ARM_RADIUS = 1400
 const LIVE_RADIUS = 2600
 const GRACE_SECONDS = 10
-const TORP_POOL = 12
+const TORP_POOL = 14
 const TORP_HIT_SHIP = 6.5
 const SPAWN_DISTANCE = 600
 // v3: certification trimmed to 3 waves (escort duty standard, heat armed W3)
@@ -114,10 +114,21 @@ const WAVES: LaunchSpec[][] = [
     { yawOff: Math.PI - 0.3, elev: 0.6 },
     { yawOff: Math.PI + 0.3, elev: -0.55 },
     { yawOff: 0.05, elev: 0.25 },
+    { yawOff: 2.4, elev: 0.2 },
+    { yawOff: -2.4, elev: -0.18 },
     { yawOff: Math.PI, elev: 0, speedMult: 1.5, turnMult: 0.5 }, // the runner: dodge it
   ],
 ]
-const BASE_SPEED = [95, 165, 185]
+/**
+ * Re-tuned 2026-08-05: the acceptance law ("a parked ship takes hits by
+ * wave 2 and fails by wave 3") had silently drifted — measured completing
+ * untouched, and Tirtha felt it live ("I can just sit... it's not really
+ * doing anything"). Waves 2-3 run faster and wave 3 runs twelve across
+ * five axes with a denser storm stagger: saturation beyond what six held
+ * tracks can eat, unless the pilot flies geometry that buys the guns
+ * their windows.
+ */
+const BASE_SPEED = [95, 190, 235]
 const BASE_TURN = [0.9, 1.0, 1.1]
 
 const _q = new Quaternion()
@@ -350,7 +361,7 @@ export function GunneryRange() {
         torp.alive = true
         torp.launched = i === 0
         // the final wave rolls in on a wider stagger — a storm, not a volley
-        torp.launchAt = t + i * (g.wave >= 3 ? 0.25 : 0.15)
+        torp.launchAt = t + i * (g.wave >= 3 ? 0.1 : 0.15)
         torp.tracked = false
       })
       for (let i = specs.length; i < TORP_POOL; i++) torpedoes[i].alive = false

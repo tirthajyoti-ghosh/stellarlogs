@@ -52,16 +52,29 @@ const ROUND_LIFE = 2.4 // seconds — misses sail ~1,900 units into the black
  * by wave 3). Lethality and visibility are separate budgets now.
  */
 const LETHAL_TIME = 1.7
-const ROUND_LEN = 1.2
-const ROUND_RADIUS = 0.032
-const POOL = 512
-const ROUNDS_PER_SEC = 12
+/**
+ * Every lethal round is accompanied by two INERT siblings drawn from the
+ * same fire-control solution with a slightly wider hand. The kill economy
+ * is untouched — the siblings cannot adjudicate — but the stream on screen
+ * carries three times the rounds, and the spray of misses is finally
+ * visible instead of vanishing between sparse dashes ("convert all the
+ * bullets to tracers so I can at least see the spray").
+ */
+const SIBLINGS_PER_ROUND = 2
+const SIBLING_ERR_MULT = 1.4
+const ROUND_LEN = 0.55
+const ROUND_RADIUS = 0.026
+const POOL = 1024
+const ROUNDS_PER_SEC = 10
 const KILL_RADIUS = 3.4
 const ERR_MAX = 60 // u/s of lateral aim error at track acquisition
-// Converged error stays a visible spray, never a laser — tuned so a
-// STATIONARY ship leaks hits by wave 2 (the acceptance law): the guns are
-// good, not perfect, and flying the geometry is still the pilot's job.
-const ERR_MIN = 13
+// Converged error stays a visible spray, never a laser — RE-TUNED
+// 2026-08-05: the old floor of 13 had drifted into near-certain terminal
+// hits (a parked ship completed the cert untouched; Tirtha: "I can just
+// sit"). At 20, converged fire still shreds, but the spread against a
+// 3.4u kill radius leaves honest leaks — the guns are good, not perfect,
+// and flying the geometry is the pilot's job again.
+const ERR_MIN = 23
 const ERR_TAU = 0.85 // seconds; convergence time constant per held track
 // Fire-control lead QUALITY degrades with flight time: distant shots get a
 // poor solution (streams visibly lag and spray after the target), close
@@ -271,6 +284,9 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         const err = ERR_MIN + (ERR_MAX - ERR_MIN) * Math.exp(-s.trackTime[ti] / ERR_TAU)
         _shooterVel.copy(shipRig.velocityDir).multiplyScalar(Math.min(shipRig.speed, 520))
         spawn(muzzle.position, _shooterVel, 520, src, sourceIdx, err, solution, 1)
+        for (let k = 0; k < SIBLINGS_PER_ROUND; k++) {
+          spawn(muzzle.position, _shooterVel, 520, src, -1, err * SIBLING_ERR_MULT, solution, 1)
+        }
       }
     }
 

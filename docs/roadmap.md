@@ -243,9 +243,14 @@ vaporized, very Belter.
 (7e2d1b5b9f0249cfb3111a00bf48237b, CC-BY); fallback SACHSEN CLASS FRIGATE.*
 
 ### Certification trim (rides along with F.4)
-**+ 2026-08-05: re-tune the acceptance law.** A parked ship should take hits
-by wave 2 and fail by wave 3; measured on the pre-tracer build it completes
-untouched. The drift predates the tracer work (verified by baseline A/B).
+**+ 2026-08-05: acceptance law re-tuned same night** (Tirtha felt it live:
+"I can just sit"). Converged-error floor 13 → 23, lethal rate 12 → 10/s,
+wave 2 at 190, wave 3 at 235 with twelve torpedoes on a 0.1 s storm
+stagger. Parked verification now: hits every run (first at W2), one in
+three fails outright at HULL CRITICAL. Sitting bleeds, often kills; the
+next notch is one constant if playtest wants it harsher. Note: the error
+floor is shared with escort guns — slightly more leaks in the lanes, in
+the direction Tirtha asked ("not underwhelming").
 The existing gunnery range stays but shrinks (~3 waves) and gets honest
 signage: "PDC CERTIFICATION — ESCORT DUTY STANDARD." No gating (free order
 is law); the fiction now explains the drill, and it remains the
