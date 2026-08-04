@@ -12,7 +12,7 @@ export const CONTACT: SystemContent = {
       subtitle: 'Senior AI Engineer · 6+ years experience',
       body: 'Built 30+ production AI agents for enterprise clients, a custom agent loop engine, and a production observability platform.',
       links: [
-        { label: '✉ itirthahere@gmail.com', url: 'mailto:itirthahere@gmail.com' },
+        { label: '✉ t.ghosh.me@gmail.com', url: 'mailto:t.ghosh.me@gmail.com' },
         { label: 'GitHub — tirthajyoti-ghosh', url: 'https://github.com/tirthajyoti-ghosh' },
         { label: 'Blog — tghosh.hashnode.dev', url: 'https://tghosh.hashnode.dev' },
       ],
