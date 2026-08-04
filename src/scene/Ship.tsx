@@ -21,6 +21,7 @@ import { driveLock } from '../physics/driveLock'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
+import { PROBES } from '../config/probes'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
 
 const MODEL_URL = '/models/tachi.glb'
@@ -134,8 +135,8 @@ export function Ship() {
   const starboardLightRef = useRef<Mesh>(null)
   const state = useMemo(() => createShipState(new Vector3(...SPAWN_POSITION), SPAWN_YAW), [])
 
-  // Dev-only teleport for visual inspection / automation
-  if (import.meta.env.DEV) {
+  // Teleport for visual inspection / automation (dev + probe builds)
+  if (PROBES) {
     ;(window as unknown as Record<string, unknown>).__teleport = (
       x: number,
       y: number,

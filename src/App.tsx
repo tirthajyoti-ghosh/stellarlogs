@@ -18,12 +18,14 @@ import { Explosions } from './scene/fx/Explosions'
 import { HullDamage } from './scene/fx/HullDamage'
 import { Effects } from './scene/Effects'
 import { AdaptiveResolution } from './scene/AdaptiveResolution'
+import { HardenMaterials } from './scene/HardenMaterials'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
 import { HUD } from './hud/HUD'
 import { SeoContent } from './SeoContent'
 import { ALL_SYSTEMS } from './config/systems'
 import { QUALITY } from './config/quality'
+import { PROBES } from './config/probes'
 
 export default function App() {
   useShipControls()
@@ -52,9 +54,11 @@ export default function App() {
            * a broken shader should be loud.
            */
           gl.debug.checkShaderErrors = import.meta.env.DEV
-          if (import.meta.env.DEV) {
-            // so the flag above can be flipped on a live scene when measuring
-            ;(window as unknown as Record<string, unknown>).__gl = gl
+          if (PROBES) {
+            // enough of the renderer to measure it: the flag above, GPU timer
+            // queries, and the scene graph for attributing cost per subtree
+            const w = window as unknown as Record<string, unknown>
+            w.__gl = gl
           }
         }}
       >
@@ -88,6 +92,7 @@ export default function App() {
         <Ship />
         <ChaseCamera />
         <AdaptiveResolution />
+        <HardenMaterials />
         <HudBridge />
         {QUALITY.postprocessing && <Effects />}
       </Canvas>

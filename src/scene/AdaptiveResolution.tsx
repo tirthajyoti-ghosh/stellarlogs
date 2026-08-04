@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { QUALITY } from '../config/quality'
 import { perfFlags } from '../config/perfFlags'
+import { PROBES } from '../config/probes'
 
 /**
  * Render fewer pixels when the machine cannot keep up — but only if that
@@ -71,7 +72,7 @@ export function AdaptiveResolution() {
     held: false,
   })
 
-  if (import.meta.env.DEV) {
+  if (PROBES) {
     // Pins the ratio and parks the controller, so a measurement can compare
     // one pixel count against another without the controller correcting it.
     ;(window as unknown as Record<string, unknown>).__setDpr = (v: number) => {
@@ -84,13 +85,16 @@ export function AdaptiveResolution() {
     ;(window as unknown as Record<string, unknown>).__releaseDpr = () => {
       state.current.held = false
     }
+    // The whole renderer state, so a measurement can reach the scene graph and
+    // attribute GPU cost to individual subtrees by hiding them one at a time.
+    ;(window as unknown as Record<string, unknown>).__r3f = get
   }
 
   useFrame((_, dt) => {
     const s = state.current
     const ms = dt * 1000
 
-    if (import.meta.env.DEV && s.held) return
+    if (PROBES && s.held) return
 
     // The Canvas carries no dpr prop, so claim the tier's ceiling once.
     if (s.current < 0) {
@@ -127,7 +131,7 @@ export function AdaptiveResolution() {
     // nothing beats vsync, so the floor of the distribution is the refresh.
     const refresh = Math.min(20, Math.max(6.5, sorted[Math.floor(sorted.length * 0.1)]))
 
-    if (import.meta.env.DEV) {
+    if (PROBES) {
       ;(window as unknown as Record<string, unknown>).__dpr = {
         dpr: s.current,
         medianMs: +median.toFixed(1),

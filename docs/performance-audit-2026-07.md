@@ -497,3 +497,78 @@ the site: pinning the pixel ratio appeared to do nothing because the disabled
 controller was re-pinning it to the ceiling every frame, and `renderer.info`
 reports one draw call because three resets it per render pass and the last pass
 is the composer's fullscreen quad. Neither number meant what it looked like.
+
+
+## WHAT THE FRAME IS ACTUALLY SPENT ON — probe build (2026-08-04)
+
+`npm run build:probe` produces the production bundle with the measurement
+hooks left in, so for the first time these numbers describe what a visitor
+runs rather than the dev server. The difference is not small:
+
+| at the same viewpoint, 2400x1350 | dev server | probe build |
+|---|---|---|
+| frame | 73.6 ms (14 fps) | **22.9 ms (44 fps)** |
+| GPU | 177 ms | 47.7 ms |
+
+The July GPU figure (51.5 ms) matches the probe build, so the audit's
+*measurement* was sound. Its *inference* — "GPU bound, therefore
+fill-limited" — was not: dropping from 3600x2025 to 1200x675 still only
+moved the frame from 22.9 ms to 20.4 ms.
+
+### Two findings that dwarf everything else on the plan
+
+Both taken with an immediate baseline-condition-baseline pairing, on a fresh
+page, so slow drift cancels:
+
+| change | frame | saving |
+|---|---|---|
+| player ship DoubleSide -> FrontSide | 38.1 -> 20.5 ms | **17.6 ms (46%)** |
+| all point lights off | 35.1 -> 16.7 ms | **18.4 ms (52%)** |
+
+**1. Double-sided hulls.** Nothing in this repo asked for it — Sketchfab
+exports carry `doubleSided: true` and three honours it, so every triangle of
+every downloaded hull is rasterised twice and cannot be depth-rejected early.
+The back faces are inside the ship. `<HardenMaterials>` now restores
+`FrontSide` on opaque loaded materials, with `userData.keepDoubleSide` opting
+out the two surfaces that genuinely need it (planet atmosphere shell, the open
+cone of a billboard jet).
+
+**2. One hundred and two point lights.** Every billboard mounts its own
+floodlight; 102 exist and ~21 are visible at once. `MeshStandardMaterial`
+costs O(lights) per fragment, so every lit surface in the scene pays for all of
+them. This is untouched and is the single largest remaining lead. Cheaper
+options, in order of preference: bake the wash into the panel material, share
+one floodlight per board ring, or light only the board being read.
+
+### Triangle count is nearly irrelevant here
+
+Hiding whole subtrees, paired against adjacent baselines:
+
+| subtree | meshes | triangles | saving |
+|---|---|---|---|
+| #18 | 515 | 1,530k | **0.0 ms** |
+| #14 | 10 | 884k | 1.2 ms |
+| #13 | 174 | 407k | -0.1 ms |
+| #32 (the player ship) | 36 | 141k | **10.0 ms** |
+
+The heaviest subtree in the scene costs nothing; the ship, with a tenth of its
+triangles, costs a quarter of the frame. Any future plan that ranks work by
+triangle count is ranking by the wrong number.
+
+### Four ways these measurements lie, all found the hard way
+
+- **Thermal throttling.** Sustained automated rendering degrades the baseline
+  from 23 ms to 55 ms over about ten minutes on this M3. Any unpaired
+  comparison taken minutes apart is worthless.
+- **The ship drifts.** Gravity pulls it toward whatever system it was parked
+  near, so a "fixed" viewpoint is not fixed — one run ended up inside the star.
+- **Bulk `needsUpdate` recompiles.** Flipping hundreds of materials at once
+  triggers a shader recompile storm that poisons the next sample.
+- **Flags that arrive too late.** `perfFlags.hardenMaterials` cannot be A/B'd
+  by flipping it after load: models load during the preflight and the pass has
+  already run. A real whole-scene A/B needs the flag set before module init.
+
+Because of the last two, the **17.6 ms is established for the ship in
+isolation, not yet for the whole-scene pass**. The pass is verified to work
+(565 materials remain double-sided, the rest converted) and verified not to
+break anything visually, but its end-to-end number is still owed.

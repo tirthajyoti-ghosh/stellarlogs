@@ -1,3 +1,4 @@
+import { PROBES } from '../config/probes'
 import { Quaternion, Vector3 } from 'three'
 
 /**
@@ -41,7 +42,7 @@ export const shipRig: {
   tumblePitch: 0,
 }
 
-// Dev-only inspection handle for debugging/automation
-if (import.meta.env.DEV) {
+// Inspection handle for debugging/automation
+if (PROBES) {
   ;(window as unknown as Record<string, unknown>).__shipRig = shipRig
 }

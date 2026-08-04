@@ -183,6 +183,8 @@ export function Planet({ config, sunPosition }: PlanetProps) {
               uSeed: { value: config.seed },
             },
             side: DoubleSide,
+            // a hollow shell, seen from inside — see HardenMaterials
+            userData: { keepDoubleSide: true },
             transparent: true,
             depthWrite: false,
           })

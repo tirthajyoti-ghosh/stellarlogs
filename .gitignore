@@ -7,3 +7,6 @@ dist
 # visual-regression captures (large PNGs, regenerated on demand)
 vr/
 vr2/
+
+# probe build output (production bundle + measurement hooks)
+dist-probe/

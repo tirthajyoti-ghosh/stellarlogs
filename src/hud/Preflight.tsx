@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useProgress } from '@react-three/drei'
 import { startAudio } from '../audio/engine'
 import { IS_TOUCH } from '../config/quality'
+import { PROBES } from '../config/probes'
 
 /**
  * PREFLIGHT — the loading screen.
@@ -61,9 +62,7 @@ const MAX_WAIT_MS = 25000
  * Dev-only: `?boot=0.42` pins the sequence at a fixed progress so any stage of
  * it can be looked at and screenshotted without racing the loader.
  */
-const BOOT_PARAM = import.meta.env.DEV
-  ? new URLSearchParams(window.location.search).get('boot')
-  : null
+const BOOT_PARAM = PROBES ? new URLSearchParams(window.location.search).get('boot') : null
 // `get` returns null when the parameter is absent and Number(null) is 0, which
 // is finite — reading it straight pins every ordinary dev run at 0%.
 const BOOT_PIN = BOOT_PARAM ? Number(BOOT_PARAM) : NaN

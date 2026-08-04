@@ -1,3 +1,4 @@
+import { PROBES } from './probes'
 /**
  * Runtime switches for every performance optimisation, so each one can be
  * turned OFF and ON while the scene is running.
@@ -29,10 +30,16 @@ export const perfFlags = {
    * shipped before.
    */
   adaptiveResolution: true,
+  /**
+   * Restore backface culling on loaded hulls whose glTF asked for
+   * double-sided rendering it never needed. Measured at 17.6 ms of a 38 ms
+   * frame on the player ship alone.
+   */
+  hardenMaterials: true,
 }
 
 export type PerfFlag = keyof typeof perfFlags
 
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+if (PROBES && typeof window !== 'undefined') {
   ;(window as unknown as Record<string, unknown>).__perf = perfFlags
 }

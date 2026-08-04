@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "eslint src",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:probe": "vite build --mode probe --outDir dist-probe",
+    "preview:probe": "vite preview --outDir dist-probe --port 4321"
   },
   "dependencies": {
     "@fontsource/rajdhani": "^5.3.0",

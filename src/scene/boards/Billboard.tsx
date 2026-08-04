@@ -192,7 +192,8 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
           </mesh>
           <mesh position={[x > 0 ? 2 : -2, 0, 0]} rotation-z={x > 0 ? -Math.PI / 2 : Math.PI / 2}>
             <coneGeometry args={[0.8, 1.6, 8, 1, true]} />
-            <meshStandardMaterial {...DARKMETAL} side={2} />
+            {/* open cone, seen from inside — see HardenMaterials */}
+            <meshStandardMaterial {...DARKMETAL} side={2} userData={{ keepDoubleSide: true }} />
           </mesh>
         </group>
       ))}
