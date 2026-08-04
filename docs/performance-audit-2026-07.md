@@ -650,3 +650,64 @@ Left alone on review: the board warmup/mount pacing (correct), and
 
 The warm-machine caveat cuts against us here, so the real improvement is at
 least this. Confirmation on a cold machine remains owed, per the earlier note.
+
+
+## HOW I WOULD ATTACK WHAT REMAINS — first-principles plan (Fable, 2026-08-04)
+
+Asked to approach the performance problem as if implementing it fresh, not
+patching what exists. The prior work stands; this is the strategy from here.
+
+**The prime law this audit earned three times: attribute before optimizing.**
+"97% GPU" became "fill-limited" without an experiment, and the experiment
+killed it. Triangles were assumed heavy; the 1.5M-triangle subtree cost
+nothing. Dev-server numbers condemned code the build runs fine. So: the
+remaining ~17 ms at the heavy viewpoint is NOT yet attributed, and nothing
+gets optimized until it is.
+
+**Attribution plan (one session, probe build, fresh page per arm):**
+1. CPU/GPU split: JS main-thread time inside the rAF (R3F loop + three
+   render call, measured around `gl.render`) vs the timer-query GPU median.
+2. If CPU-heavy: profile `projectObject` / `updateMatrixWorld` /
+   `WebGLRenderer.render` self-times. ~3,100 meshes make DRAW-CALL AND
+   GRAPH-WALK OVERHEAD the strongest suspect — three touches every object
+   every frame just to decide what to draw.
+3. If GPU-heavy: binary-search subtrees (paired A-B-A, the drift-proof
+   protocol), then within the winner, distinguish state-change cost from
+   shading cost by draw-call count vs covered pixels.
+4. Composer isolated: render one frame with EffectComposer bypassed. Bloom's
+   mip chain is the only full-screen work that survived the pixel ladder;
+   it deserves its own number.
+
+**Ranked levers, sized by hypothesis, each with its kill criterion:**
+- **Merge static board geometry.** Every billboard is ~25 meshes over 2
+  shared materials; merged at mount that is 1–2 draws per board — hundreds
+  of draws saved where boards cluster, plus the matching graph-walk savings.
+  Kill if attribution says draws are cheap here.
+- **Distance-gate small-fry per system** (boards, activity hardware, belt
+  extras beyond the range where they are sub-pixel). Collapses both draw
+  count and graph walk for the 90% of flight time spent in transit. The
+  no-pop contract is satisfied by gating strictly beyond sub-pixel range and
+  verified with the visual-diff judge. This was P2 in July; it survives
+  first-principles review.
+- **Static-subtree matrix freeze**: `matrixAutoUpdate=false` across the
+  station, wreck, drift colony, gates (boards already done). Cheap, safe,
+  bounded win.
+- **Composer diet** if its number warrants: bloom at half input resolution,
+  5 mip levels, drop the near-invisible ChromaticAberration pass. Visual
+  diff decides, not taste.
+- **Payload tiering** (unchanged from July, still real, independent of
+  frame rate): 19 MB serial → ship+nearest-system first; KTX2 textures;
+  re-decimate the two heavy models. Kills the loader creep and the cold
+  26 s start.
+
+**What I would explicitly NOT do:** chase pixels (measured irrelevant on
+this class of machine — adaptive resolution stays as insurance for machines
+where it is not); chase triangles (measured irrelevant); WASM the physics
+(the integrator is microseconds); move work to a worker (nothing measured
+main-thread-bound enough to pay the transfer tax).
+
+**Standing measurement discipline** (now house rules): probe build only;
+fresh page per experimental arm; paired baseline-condition-baseline so
+thermal drift cancels; suspect any result where hiding work makes things
+slower; `renderer.info` lies inside composers; a flag that cannot be flipped
+before module init cannot be A/B'd after load.

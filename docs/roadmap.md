@@ -30,6 +30,9 @@ station traffic is live, it is dynamic, so that's good."* The corrections
 below are all from that session and take priority over new features.
 
 ### 1. Billboard reveal freezes the frame — FIXED 2026-08-04 (1618 ms -> 229 ms)
+*Also settled 2026-08-04: board lighting is real per-pixel lamp math; the
+plate texture is the procedural v2 (chosen over six ambientCG candidates in
+textures.html, which stays as a permanent judging bench).*
 Flying near a planet or the Comms Station, **the whole game freezes for
 one to two seconds** just before the boards appear; afterwards everything
 is fine. `PlanetBoards` flips `activated` once and mounts the entire board
@@ -42,49 +45,104 @@ texture decode/upload. Directions: async texture decode
 staggering the mount across frames instead of one big commit. This is a
 no-pop-contract violation as much as a perf bug — the freeze *is* the pop.
 
-### 2. PDC tracers are still wrong (three separate faults)
-The design was written; the build does not match it yet.
-- **The rounds fly straight to the torpedo.** They read as hit-beams
-  aimed at the target, not as ballistics. Rounds must leave the muzzle and
-  *keep going* on the heading they were fired at, whether or not they hit.
-- **The misses must be visible and must form the hose pattern.** Tirtha's
-  image, restated: *the PDC follows the torpedo's trajectory and walks its
-  aim onto it; the rounds already fired are still out there, so sweeping
-  the gun leaves curved, wavy streams — like swinging a running hose.* The
-  wave is the record of where the gun was pointing a moment ago.
-- **The streaks are too long.** Shorten them so they read as small
-  individual rounds leaving the cannon, not as beams.
+### THE SOUND LAW (named 2026-08-04, from Tirtha's #4 direction)
+**Space is silent until it is yours.** You hear only what your own hull and
+your own radio carry: your PDCs (structure-borne), impacts on or near you,
+comms addressed to you, your ship's systems. Ambient battles — torpedoes
+streaking at other freighters, station guns firing, detonations on the lane —
+are *visible fireworks with no audio and no HUD engagement*. Accepting a
+contract is what arms the sound layer and the threat HUD, and only for events
+belonging to that contract. This is simultaneously the correction he asked
+for and the physically true answer: vacuum carries nothing.
 
-### 3. Torpedoes must be paired to specific ships, at random
-The Draugr's story is that she fires on shipments inbound to the Amnia —
-so torpedoes come from an attacker who picks targets, not from the world
-firing at everything. Requirements: the attacker chooses **which** ship to
-shoot at **randomly**, at **random times**, and **not every ship and not
-every run**. Some convoys are attacked; some are not. Torpedo bearings stay
-random and unheralded (confirmed keeper) — you never see the launch, only
-the flip.
+### 2. PDC tracers — DESIGN (explored 2026-08-04, build later)
+The hose metaphor, taken literally: every round is a real object that left
+the muzzle with the velocity the barrel had *at that instant* — gun direction
+× muzzle speed **plus the shooter's own velocity**. Nothing is retargeted
+after launch. The wavy stream is then not an effect, it is a consequence:
+when the turret slews to follow a jinking torpedo, rounds already in flight
+keep their old headings, and the stream hanging in space is a physical
+recording of where the gun used to point. Misses continue ballistically into
+the black until lifetime ends.
 
-### 4. Escort must start at the board, not by flying near a freighter
-Current behaviour (accept when near the lane) is wrong. The flow must be:
-1. Fly to the Drift station board and **accept the job there**.
-2. Get a **heading to intercept** — the freighter is inbound from a
-   direction, and the ship must fly out to meet it. Guidance required:
-   at minimum a direction indicator to the intercept, ideally a closing
-   readout.
-3. **The escort begins at the rendezvous** — when the two ships meet.
-The job is a commitment made at the station and then flown to, not a thing
-you stumble into.
+- **Rendering:** one shared InstancedMesh pool (~2048 short emissive streaks
+  — SHORT, per the feedback: they must read as bullets, not beams). Each
+  instance stores spawn position, velocity, spawn time; a vertex shader
+  computes position = p0 + v·(t−t0), so the per-frame CPU cost is spawns
+  only. One draw call for every round in the world.
+- **Tracer discipline:** only every 3rd–5th round is a visible tracer (the
+  real-world convention) — the stream reads as dashed fire, and the pool
+  stretches 3–5× further.
+- **Truth alignment:** gameplay hits stay with the existing fire-control
+  math (range-degraded convergence, already balanced in three passes). The
+  visible stream samples the SAME aim-error state, so what you see walking
+  onto the torpedo is the same solution that decides the kill. When the kill
+  rolls, the nearest tracers terminate in the impact sparks.
+- **Sound:** per the Sound Law — your guns are loud, everyone else's are
+  mute.
 
-### 5. Radar becomes a 3D cylinder in attack mode — DESIGN DISCUSSION OWED
-Confirmed and sharpened: in combat the minimap must show **three-
-dimensional** information, as a **cylindrical volume**, not a flat plane.
-It must answer, at a glance: *which direction is that torpedo coming from,
-above or below me, and is that bearing covered by my PDCs?* Described as a
-"moving, intelligent, cylindrical radar." PDC coverage arcs are a new
-requirement — the display shows defended vs undefended bearings, not just
-contacts. Tirtha wants to talk this through before it is built; the
-reference-frame question below (own-ship vs hauler-centred vs threat-axis
-lines) is part of that conversation.
+### 3. Torpedoes paired to chosen ships — DESIGN (explored 2026-08-04)
+The attacker chooses; the world does not shoot at everything.
+- **The mark:** each traffic ship rolls once at spawn — roughly a third are
+  *marked* (weightable by cargo: volatiles and fuel worth more than ice —
+  pirate economics as flavor). Unmarked ships cross in peace, every time.
+  Some sessions the lane just works; that silence is worldbuilding too.
+- **Salvo schedule:** a marked ship gets 1–3 attack events at random times
+  inside its transit window. Each salvo: 1–2 torpedoes from one bearing.
+- **The hunter implied:** within a salvo, all torpedoes share one origin
+  bearing (shots fired seconds apart come from one place — a ship). Between
+  salvos the bearing drifts a few degrees — the attacker is repositioning.
+  An attentive pilot could plot those bearings and infer the Draugr's track:
+  free foreshadowing of F.3 THE HUNT, cost zero.
+- **Outcomes stay random:** station arcs intercept some, freighter
+  self-defense some, some leak through and hit — visible venting/damage on
+  the ambient ship. (Optional drama, flagged for later decision: a rare
+  ambient loss that becomes a wreck + a board notice. Liveness hook.)
+- **Contract overlap:** if the player has accepted the escort of a marked
+  ship, that ship's schedule IS the mission — same machinery, now with
+  sound, threat HUD, and the player's guns in the fight.
+
+### 4. Escort begins at the board — DESIGN (explored 2026-08-04)
+To scrap (Tirtha, explicit): the drift-lane proximity offer ("close on her
+if you want the job"), and all ambient combat SFX/HUD noise from being in
+the region. Ambient traffic and ambient attacks remain fully visible.
+The flow:
+1. **At the AMNIA DOCKS board:** at least one escort job always posted —
+   ship name, cargo, inbound bearing, ETA, a line of flavor. Accept
+   deliberately (G / tap).
+2. **Intercept leg:** HUD mission strip with a heading marker to a live
+   computed rendezvous point (lead her track, not her position), distance
+   and closing rate. Her blip highlighted on radar. This leg is navigation
+   gameplay — flying out along a bearing to meet something moving.
+3. **Rendezvous:** inside ~250 u with relative speed low → she hails
+   ("glad for the company, bosmang") → ESCORT ACTIVE: formation envelope,
+   escort HUD, sound layer arms. The contract's salvos (see #3) are now
+   audible, threatening, and the player's to stop.
+4. **Missed intercept:** she reaches the Drift without you — the job
+   expires without ceremony and the board posts the next. No punishment;
+   the lane keeps its own schedule.
+
+### 5. Cylindrical combat radar — DISCUSSION AGENDA (needs Tirtha)
+Confirmed shape: in combat, the minimap becomes a cylinder — bearing around
+the rim, elevation as stem height above/below the reference disc, range
+radial; torpedo tracks visibly corkscrew. New requirement from feedback:
+show **PDC coverage** — which bearings/elevations your guns can currently
+answer — so "is that inbound covered?" is a glance, not a guess.
+Decisions to settle together before build:
+- **Reference frame:** own-ship-centred always (how pilots think) vs
+  hauler-centred while escorting vs own-ship + drawn threat-axis lines from
+  each torpedo to its target (recommended: stationing reads as "put my dot
+  on those lines" without changing the pilot's frame).
+- **Coverage drawing:** shaded wedge volumes on the cylinder vs arcs on the
+  base disc vs tinting the threat stems (covered = teal, uncovered = red).
+  Recommendation: tint the stems — zero extra geometry, answers the actual
+  question directly.
+- **When:** combat-only transform, or always cylindrical with the disc
+  degenerating when nothing is above/below? Recommendation: combat-only,
+  with a quick morph animation so the mode change is legible.
+- **Up-reference:** ship-relative (rolls with you) vs lane-plane-stable.
+  Recommendation: lane-plane-stable; rolling radar induces nausea and
+  torpedo elevation loses meaning if "up" keeps changing.
 
 
 ## NOW — The Ice Route (the combat layer becomes one situation)
