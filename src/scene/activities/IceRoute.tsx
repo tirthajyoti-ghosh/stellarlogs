@@ -99,6 +99,17 @@ const ICE_NAMES = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
 const FREIGHT_NAMES = ['BREKKA', 'TALVI', 'KOSMO', 'SAMAK', 'VANAJA', 'OYADEH']
 const ICE_CARGO = ['ICE', 'ICE', 'WATER']
 const FREIGHT_CARGO = ['ORE', 'FUEL', 'PARTS', 'VOLATILES', 'GRAIN', 'STEEL']
+/** What the colony actually does with each delivery — you cannot drink steel. */
+const CARGO_TOAST: Record<string, string> = {
+  ICE: 'THE AMNIA DRINKS',
+  WATER: 'THE AMNIA DRINKS',
+  ORE: 'THE SMELTERS FEED',
+  FUEL: 'THE TANKS RUN FULL',
+  PARTS: 'THE SHOPS KEEP TURNING',
+  VOLATILES: 'THE FARMS BREATHE',
+  GRAIN: 'THE AMNIA EATS',
+  STEEL: 'THE YARD KEEPS BUILDING',
+}
 
 const DRIFT = new Vector3(...DRIFT_POI.position)
 const WRECK = new Vector3(...WRECK_POI.position)
@@ -579,7 +590,7 @@ export function IceRoute() {
         s.flashText = text
         triggerFanfare()
         activityState.banner = {
-          text: `${ship.cargo} DELIVERED — THE AMNIA DRINKS`,
+          text: `${ship.cargo} DELIVERED — ${CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON'}`,
           kind: 'win',
           until: now + 3.2,
         }
