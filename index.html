@@ -12,7 +12,14 @@
         <meta name="description" content="Tirthajyoti (Tirtha) Ghosh is a Senior AI Engineer with 6+ years of experience: 30+ production AI agents for enterprise clients, a custom agent loop engine, and a production observability platform. Explore his interactive 3D space portfolio.">
         <meta name="author" content="Tirthajyoti (Tirtha) Ghosh">
         <meta name="keywords" content="Tirthajyoti Ghosh, Tirtha Ghosh, AI engineer, senior AI engineer, agentic AI, LLM, production AI agents, Python, FastAPI, PostgreSQL, TypeScript, React, enterprise AI, software engineer">
-        <link rel="canonical" href="https://tirthajyotighosh.com/">
+        <!-- The two heaviest near-spawn assets and the sky start downloading
+         before the JS has even parsed; the content CDN gets its handshake
+         out of the way early. -->
+    <link rel="preload" href="/models/gateway.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/models/tachi.glb" as="fetch" crossorigin />
+    <link rel="preload" href="/textures/starmap_4k.jpg" as="image" />
+    <link rel="preconnect" href="https://i.ibb.co" crossorigin />
+    <link rel="canonical" href="https://tirthajyotighosh.com/">
 
         <!-- Open Graph / Facebook -->
         <meta property="og:type" content="website">

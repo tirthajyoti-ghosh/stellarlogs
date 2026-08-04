@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { BackSide, CanvasTexture, Mesh, Quaternion, SRGBColorSpace, Vector3 } from 'three'
+import { BackSide, CanvasTexture, Mesh, Quaternion, SRGBColorSpace, Vector3,
+  DefaultLoadingManager,
+} from 'three'
 import { shipRig } from '../state/shipRig'
 
 /** Same plane as the starfield band — keep in sync with Starfield.tsx. */
@@ -21,10 +23,21 @@ const SKY_NEBULAE = [
 ]
 
 function loadImage(src: string): Promise<HTMLImageElement> {
+  // Registered with the DefaultLoadingManager so the preflight bar tells the
+  // truth: 1.8 MB of sky used to download invisibly, and the boot sequence
+  // could read 100% while the backdrop was still arriving.
+  DefaultLoadingManager.itemStart(src)
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.onload = () => resolve(img)
-    img.onerror = reject
+    img.onload = () => {
+      DefaultLoadingManager.itemEnd(src)
+      resolve(img)
+    }
+    img.onerror = (e) => {
+      DefaultLoadingManager.itemError(src)
+      DefaultLoadingManager.itemEnd(src)
+      reject(e)
+    }
     img.src = src
   })
 }

@@ -13,6 +13,7 @@ import {
   Texture,
   TextureLoader,
   Vector3,
+  LoadingManager,
 } from 'three'
 import type { BoardSpec } from './boardSpecs'
 import { FONT, FONT_BOLD } from './font'
@@ -29,6 +30,9 @@ interface BillboardProps {
   planetWorldPos: Vector3
 }
 
+/** content photos load here, invisible to the boot sequence's progress */
+const contentManager = new LoadingManager()
+
 function wrapAngle(a: number): number {
   while (a > Math.PI) a -= Math.PI * 2
   while (a < -Math.PI) a += Math.PI * 2
@@ -41,7 +45,12 @@ function ImagePlane({ url, width, height }: { url: string; width: number; height
   useEffect(() => {
     let disposed = false
     let loaded: Texture | null = null
-    const loader = new TextureLoader()
+    // A PRIVATE manager, deliberately: these are content photos for a system
+    // the visitor is browsing, not ship systems. On the default manager they
+    // used to hold the preflight bar hostage — measured parked at 99% for
+    // 48 s waiting on i.ibb.co — which is why Preflight grew stall/timeout
+    // escapes. Content now loads outside the boot accounting entirely.
+    const loader = new TextureLoader(contentManager)
     loader.setCrossOrigin('anonymous')
     loader.load(
       url,

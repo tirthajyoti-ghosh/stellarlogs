@@ -711,3 +711,70 @@ fresh page per experimental arm; paired baseline-condition-baseline so
 thermal drift cancels; suspect any result where hiding work makes things
 slower; `renderer.info` lies inside composers; a flag that cannot be flipped
 before module init cannot be A/B'd after load.
+
+
+## THE PERFORMANCE PUSH, EXECUTED — and what the evidence rejected (2026-08-04)
+
+Governing constraint, from Tirtha: playability and delight are the hard
+line; performance serves them. Banned outright: pixelation, pop-in, visible
+distortion. Every lever below was accepted or rejected against that line.
+
+### Attribution (Phase A, probe build, simultaneous per-frame counters)
+
+| viewpoint | frame | JS render (matrices+walk+dispatch) | draw calls |
+|---|---|---|---|
+| station | 25.8 ms | 5.4 ms | 381 |
+| Projects | 28.6 ms | 4.2 ms | 106 |
+| transit | 19.7 ms | 3.5 ms | 91 |
+
+The CPU side is <=6 ms and dispatched draws are hundreds, not thousands —
+frustum culling and lazy board mounting already work. The frame is
+GPU-side. The composer could not be priced: thermal drift (26 -> 39 ms
+across paired arms after hours of automated rendering) swamped it.
+`perfFlags.postfx` + PostFxGate now exist so a cool-machine run can price
+it in one minute.
+
+### Accepted (shipped)
+
+- Shared board materials: ~3,500 -> 957 unique materials in the live scene.
+- ContactStation hidden-board early-out; InteramniaDrift colony matrix
+  freeze (marquee stays live).
+- Loader honesty: SkyDome's 1.8 MB of sky now counts toward the boot bar;
+  the 26 remote content photos moved to a private LoadingManager and can
+  never again hold the bar at 99%.
+- index.html: preload gateway.glb + tachi.glb + starmap, preconnect i.ibb.co.
+- buoy.glb 210 -> 100 KB, torpedo.glb 123 -> 25 KB (quantize+meshopt;
+  attributes, textures and triangle counts verified identical).
+- Flag honesty: bodyLod/shipLod marked DECLARED, NOT IMPLEMENTED.
+
+### Rejected, with the evidence that rejected it
+
+- **Board geometry merge, transit gating, pool bounding spheres** — killed
+  by attribution: the costs they attack total a few ms of CPU that is
+  already <=6 ms, and transit dispatches 91 draws.
+- **Far star-light gating** — killed by the Delight Line before a line was
+  written: stars use distance=0, decay=0.35 deliberately; a sun 6,000 units
+  away still lights your hull. Gating would visibly darken transit.
+- **Gateway decimation** — 405k -> 238k tris saved only ~1.0 MB (its
+  geometry meshopt-compresses superbly) and Phase A says triangles buy no
+  frames here; not worth any eyeball risk on the docking hero.
+- **Drift decimation** — saved 0.28 MB, dropped a texture in the process,
+  and emitted TEXCOORD warnings. Risk for noise; rejected.
+- A corrupted 5.8 KB buoy output from one anomalous compression run was
+  caught by size sanity-check, never installed, and did not reproduce.
+
+### Corrections to earlier claims
+
+The 2026-08-04 exploration asserted the GLBs ship uncompressed. False: 10
+of 11 already carry EXT_meshopt_compression + KHR_mesh_quantization +
+EXT_texture_webp from the July pipeline, and drei wires MeshoptDecoder by
+default. The payload's real composition: gateway is ~3.8 MB of *compressed*
+geometry + 2.6 MB of webp textures. The "~400 MB of bake VRAM at high
+tier" estimate stands analytically but was not measured; it only matters
+on low-VRAM machines and stays parked behind the (unbuilt) D4.
+
+### Still owed
+
+One cool-machine session: frame medians at the three viewpoints, the
+composer's isolated price via `__perf.postfx`, and the cold-start timeline
+with the new hints. Do it before any further optimisation is chosen.
