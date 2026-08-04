@@ -17,6 +17,7 @@ import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
 import { HullDamage } from './scene/fx/HullDamage'
 import { Effects } from './scene/Effects'
+import { AdaptiveResolution } from './scene/AdaptiveResolution'
 import { useShipControls } from './systems/useShipControls'
 import { HudBridge } from './hud/HudBridge'
 import { HUD } from './hud/HUD'
@@ -32,7 +33,12 @@ export default function App() {
       <Canvas
         gl={{ logarithmicDepthBuffer: true, antialias: true }}
         camera={{ fov: 62, near: 0.5, far: 60000 }}
-        dpr={QUALITY.dpr}
+        /**
+         * No `dpr` prop on purpose. R3F re-applies that prop from `configure()`
+         * on every Canvas render, which snapped any runtime change straight
+         * back to the tier ceiling — <AdaptiveResolution> owns the pixel ratio
+         * instead, and sets the tier ceiling itself on its first frame.
+         */
         onCreated={({ gl }) => {
           /**
            * three asks the driver for the shader info log straight after
@@ -81,6 +87,7 @@ export default function App() {
         </Suspense>
         <Ship />
         <ChaseCamera />
+        <AdaptiveResolution />
         <HudBridge />
         {QUALITY.postprocessing && <Effects />}
       </Canvas>

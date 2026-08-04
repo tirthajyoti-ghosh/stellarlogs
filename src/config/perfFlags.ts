@@ -23,6 +23,12 @@ export const perfFlags = {
    * on approach. Kept switchable so the fix can be A/B'd on a live scene.
    */
   boardWarmup: true,
+  /**
+   * Move the pixel ratio within the tier's range when the machine cannot hold
+   * the display's refresh. Off = pinned at the tier ceiling, which is what
+   * shipped before.
+   */
+  adaptiveResolution: true,
 }
 
 export type PerfFlag = keyof typeof perfFlags

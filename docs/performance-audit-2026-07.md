@@ -447,3 +447,53 @@ isolate a repeatable win, so it is not claimed as part of the fix.
 Screenshots before/after at the Comms Station are pixel-comparable: same
 boards, same layout, same legibility. The remaining ~250 ms on arrival is a
 stutter rather than a freeze, and is next.
+
+
+## PIXELS ARE NOT THE BOTTLENECK — the plan's first step, overturned (2026-08-04)
+
+The audit put adaptive resolution first on the strength of "97% GPU bound and
+fill-limited". Measured directly, that does not hold. At a heavy viewpoint
+inside the Projects system, pinning the pixel ratio by hand and letting each
+setting run for 3.5 s:
+
+| backing store | pixels | GPU time | frame time |
+|---|---|---|---|
+| 3600 x 2025 | 100% | 177 ms | 73.6 ms |
+| 2400 x 1350 | 44% | 166 ms | 65.0 ms |
+| 1200 x 675 | 11% | 158 ms | 60.8 ms |
+
+**89% fewer pixels bought 11% of the GPU time.** Whatever dominates that
+view, it is not shading pixels. (Absolute GPU figures are inflated — the timer
+query window straddles frames — but every row used the same method, so the
+comparison is sound. This is also a dev build, where JS costs far more than in
+a build; see the caveat below.)
+
+Three corrections follow:
+
+1. **Adaptive resolution is insurance, not the headline fix.** It ships,
+   because a genuinely fill-bound device (phone, integrated graphics) still
+   benefits, but it now proves its own worth: each reduction is a trial, and if
+   the frames do not measurably improve it puts the pixels back and stops
+   trying. On the machine above it correctly stepped 1.5 -> 1.35, saw the
+   median go from 63.9 ms to 75.3 ms, reverted, and gave up.
+
+2. **The ordering needs re-deriving.** "Fill-rate first" was inferred from the
+   97% GPU split, not from a pixel-count experiment. The experiment now exists
+   and disagrees, so the next question is what that GPU time is actually spent
+   on at a heavy viewpoint — vertex work, draw-call count, texture bandwidth or
+   a specific expensive material.
+
+3. **Measure the build, not the dev server.** Everything above is a dev build
+   under automation, where React and three are unminified and JS costs are much
+   larger than what a visitor sees. The July figures may not be comparable. The
+   probes needed to measure a production build (`__teleport`, `__setDpr`) are
+   DEV-only, so getting a like-for-like number needs a deliberate probe build —
+   that is the next measurement, before any more optimisation is chosen.
+
+### A note on method
+
+Two false results were produced along the way and both were the harness, not
+the site: pinning the pixel ratio appeared to do nothing because the disabled
+controller was re-pinning it to the ceiling every frame, and `renderer.info`
+reports one draw call because three resets it per render pass and the last pass
+is the composer's fullscreen quad. Neither number meant what it looked like.
