@@ -26,6 +26,7 @@ import { SeoContent } from './SeoContent'
 import { ALL_SYSTEMS } from './config/systems'
 import { QUALITY } from './config/quality'
 import { PROBES } from './config/probes'
+import { PostFxGate } from './scene/PostFxGate'
 
 export default function App() {
   useShipControls()
@@ -94,7 +95,7 @@ export default function App() {
         <AdaptiveResolution />
         <HardenMaterials />
         <HudBridge />
-        {QUALITY.postprocessing && <Effects />}
+        {QUALITY.postprocessing && <PostFxGate><Effects /></PostFxGate>}
       </Canvas>
 
       <HUD />

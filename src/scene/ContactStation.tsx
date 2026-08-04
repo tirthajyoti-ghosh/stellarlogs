@@ -78,6 +78,9 @@ export function ContactStation() {
       const wanted = d < 700 && (!perfFlags.boardWarmup || boardsWarm) ? 1 : 0
       boardScale.current = MathUtils.lerp(boardScale.current, wanted, 0.08)
       boards.visible = boardScale.current > 0.02
+      // Hidden boards used to keep paying for their reposition loop every
+      // frame (PlanetBoards has this early-out; this file had lost it).
+      if (!boards.visible) return
       boards.scale.setScalar(boardScale.current)
       // Geostationary ring; each board turns to face the ship (see Billboard)
       const n = Math.max(1, boards.children.length)

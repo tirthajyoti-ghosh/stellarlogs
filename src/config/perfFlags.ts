@@ -14,9 +14,12 @@ import { PROBES } from './probes'
 export const perfFlags = {
   /** Asteroid belts: real instance bounds + frustum culling + rock LOD */
   beltCulling: true,
-  /** Screen-size driven tessellation for planets and stars */
+  /**
+   * DECLARED, NOT IMPLEMENTED. These two describe features that do not exist
+   * yet (nothing reads them) — kept as named intentions for the LOD work, and
+   * marked honestly so nobody trusts a switch that switches nothing.
+   */
   bodyLod: true,
-  /** Distance/screen-size LOD on ship hulls */
   shipLod: true,
   /**
    * Compile board shaders before the boards are revealed, and mount them a
@@ -36,6 +39,13 @@ export const perfFlags = {
    * frame on the player ship alone.
    */
   hardenMaterials: true,
+  /**
+   * The postprocessing chain (bloom, chromatic aberration, vignette). Exists
+   * as a flag so its cost can be measured in isolation on a live scene —
+   * bloom's mip chain is the only full-screen work that survived the pixel
+   * ladder, and it deserves its own number before anyone tunes it.
+   */
+  postfx: true,
 }
 
 export type PerfFlag = keyof typeof perfFlags

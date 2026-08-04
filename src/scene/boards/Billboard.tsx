@@ -8,6 +8,7 @@ import {
   MathUtils,
   Mesh,
   MeshBasicMaterial,
+  MeshStandardMaterial,
   SRGBColorSpace,
   Texture,
   TextureLoader,
@@ -137,15 +138,96 @@ function LinkRow({
   )
 }
 
-const FRAME = {
-  color: '#39414d',
-  metalness: 0.55,
-  roughness: 0.62,
-  flatShading: true,
-  emissive: '#0d1420',
-  emissiveIntensity: 1,
+/**
+ * SHARED materials. The spread-props JSX (`<meshStandardMaterial {...FRAME}/>`)
+ * created one material INSTANCE per mesh — measured at ~2,950 material objects
+ * across the world's 82 boards, every one a separate uniform block and a
+ * potential program switch. The values were identical; only the identity
+ * differed. These lazy singletons keep the exact same values with one identity,
+ * so the change is pixel-equal by construction.
+ *
+ * Not shared on purpose: PuffJet materials (opacity animated per jet), LinkRow
+ * materials (hover state per row), ImagePlane (mutates itself when the photo
+ * lands), and the panel ShaderMaterial (per-board uniforms).
+ */
+let frameMat: MeshStandardMaterial | null = null
+let darkMat: MeshStandardMaterial | null = null
+let coneMat: MeshStandardMaterial | null = null
+let glareMat: MeshBasicMaterial | null = null
+const lampFaceMats: MeshBasicMaterial[] = []
+const accentMats = new Map<string, { marker: MeshBasicMaterial; glow: MeshBasicMaterial }>()
+
+function getFrameMat(): MeshStandardMaterial {
+  if (!frameMat)
+    frameMat = new MeshStandardMaterial({
+      color: '#39414d',
+      metalness: 0.55,
+      roughness: 0.62,
+      flatShading: true,
+      emissive: '#0d1420',
+      emissiveIntensity: 1,
+      map: getMetalMap(),
+    })
+  return frameMat
 }
-const DARKMETAL = { color: '#161c26', metalness: 0.6, roughness: 0.7, flatShading: true }
+function getDarkMat(): MeshStandardMaterial {
+  if (!darkMat)
+    darkMat = new MeshStandardMaterial({
+      color: '#161c26',
+      metalness: 0.6,
+      roughness: 0.7,
+      flatShading: true,
+      map: getMetalMap(),
+    })
+  return darkMat
+}
+/** open thruster cone — the one legitimate double-sided surface */
+function getConeMat(): MeshStandardMaterial {
+  if (!coneMat) {
+    coneMat = new MeshStandardMaterial({
+      color: '#161c26',
+      metalness: 0.6,
+      roughness: 0.7,
+      flatShading: true,
+      map: getMetalMap(),
+      side: 2,
+    })
+    coneMat.userData.keepDoubleSide = true
+  }
+  return coneMat
+}
+function getLampFaceMat(i: number): MeshBasicMaterial {
+  if (!lampFaceMats[i]) {
+    const v = [0.92, 1.1, 0.84][i] ?? 1
+    lampFaceMats[i] = new MeshBasicMaterial({ toneMapped: false })
+    lampFaceMats[i].color.setRGB(2.6 * v, 2.42 * v, 1.98 * v)
+  }
+  return lampFaceMats[i]
+}
+function getGlareMat(): MeshBasicMaterial {
+  if (!glareMat) {
+    glareMat = new MeshBasicMaterial({
+      map: getGlowDot(),
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+      toneMapped: false,
+    })
+    glareMat.color.setRGB(1.5, 1.4, 1.15)
+  }
+  return glareMat
+}
+function getAccentMats(accent: string): { marker: MeshBasicMaterial; glow: MeshBasicMaterial } {
+  let m = accentMats.get(accent)
+  if (!m) {
+    m = {
+      marker: new MeshBasicMaterial({ color: accent, toneMapped: false }),
+      glow: new MeshBasicMaterial({ color: accent, transparent: true, opacity: 0.55, toneMapped: false }),
+    }
+    accentMats.set(accent, m)
+  }
+  return m
+}
 
 /** Structural frame, back bus, thruster pods — the Futurama satellite rig. */
 function BoardStructure({ width: w, height: h, accentColor }: { width: number; height: number; accentColor: string }) {
@@ -153,37 +235,30 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
   return (
     <group>
       {/* Perimeter frame beams */}
-      <mesh position={[0, h / 2 + beam / 2, -0.5]}>
+      <mesh position={[0, h / 2 + beam / 2, -0.5]} material={getFrameMat()}>
         <boxGeometry args={[w + beam * 2, beam, 2.4]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
-      <mesh position={[0, -h / 2 - beam / 2, -0.5]}>
+      <mesh position={[0, -h / 2 - beam / 2, -0.5]} material={getFrameMat()}>
         <boxGeometry args={[w + beam * 2, beam, 2.4]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
-      <mesh position={[-w / 2 - beam / 2, 0, -0.5]}>
+      <mesh position={[-w / 2 - beam / 2, 0, -0.5]} material={getFrameMat()}>
         <boxGeometry args={[beam, h, 2.4]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
-      <mesh position={[w / 2 + beam / 2, 0, -0.5]}>
+      <mesh position={[w / 2 + beam / 2, 0, -0.5]} material={getFrameMat()}>
         <boxGeometry args={[beam, h, 2.4]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       {/* Solid backing plate with ribs */}
-      <mesh position={[0, 0, -1.4]}>
+      <mesh position={[0, 0, -1.4]} material={getDarkMat()}>
         <boxGeometry args={[w + beam, h + beam, 0.8]} />
-        <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
       </mesh>
       {[-w / 4, w / 4].map((x) => (
-        <mesh key={x} position={[x, 0, -2.1]}>
+        <mesh key={x} position={[x, 0, -2.1]} material={getFrameMat()}>
           <boxGeometry args={[1.6, h * 0.85, 0.7]} />
-          <meshStandardMaterial {...FRAME} map={getMetalMap()} />
         </mesh>
       ))}
       {/* Satellite bus on the back */}
-      <mesh position={[0, 0, -3.6]}>
+      <mesh position={[0, 0, -3.6]} material={getFrameMat()}>
         <boxGeometry args={[w * 0.22, h * 0.3, 2.6]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       {/* Corner thruster pods (station-keeping — no actual motion) */}
       {[
@@ -193,22 +268,24 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
         [w / 2, h / 2],
       ].map(([x, y], i) => (
         <group key={i} position={[x, y, -1.2]}>
-          <mesh>
+          <mesh material={getDarkMat()}>
             <boxGeometry args={[2.6, 2.6, 2.6]} />
-            <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
           </mesh>
-          <mesh position={[x > 0 ? 2 : -2, 0, 0]} rotation-z={x > 0 ? -Math.PI / 2 : Math.PI / 2}>
+          {/* open cone, seen from inside — the shared material keeps side=2
+              and userData.keepDoubleSide so HardenMaterials leaves it alone */}
+          <mesh
+            position={[x > 0 ? 2 : -2, 0, 0]}
+            rotation-z={x > 0 ? -Math.PI / 2 : Math.PI / 2}
+            material={getConeMat()}
+          >
             <coneGeometry args={[0.8, 1.6, 8, 1, true]} />
-            {/* open cone, seen from inside — see HardenMaterials */}
-            <meshStandardMaterial {...DARKMETAL} side={2} userData={{ keepDoubleSide: true }} />
           </mesh>
         </group>
       ))}
       {/* Blinking marker lights on the top corners */}
       {[-w / 2, w / 2].map((x) => (
-        <mesh key={x} position={[x, h / 2 + beam, 0]}>
+        <mesh key={x} position={[x, h / 2 + beam, 0]} material={getAccentMats(accentColor).marker}>
           <sphereGeometry args={[0.9, 8, 8]} />
-          <meshBasicMaterial color={accentColor} toneMapped={false} />
         </mesh>
       ))}
       {/* Floodlight rig: a boom held off the top frame on two raked standoffs,
@@ -232,47 +309,32 @@ function FloodRig({ width: w, height: h }: { width: number; height: number }) {
   return (
     <group>
       {/* boom */}
-      <mesh position={[0, boomY, boomZ]}>
+      <mesh position={[0, boomY, boomZ]} material={getDarkMat()}>
         <boxGeometry args={[w * 0.78, 0.8, 0.8]} />
-        <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
       </mesh>
       {/* raked standoffs tying the boom back to the top frame */}
       {[-w * 0.3, w * 0.3].map((x) => (
-        <mesh key={x} position={[x, boomY - 1.2, boomZ - 1.6]} rotation-x={0.62}>
+        <mesh key={x} position={[x, boomY - 1.2, boomZ - 1.6]} rotation-x={0.62} material={getDarkMat()}>
           <boxGeometry args={[0.6, 0.6, 3.6]} />
-          <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
         </mesh>
       ))}
       {/* heads: housing behind, burning face in front, tilted onto the plate */}
       {positions.map((p, i) => (
         <group key={i} position={[p.x, p.y, p.z]} rotation-x={tilt}>
-          <mesh position={[0, 0, -0.7]}>
+          <mesh position={[0, 0, -0.7]} material={getFrameMat()}>
             <boxGeometry args={[2.2, 1.8, 1.2]} />
-            <meshStandardMaterial {...FRAME} map={getMetalMap()} />
           </mesh>
           {/* slightly different age per bulb — nothing in a port matches */}
-          <mesh>
+          <mesh material={getLampFaceMat(i)}>
             <planeGeometry args={[1.7, 1.3]} />
-            <meshBasicMaterial
-              color={[2.6, 2.42, 1.98].map((v) => v * [0.92, 1.1, 0.84][i]) as unknown as Color}
-              toneMapped={false}
-            />
           </mesh>
         </group>
       ))}
       {/* glare: the bulbs read from the reading side even though the heads
           are tilted away — a soft dot, not a beam; vacuum has no beams */}
       {positions.map((p, i) => (
-        <mesh key={'g' + i} position={[p.x, p.y - 0.3, p.z + 0.5]}>
+        <mesh key={'g' + i} position={[p.x, p.y - 0.3, p.z + 0.5]} material={getGlareMat()}>
           <planeGeometry args={[2.6, 1.9]} />
-          <meshBasicMaterial
-            map={getGlowDot()}
-            color={[1.5, 1.4, 1.15] as unknown as Color}
-            transparent
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
         </mesh>
       ))}
     </group>
@@ -395,9 +457,8 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
         <PuffJet x={halfW} z={3} dir={1} jetRef={(m) => (jets.current.rightF = m)} />
         <PuffJet x={halfW} z={-3} dir={-1} jetRef={(m) => (jets.current.rightB = m)} />
         {/* Accent glow frame */}
-        <mesh position={[0, 0, -0.4]}>
+        <mesh position={[0, 0, -0.4]} material={getAccentMats(accentColor).glow}>
           <planeGeometry args={[spec.width + 1.6, spec.height + 1.6]} />
-          <meshBasicMaterial color={accentColor} transparent opacity={0.55} toneMapped={false} />
         </mesh>
         {/* The plate, lit per-pixel by the rig's three lamps — real diffuse
             falloff, real view-dependent sheen, normal-mapped relief. Unlit

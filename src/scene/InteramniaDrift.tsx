@@ -153,7 +153,19 @@ export function InteramniaDrift() {
     mesh.instanceMatrix.needsUpdate = true
   }, [])
 
+  const frozen = useRef(false)
   useFrame(() => {
+    // The colony is solid and never moves (its rocks were made SOLID so the
+    // colliders hold still) — but with matrixAutoUpdate on, three recomposed
+    // every local matrix every frame anyway. Freeze everything except the
+    // marquee, which really rotates; its children stay frozen relative to it.
+    if (!frozen.current && colonyRef.current) {
+      frozen.current = true
+      colonyRef.current.updateMatrixWorld(true)
+      colonyRef.current.traverse((child) => {
+        if (child !== colonyRef.current && child !== marqueeRef.current) child.matrixAutoUpdate = false
+      })
+    }
     // Marquee faces the pilot (geostationary law). The colony itself holds
     // still — her rocks are SOLID now, and colliders don't chase rotations.
     const marquee = marqueeRef.current
