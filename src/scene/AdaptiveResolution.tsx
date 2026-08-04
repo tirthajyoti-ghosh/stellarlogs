@@ -48,6 +48,9 @@ const STEP_DOWN = 0.15
 const STEP_UP = 0.1
 /** a step down must buy at least this much frame time to be worth the blur */
 const MUST_IMPROVE = 0.92
+/** how long "pixels don't help here" stays believed before re-testing — the
+ *  verdict is about a viewpoint, not the machine, and viewpoints change */
+const GIVE_UP_MS = 120_000
 /** ignore the first moments, where loading noise is not the renderer's fault */
 const SETTLE_FRAMES = 120
 
@@ -66,8 +69,8 @@ export function AdaptiveResolution() {
     /** median before the step down being judged right now, 0 if none */
     trialFrom: 0,
     trialDpr: 0,
-    /** set once a step down has been shown not to help on this machine */
-    pixelsDontHelp: false,
+    /** timestamp until which "pixels don't help" is believed; 0 = not held */
+    pixelsDontHelpUntil: 0,
     /** dev-only: a measurement is holding the ratio, do not judge */
     held: false,
   })
@@ -136,7 +139,7 @@ export function AdaptiveResolution() {
         dpr: s.current,
         medianMs: +median.toFixed(1),
         refreshMs: +refresh.toFixed(1),
-        pixelsDontHelp: s.pixelsDontHelp,
+        pixelsDontHelp: performance.now() < s.pixelsDontHelpUntil,
       }
     }
 
@@ -146,14 +149,14 @@ export function AdaptiveResolution() {
       if (!helped) {
         s.current = s.trialDpr
         setDpr(s.trialDpr)
-        s.pixelsDontHelp = true
+        s.pixelsDontHelpUntil = performance.now() + GIVE_UP_MS
       }
       s.trialFrom = 0
       s.cooldown = COOLDOWN_DOWN
       return
     }
 
-    if (median > refresh * SLOW && s.current > floor && !s.pixelsDontHelp) {
+    if (median > refresh * SLOW && s.current > floor && performance.now() > s.pixelsDontHelpUntil) {
       s.trialFrom = median
       s.trialDpr = s.current
       s.current = Math.max(floor, +(s.current - STEP_DOWN).toFixed(2))

@@ -603,3 +603,50 @@ taken hours earlier on a cool machine, and this one had been rendering flat
 out since. Thermal decay of 23 -> 55 ms was already documented above. Nothing
 here can be concluded from that reading; the saving rests on the paired
 lights-off measurement, and a clean confirmation needs a cold machine.
+
+
+## BOARD LIGHTING v2 + REVIEW OF THE 2026-08-04 OPTIMISATIONS (Fable, same day)
+
+**The painted-light approach was scrapped** after Tirtha's verdict on its look
+("it does not look like anything"). The face is now lit by real math: a small
+shader evaluates the board's three lamps per pixel — inverse-square falloff,
+soft cone, Blinn specular, normal-mapped plate — with lamp positions fixed in
+board-local space. No scene lights are involved, so the 102-light problem
+stays dead, and the face dropped from three draw calls (panel + shade quad +
+glow strip) to one. Fixture geometry and shading share one `lampLayout()`, so
+the light provably comes from the hardware you see. In vacuum there are no
+visible beams — fixtures and lit plate only.
+
+**Texture candidates** for the plate surface are staged in `textures.html`
+(dev page): six CC0 sets from ambientCG (color + real normal maps) against the
+procedural v2 plate, all rendered under the production shader. Sketchfab was
+considered and rejected for this: its textures are per-model atlases, not
+tileable materials.
+
+**Review of the earlier optimisations found two real flaws, both fixed:**
+
+1. `HardenMaterials` watched `gl.info.memory.geometries`, which only ticks
+   AFTER a mesh's first draw — so every newly spawned hull compiled its shader
+   double-sided, was flipped, and compiled again, the second time mid-flight,
+   exactly where the no-pop contract cares. Clones share geometry, so cloned
+   materials could dodge the signal entirely. Now: unconditional sweep every
+   15th frame (~7 µs/frame amortised), and materials caught before their first
+   draw skip `needsUpdate` — the first compile picks the corrected side up for
+   free.
+
+2. `AdaptiveResolution`'s "pixels don't help" verdict latched for the whole
+   session, but the verdict describes a viewpoint, not the machine. It now
+   expires after two minutes.
+
+Left alone on review: the board warmup/mount pacing (correct), and
+`checkShaderErrors=false` in builds (kept, still not credited).
+
+**Where the frame stands** — standard heavy viewpoint, dpr 1.5, 2400×1350:
+
+| when | median | fps |
+|---|---|---|
+| baseline, cool machine (this morning) | 22.9 ms | 44 |
+| after lights-gone + sides + lighting v2, WARM machine | **17.1 ms** | **58** |
+
+The warm-machine caveat cuts against us here, so the real improvement is at
+least this. Confirmation on a cold machine remains owed, per the earlier note.

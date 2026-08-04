@@ -18,30 +18,45 @@ import { perfFlags } from '../config/perfFlags'
  * never visible — the cost bought nothing at all.
  *
  * The pass runs over the whole scene rather than at sixteen `useGLTF` call
- * sites, and re-runs whenever the geometry count changes, which is how a newly
- * arrived model announces itself. Changing `side` flips a shader define, so
- * each material recompiles once, the first time it is seen — that is why this
- * waits for the boards' own shader warmup rather than racing it.
+ * sites, every 15th frame. It used to watch `gl.info.memory.geometries` as a
+ * dirty signal, and that signal had two flaws found on review:
+ *
+ *   · it only ticks AFTER a new mesh's first draw, so every new hull compiled
+ *     its shader double-sided, then was flipped, then compiled AGAIN — two
+ *     compiles per material, the second landing mid-flight when traffic
+ *     spawns, which is exactly where a hitch is least welcome;
+ *   · a cloned mesh shares geometry, so a spawned ship that clones its hull
+ *     ticks nothing at all and cloned-then-replaced materials slip through.
+ *
+ * The unconditional sweep costs ~0.1 ms every 15 frames (~7 µs/frame
+ * amortised) and cannot be fooled. And when it catches a material BEFORE its
+ * first draw, it skips `needsUpdate` entirely: an uncompiled material picks
+ * the new side up in its first compile, free — the recompile only happens for
+ * materials that genuinely were drawn double-sided already.
  *
  * TWO MATERIALS ARE DELIBERATELY DOUBLE-SIDED and opt out with
  * `userData.keepDoubleSide`: the planet atmosphere shell, and the open cone
  * that makes a billboard's station-keeping jet. Both are hollow surfaces seen
  * from inside, and both look wrong single-sided.
  */
+const SWEEP_EVERY = 15
+
 export function HardenMaterials() {
   const scene = useThree((s) => s.scene)
   const gl = useThree((s) => s.gl)
-  const seen = useRef({ geometries: -1, hardened: 0 })
+  const state = useRef({ frame: 0, hardened: 0 })
 
   useFrame(() => {
     if (!perfFlags.hardenMaterials) return
-    // A change in the geometry count means a model arrived (or left); that is
-    // the only moment this can have new work to do.
-    const count = gl.info.memory.geometries
-    if (count === seen.current.geometries) return
-    seen.current.geometries = count
+    if (state.current.frame++ % SWEEP_EVERY !== 0) return
 
-    let hardened = 0
+    // renderer.properties knows whether a material has ever been compiled.
+    // Not public API, so probe defensively: if the shape ever changes, the
+    // fallback is needsUpdate=true, which is merely the old behaviour.
+    const properties = (
+      gl as unknown as { properties?: { get(m: Material): { currentProgram?: unknown } } }
+    ).properties
+
     scene.traverse((object) => {
       const mesh = object as Mesh
       if (!mesh.isMesh) return
@@ -53,11 +68,11 @@ export function HardenMaterials() {
         // leave those alone and take the win on the solid geometry.
         if (material.transparent) continue
         material.side = FrontSide
-        material.needsUpdate = true
-        hardened++
+        const compiled = properties ? !!properties.get(material)?.currentProgram : true
+        if (compiled) material.needsUpdate = true
+        state.current.hardened++
       }
     })
-    seen.current.hardened += hardened
   })
 
   return null

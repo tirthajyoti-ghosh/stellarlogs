@@ -10,3 +10,6 @@ vr2/
 
 # probe build output (production bundle + measurement hooks)
 dist-probe/
+
+# texture candidates for the board picker (dev only until one is chosen)
+public/_textures/

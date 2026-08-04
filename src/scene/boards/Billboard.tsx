@@ -15,11 +15,10 @@ import {
 } from 'three'
 import type { BoardSpec } from './boardSpecs'
 import { FONT, FONT_BOLD } from './font'
-import { getMetalMap, getPanelMap, getShadeMap } from './panelTexture'
+import { getGlowDot, getMetalMap } from './panelTexture'
+import { createPanelMaterial, lampLayout } from './panelMaterial'
 import { shipRig } from '../../state/shipRig'
 import { perfFlags } from '../../config/perfFlags'
-
-const PANEL_BG = '#050d1c'
 
 interface BillboardProps {
   spec: BoardSpec
@@ -212,19 +211,68 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
           <meshBasicMaterial color={accentColor} toneMapped={false} />
         </mesh>
       ))}
-      {/* Floodlight bar washing the panel face, like real ad boards */}
-      {/* The lamp bar. It used to carry a real pointLight; 102 of those
-          existed across the world and every lit surface in the scene paid for
-          all of them (18.4 ms of a 35 ms frame). The light it threw is painted
-          onto the face instead — see panelTexture. */}
-      <mesh position={[0, h / 2 + beam * 1.8, 2.5]}>
-        <boxGeometry args={[w * 0.5, 0.9, 0.9]} />
-        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
+      {/* Floodlight rig: a boom held off the top frame on two raked standoffs,
+          three angled heads aimed back down at the face. The heads sit exactly
+          where the panel shader's virtual lamps sit (lampLayout is the single
+          source of truth), so the hardware and the light agree. The glowing
+          faces are the only HDR emitters here — in vacuum there is nothing to
+          scatter a beam in, so what you see is fixtures and lit plate, the way
+          night work on a real gantry looks. */}
+      <FloodRig width={w} height={h} />
+    </group>
+  )
+}
+
+/** The lamp hardware. Positions and aim come from lampLayout — the same
+ *  numbers the panel shader lights with. */
+function FloodRig({ width: w, height: h }: { width: number; height: number }) {
+  const { positions, tilt } = lampLayout(w, h)
+  const boomY = positions[0].y - 0.2
+  const boomZ = positions[0].z - 0.4
+  return (
+    <group>
+      {/* boom */}
+      <mesh position={[0, boomY, boomZ]}>
+        <boxGeometry args={[w * 0.78, 0.8, 0.8]} />
+        <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
       </mesh>
-      {[-w * 0.18, 0, w * 0.18].map((x) => (
-        <mesh key={x} position={[x, h / 2 + beam * 1.8, 2.95]} rotation-x={Math.PI / 2}>
-          <cylinderGeometry args={[0.62, 0.62, 0.5, 10]} />
-          <meshBasicMaterial color="#dceaff" toneMapped={false} />
+      {/* raked standoffs tying the boom back to the top frame */}
+      {[-w * 0.3, w * 0.3].map((x) => (
+        <mesh key={x} position={[x, boomY - 1.2, boomZ - 1.6]} rotation-x={0.62}>
+          <boxGeometry args={[0.6, 0.6, 3.6]} />
+          <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
+        </mesh>
+      ))}
+      {/* heads: housing behind, burning face in front, tilted onto the plate */}
+      {positions.map((p, i) => (
+        <group key={i} position={[p.x, p.y, p.z]} rotation-x={tilt}>
+          <mesh position={[0, 0, -0.7]}>
+            <boxGeometry args={[2.2, 1.8, 1.2]} />
+            <meshStandardMaterial {...FRAME} map={getMetalMap()} />
+          </mesh>
+          {/* slightly different age per bulb — nothing in a port matches */}
+          <mesh>
+            <planeGeometry args={[1.7, 1.3]} />
+            <meshBasicMaterial
+              color={[2.6, 2.42, 1.98].map((v) => v * [0.92, 1.1, 0.84][i]) as unknown as Color}
+              toneMapped={false}
+            />
+          </mesh>
+        </group>
+      ))}
+      {/* glare: the bulbs read from the reading side even though the heads
+          are tilted away — a soft dot, not a beam; vacuum has no beams */}
+      {positions.map((p, i) => (
+        <mesh key={'g' + i} position={[p.x, p.y - 0.3, p.z + 0.5]}>
+          <planeGeometry args={[2.6, 1.9]} />
+          <meshBasicMaterial
+            map={getGlowDot()}
+            color={[1.5, 1.4, 1.15] as unknown as Color}
+            transparent
+            blending={AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
         </mesh>
       ))}
     </group>
@@ -278,6 +326,11 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
     rightB: null,
   })
   const initialized = useRef(false)
+  const panelMaterial = useMemo(
+    () => createPanelMaterial(spec.width, spec.height),
+    [spec.width, spec.height],
+  )
+  useEffect(() => () => panelMaterial.dispose(), [panelMaterial])
 
   const halfW = spec.width / 2 + 2
 
@@ -346,41 +399,13 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
           <planeGeometry args={[spec.width + 1.6, spec.height + 1.6]} />
           <meshBasicMaterial color={accentColor} transparent opacity={0.55} toneMapped={false} />
         </mesh>
-        {/* Panel: painted steel plate, lit only by the board's own lamps.
-            Unlit at the bottom corners on purpose — the text is drawn with its
-            own material and stays legible wherever it falls. */}
-        <mesh>
+        {/* The plate, lit per-pixel by the rig's three lamps — real diffuse
+            falloff, real view-dependent sheen, normal-mapped relief. Unlit
+            corners are the point; the text has its own material in front and
+            stays legible wherever the light gives out. One draw call where
+            the painted version needed three. */}
+        <mesh material={panelMaterial}>
           <planeGeometry args={[spec.width, spec.height]} />
-          <meshBasicMaterial
-            color={PANEL_BG}
-            map={getPanelMap()}
-            toneMapped={false}
-          />
-        </mesh>
-        {/* Shade: everything the lamps on the bar do not reach. Sits behind
-            the text, so the dark corners never cost legibility. */}
-        <mesh position={[0, 0, 0.06]}>
-          <planeGeometry args={[spec.width, spec.height]} />
-          <meshBasicMaterial
-            color="#01030a"
-            alphaMap={getShadeMap()}
-            transparent
-            opacity={0.72}
-            depthWrite={false}
-            toneMapped={false}
-          />
-        </mesh>
-        {/* the throw of the lamps themselves, just under the bar */}
-        <mesh position={[0, spec.height / 2 - 1.2, 0.12]}>
-          <planeGeometry args={[spec.width * 0.92, 5]} />
-          <meshBasicMaterial
-            color="#9fc4ea"
-            transparent
-            opacity={0.22}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-          />
         </mesh>
         {/* Text blocks */}
         {spec.blocks.map((block, i) => (

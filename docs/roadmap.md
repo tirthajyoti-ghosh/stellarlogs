@@ -29,7 +29,7 @@ Verdict on what shipped: *"things are looking much better… the Drift
 station traffic is live, it is dynamic, so that's good."* The corrections
 below are all from that session and take priority over new features.
 
-### 1. Billboard reveal freezes the frame — BUG, ships with the perf work
+### 1. Billboard reveal freezes the frame — FIXED 2026-08-04 (1618 ms -> 229 ms)
 Flying near a planet or the Comms Station, **the whole game freezes for
 one to two seconds** just before the boards appear; afterwards everything
 is fine. `PlanetBoards` flips `activated` once and mounts the entire board
