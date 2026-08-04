@@ -572,3 +572,34 @@ Because of the last two, the **17.6 ms is established for the ship in
 isolation, not yet for the whole-scene pass**. The pass is verified to work
 (565 materials remain double-sided, the rest converted) and verified not to
 break anything visually, but its end-to-end number is still owed.
+
+
+## THE BOARD FLOODLIGHTS — removed, and the look they were there for, kept
+
+102 point lights existed across the world, one bolted to every billboard, and
+`MeshStandardMaterial` costs O(lights) per fragment — so every lit surface in
+the scene paid for all of them. Turning them all off measured **18.4 ms of a
+35 ms frame** (paired, fresh page).
+
+They are gone. 102 point lights -> 20 (stars, the station, the drift colony).
+
+The look they existed for is now painted instead, to Tirtha's brief: *the
+writing should be visible only because of floodlights attached to the board
+itself; naturally there would be unlit parts, and that is fine as long as the
+text is understandable.* A lamp bar with three visible lamps runs along the
+top edge; a shade map darkens the plate in proportion to how far it is from
+them, so the face falls into black at the bottom corners. The text is drawn
+with its own material in front of that layer, so it stays legible wherever it
+falls — the dark parts cost atmosphere, not readability.
+
+The boards also stopped being flat colour. `panelTexture.ts` draws painted
+steel into a canvas at startup — rolling marks, weld seams, grime and rust
+banking up at the edges — shared by every board in the world. Nothing is
+downloaded for any of it.
+
+**The end-to-end number is still owed.** Measured immediately afterwards the
+frame read 50 ms, worse than the 22.9 ms baseline — but that baseline was
+taken hours earlier on a cool machine, and this one had been rendering flat
+out since. Thermal decay of 23 -> 55 ms was already documented above. Nothing
+here can be concluded from that reading; the saving rests on the paired
+lights-off measurement, and a clean confirmation needs a cold machine.

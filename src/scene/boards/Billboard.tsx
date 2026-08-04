@@ -15,6 +15,7 @@ import {
 } from 'three'
 import type { BoardSpec } from './boardSpecs'
 import { FONT, FONT_BOLD } from './font'
+import { getMetalMap, getPanelMap, getShadeMap } from './panelTexture'
 import { shipRig } from '../../state/shipRig'
 import { perfFlags } from '../../config/perfFlags'
 
@@ -137,8 +138,15 @@ function LinkRow({
   )
 }
 
-const FRAME = { color: '#39414d', metalness: 0.7, roughness: 0.4, flatShading: true }
-const DARKMETAL = { color: '#161c26', metalness: 0.75, roughness: 0.45, flatShading: true }
+const FRAME = {
+  color: '#39414d',
+  metalness: 0.55,
+  roughness: 0.62,
+  flatShading: true,
+  emissive: '#0d1420',
+  emissiveIntensity: 1,
+}
+const DARKMETAL = { color: '#161c26', metalness: 0.6, roughness: 0.7, flatShading: true }
 
 /** Structural frame, back bus, thruster pods — the Futurama satellite rig. */
 function BoardStructure({ width: w, height: h, accentColor }: { width: number; height: number; accentColor: string }) {
@@ -148,35 +156,35 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
       {/* Perimeter frame beams */}
       <mesh position={[0, h / 2 + beam / 2, -0.5]}>
         <boxGeometry args={[w + beam * 2, beam, 2.4]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       <mesh position={[0, -h / 2 - beam / 2, -0.5]}>
         <boxGeometry args={[w + beam * 2, beam, 2.4]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       <mesh position={[-w / 2 - beam / 2, 0, -0.5]}>
         <boxGeometry args={[beam, h, 2.4]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       <mesh position={[w / 2 + beam / 2, 0, -0.5]}>
         <boxGeometry args={[beam, h, 2.4]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       {/* Solid backing plate with ribs */}
       <mesh position={[0, 0, -1.4]}>
         <boxGeometry args={[w + beam, h + beam, 0.8]} />
-        <meshStandardMaterial {...DARKMETAL} />
+        <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
       </mesh>
       {[-w / 4, w / 4].map((x) => (
         <mesh key={x} position={[x, 0, -2.1]}>
           <boxGeometry args={[1.6, h * 0.85, 0.7]} />
-          <meshStandardMaterial {...FRAME} />
+          <meshStandardMaterial {...FRAME} map={getMetalMap()} />
         </mesh>
       ))}
       {/* Satellite bus on the back */}
       <mesh position={[0, 0, -3.6]}>
         <boxGeometry args={[w * 0.22, h * 0.3, 2.6]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
       {/* Corner thruster pods (station-keeping — no actual motion) */}
       {[
@@ -188,7 +196,7 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
         <group key={i} position={[x, y, -1.2]}>
           <mesh>
             <boxGeometry args={[2.6, 2.6, 2.6]} />
-            <meshStandardMaterial {...DARKMETAL} />
+            <meshStandardMaterial {...DARKMETAL} map={getMetalMap()} />
           </mesh>
           <mesh position={[x > 0 ? 2 : -2, 0, 0]} rotation-z={x > 0 ? -Math.PI / 2 : Math.PI / 2}>
             <coneGeometry args={[0.8, 1.6, 8, 1, true]} />
@@ -205,11 +213,20 @@ function BoardStructure({ width: w, height: h, accentColor }: { width: number; h
         </mesh>
       ))}
       {/* Floodlight bar washing the panel face, like real ad boards */}
+      {/* The lamp bar. It used to carry a real pointLight; 102 of those
+          existed across the world and every lit surface in the scene paid for
+          all of them (18.4 ms of a 35 ms frame). The light it threw is painted
+          onto the face instead — see panelTexture. */}
       <mesh position={[0, h / 2 + beam * 1.8, 2.5]}>
         <boxGeometry args={[w * 0.5, 0.9, 0.9]} />
-        <meshStandardMaterial {...FRAME} />
+        <meshStandardMaterial {...FRAME} map={getMetalMap()} />
       </mesh>
-      <pointLight position={[0, h / 2 + 2, 6]} color="#e8f0ff" intensity={2} distance={Math.max(w, h) * 1.2} decay={2} />
+      {[-w * 0.18, 0, w * 0.18].map((x) => (
+        <mesh key={x} position={[x, h / 2 + beam * 1.8, 2.95]} rotation-x={Math.PI / 2}>
+          <cylinderGeometry args={[0.62, 0.62, 0.5, 10]} />
+          <meshBasicMaterial color="#dceaff" toneMapped={false} />
+        </mesh>
+      ))}
     </group>
   )
 }
@@ -329,10 +346,41 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
           <planeGeometry args={[spec.width + 1.6, spec.height + 1.6]} />
           <meshBasicMaterial color={accentColor} transparent opacity={0.55} toneMapped={false} />
         </mesh>
-        {/* Panel */}
+        {/* Panel: painted steel plate, lit only by the board's own lamps.
+            Unlit at the bottom corners on purpose — the text is drawn with its
+            own material and stays legible wherever it falls. */}
         <mesh>
           <planeGeometry args={[spec.width, spec.height]} />
-          <meshBasicMaterial color={PANEL_BG} opacity={1} />
+          <meshBasicMaterial
+            color={PANEL_BG}
+            map={getPanelMap()}
+            toneMapped={false}
+          />
+        </mesh>
+        {/* Shade: everything the lamps on the bar do not reach. Sits behind
+            the text, so the dark corners never cost legibility. */}
+        <mesh position={[0, 0, 0.06]}>
+          <planeGeometry args={[spec.width, spec.height]} />
+          <meshBasicMaterial
+            color="#01030a"
+            alphaMap={getShadeMap()}
+            transparent
+            opacity={0.72}
+            depthWrite={false}
+            toneMapped={false}
+          />
+        </mesh>
+        {/* the throw of the lamps themselves, just under the bar */}
+        <mesh position={[0, spec.height / 2 - 1.2, 0.12]}>
+          <planeGeometry args={[spec.width * 0.92, 5]} />
+          <meshBasicMaterial
+            color="#9fc4ea"
+            transparent
+            opacity={0.22}
+            blending={AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+          />
         </mesh>
         {/* Text blocks */}
         {spec.blocks.map((block, i) => (
