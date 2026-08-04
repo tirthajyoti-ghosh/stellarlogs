@@ -45,7 +45,7 @@ texture decode/upload. Directions: async texture decode
 staggering the mount across frames instead of one big commit. This is a
 no-pop-contract violation as much as a perf bug — the freeze *is* the pop.
 
-### THE SOUND LAW (named 2026-08-04, from Tirtha's #4 direction)
+### THE SOUND LAW — ENFORCED 2026-08-04
 **Space is silent until it is yours.** You hear only what your own hull and
 your own radio carry: your PDCs (structure-borne), impacts on or near you,
 comms addressed to you, your ship's systems. Ambient battles — torpedoes
@@ -55,7 +55,7 @@ contract is what arms the sound layer and the threat HUD, and only for events
 belonging to that contract. This is simultaneously the correction he asked
 for and the physically true answer: vacuum carries nothing.
 
-### 2. PDC tracers — DESIGN (explored 2026-08-04, build later)
+### 2. PDC tracers — DESIGN (explored 2026-08-04, BUILD NEXT)
 The hose metaphor, taken literally: every round is a real object that left
 the muzzle with the velocity the barrel had *at that instant* — gun direction
 × muzzle speed **plus the shooter's own velocity**. Nothing is retargeted
@@ -81,7 +81,7 @@ the black until lifetime ends.
 - **Sound:** per the Sound Law — your guns are loud, everyone else's are
   mute.
 
-### 3. Torpedoes paired to chosen ships — DESIGN (explored 2026-08-04)
+### 3. Torpedoes paired to chosen ships — BUILT 2026-08-04
 The attacker chooses; the world does not shoot at everything.
 - **The mark:** each traffic ship rolls once at spawn — roughly a third are
   *marked* (weightable by cargo: volatiles and fuel worth more than ice —
@@ -102,7 +102,7 @@ The attacker chooses; the world does not shoot at everything.
   ship, that ship's schedule IS the mission — same machinery, now with
   sound, threat HUD, and the player's guns in the fight.
 
-### 4. Escort begins at the board — DESIGN (explored 2026-08-04)
+### 4. Escort begins at the board — BUILT 2026-08-04
 To scrap (Tirtha, explicit): the drift-lane proximity offer ("close on her
 if you want the job"), and all ambient combat SFX/HUD noise from being in
 the region. Ambient traffic and ambient attacks remain fully visible.

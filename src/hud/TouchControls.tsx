@@ -16,9 +16,13 @@ export function TouchControls() {
   // RE-RUN appears only after a finished drill, while still in the zone
   // (drills auto-start on entry; this is the only activity button needed)
   const [canRestart, setCanRestart] = useState(false)
+  const [hasOffer, setHasOffer] = useState(false)
   useEffect(() => {
     if (!IS_TOUCH) return
-    const id = setInterval(() => setCanRestart(activityState.canRestart), 300)
+    const id = setInterval(() => {
+      setCanRestart(activityState.canRestart)
+      setHasOffer(activityState.offer !== '')
+    }, 300)
     return () => clearInterval(id)
   }, [])
 
@@ -110,6 +114,16 @@ export function TouchControls() {
             }}
           >
             RE-RUN
+          </button>
+        )}
+        {hasOffer && (
+          <button
+            className="hud-touch-btn hud-touch-fire"
+            onPointerDown={() => {
+              activityState.acceptRequest = true
+            }}
+          >
+            ACCEPT
           </button>
         )}
         <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>

@@ -29,6 +29,7 @@ import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { DRIFT_POI, WRECK_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
+import { PROBES } from '../../config/probes'
 import { FONT_BOLD } from '../boards/font'
 
 /**
@@ -41,13 +42,26 @@ import { FONT_BOLD } from '../boards/font'
  * different classes of hull. The dockmaster's board always has work on it —
  * finish an escort and the next ship is already inbound.
  *
- * Raiders work these lanes. An unescorted ship on final gets hit anyway and
- * either the colony's batteries or her own gunner answers, which you can sit
- * off the docks and simply watch. Take the job and the raid becomes yours:
- * salvos at random times on random bearings, launched from beyond anything
- * you can see — trails and a direction, never a shooter. Until she flips.
- * Drive cold, no dodge left in her, that is when the DRAUGR shows herself
- * and fires from where you can finally SEE it.
+ * THE MARK. The Draugr chooses. Roughly a third of the hulls that enter
+ * these lanes are marked at spawn — weighted by cargo, because volatiles are
+ * worth boarding and ice barely is — and the rest cross in peace, every
+ * time. A marked ship takes one to three salvos at random moments in her
+ * transit, every torpedo in a salvo from ONE hidden origin, and that origin
+ * drifts a few degrees between salvos: shots fired seconds apart come from
+ * one place, and a place that moves is a ship. Plot the bearings and you are
+ * plotting HER. When a marked ship flips — drive cold, no dodge left — the
+ * Draugr shows herself exactly where those bearings said she would be.
+ *
+ * THE CONTRACT. Jobs are taken at the AMNIA DOCKS board and nowhere else —
+ * flying near a freighter is sightseeing, not employment. Accept, get her
+ * intercept bearing, fly out and meet her; the escort begins at the
+ * handshake. Miss her and she makes the docks without you; the board simply
+ * posts the next one.
+ *
+ * THE SOUND LAW. Space is silent until it is yours. Ambient raids are
+ * visible fireworks — torpedoes, defensive fire, detonations — with no
+ * audio and no HUD engagement. What you hear is what your own hull and
+ * radio carry, and both belong to your contract.
  *
  * You do not chase her. The freighter is the job; the chase is the next one,
  * and the dockmaster posts it when the cargo is in.
@@ -77,8 +91,12 @@ const MAX_SHIPS = 4
 const SPAWN_DIST = 2400
 const DOCK_DIST = 330
 const WRECK_BERTH = 220
-const JOIN_RADIUS = 450
+/** you take jobs standing at the dockmaster's board, nowhere else */
+const BOARD_RANGE = 620
+/** a job is worth posting while she still has a real transit left */
 const JOIN_MIN_RANGE = 900
+/** the handshake: this close to her and the escort is on */
+const RENDEZVOUS_RADIUS = 260
 const CONVOY_RADIUS = 1000
 const WATCH_RANGE = 2600
 const DESPAWN_DIST = 3400
@@ -100,10 +118,25 @@ const TORP_POOL = 18
 const TORP_SPEED = 105
 const TORP_TURN = 0.85
 const TORP_WEAVE = 20
-const RAID_FIRST = 4
-const RAID_GAP = 7
-const RAID_JITTER = 5
 const HIDDEN_LAUNCH = 1400
+/** the mark: how likely the Draugr wants a given cargo */
+const MARK_ODDS: Record<string, number> = {
+  VOLATILES: 0.6,
+  FUEL: 0.5,
+  PARTS: 0.4,
+  ORE: 0.35,
+  STEEL: 0.35,
+  GRAIN: 0.3,
+  ICE: 0.22,
+  WATER: 0.22,
+}
+/** salvo scheduling for a marked hull (seconds into / between) */
+const MARK_FIRST_MIN = 8
+const MARK_FIRST_JITTER = 18
+const MARK_GAP_MIN = 13
+const MARK_GAP_JITTER = 16
+/** how far the hidden origin swings between salvos — a hunter repositioning */
+const BEARING_DRIFT = 0.42
 
 const RAIDER_REVEAL_DIST = 240
 const RAIDER_LINGER = 13
@@ -135,7 +168,12 @@ interface Ship {
   flipT: number
   hull: number
   holdUntil: number
-  ambientNextAt: number
+  /** the Draugr wants this one */
+  marked: boolean
+  salvosLeft: number
+  nextAttackAt: number
+  /** the hidden origin of her salvos — ONE bearing, drifting between them */
+  attackBearing: Vector3
   defender: number
   labelOff: (() => void) | null
   collider: { position: Vector3; radius: number }
@@ -265,7 +303,10 @@ export function IceRoute() {
         flipT: 0,
         hull: HULL_MAX,
         holdUntil: 0,
-        ambientNextAt: 0,
+        marked: false,
+        salvosLeft: 0,
+        nextAttackAt: 0,
+        attackBearing: new Vector3(1, 0, 0),
         defender: 0,
         labelOff: null,
         collider: { position: new Vector3(0, -99999, 0), radius: 0 },
@@ -296,14 +337,14 @@ export function IceRoute() {
   const targetSlots = useMemo(() => torpedoes.map((t) => ({ position: t.position })), [torpedoes])
 
   const g = useRef({
-    escort: -1, // slot index of the ship whose escort is ours, or -1
-    offer: -1, // a job standing in front of us, waiting on an answer
+    escort: -1, // slot index of the contracted ship, or -1
+    offer: -1, // the job on the board in front of us, waiting on an answer
     accept: false, // one-shot: the pilot pressed accept
-    job: 'none' as 'none' | 'escort' | 'over',
+    job: 'none' as 'none' | 'intercept' | 'escort' | 'over',
     playerHull: 3,
     intercepts: 0,
     salvos: 0,
-    nextSalvoAt: 0,
+    lastRange: 0, // for the closing-rate readout on the intercept leg
     nextSpawnAt: 2,
     graceUntil: 0,
     holdUntil: 0,
@@ -316,6 +357,8 @@ export function IceRoute() {
     best: Number(localStorage.getItem(BEST_KEY) ?? 0),
   })
   const raiderLabel = useRef<(() => void) | null>(null)
+  /** the live rendezvous point the intercept marker leads to */
+  const interceptPoint = useMemo(() => new Vector3(), [])
 
   // every slot owns a collider that rides its live position (radius 0 = idle)
   useEffect(() => {
@@ -352,7 +395,7 @@ export function IceRoute() {
       g.current.intercepts++
       spawnExplosion(position, 0.9)
     }
-    if (import.meta.env.DEV) {
+    if (PROBES) {
       const w = window as unknown as Record<string, unknown>
       w.__lanes = g
       w.__ships = ships
@@ -392,7 +435,12 @@ export function IceRoute() {
       ship.flipT = 0
       ship.hull = HULL_MAX
       ship.defender = Math.random() < 0.5 ? 0 : 1
-      ship.ambientNextAt = now + 5 + Math.random() * 12
+      // The mark, rolled once per hull. Unmarked ships cross in peace — that
+      // quiet is worldbuilding too.
+      ship.marked = Math.random() < (MARK_ODDS[ship.cargo] ?? 0.3)
+      ship.salvosLeft = ship.marked ? 1 + Math.floor(Math.random() * 3) : 0
+      ship.nextAttackAt = now + MARK_FIRST_MIN + Math.random() * MARK_FIRST_JITTER
+      pickBearing(ship.attackBearing, false)
       ship.labelOff?.()
       ship.labelOff = registerHudLabel({
         id: `ship-${ships.indexOf(ship)}`,
@@ -419,12 +467,20 @@ export function IceRoute() {
       if (s.escort === idx) s.escort = -1
     }
 
+    /** One salvo from the hunter's CURRENT position: every torpedo in it
+     *  shares one hidden origin on the ship's attack bearing, and that
+     *  bearing drifts a few degrees afterwards — she is repositioning. */
     function fireSalvo(count: number, from: Vector3 | null, ambient: boolean, target: number) {
       const ship = ships[target]
       if (!ship?.active) return
       if (!from) {
-        pickBearing(_side, false)
-        _v2.copy(ship.position).addScaledVector(_side, HIDDEN_LAUNCH)
+        _v2.copy(ship.position).addScaledVector(ship.attackBearing, HIDDEN_LAUNCH)
+        // drift for the NEXT salvo: rotate the bearing about the vertical
+        _v.copy(ship.attackBearing)
+        const drift = (Math.random() - 0.5) * BEARING_DRIFT
+        const cos = Math.cos(drift)
+        const sin = Math.sin(drift)
+        ship.attackBearing.set(_v.x * cos - _v.z * sin, _v.y, _v.x * sin + _v.z * cos).normalize()
       } else {
         _v2.copy(from)
       }
@@ -453,7 +509,9 @@ export function IceRoute() {
 
     function raiderSalvo(target: number) {
       const ship = ships[target]
-      pickBearing(_side, false)
+      // She appears exactly where her salvos have been coming from — anyone
+      // who plotted the torpedo bearings knew where to look before she showed.
+      _side.copy(ship.attackBearing)
       raiderPos.copy(ship.position).addScaledVector(_side, RAIDER_REVEAL_DIST)
       raiderDir.copy(ship.position).sub(raiderPos).normalize()
       s.raiderUntil = now + RAIDER_LINGER
@@ -556,7 +614,9 @@ export function IceRoute() {
       torp.alive = false
       ship.hull--
       spawnExplosion(hitPoint, 1.4)
-      triggerImpact()
+      // The Sound Law: vacuum carries nothing. You hear a hit on HER hull
+      // only when she is yours — through your own radio watch.
+      if (ships.indexOf(ship) === s.escort && s.job === 'escort') triggerImpact()
       if (ship.hull === 3 && ships.indexOf(ship) === s.escort) {
         activityState.banner = { text: 'HULL FAILING — CLOSE UP', kind: 'fail', until: now + 2 }
       }
@@ -607,7 +667,7 @@ export function IceRoute() {
         ) {
           ship.flight = 'flip'
           ship.flipT = 0
-          if (isEscort) raiderSalvo(i) // drive cold — the moment they wait for
+          if (isEscort && escorted?.marked) raiderSalvo(i) // drive cold — her moment
         }
         if (ship.flight === 'flip') {
           ship.flipT += dt
@@ -639,15 +699,35 @@ export function IceRoute() {
             if (ang > 1e-4) ship.dir.lerp(_v, Math.min(1, (TURN_RATE * dt) / ang)).normalize()
           }
         }
-        // ambient: the lane is dangerous with or without you
+        // The mark's schedule. Only marked hulls are ever attacked, only on
+        // their rolled salvos, and only while somebody can see the lane (the
+        // simulation gate — torpedoes nobody could witness are not simulated).
+        // Contract salvos are the SAME schedule: if she is yours and the
+        // handshake is done, the raid is loud and the PDCs answer; otherwise
+        // her own defenses fight it silently and you may simply watch.
+        const witnessed =
+          distToDrift < WATCH_RANGE || ship.position.distanceTo(shipRig.position) < 2200
         if (
-          !isEscort &&
-          distToDrift < WATCH_RANGE &&
-          ship.position.distanceTo(DRIFT) < 1500 &&
-          now >= ship.ambientNextAt
+          ship.marked &&
+          ship.salvosLeft > 0 &&
+          now >= ship.nextAttackAt &&
+          ship.flight !== 'flip' &&
+          ship.flight !== 'brake' &&
+          witnessed
         ) {
-          fireSalvo(2, null, true, i)
-          ship.ambientNextAt = now + 16 + Math.random() * 14
+          const isContract = i === s.escort && s.job === 'escort'
+          fireSalvo(2 + Math.floor(Math.random() * 3), null, !isContract, i)
+          ship.salvosLeft--
+          ship.nextAttackAt = now + MARK_GAP_MIN + Math.random() * MARK_GAP_JITTER
+          if (isContract) {
+            s.salvos++
+            triggerKlaxon()
+            activityState.banner = {
+              text: 'TORPEDOES INBOUND — BEARING UNKNOWN',
+              kind: 'battle',
+              until: now + 2.2,
+            }
+          }
         }
       } else if (ship.phase === 'docked') {
         if (now >= ship.holdUntil) {
@@ -675,44 +755,86 @@ export function IceRoute() {
       }
     }
 
-    // ---------- taking a job: the pilot SAYS YES ----------
-    // Flying near a freighter is not a contract. Close on one and the offer
-    // stands on the panel until you accept it or leave.
+    // ---------- the job machine ----------
+    // A contract is taken AT THE BOARD, nowhere else. Flying near a freighter
+    // is sightseeing. The board offers the dockmaster's priority: marked
+    // hulls first (that is WHY escort is wanted), longest transit first.
+    const distToBoard = shipRig.position.distanceTo(_v.set(DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210))
     s.offer = -1
-    if (s.job === 'none' && !shipRig.warping) {
+    if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE) {
+      let bestScore = -1
       for (let i = 0; i < ships.length; i++) {
         const ship = ships[i]
         if (!ship.active || ship.phase !== 'inbound') continue
-        if (ship.position.distanceTo(DRIFT) <= JOIN_MIN_RANGE) continue
-        if (shipRig.position.distanceTo(ship.position) > JOIN_RADIUS) continue
-        s.offer = i
-        break
+        const range = ship.position.distanceTo(DRIFT)
+        if (range <= JOIN_MIN_RANGE) continue
+        const score = (ship.marked ? 10000 : 0) + range
+        if (score > bestScore) {
+          bestScore = score
+          s.offer = i
+        }
       }
     }
-    if (s.offer >= 0 && s.accept) {
-      {
-        const i = s.offer
-        const ship = ships[i]
-        s.escort = i
-        s.job = 'escort'
-        s.playerHull = 3
-        s.intercepts = 0
-        s.salvos = 0
-        s.nextSalvoAt = now + RAID_FIRST + Math.random() * 3
-        for (const t of torpedoes) if (t.alive && t.target === i) t.ambient = false
-        damageFx.clear()
-        triggerKlaxon()
-        activityState.banner = {
-          text: `ESCORT ACCEPTED — ${ship.name}, ${ship.cargo}`,
-          kind: 'battle',
-          until: now + 3,
-        }
-        s.flashText = ''
-        s.flashUntil = 0
+    if (s.offer >= 0 && (s.accept || activityState.acceptRequest)) {
+      const i = s.offer
+      const ship = ships[i]
+      s.escort = i
+      s.job = 'intercept'
+      s.intercepts = 0
+      s.salvos = 0
+      s.lastRange = shipRig.position.distanceTo(ship.position)
+      activityState.banner = {
+        text: `CONTRACT LOGGED — INTERCEPT ${ship.name}`,
+        kind: 'info',
+        until: now + 3,
       }
+      s.flashText = ''
+      s.flashUntil = 0
     }
     s.accept = false
+    activityState.acceptRequest = false
     if (s.job === 'over' && now >= s.holdUntil) s.job = 'none'
+
+    // The intercept leg: fly out and MEET her. The marker leads her track —
+    // two cheap iterations of "where will she be when I can get there".
+    const intercepting = s.job === 'intercept' && !!escorted
+    if (intercepting && escorted) {
+      if (escorted.phase !== 'inbound') {
+        // she made the docks without you — no ceremony, the lane moves on
+        activityState.banner = {
+          text: `${escorted.name} MADE THE DOCKS WITHOUT YOU`,
+          kind: 'info',
+          until: now + 2.6,
+        }
+        s.job = 'over'
+        s.holdUntil = now + 2.6
+        s.escort = -1
+      } else {
+        const d = shipRig.position.distanceTo(escorted.position)
+        const closingSpeed = Math.max(120, shipRig.speed)
+        let lead = Math.min(escorted.v * (d / closingSpeed), escorted.legLength - escorted.s - 40)
+        interceptPoint.copy(escorted.position).addScaledVector(escorted.dir, Math.max(0, lead))
+        const d2 = shipRig.position.distanceTo(interceptPoint)
+        lead = Math.min(escorted.v * (d2 / closingSpeed), escorted.legLength - escorted.s - 40)
+        interceptPoint.copy(escorted.position).addScaledVector(escorted.dir, Math.max(0, lead))
+
+        if (d < RENDEZVOUS_RADIUS) {
+          // the handshake: NOW it is an escort, and now it is loud
+          s.job = 'escort'
+          s.playerHull = 3
+          damageFx.clear()
+          for (const t of torpedoes) if (t.alive && t.target === s.escort) t.ambient = false
+          if (escorted.marked && escorted.salvosLeft > 0) {
+            escorted.nextAttackAt = Math.min(escorted.nextAttackAt, now + 5 + Math.random() * 4)
+          }
+          activityState.banner = {
+            text: `${escorted.name}: "GLAD FOR THE COMPANY, BOSMANG"`,
+            kind: 'win',
+            until: now + 3,
+          }
+        }
+      }
+    }
 
     if (escorting && escorted) {
       const d = shipRig.position.distanceTo(escorted.position)
@@ -728,18 +850,6 @@ export function IceRoute() {
         s.graceUntil = 0
       }
       damageFx.severity = Math.min(1, (3 - s.playerHull) / 2)
-      // the raid: random times, random bearings, unseen launches
-      if (now >= s.nextSalvoAt && escorted.flight !== 'flip' && escorted.flight !== 'brake') {
-        fireSalvo(2 + Math.floor(Math.random() * 3), null, false, s.escort)
-        s.salvos++
-        s.nextSalvoAt = now + RAID_GAP + Math.random() * RAID_JITTER
-        triggerKlaxon()
-        activityState.banner = {
-          text: 'TORPEDOES INBOUND — BEARING UNKNOWN',
-          kind: 'battle',
-          until: now + 2.2,
-        }
-      }
     }
 
     // ---------- the Draugr ----------
@@ -803,22 +913,13 @@ export function IceRoute() {
     }
 
     // ---------- HUD ----------
+    // The Sound Law's HUD half: being NEAR the lane engages nothing. The
+    // panel wakes for your contract, or when you are standing at the board
+    // where jobs are taken. Ambient raids play out with no readouts at all.
     activityState.bannerClock = now
+    const onContract = s.job === 'intercept' || s.job === 'escort'
     const battle = escorting && torpedoes.some((t) => t.alive && !t.ambient)
-    // nearest ship still out in the dark: what the marker points at
-    let nearestJoin = -1
-    let nearestD = Infinity
-    for (let i = 0; i < ships.length; i++) {
-      const ship = ships[i]
-      if (!ship.active || ship.phase !== 'inbound') continue
-      if (ship.position.distanceTo(DRIFT) <= JOIN_MIN_RANGE) continue
-      const d = shipRig.position.distanceTo(ship.position)
-      if (d < nearestD) {
-        nearestD = d
-        nearestJoin = i
-      }
-    }
-    const engaged = escorting || s.job === 'over' || distToDrift < WATCH_RANGE || nearestD < 900
+    const engaged = onContract || s.job === 'over' || distToBoard < BOARD_RANGE
     if (engaged) {
       activityState.owner = 'iceroute'
       activityState.active = true
@@ -830,38 +931,54 @@ export function IceRoute() {
       activityState.waveMax = Math.max(s.salvos, 4)
       activityState.waveLabel = 'SALVO'
       activityState.canRestart = false
-      activityState.title = escorting && escorted ? `ESCORT — ${escorted.name}` : 'THE AMNIA LANES'
+      activityState.offer = s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
+      activityState.title =
+        escorting && escorted
+          ? `ESCORT — ${escorted.name}`
+          : intercepting && escorted
+            ? `CONTRACT — ${escorted.name}`
+            : 'AMNIA DOCKS'
+      const range = escorted ? shipRig.position.distanceTo(escorted.position) : 0
       activityState.hint = battle
         ? 'STATION BETWEEN THE TORPEDOES AND HER HULL'
         : escorting
           ? 'HOLD FORMATION — RAIDERS WORK THESE LANES'
-          : s.offer >= 0
-            ? `${ships[s.offer].name} REQUESTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO ACCEPT`
-            : nearestJoin >= 0
-              ? `${ships[nearestJoin].name} IS INBOUND — CLOSE ON HER IF YOU WANT THE JOB`
+          : intercepting
+            ? 'FLY THE MARKER — MEET HER ON THE WAY IN'
+            : s.offer >= 0
+              ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO TAKE HER`
               : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
-      activityState.lines =
-        escorting && escorted
-          ? [
-              { label: escorted.name, value: `${escorted.hull}/${HULL_MAX}` },
-              { label: 'INTERCEPTS', value: String(s.intercepts) },
-              { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
-            ]
-          : [
-              { label: 'IN LANE', value: String(activeCount) },
-              {
-                label: 'ESCORT',
-                value: nearestJoin >= 0 ? `${(nearestD / 1000).toFixed(1)}K` : '—',
-              },
-              { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
-            ]
+      if (intercepting && escorted) {
+        const closing = dt > 0 ? (s.lastRange - range) / dt : 0
+        s.lastRange = range
+        activityState.lines = [
+          { label: escorted.name, value: `${(range / 1000).toFixed(1)}K` },
+          { label: 'CLOSING', value: `${Math.max(0, Math.round(closing))} M/S` },
+          {
+            label: 'HER ETA',
+            value: `${Math.max(0, Math.round((escorted.legLength - escorted.s) / Math.max(1, escorted.v)))}S`,
+          },
+        ]
+      } else if (escorting && escorted) {
+        activityState.lines = [
+          { label: escorted.name, value: `${escorted.hull}/${HULL_MAX}` },
+          { label: 'INTERCEPTS', value: String(s.intercepts) },
+          { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
+        ]
+      } else {
+        activityState.lines = [
+          { label: 'IN LANE', value: String(activeCount) },
+          { label: 'ON BOARD', value: s.offer >= 0 ? ships[s.offer].name : '—' },
+          { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
+        ]
+      }
       activityState.flash = now < s.flashUntil ? s.flashText : ''
       if (escorting && escorted) {
         activityState.raceTarget = escorted.position
         activityState.raceTargetLabel = escorted.name
-      } else if (nearestJoin >= 0) {
-        activityState.raceTarget = ships[nearestJoin].position
-        activityState.raceTargetLabel = ships[nearestJoin].name
+      } else if (intercepting && escorted) {
+        activityState.raceTarget = interceptPoint
+        activityState.raceTargetLabel = `MEET ${escorted.name}`
       } else {
         activityState.raceTarget = null
       }
@@ -871,6 +988,7 @@ export function IceRoute() {
       activityState.battle = false
       activityState.raceTarget = null
       activityState.threats = []
+      activityState.offer = ''
     }
 
     pdcFire.firing = battle

@@ -55,6 +55,10 @@ export const activityState = {
   canRestart: false,
   /** One-shot re-run request (Space / touch button), consumed by the activity */
   restartRequest: false,
+  /** A job is on the table (label for the accept UI), empty when none */
+  offer: '',
+  /** One-shot accept (G / touch button), consumed by the offering activity */
+  acceptRequest: false,
   /** Race guidance: world position of the next gate (null = no marker) */
   raceTarget: null as { x: number; y: number; z: number } | null,
   /** Label shown on the race marker ("START", "GATE 4", "FINISH") */
