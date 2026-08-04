@@ -57,8 +57,16 @@ import { FONT_BOLD } from '../boards/font'
  * transit, every torpedo in a salvo from ONE hidden origin, and that origin
  * drifts a few degrees between salvos: shots fired seconds apart come from
  * one place, and a place that moves is a ship. Plot the bearings and you are
- * plotting HER. When a marked ship flips — drive cold, no dodge left — the
- * Draugr shows herself exactly where those bearings said she would be.
+ * plotting HER. When a marked ship starts her braking burn — drive blazing
+ * at the docks, no dodge left in her — the Draugr shows herself exactly
+ * where those bearings said she would be.
+ *
+ * THE APPROACH (Tirtha, 2026-08-04): a ship that has burned for days flips
+ * at midpoint, days out and far off anyone's screen — so everything inbound
+ * arrives TAIL-FIRST, decelerating, drive toward the docks. No theatrical
+ * flip in view of the station: a newcomer sees ships slowing the way physics
+ * says they must, and discovers the flip-and-burn the first time their OWN
+ * jump drive performs one.
  *
  * THE CONTRACT. Jobs are taken at the AMNIA DOCKS board and nowhere else —
  * flying near a freighter is sightseeing, not employment. Accept, get her
@@ -96,7 +104,7 @@ const DRIFT = new Vector3(...DRIFT_POI.position)
 const WRECK = new Vector3(...WRECK_POI.position)
 
 const MAX_SHIPS = 4
-const SPAWN_DIST = 6200
+const SPAWN_DIST = 9200
 const DOCK_DIST = 330
 const WRECK_BERTH = 220
 /** you take jobs standing at the dockmaster's board, nowhere else */
@@ -107,13 +115,12 @@ const JOIN_MIN_RANGE = 900
 const RENDEZVOUS_RADIUS = 260
 const CONVOY_RADIUS = 1000
 const WATCH_RANGE = 2600
-const DESPAWN_DIST = 7000
+const DESPAWN_DIST = 9800
 const GRACE_SECONDS = 10
 
 const CRUISE = 62
 const ACCEL = 8
 const BRAKE = 12
-const FLIP_SECONDS = 2.6
 const TURN_RATE = 0.35
 /** Departure: she lights the drive and is simply gone. Player boost is 520. */
 const BOOST_ACCEL = 95
@@ -143,10 +150,14 @@ const MARK_FIRST_MIN = 8
 const MARK_FIRST_JITTER = 18
 const MARK_GAP_MIN = 17
 const MARK_GAP_JITTER = 17
-/** after the handshake the pilot gets a moment to settle into formation
- *  before the first wake-up call */
-const CONTRACT_FIRST_MIN = 10
-const CONTRACT_FIRST_JITTER = 6
+/** after the handshake: a short settle, then the raid IS coming — an
+ *  accepted escort is never a quiet run (Tirtha: "it's not random") */
+const CONTRACT_FIRST_MIN = 6
+const CONTRACT_FIRST_JITTER = 5
+const CONTRACT_GAP_MIN = 13
+const CONTRACT_GAP_JITTER = 8
+/** waves the contract guarantees before the braking-burn finale */
+const CONTRACT_WAVES_MIN = 2
 /** how far the hidden origin swings between salvos — a hunter repositioning */
 const BEARING_DRIFT = 0.42
 
@@ -168,7 +179,7 @@ interface Ship {
   cargo: string
   cls: number
   phase: 'inbound' | 'docked' | 'outbound'
-  flight: 'accel' | 'cruise' | 'flip' | 'brake' | 'stopped'
+  flight: 'accel' | 'cruise' | 'brake' | 'stopped'
   bearing: Vector3
   origin: Vector3
   dock: Vector3
@@ -177,7 +188,6 @@ interface Ship {
   s: number
   legLength: number
   v: number
-  flipT: number
   hull: number
   holdUntil: number
   /** the Draugr wants this one */
@@ -212,7 +222,6 @@ const _v2 = new Vector3()
 const _side = new Vector3()
 const _seg = new Vector3()
 const _q = new Quaternion()
-const _qFlip = new Quaternion()
 const _up = new Vector3(0, 1, 0)
 const _xAxis = new Vector3(1, 0, 0)
 const _dummy = new Object3D()
@@ -322,7 +331,6 @@ export function IceRoute() {
         s: 0,
         legLength: 1,
         v: 0,
-        flipT: 0,
         hull: HULL_MAX,
         holdUntil: 0,
         marked: false,
@@ -457,7 +465,6 @@ export function IceRoute() {
       // edge of a lane. Arrives at cruise, drive lit.
       ship.v = CRUISE
       ship.flight = 'cruise'
-      ship.flipT = 0
       ship.hull = HULL_MAX
       ship.defender = Math.random() < 0.5 ? 0 : 1
       // The mark, rolled once per hull. Unmarked ships cross in peace — that
@@ -688,15 +695,12 @@ export function IceRoute() {
         }
         if (
           (ship.flight === 'cruise' || ship.flight === 'accel') &&
-          remaining <= brakeDist + ship.v * FLIP_SECONDS + 30
+          remaining <= brakeDist + 30
         ) {
-          ship.flight = 'flip'
-          ship.flipT = 0
-          if (isEscort && escorted?.marked) raiderSalvo(i) // drive cold — her moment
-        }
-        if (ship.flight === 'flip') {
-          ship.flipT += dt
-          if (ship.flipT >= FLIP_SECONDS) ship.flight = 'brake'
+          // The braking burn: her drive blazes toward the docks and every
+          // gram of thrust is spoken for — no dodge left in her. Her moment.
+          ship.flight = 'brake'
+          if (isEscort) raiderSalvo(i)
         }
         if (ship.flight === 'brake') {
           ship.v = Math.max(0, ship.v - BRAKE * dt)
@@ -736,16 +740,19 @@ export function IceRoute() {
           ship.marked &&
           ship.salvosLeft > 0 &&
           now >= ship.nextAttackAt &&
-          ship.flight !== 'flip' &&
           ship.flight !== 'brake' &&
           witnessed
         ) {
           const isContract = i === s.escort && s.job === 'escort'
-          // the first wake-up is a probe, not a wall — playability rules here
-          const count = isContract && s.salvos === 0 ? 2 : 2 + Math.floor(Math.random() * 3)
+          // waves ramp: a 2-torpedo probe, then 3, then 4 — never a wall first
+          const count = isContract ? Math.min(2 + s.salvos, 4) : 2 + Math.floor(Math.random() * 3)
           fireSalvo(count, null, !isContract, i)
           ship.salvosLeft--
-          ship.nextAttackAt = now + MARK_GAP_MIN + Math.random() * MARK_GAP_JITTER
+          ship.nextAttackAt =
+            now +
+            (isContract
+              ? CONTRACT_GAP_MIN + Math.random() * CONTRACT_GAP_JITTER
+              : MARK_GAP_MIN + Math.random() * MARK_GAP_JITTER)
           if (isContract) {
             s.salvos++
             triggerKlaxon()
@@ -851,13 +858,16 @@ export function IceRoute() {
           s.playerHull = 3
           damageFx.clear()
           for (const t of torpedoes) if (t.alive && t.target === s.escort) t.ambient = false
-          if (escorted.marked && escorted.salvosLeft > 0) {
-            // settle-in time: formation first, fight after
-            escorted.nextAttackAt = Math.max(
-              now + CONTRACT_FIRST_MIN + Math.random() * CONTRACT_FIRST_JITTER,
-              Math.min(escorted.nextAttackAt, now + 24),
-            )
-          }
+          // An accepted escort is never a quiet run. Whatever her ambient
+          // history — even if the spread already spent itself while you stood
+          // at the board deciding — the Draugr answers an escorted prize:
+          // the mark is forced, the magazine restocked, the clock set short.
+          escorted.marked = true
+          escorted.salvosLeft = Math.max(
+            escorted.salvosLeft,
+            CONTRACT_WAVES_MIN + Math.floor(Math.random() * 2),
+          )
+          escorted.nextAttackAt = now + CONTRACT_FIRST_MIN + Math.random() * CONTRACT_FIRST_JITTER
           activityState.banner = {
             text: `${escorted.name}: "GLAD FOR THE COMPANY, BOSMANG"`,
             kind: 'win',
@@ -993,8 +1003,11 @@ export function IceRoute() {
       } else if (escorting && escorted) {
         activityState.lines = [
           { label: escorted.name, value: `${escorted.hull}/${HULL_MAX}` },
+          {
+            label: 'TO DOCK',
+            value: `${((escorted.legLength - escorted.s) / 1000).toFixed(1)}K`,
+          },
           { label: 'INTERCEPTS', value: String(s.intercepts) },
-          { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
         ]
       } else {
         activityState.lines = [
@@ -1059,27 +1072,26 @@ export function IceRoute() {
       const models = slotModels[i]
       for (let m = 0; m < models.length; m++) models[m].visible = m === ship.cls
       group.position.copy(ship.position)
-      _q.setFromUnitVectors(_xAxis, ship.dir)
-      if (ship.phase === 'inbound' && (ship.flight === 'flip' || ship.flight === 'brake')) {
-        const k = ship.flight === 'flip' ? Math.min(1, ship.flipT / FLIP_SECONDS) : 1
-        const smooth = k * k * (3 - 2 * k)
-        _side.crossVectors(ship.dir, _up).normalize()
-        _qFlip.setFromAxisAngle(_side, Math.PI * smooth)
-        _q.premultiply(_qFlip)
-      }
+      // Tail-first the whole way in: she flipped at midpoint, days out,
+      // nowhere near anyone's screen. Bow always points AWAY from the docks —
+      // which also means she departs bow-first without ever turning in view.
+      _v.copy(ship.dir)
+      if (ship.phase !== 'outbound') _v.negate()
+      _q.setFromUnitVectors(_xAxis, _v)
       group.quaternion.copy(_q)
       const plume = plumeRefs.current[i]
       if (plume) {
         const cls = CLASSES[ship.cls]
         const burning =
-          (ship.phase === 'inbound' && ship.flight !== 'flip' && ship.flight !== 'stopped') ||
-          ship.phase === 'outbound'
+          (ship.phase === 'inbound' && ship.flight !== 'stopped') || ship.phase === 'outbound'
         plume.visible = burning
         if (burning) {
           plume.position.x = cls.plumeX
           // departure is a hard burn: the plume swells as she runs away
           const boost = ship.phase === 'outbound' ? 1 + (ship.v / BOOST_MAX) * 3.4 : 1
-          const power = (ship.flight === 'cruise' && ship.phase === 'inbound' ? 0.45 : 1) * boost
+          // coasting in = trim burns only; the braking burn is the blaze
+          const power =
+            (ship.phase === 'inbound' ? (ship.flight === 'brake' ? 1.25 : 0.3) : 1) * boost
           const flicker = power * (0.85 + Math.random() * 0.3)
           plume.scale.set(
             (flicker * cls.plume) / 2.6,
@@ -1228,7 +1240,7 @@ export function IceRoute() {
         </group>
       ))}
 
-      {/* THE DRAUGR — seen only at the flip, and only for a moment */}
+      {/* THE DRAUGR — seen only at the braking burn, and only for a moment */}
       <group ref={raiderRef} visible={false}>
         <primitive object={raiderHull} />
         <DraugrPlumes drive={raiderDrive} />

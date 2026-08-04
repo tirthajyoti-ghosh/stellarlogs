@@ -110,6 +110,14 @@ The attacker chooses; the world does not shoot at everything.
   sound, threat HUD, and the player's guns in the fight.
 
 ### 4. Escort begins at the board — BUILT 2026-08-04
+*Second pass, same day: lane traffic arrives TAIL-FIRST decelerating (the
+flip happened at midpoint, days off-screen — newcomers meet the flip via
+their own jump drive, not as station theater); the Draugr reveals at the
+BRAKING BURN; accepted contracts guarantee the raid (mark forced, 2-3 waves
+restocked, sizes ramp 2→3→4, first wave 6-11 s after handshake, finale at
+the burn); spawns pushed to 9.2k so the offer stands ~8k out; escort HUD
+counts down TO DOCK. And the gunnery range now starts on consent like every
+job: the ring wakes the panel, G / tap-ACCEPT runs the drill.*
 To scrap (Tirtha, explicit): the drift-lane proximity offer ("close on her
 if you want the job"), and all ambient combat SFX/HUD noise from being in
 the region. Ambient traffic and ambient attacks remain fully visible.

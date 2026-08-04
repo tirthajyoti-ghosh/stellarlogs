@@ -226,7 +226,6 @@ export function GunneryRange() {
     /** First-overheat coach shown this run */
     heatWarned: false,
     /** Drill just ended inside the zone — wait for an explicit re-run */
-    awaitRestart: false,
     armedAt: 0,
     bestTime: Number(localStorage.getItem(BEST_TIME_KEY) ?? 0),
     phaseUntil: 0,
@@ -270,6 +269,18 @@ export function GunneryRange() {
   }, [])
 
   // Wire the shared PDC fire module to this drill's torpedo pool
+  // Consent key, mirroring the docks board: G accepts what the panel offers.
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.code !== 'KeyG' || e.repeat) return
+      if (activityState.owner === 'gunnery' && activityState.offer !== '') {
+        activityState.acceptRequest = true
+      }
+    }
+    window.addEventListener('keydown', down)
+    return () => window.removeEventListener('keydown', down)
+  }, [])
+
   useEffect(() => {
     pdcFire.sources = torpedoes
     pdcFire.onKill = (idx, position) => {
@@ -298,7 +309,6 @@ export function GunneryRange() {
       g.veteran = g.nextVeteran
       g.armedAt = now
       g.graceUntil = 0
-      g.awaitRestart = false
       g.phaseUntil = now + 3.0
       triggerKlaxon()
       activityState.banner = {
@@ -381,7 +391,6 @@ export function GunneryRange() {
       g.phase = 'over'
       g.phaseUntil = now + 3
       g.graceUntil = 0
-      g.awaitRestart = true
       for (const torp of torpedoes) torp.alive = false
     }
 
@@ -415,15 +424,16 @@ export function GunneryRange() {
       }
     }
 
-    // ---- drill state machine: entering the ring IS the start ----
-    // (never while warping — a brachistochrone transit through the ring is
-    // passage, not consent; torpedoes spawning on a ship mid-burn is a mugging)
-    if (g.phase === 'idle' && !shipRig.warping) {
-      if (!inArmZone) {
-        g.awaitRestart = false
-      } else if (!g.awaitRestart) {
-        startDrill()
-      } else if (activityState.restartRequest) {
+    // ---- drill state machine: the drill starts on the pilot's WORD ----
+    // Entering the ring used to start it automatically; that died with the
+    // docks-board rework (Tirtha, 2026-08-04: everything combat is taken
+    // deliberately, like a job). The ring wakes the panel and posts the
+    // offer; G / touch-ACCEPT / the old re-run request all count as consent.
+    // Never while warping — a brachistochrone transit through the ring is
+    // passage, not consent.
+    if (g.phase === 'idle' && !shipRig.warping && inArmZone) {
+      if (activityState.acceptRequest || activityState.restartRequest) {
+        activityState.acceptRequest = false
         activityState.restartRequest = false
         startDrill()
       }
@@ -519,15 +529,17 @@ export function GunneryRange() {
       activityState.wave = battleRunning ? g.wave : 0
       activityState.waveMax = WAVES.length
       activityState.waveLabel = 'WAVE'
-      activityState.canRestart = g.phase === 'idle' && inArmZone && g.awaitRestart
+      const offering = g.phase === 'idle' && inArmZone && !shipRig.warping
+      activityState.canRestart = false
+      activityState.offer = offering ? 'PDC CERTIFICATION' : ''
       activityState.title =
         g.veteran && battleRunning ? 'MILITIA CERT — VETERAN' : 'MILITIA PDC CERTIFICATION'
       const coach =
         battleRunning && g.wave === 1 && g.phase === 'wave' && turretControl.locks === 0 && incoming > 0
-      activityState.hint = activityState.canRestart
+      activityState.hint = offering
         ? g.nextVeteran
-          ? `${IS_TOUCH ? 'TAP RE-RUN' : 'PRESS SPACE'} — VETERAN DRILL AWAITS`
-          : `${IS_TOUCH ? 'TAP RE-RUN' : 'PRESS SPACE'} — RUN IT AGAIN`
+          ? `VETERAN DRILL LOADED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN IT`
+          : `RANGE COLD — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN THE DRILL`
         : coach
           ? `THREATS AFT — TURN THE SHIP${IS_TOUCH ? '' : ' (A / D)'}`
           : ''
@@ -542,6 +554,7 @@ export function GunneryRange() {
       activityState.battle = false
       activityState.threats = []
       activityState.canRestart = false
+      activityState.offer = ''
     }
 
     // ---- feed turrets: guns are AUTOMATIC while the drill runs ----
