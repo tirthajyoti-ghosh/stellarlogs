@@ -55,7 +55,17 @@ contract is what arms the sound layer and the threat HUD, and only for events
 belonging to that contract. This is simultaneously the correction he asked
 for and the physically true answer: vacuum carries nothing.
 
-### 2. PDC tracers — DESIGN (explored 2026-08-04, BUILD NEXT)
+### 2. PDC tracers — BUILT 2026-08-05
+*Streaks 2.6 → 1.2 (bullets, not bars); misses sail 2.4 s (~1,900 u) but are
+LETHAL only for the original 1.7 s — extending life "visually" turned out to
+extend kill RANGE and let a parked ship ace the cert, so lethality and
+visibility are separate budgets now. The fake ambient defense dashes are
+gone: the colony's mount and each hull's own gunner fire the same ballistic
+pool (ember tracers, longer/hotter for viewing distance; yours are gold and
+short), with no kill authority — outcomes stay with the lane. DISCOVERED in
+verification: the parked-ship-dies-by-wave-3 cert law had ALREADY drifted
+before this work (baseline also completes with 0 hits) — re-tune belongs to
+the Certification-trim item.*
 The hose metaphor, taken literally: every round is a real object that left
 the muzzle with the velocity the barrel had *at that instant* — gun direction
 × muzzle speed **plus the shooter's own velocity**. Nothing is retargeted
@@ -233,6 +243,9 @@ vaporized, very Belter.
 (7e2d1b5b9f0249cfb3111a00bf48237b, CC-BY); fallback SACHSEN CLASS FRIGATE.*
 
 ### Certification trim (rides along with F.4)
+**+ 2026-08-05: re-tune the acceptance law.** A parked ship should take hits
+by wave 2 and fail by wave 3; measured on the pre-tracer build it completes
+untouched. The drift predates the tracer work (verified by baseline A/B).
 The existing gunnery range stays but shrinks (~3 waves) and gets honest
 signage: "PDC CERTIFICATION — ESCORT DUTY STANDARD." No gating (free order
 is law); the fiction now explains the drill, and it remains the

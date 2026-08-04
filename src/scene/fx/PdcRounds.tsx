@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import {
   AdditiveBlending,
   CanvasTexture,
+  Color,
   InstancedMesh,
   Matrix4,
   Quaternion,
@@ -14,24 +15,46 @@ import { shipRig } from '../../state/shipRig'
 
 /**
  * Shared PDC fire: the rounds themselves. Every round is a real projectile —
- * spawned at a muzzle, flying at ROUND_SPEED, dying by age or by passing
- * within kill radius of ITS target. Misses keep flying into the black, which
- * is the point: with per-turret aim error that CONVERGES while a mount holds
- * the same track, the visible spray "walks onto" the torpedo exactly like a
- * hose stream catching up to where you're pointing. Fire-control lead is
- * computed against the target's velocity so crossing shots (escort work)
- * connect honestly.
+ * spawned at a muzzle with the SHOOTER'S velocity folded in, flying ballistic,
+ * dying by age or by passing within kill radius of ITS target. Misses keep
+ * sailing into the black, and they sail for a long time on purpose: the wavy
+ * stream hanging in space is a physical recording of where the gun used to
+ * point (Tirtha's hose), and cutting it short cut the story off. Fire-control
+ * lead is computed against the target's velocity so crossing shots connect
+ * honestly; per-turret aim error CONVERGES while a mount holds one track, so
+ * fresh sprays hose wide and settle on.
+ *
+ * The streaks are SHORT — small hot bullets, not bars. A 2.6-unit streak was
+ * over half a torpedo long and a stream of them read as a beam ("it's like a
+ * straight line... not that").
+ *
+ * REMOTE BATTERIES: the same ballistics fired by somebody else — the Drift's
+ * mount, a freighter's own gunner. They use this pool and this integrator but
+ * carry NO kill authority (ambient outcomes belong to the activity; these are
+ * the visible truth of the Sound Law's silent fireworks) and they shoot like
+ * dock gunners, not like you: lower rate, wider error, a degraded solution.
+ * Their tracers run hotter-red; yours run gold — you can tell whose fire is
+ * whose across a klick of dark.
  *
  * An activity owns a PdcFire object: it writes `sources` (its torpedo pool),
- * `slotSource` (turretControl.targets index → sources index), `firing`, and
- * `onKill`; this component integrates, spawns, hit-tests, and renders the
- * instanced rounds plus the per-turret muzzle flashes.
+ * `slotSource` (turretControl.targets index → sources index), `firing`,
+ * `batteries`, and `onKill`; this component integrates, spawns, hit-tests,
+ * and renders the one instanced pool plus per-turret muzzle flashes.
  */
 
 const ROUND_SPEED = 800
-const ROUND_LIFE = 1.7 // seconds — misses visibly sail on
-const ROUND_LEN = 2.6
-const POOL = 320
+const ROUND_LIFE = 2.4 // seconds — misses sail ~1,900 units into the black
+/**
+ * A round can KILL only for its first 1.7 seconds — the value the three-pass
+ * balance was tuned at — and then flies on inert for the rest of its life.
+ * Found the hard way: extending life "visually" extended kill RANGE, and a
+ * parked ship aced the cert in 25 s flat (the acceptance law demands it die
+ * by wave 3). Lethality and visibility are separate budgets now.
+ */
+const LETHAL_TIME = 1.7
+const ROUND_LEN = 1.2
+const ROUND_RADIUS = 0.032
+const POOL = 512
 const ROUNDS_PER_SEC = 12
 const KILL_RADIUS = 3.4
 const ERR_MAX = 60 // u/s of lateral aim error at track acquisition
@@ -50,11 +73,30 @@ const ERR_TAU = 0.85 // seconds; convergence time constant per held track
 // geometry buys the guns their windows.
 const LEAD_RANGE_TAU = 0.45 // flight seconds at which the solution is fully degraded
 
+/** dock gunners: slower guns, wider hands, half a solution */
+const BATTERY_RATE = 10
+const BATTERY_ERR = 45
+const BATTERY_SOLUTION = 0.55
+
+const GOLD = new Color(0.98, 0.82, 0.5)
+const EMBER = new Color(1.0, 0.55, 0.35)
+
 export interface PdcSource {
   position: Vector3
   velocity: Vector3
   alive: boolean
   launched: boolean
+}
+
+/** Somebody else's gun: a live origin, a live shooter velocity, one target. */
+export interface RemoteBattery {
+  /** live ref — the mount's world position (station point or a moving ship) */
+  origin: Vector3
+  /** live ref — the shooter's velocity, folded into every round */
+  velocity: Vector3
+  /** index into `sources`, or -1 to hold fire */
+  targetIdx: number
+  accum: number
 }
 
 export interface PdcFire {
@@ -64,11 +106,17 @@ export interface PdcFire {
   slotSource: number[]
   /** Guns hot (activity battle running) */
   firing: boolean
+  /** Other people's guns, visual truth only — no kill authority */
+  batteries: RemoteBattery[]
   onKill: ((sourceIndex: number, position: Vector3) => void) | null
 }
 
 export function createPdcFire(): PdcFire {
-  return { sources: [], slotSource: [], firing: false, onKill: null }
+  return { sources: [], slotSource: [], firing: false, batteries: [], onKill: null }
+}
+
+export function createBattery(origin: Vector3, velocity: Vector3): RemoteBattery {
+  return { origin, velocity, targetIdx: -1, accum: 0 }
 }
 
 interface Round {
@@ -77,7 +125,11 @@ interface Round {
   life: number
   fresh: boolean
   active: boolean
+  /** -1: a battery round — renders and flies, never kills */
   sourceIdx: number
+  /** 0 = ember (somebody else's), 1 = gold (yours); per-round flicker baked in */
+  heat: number
+  brightness: number
 }
 
 function makeFlashTexture(): CanvasTexture {
@@ -101,6 +153,7 @@ const _aim = new Vector3()
 const _jitter = new Vector3()
 const _scale = new Vector3(1, 1, 1)
 const _up = new Vector3(0, 1, 0)
+const _c = new Color()
 
 export function PdcRounds({ fire }: { fire: PdcFire }) {
   const meshRef = useRef<InstancedMesh>(null)
@@ -117,6 +170,8 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         fresh: false,
         active: false,
         sourceIdx: -1,
+        heat: 1,
+        brightness: 1,
       }),
     ),
     fireAccum: [0, 0, 0, 0, 0, 0],
@@ -127,7 +182,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
 
   useFrame((_, dt) => {
     const s = state.current
-    const { sources, slotSource, firing, onKill } = fire
+    const { sources, slotSource, firing, batteries, onKill } = fire
 
     // ---- integrate + hit-test existing rounds ----
     for (const round of s.rounds) {
@@ -142,6 +197,9 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         round.active = false
         continue
       }
+      // battery rounds carry sourceIdx -1: they fly, they never adjudicate;
+      // and every round goes inert past LETHAL_TIME — tracer, not bullet
+      if (ROUND_LIFE - round.life > LETHAL_TIME) continue
       const src = sources[round.sourceIdx]
       if (src && src.alive && src.launched) {
         if (round.position.distanceTo(src.position) < KILL_RADIUS) {
@@ -151,7 +209,43 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
       }
     }
 
-    // ---- spawn: aim error converges while a mount holds the same track ----
+    const spawn = (
+      origin: Vector3,
+      shooterVel: Vector3 | null,
+      shooterSpeedCap: number,
+      src: PdcSource,
+      sourceIdx: number,
+      err: number,
+      solution: number,
+      heat: number,
+    ) => {
+      const round = s.rounds.find((r) => !r.active)
+      if (!round) return
+      // Fire-control lead: aim where the target WILL be for a round
+      // launched from a moving shooter (relative-velocity solution, one pass)
+      const flight = origin.distanceTo(src.position) / ROUND_SPEED
+      _aim.copy(src.velocity)
+      if (shooterVel) _aim.sub(shooterVel)
+      _aim.multiplyScalar(flight * solution).add(src.position)
+      _v.copy(_aim).sub(origin).normalize()
+      _jitter
+        .set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
+        .multiplyScalar(2 * err)
+      round.sourceIdx = sourceIdx
+      round.active = true
+      round.fresh = true
+      round.life = ROUND_LIFE
+      round.heat = heat
+      round.brightness = 0.7 + Math.random() * 0.5
+      round.velocity.copy(_v).multiplyScalar(ROUND_SPEED).add(_jitter)
+      if (shooterVel) {
+        _v2spawn.copy(shooterVel).clampLength(0, shooterSpeedCap)
+        round.velocity.add(_v2spawn)
+      }
+      round.position.copy(origin).addScaledVector(_v, ROUND_LEN / 2)
+    }
+
+    // ---- your turrets: aim error converges while a mount holds one track ----
     const shooting = firing && turretControl.spin > 0.85
     const muzzles = turretControl.muzzles
     for (let ti = 0; ti < muzzles.length; ti++) {
@@ -172,37 +266,33 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
       s.fireAccum[ti] += dt * ROUNDS_PER_SEC
       while (s.fireAccum[ti] >= 1) {
         s.fireAccum[ti] -= 1
-        const round = s.rounds.find((r) => !r.active)
-        if (!round) break
-        // Fire-control lead: aim where the target WILL be for a round
-        // launched from a moving ship (relative-velocity solution, one pass)
         const flight = muzzle.position.distanceTo(src.position) / ROUND_SPEED
         const solution = Math.max(0, 1 - flight / LEAD_RANGE_TAU)
-        _aim
-          .copy(src.velocity)
-          .addScaledVector(shipRig.velocityDir, -Math.min(shipRig.speed, 520))
-          .multiplyScalar(flight * solution)
-          .add(src.position)
-        _v.copy(_aim).sub(muzzle.position).normalize()
-        // Converging spray: fresh tracks hose wide, held tracks tighten
         const err = ERR_MIN + (ERR_MAX - ERR_MIN) * Math.exp(-s.trackTime[ti] / ERR_TAU)
-        _jitter
-          .set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5)
-          .multiplyScalar(2 * err)
-        round.sourceIdx = sourceIdx
-        round.active = true
-        round.fresh = true
-        round.life = ROUND_LIFE
-        round.velocity
-          .copy(_v)
-          .multiplyScalar(ROUND_SPEED)
-          .addScaledVector(shipRig.velocityDir, Math.min(shipRig.speed, 520))
-          .add(_jitter)
-        round.position.copy(muzzle.position).addScaledVector(_v, ROUND_LEN / 2)
+        _shooterVel.copy(shipRig.velocityDir).multiplyScalar(Math.min(shipRig.speed, 520))
+        spawn(muzzle.position, _shooterVel, 520, src, sourceIdx, err, solution, 1)
       }
     }
 
-    // ---- render rounds ----
+    // ---- everyone else's guns: visible truth, no verdicts ----
+    for (const battery of batteries) {
+      if (battery.targetIdx < 0) {
+        battery.accum = 0
+        continue
+      }
+      const src = sources[battery.targetIdx]
+      if (!src || !src.alive || !src.launched) {
+        battery.accum = 0
+        continue
+      }
+      battery.accum += dt * BATTERY_RATE
+      while (battery.accum >= 1) {
+        battery.accum -= 1
+        spawn(battery.origin, battery.velocity, 1200, src, -1, BATTERY_ERR, BATTERY_SOLUTION, 0)
+      }
+    }
+
+    // ---- render: one pool, per-round color (gold = yours, ember = theirs) ----
     const mesh = meshRef.current
     if (mesh) {
       let n = 0
@@ -210,22 +300,32 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         if (!round.active) continue
         _v.copy(round.velocity).normalize()
         _q.setFromUnitVectors(_up, _v)
+        // Battery tracers render longer and hotter: they are watched from
+        // hundreds of units away, where a bullet-length streak reads as dust.
+        // Your own rounds stay short — they are seen from the gun.
+        _scale.set(1, round.heat < 0.5 ? 2.6 : 1, 1)
         _m.compose(round.position, _q, _scale)
-        mesh.setMatrixAt(n++, _m)
+        mesh.setMatrixAt(n, _m)
+        _c.copy(EMBER).lerp(GOLD, round.heat).multiplyScalar(
+          round.brightness * (round.heat < 0.5 ? 1.35 : 1),
+        )
+        mesh.setColorAt(n, _c)
+        n++
       }
       mesh.count = n
       mesh.instanceMatrix.needsUpdate = true
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true
     }
-    // ---- muzzle flashes ----
+    // ---- muzzle flashes: pulse with the burst, not a held lamp ----
     for (let ti = 0; ti < 6; ti++) {
       const sprite = flashRefs.current[ti]
       if (!sprite) continue
       const muzzle = muzzles[ti]
       const on = shooting && muzzle && muzzle.targetIndex >= 0
-      sprite.visible = !!on
-      if (on) {
+      sprite.visible = !!on && Math.random() > 0.25
+      if (sprite.visible) {
         sprite.position.copy(muzzle.position)
-        const sc = 0.28 + Math.random() * 0.22
+        const sc = 0.18 + Math.random() * 0.34
         sprite.scale.set(sc, sc, 1)
       }
     }
@@ -234,11 +334,11 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
   return (
     <group>
       <instancedMesh ref={meshRef} args={[undefined, undefined, POOL]} frustumCulled={false}>
-        <cylinderGeometry args={[0.045, 0.045, ROUND_LEN, 4, 1, true]} />
+        <cylinderGeometry args={[ROUND_RADIUS, ROUND_RADIUS, ROUND_LEN, 4, 1, true]} />
         <meshBasicMaterial
-          color={[0.98, 0.82, 0.5]}
+          color="#ffffff"
           transparent
-          opacity={0.85}
+          opacity={0.9}
           blending={AdditiveBlending}
           depthWrite={false}
           toneMapped={false}
@@ -265,3 +365,6 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
     </group>
   )
 }
+
+const _shooterVel = new Vector3()
+const _v2spawn = new Vector3()

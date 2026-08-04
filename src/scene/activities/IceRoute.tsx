@@ -25,7 +25,7 @@ import { triggerImpact, triggerFanfare, triggerKlaxon } from '../../audio/engine
 import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
-import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
+import { PdcRounds, createPdcFire, createBattery } from '../fx/PdcRounds'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { DRIFT_POI, WRECK_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
@@ -178,7 +178,9 @@ const FINALE_LEAD_SECONDS = 7
 const RAIDER_REVEAL_DIST = 1000
 const RAIDER_LINGER = 13
 const DEFENSE_RANGE = 420
-const DEFENSE_STREAKS = 30
+/** the colony's battery mount, up on the spine above the docks */
+const STATION_MOUNT = new Vector3(DRIFT_POI.position[0] + 30, DRIFT_POI.position[1] + 130, DRIFT_POI.position[2] - 20)
+const ZERO_VEL = new Vector3()
 
 const DOCK_HOLD_MIN = 12
 const DOCK_HOLD_JITTER = 14
@@ -239,8 +241,6 @@ const _q = new Quaternion()
 const _up = new Vector3(0, 1, 0)
 const _xAxis = new Vector3(1, 0, 0)
 const _dummy = new Object3D()
-const _scaleOne = new Vector3(1, 1, 1)
-const _m = new Matrix4()
 
 const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)]
 
@@ -309,6 +309,11 @@ export function IceRoute() {
   const raiderHull = useMemo(() => raiderGltf.scene.getObjectByName('hull') as Object3D, [raiderGltf])
   const torpedoBody = useTorpedoBody()
   const pdcFire = useMemo(() => createPdcFire(), [])
+  /** Real defensive fire, not dashes: the colony's mount plus each hull's own
+   *  gunner, all shooting the shared ballistic pool. Visual truth only — the
+   *  interception OUTCOME below stays exactly as it was. */
+  const batteries = useMemo(() => [] as ReturnType<typeof createBattery>[], [])
+  const gunnerVels = useMemo(() => Array.from({ length: MAX_SHIPS }, () => new Vector3()), [])
 
   /** One clone of every class per slot — geometry and materials are shared. */
   const slotModels = useMemo(() => {
@@ -324,7 +329,6 @@ export function IceRoute() {
   const raiderDrive = useMemo(() => createDrivePower(), [])
   const torpMeshRef = useRef<InstancedMesh>(null)
   const torpPlumeRef = useRef<InstancedMesh>(null)
-  const defenseMeshRef = useRef<InstancedMesh>(null)
   const boardRef = useRef<Group>(null)
   const boardRows = useRef<({ text: string; sync?: () => void } | null)[]>([])
 
@@ -433,6 +437,10 @@ export function IceRoute() {
 
   useEffect(() => {
     pdcFire.sources = torpedoes
+    batteries.length = 0
+    batteries.push(createBattery(STATION_MOUNT, ZERO_VEL))
+    for (let i = 0; i < MAX_SHIPS; i++) batteries.push(createBattery(ships[i].position, gunnerVels[i]))
+    pdcFire.batteries = batteries
     pdcFire.onKill = (idx, position) => {
       const torp = torpedoes[idx]
       if (!torp.alive) return
@@ -447,7 +455,7 @@ export function IceRoute() {
       w.__raider = raiderPos
       w.__torps = torpedoes
     }
-  }, [pdcFire, torpedoes, ships, raiderPos])
+  }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels])
 
   useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
@@ -1161,30 +1169,30 @@ export function IceRoute() {
       torpPlume.instanceMatrix.needsUpdate = true
     }
 
-    // ---------- render: somebody else's guns ----------
-    const defense = defenseMeshRef.current
-    if (defense) {
-      let n = 0
-      for (const torp of torpedoes) {
-        if (!torp.alive || !torp.launched || !torp.ambient) continue
-        const ship = ships[torp.target]
-        if (!ship?.active) continue
-        _v2.copy(ship.defender === 0 ? DRIFT : ship.position)
-        const len = torp.position.distanceTo(_v2)
-        if (len > DEFENSE_RANGE) continue
-        _v.copy(torp.position).sub(_v2).divideScalar(len)
-        _q.setFromUnitVectors(_up, _v)
-        for (let k = 0; k < 5 && n < DEFENSE_STREAKS; k++) {
-          _dummy.position.copy(_v2).addScaledVector(_v, Math.random() * len)
-          _dummy.position.x += (Math.random() - 0.5) * 6
-          _dummy.position.y += (Math.random() - 0.5) * 6
-          _dummy.position.z += (Math.random() - 0.5) * 6
-          _m.compose(_dummy.position, _q, _scaleOne)
-          defense.setMatrixAt(n++, _m)
-        }
+    // ---------- somebody else's guns: real rounds from real mounts ----------
+    // The colony's battery and each hull's own gunner pick the nearest live
+    // ambient torpedo in their envelope and hose it with the same ballistic
+    // pool the player fires — worse hands, redder tracers, no kill authority.
+    for (const b of batteries) b.targetIdx = -1
+    for (let k = 0; k < MAX_SHIPS; k++) {
+      const ship = ships[k]
+      if (ship.active) gunnerVels[k].copy(ship.dir).multiplyScalar(ship.v)
+      else gunnerVels[k].set(0, 0, 0)
+    }
+    for (let t = 0; t < torpedoes.length; t++) {
+      const torp = torpedoes[t]
+      if (!torp.alive || !torp.launched || !torp.ambient) continue
+      const ship = ships[torp.target]
+      if (!ship?.active) continue
+      const battery = ship.defender === 0 ? batteries[0] : batteries[1 + torp.target]
+      _v2.copy(ship.defender === 0 ? STATION_MOUNT : ship.position)
+      const len = torp.position.distanceTo(_v2)
+      if (len > DEFENSE_RANGE * 1.5) continue
+      if (battery.targetIdx >= 0) {
+        const cur = torpedoes[battery.targetIdx]
+        if (cur.position.distanceTo(_v2) <= len) continue
       }
-      defense.count = n
-      defense.instanceMatrix.needsUpdate = true
+      battery.targetIdx = t
     }
 
     // ---------- the dockmaster's board ----------
@@ -1281,23 +1289,6 @@ export function IceRoute() {
       </instancedMesh>
       <TorpedoTrails sources={torpedoes} />
       <PdcRounds fire={pdcFire} />
-
-      {/* Somebody else's tracers */}
-      <instancedMesh
-        ref={defenseMeshRef}
-        args={[undefined, undefined, DEFENSE_STREAKS]}
-        frustumCulled={false}
-      >
-        <cylinderGeometry args={[0.05, 0.05, 3.2, 4, 1, true]} />
-        <meshBasicMaterial
-          color={[0.95, 0.85, 0.55]}
-          transparent
-          opacity={0.8}
-          blending={AdditiveBlending}
-          depthWrite={false}
-          toneMapped={false}
-        />
-      </instancedMesh>
 
       {/* AMNIA DOCKS — the dockmaster's board. There is always work on it. */}
       <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210]}>
