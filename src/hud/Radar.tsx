@@ -480,27 +480,6 @@ export function Radar() {
           ctx.fillRect(ePt.fx - 1.5, ePt.fy - 1.5, 3, 3)
         }
 
-        // dead reckoning: where I will be in three seconds — combat is
-        // geometry, and a Newtonian pilot needs to see their own drift
-        if (shipRig.speed > 5) {
-          const f = proj(
-            shipRig.position.x + shipRig.velocityDir.x * shipRig.speed * 3,
-            shipRig.position.y + shipRig.velocityDir.y * shipRig.speed * 3,
-            shipRig.position.z + shipRig.velocityDir.z * shipRig.speed * 3,
-          )
-          ctx.strokeStyle = 'rgba(220,232,244,0.55)'
-          ctx.lineWidth = 1
-          ctx.setLineDash([2, 3])
-          ctx.beginPath()
-          ctx.moveTo(0, 0)
-          ctx.lineTo(f.fx, f.fy - f.eh)
-          ctx.stroke()
-          ctx.setLineDash([])
-          ctx.beginPath()
-          ctx.arc(f.fx, f.fy - f.eh, size * 0.007, 0, Math.PI * 2)
-          ctx.stroke()
-        }
-
         // ABOVE the surface
         halfPass(false)
 
