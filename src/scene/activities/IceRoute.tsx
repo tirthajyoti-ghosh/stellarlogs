@@ -26,6 +26,14 @@ import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire, createBattery } from '../fx/PdcRounds'
+import {
+  armBrain,
+  createBrain,
+  reportNearMiss,
+  steerTorpedo,
+  type TorpBrain,
+  type TorpClass,
+} from '../../systems/torpedoBrain'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { DRIFT_POI, WRECK_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
@@ -141,9 +149,35 @@ const HULL_MAX = 8
 const PLAYER_HIT_RADIUS = 6.5
 
 const TORP_POOL = 18
-const TORP_SPEED = 165
-const TORP_TURN = 0.85
-const TORP_WEAVE = 20
+/**
+ * Lane ordnance — classes for the shared torpedo brain
+ * (systems/torpedoBrain), in the lane's own speed regime (~165 was the
+ * old flat TORP_SPEED). SURPLUS is the raider's standard stock: it leads
+ * the intercept and weaves terminal. MIL-SPEC is what she spends on
+ * contracts after the probe wave, and on the finale: full solution,
+ * tighter corkscrew, dogleg fans off one launch axis, and it flinches
+ * away from player streams that nearly kill it.
+ */
+const LANE_SURPLUS: TorpClass = {
+  lead: 0.7,
+  accel: 26,
+  v0: 100,
+  vmax: 170,
+  turn: 0.75,
+  corkRadius: 4.5,
+  corkSpin: 1.6,
+  jukes: false,
+}
+const LANE_MILSPEC: TorpClass = {
+  lead: 1,
+  accel: 34,
+  v0: 105,
+  vmax: 195,
+  turn: 1.0,
+  corkRadius: 7,
+  corkSpin: 2.2,
+  jukes: true,
+}
 const HIDDEN_LAUNCH = 1700
 /** the mark: how likely the Draugr wants a given cargo */
 const MARK_ODDS: Record<string, number> = {
@@ -221,8 +255,7 @@ interface Torpedo {
   position: Vector3
   velocity: Vector3
   aimOffset: Vector3
-  speed: number
-  weavePhase: number
+  brain: TorpBrain
   alive: boolean
   launchAt: number
   launched: boolean
@@ -237,6 +270,11 @@ const _v = new Vector3()
 const _v2 = new Vector3()
 const _side = new Vector3()
 const _seg = new Vector3()
+const _tAim = new Vector3()
+const _tVel = new Vector3()
+const _launchAxis = new Vector3()
+const _fan = new Vector3()
+const _dog = new Vector3()
 const _q = new Quaternion()
 const _up = new Vector3(0, 1, 0)
 const _xAxis = new Vector3(1, 0, 0)
@@ -370,8 +408,7 @@ export function IceRoute() {
         position: new Vector3(),
         velocity: new Vector3(),
         aimOffset: new Vector3(),
-        speed: TORP_SPEED,
-        weavePhase: 0,
+        brain: createBrain(),
         alive: false,
         launchAt: 0,
         launched: false,
@@ -447,6 +484,11 @@ export function IceRoute() {
       torp.alive = false
       g.current.intercepts++
       spawnExplosion(position, 0.9)
+    }
+    // the duel: your rounds passing close make mil-spec ordnance flinch
+    pdcFire.onNearMiss = (idx) => {
+      const torp = torpedoes[idx]
+      if (torp.alive && torp.launched) reportNearMiss(torp.brain, torp.velocity)
     }
     if (PROBES) {
       const w = window as unknown as Record<string, unknown>
@@ -525,7 +567,13 @@ export function IceRoute() {
     /** One wake-up call: every torpedo in a salvo shares one hidden origin,
      *  but each SALVO wakes a different part of the spread — a fresh random
      *  bearing every time. Waves arrive from a mix of directions. */
-    function fireSalvo(count: number, from: Vector3 | null, ambient: boolean, target: number) {
+    function fireSalvo(
+      count: number,
+      from: Vector3 | null,
+      ambient: boolean,
+      target: number,
+      cls: TorpClass,
+    ) {
       const ship = ships[target]
       if (!ship?.active) return
       if (!from) {
@@ -534,6 +582,8 @@ export function IceRoute() {
       } else {
         _v2.copy(from)
       }
+      _launchAxis.copy(ship.position).sub(_v2).normalize()
+      const launchDist = _v2.distanceTo(ship.position)
       let spawned = 0
       for (const torp of torpedoes) {
         if (torp.alive || spawned >= count) continue
@@ -544,9 +594,24 @@ export function IceRoute() {
         torp.aimOffset
           .copy(ship.dir)
           .multiplyScalar((Math.random() - 0.5) * 2 * CLASSES[ship.cls].halfLen * 0.8)
-        torp.speed = TORP_SPEED * (0.92 + Math.random() * 0.16)
-        torp.weavePhase = Math.random() * 6.28
-        torp.velocity.copy(ship.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
+        // per-torpedo build variance keeps a salvo from flying as one body
+        const tc: TorpClass = { ...cls, vmax: cls.vmax * (0.94 + Math.random() * 0.12) }
+        // MIL-SPEC salvos on a live contract dogleg: one shared origin,
+        // many terminal bearings — the dormant-spread canon made kinetic
+        let dogleg: Vector3 | null = null
+        if (!ambient && cls.jukes && count > 1) {
+          _fan.crossVectors(_launchAxis, _up)
+          if (_fan.lengthSq() < 1e-6) _fan.set(1, 0, 0)
+          _fan.normalize()
+          _q.setFromAxisAngle(_launchAxis, spawned * 2.4)
+          _fan.applyQuaternion(_q)
+          dogleg = _dog
+            .copy(_v2)
+            .addScaledVector(_launchAxis, launchDist * 0.5)
+            .addScaledVector(_fan, 300)
+        }
+        armBrain(torp.brain, tc, { boost: 0.6 + Math.random() * 0.3, dogleg })
+        torp.velocity.copy(ship.position).sub(torp.position).normalize().multiplyScalar(tc.v0)
         torp.alive = true
         torp.launched = false
         torp.launchAt = now + spawned * 0.3
@@ -567,7 +632,7 @@ export function IceRoute() {
       s.raiderUntil = now + RAIDER_LINGER
       s.raiderFiring = true
       s.huntBearing = Math.round(((Math.atan2(_side.x, _side.z) * 180) / Math.PI + 360) % 360)
-      fireSalvo(4, raiderPos, false, target)
+      fireSalvo(4, raiderPos, false, target, LANE_MILSPEC)
       s.salvos++
       triggerKlaxon()
       activityState.banner = { text: 'THERE — THE DRAUGR', kind: 'battle', until: now + 2.6 }
@@ -767,9 +832,12 @@ export function IceRoute() {
           witnessed
         ) {
           const isContract = i === s.escort && s.job === 'escort'
-          // waves ramp: a 2-torpedo probe, then 3, then 4 — never a wall first
+          // waves ramp: a 2-torpedo probe, then 3, then 4 — never a wall
+          // first — and the CLASS ramps with them: the probe is surplus
+          // stock, everything after flies mil-spec
           const count = isContract ? Math.min(2 + s.salvos, 4) : 2 + Math.floor(Math.random() * 3)
-          fireSalvo(count, null, !isContract, i)
+          const cls = isContract && s.salvos > 0 ? LANE_MILSPEC : LANE_SURPLUS
+          fireSalvo(count, null, !isContract, i, cls)
           ship.salvosLeft--
           ship.nextAttackAt =
             now +
@@ -944,15 +1012,9 @@ export function IceRoute() {
         if (now >= torp.launchAt) torp.launched = true
         else continue
       }
-      _v.copy(ship.position).add(torp.aimOffset).sub(torp.position).normalize()
-      const wob = Math.sin(now * 2.1 + torp.weavePhase) * TORP_WEAVE
-      _side.set(-_v.z, 0, _v.x).normalize()
-      _v.multiplyScalar(torp.speed).addScaledVector(_side, wob)
-      _v.y += Math.cos(now * 1.6 + torp.weavePhase) * TORP_WEAVE * 0.5
-      _v.setLength(torp.speed)
-      const maxStep = TORP_TURN * torp.speed * dt
-      _v.sub(torp.velocity).clampLength(0, maxStep)
-      torp.velocity.add(_v).setLength(torp.speed)
+      _tAim.copy(ship.position).add(torp.aimOffset)
+      _tVel.copy(ship.dir).multiplyScalar(ship.v)
+      steerTorpedo(torp.brain, torp.position, torp.velocity, _tAim, _tVel, dt)
       torp.position.addScaledVector(torp.velocity, dt)
 
       const cls = CLASSES[ship.cls]

@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Component, Suspense, type ReactNode } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { Environment, Lightformer } from '@react-three/drei'
 import { Ship } from './scene/Ship'
@@ -28,11 +28,73 @@ import { QUALITY } from './config/quality'
 import { PROBES } from './config/probes'
 import { PostFxGate } from './scene/PostFxGate'
 
+/**
+ * If the 3D canvas dies — GL context creation failing under GPU pressure,
+ * a driver reset, anything that makes the R3F tree throw — the failure mode
+ * must be a readable screen, not an uncaught React error over a black page.
+ * One observed in the field (2026-08-05): React #185 out of R3F's GL
+ * bring-up gate on a loaded machine, unreproducible on three environments
+ * here. The world can be mortal; the page cannot.
+ */
+class GlFaultBoundary extends Component<{ children: ReactNode }, { fault: boolean }> {
+  state = { fault: false }
+  static getDerivedStateFromError() {
+    return { fault: true }
+  }
+  componentDidCatch(error: unknown) {
+    console.error('[stellarlogs] render fault — canvas safed', error)
+  }
+  render() {
+    if (!this.state.fault) return this.props.children
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          background: '#020814',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '14px',
+          fontFamily: "'Space Mono', ui-monospace, monospace",
+          color: '#9fb2c8',
+          zIndex: 40,
+        }}
+      >
+        <div style={{ color: '#ffb454', letterSpacing: '0.3em', fontSize: '13px' }}>
+          REACTOR FAULT
+        </div>
+        <div style={{ fontSize: '11px', letterSpacing: '0.12em', opacity: 0.8 }}>
+          GRAPHICS CONTEXT FAILED — SYSTEMS SAFED
+        </div>
+        <button
+          onClick={() => window.location.reload()}
+          style={{
+            marginTop: '10px',
+            padding: '10px 26px',
+            background: 'transparent',
+            border: '1px solid #ffb454',
+            color: '#ffb454',
+            fontFamily: 'inherit',
+            fontSize: '12px',
+            letterSpacing: '0.25em',
+            cursor: 'pointer',
+          }}
+        >
+          RE-IGNITE
+        </button>
+      </div>
+    )
+  }
+}
+
 export default function App() {
   useShipControls()
 
   return (
     <div id="app">
+      <GlFaultBoundary>
       <Canvas
         gl={{ logarithmicDepthBuffer: true, antialias: true }}
         camera={{ fov: 62, near: 0.5, far: 60000 }}
@@ -55,6 +117,20 @@ export default function App() {
            * a broken shader should be loud.
            */
           gl.debug.checkShaderErrors = import.meta.env.DEV
+          /**
+           * Context-loss breadcrumbs. three itself preventDefaults the loss
+           * and restores the context (WebGLRenderer.onContextLost) — these
+           * listeners only make the event VISIBLE, because a field report of
+           * "console error at open" (React #185 from R3F's own GL bring-up
+           * gate churning, seen 2026-08-05 on a machine under GPU pressure)
+           * is undiagnosable without knowing whether the context blinked.
+           */
+          gl.domElement.addEventListener('webglcontextlost', () => {
+            console.warn('[stellarlogs] WebGL context lost — three will attempt restore')
+          })
+          gl.domElement.addEventListener('webglcontextrestored', () => {
+            console.info('[stellarlogs] WebGL context restored')
+          })
           if (PROBES) {
             // enough of the renderer to measure it: the flag above, GPU timer
             // queries, and the scene graph for attributing cost per subtree
@@ -97,6 +173,7 @@ export default function App() {
         <HudBridge />
         {QUALITY.postprocessing && <PostFxGate><Effects /></PostFxGate>}
       </Canvas>
+      </GlFaultBoundary>
 
       <HUD />
       <SeoContent />

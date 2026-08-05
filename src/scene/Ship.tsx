@@ -150,6 +150,13 @@ export function Ship() {
       state.yaw = state.prevYaw = yaw
       state.pitch = state.prevPitch = pitch
     }
+    // A velocity kick for scripted "flown" acceptance runs — the parked/
+    // moving comparison the wave-balance law is verified against.
+    ;(window as unknown as Record<string, unknown>).__impulse = (x: number, y: number, z: number) => {
+      state.velocity.x += x
+      state.velocity.y += y
+      state.velocity.z += z
+    }
     ;(window as unknown as Record<string, unknown>).__aimTurrets = (
       x?: number,
       y?: number,

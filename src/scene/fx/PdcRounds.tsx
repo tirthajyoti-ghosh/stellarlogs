@@ -82,6 +82,10 @@ const FADE_OUT = 0.35
 const POOL = 1024
 const ROUNDS_PER_SEC = 10
 const KILL_RADIUS = 3.4
+/** inside this (but outside the kill), a round is a near miss — reported so
+ *  smart torpedoes can flinch; discrete sampling misses some crossers at
+ *  800 u/s, which just makes the flinches feel stochastic */
+const NEAR_MISS_RADIUS = 9
 const ERR_MAX = 60 // u/s of lateral aim error at track acquisition
 // Converged error stays a visible spray, never a laser — RE-TUNED
 // 2026-08-05: the old floor of 13 had drifted into near-certain terminal
@@ -139,10 +143,20 @@ export interface PdcFire {
   /** Other people's guns, visual truth only — no kill authority */
   batteries: RemoteBattery[]
   onKill: ((sourceIndex: number, position: Vector3) => void) | null
+  /** A lethal round passed close without killing — the duel channel that
+   *  lets smart torpedoes flinch away from the stream they can see */
+  onNearMiss: ((sourceIndex: number) => void) | null
 }
 
 export function createPdcFire(): PdcFire {
-  return { sources: [], slotSource: [], firing: false, batteries: [], onKill: null }
+  return {
+    sources: [],
+    slotSource: [],
+    firing: false,
+    batteries: [],
+    onKill: null,
+    onNearMiss: null,
+  }
 }
 
 export function createBattery(origin: Vector3, velocity: Vector3): RemoteBattery {
@@ -164,6 +178,8 @@ interface Round {
   speed: number
   /** distance flown since the muzzle; clamps the streak at birth */
   traveled: number
+  /** already reported one near miss — each round gets one flinch */
+  grazed: boolean
 }
 
 /** Head-bright, tail-fading ramp shared by every streak. The gradient is
@@ -232,6 +248,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         brightness: 1,
         speed: 0,
         traveled: 0,
+        grazed: false,
       }),
     ),
     fireAccum: [0, 0, 0, 0, 0, 0],
@@ -242,7 +259,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
 
   useFrame((_, dt) => {
     const s = state.current
-    const { sources, slotSource, firing, batteries, onKill } = fire
+    const { sources, slotSource, firing, batteries, onKill, onNearMiss } = fire
 
     // ---- integrate + hit-test existing rounds ----
     for (const round of s.rounds) {
@@ -263,9 +280,13 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
       if (ROUND_LIFE - round.life > LETHAL_TIME) continue
       const src = sources[round.sourceIdx]
       if (src && src.alive && src.launched) {
-        if (round.position.distanceTo(src.position) < KILL_RADIUS) {
+        const d = round.position.distanceTo(src.position)
+        if (d < KILL_RADIUS) {
           round.active = false
           onKill?.(round.sourceIdx, src.position)
+        } else if (d < NEAR_MISS_RADIUS && !round.grazed) {
+          round.grazed = true
+          onNearMiss?.(round.sourceIdx)
         }
       }
     }
@@ -306,6 +327,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
       round.position.copy(origin).addScaledVector(_v, ROUND_LEN / 2)
       round.speed = round.velocity.length()
       round.traveled = 0
+      round.grazed = false
     }
 
     // ---- your turrets: aim error converges while a mount holds one track ----

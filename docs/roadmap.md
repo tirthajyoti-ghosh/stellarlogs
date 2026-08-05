@@ -242,15 +242,40 @@ vaporized, very Belter.
 *Asset locked in drawer: "Stealth Ship - Vehicle Design"
 (7e2d1b5b9f0249cfb3111a00bf48237b, CC-BY); fallback SACHSEN CLASS FRIGATE.*
 
+### THE TORPEDO BRAIN — BUILT 2026-08-05 (shared guidance, every activity)
+One module (`systems/torpedoBrain.ts`) replaced every activity's pure-
+pursuit-plus-wobble: BOOST off the rail → lead-pursuit MIDCOURSE with
+continuous burn (far launches arrive hot) and optional DOGLEG waypoints
+(one launch origin, many terminal bearings — the dormant-spread canon
+made kinetic) → TERMINAL corkscrew, a helix around the intercept line
+that spirals in (the show's anti-PDC maneuver; the anti-PDC math is
+real) → near-miss JUKES with finite fuel (3), fed by the player's own
+rounds passing inside 9 u — you watch your stream converge, the torpedo
+flinch, the stream walk back on. Classes, not code, make difficulty:
+JUNK (the old tail-chase, demoted to the bottom rung on purpose),
+SURPLUS (leads + weaves), MIL-SPEC (everything + salvo choreography),
+DARK RUNNER reserved for THE HUNT. The lanes fly lane-tuned SURPLUS
+(ambient + first contract probe) and MIL-SPEC (later waves + finale);
+verified end-to-end: escort accepted, 3 waves fought, Draugr finale at
+the reveal, DELIVERED with her hull 5/8 — hurt but alive.
+
 ### Certification trim (rides along with F.4)
-**+ 2026-08-05: acceptance law re-tuned same night** (Tirtha felt it live:
-"I can just sit"). Converged-error floor 13 → 23, lethal rate 12 → 10/s,
-wave 2 at 190, wave 3 at 235 with twelve torpedoes on a 0.1 s storm
-stagger. Parked verification now: hits every run (first at W2), one in
-three fails outright at HULL CRITICAL. Sitting bleeds, often kills; the
-next notch is one constant if playtest wants it harsher. Note: the error
-floor is shared with escort guns — slightly more leaks in the lanes, in
-the direction Tirtha asked ("not underwhelming").
+**+ 2026-08-05 (same night, second pass): the ladder is BEHAVIOR now.**
+Speed/count tuning kept plateauing ("I can still almost sit and still
+win") because more-of-the-same scales linearly and converged guns eat it.
+Waves are torpedo CLASSES from the brain: W1 CIVILIAN JUNK from astern
+(sit and learn — parked took 0 hits in every harness run), W2 NAVAL
+SURPLUS leads (parked: 0–3 hits, once killed outright), W3 MIL-SPEC
+SALVO — two synchronized flights of six (one per turret; flights of four
+measured ZERO leaks — saturation must match the mount count) on dogleg
+fans, corkscrews holding until 0.55 s to go (at 1.4 s every torpedo flew
+straight for its last 370 u and converged guns never missed), jukes with
+finite fuel. Wave banners name the class. MEASURED on the parked/flown
+harness: parked dies 4/7 runs and bleeds 7/7; crude random burns
+coin-flip; a sustained orbit completes at 33% hull; vmax 330 was a WALL
+(even the orbit died — motion must matter, so 310). Wave-clear now counts
+QUEUED torpedoes (a 5 s flight gap let the drill declare victory with six
+still on the rail).
 The existing gunnery range stays but shrinks (~3 waves) and gets honest
 signage: "PDC CERTIFICATION — ESCORT DUTY STANDARD." No gating (free order
 is law); the fiction now explains the drill, and it remains the
@@ -272,10 +297,15 @@ above/below the plane, so corkscrewing ordnance visibly climbs and dives.
  those lines." Positioning info without changing the pilot's frame.
 Decide in playtest.
 
-### PDC tracer spray with visible misses (combat-support) — NOT YET RIGHT
-*See PLAYTEST FEEDBACK #2: shipped behaviour still reads as straight lines
-to the target, with streaks too long. The design below stands; the build
-has to be brought to it.*
+### PDC tracer spray with visible misses (combat-support) — SHIPPED 2026-08-05 (shutter streaks)
+*Root cause found by arithmetic: at 800 u/s and 30 rounds/s the fixed
+dashes sat 27 u apart (98% empty stream) and each round jumped 24
+body-lengths per frame — no tuning could ever read as a hose; the show's
+ribbon IS camera motion blur. v2 renders each round as the path it swept
+during a fixed 1/60 s shutter (13–33 u, framerate-independent), head at
+the true bullet, tail fading via gradient, birth-clamped at the muzzle,
+HDR colors past the bloom threshold. 50% duty-cycle dashed ribbon; the
+ember battery hacks died (speed IS the length). Same pool, one draw.*
 Reference: the show — streams of rounds that persist in space, most rounds
 *missing*, the gun visibly walking onto the target. Tirtha's image: a water
 hose being swept — the stream leaves in curves that lag the motion. Design:

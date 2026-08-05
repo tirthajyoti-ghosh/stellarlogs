@@ -27,6 +27,14 @@ import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
+import {
+  armBrain,
+  createBrain,
+  reportNearMiss,
+  steerTorpedo,
+  type TorpBrain,
+  type TorpClass,
+} from '../../systems/torpedoBrain'
 import { GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
 import { FONT_BOLD } from '../boards/font'
@@ -36,10 +44,16 @@ import { FONT_BOLD } from '../boards/font'
  * BECAUSE the ice route is dangerous (see docs/roadmap.md, The Ice Route):
  * a finite 3-wave exercise you WIN, teaching the systems the real escort
  * job (IceRun) then demands. Guns are automatic; the pilot's job is flying.
- * AUTO-STARTS on crossing the boundary ring. W1 attacks from ASTERN (turn
- * the ship), W2 splits axes, W3 saturates + a runner you dodge — with the
- * thermal model ARMED, because escort duty runs guns hot. Torpedoes weave
- * and drag white path trails; 3-hit hull with full impact feedback.
+ *
+ * The ladder is BEHAVIOR, not hit points — each wave is a torpedo CLASS
+ * from the shared brain (systems/torpedoBrain): W1 CIVILIAN JUNK flies the
+ * old tail-chase from astern (sit and learn the guns); W2 NAVAL SURPLUS
+ * leads the intercept and weaves terminal (sitting starts to cost); W3
+ * MIL-SPEC comes as two synchronized flights of SIX on dogleg
+ * approaches with terminal corkscrews and near-miss jukes, plus the
+ * runner — saturation choreography that a parked ship cannot serve.
+ * Moving de-synchronizes the flights; that IS the skill. Thermal model
+ * armed W3 because escort duty runs guns hot.
  */
 
 const CENTER = new Vector3(...GUNNERY_POI.position)
@@ -60,10 +74,7 @@ const BUOY_LIGHT_Y = 3.4
 interface Torpedo {
   position: Vector3
   velocity: Vector3
-  speed: number
-  turnRate: number
-  weave: number
-  weavePhase: number
+  brain: TorpBrain
   alive: boolean
   launchAt: number
   launched: boolean
@@ -81,12 +92,12 @@ interface LaunchSpec {
 }
 
 /**
- * Wave design: saturation + evasion create the challenge (six ball turrets
- * cover the sphere, so blind spots don't exist). W1: four from ASTERN so the
- * very first act is turning the ship. W2: seven split forward/astern fans.
- * W3: ten across four axes + a fast low-turn runner — with the thermal
- * model ARMED (escort duty standard: guns run hot, gaps must be flown).
- * A stationary ship takes hits by wave 2 (verified acceptance test).
+ * Launch AXES per wave (the spatial spread; the BEHAVIOR comes from the
+ * class table below). W1: four from ASTERN so the very first act is
+ * turning the ship. W2: seven split forward/astern fans. W3: twelve
+ * across five axes + the fast low-turn runner — flown as flights of
+ * six (see launchWave) with the thermal model ARMED (escort duty
+ * standard: guns run hot, gaps must be flown).
  */
 const WAVES: LaunchSpec[][] = [
   [
@@ -120,16 +131,48 @@ const WAVES: LaunchSpec[][] = [
   ],
 ]
 /**
- * Re-tuned 2026-08-05: the acceptance law ("a parked ship takes hits by
- * wave 2 and fails by wave 3") had silently drifted — measured completing
- * untouched, and Tirtha felt it live ("I can just sit... it's not really
- * doing anything"). Waves 2-3 run faster and wave 3 runs twelve across
- * five axes with a denser storm stagger: saturation beyond what six held
- * tracks can eat, unless the pilot flies geometry that buys the guns
- * their windows.
+ * The certification ladder — waves ARE torpedo classes. Same-night history
+ * (2026-08-05): speed/count tuning alone kept plateauing because
+ * more-of-the-same scales linearly and converged guns eat it ("I can
+ * still almost sit and still win"). Class behavior changes the win
+ * condition per wave instead: JUNK is watchable, SURPLUS leads, MIL-SPEC
+ * corkscrews through the fire solution and arrives in synchronized
+ * flights — the acceptance law ("a parked ship takes hits by wave 2 and
+ * dies at wave 3, nearly always") is enforced by the parked/flown
+ * harness runs, and the knobs are class parameters now.
  */
-const BASE_SPEED = [95, 190, 235]
-const BASE_TURN = [0.9, 1.0, 1.1]
+const JUNK: TorpClass = {
+  lead: 0,
+  accel: 25,
+  v0: 70,
+  vmax: 105,
+  turn: 0.9,
+  corkRadius: 0,
+  corkSpin: 0,
+  jukes: false,
+}
+const SURPLUS: TorpClass = {
+  lead: 0.75,
+  accel: 55,
+  v0: 90,
+  vmax: 200,
+  turn: 1.0,
+  corkRadius: 5.5,
+  corkSpin: 1.8,
+  jukes: false,
+}
+const MILSPEC: TorpClass = {
+  lead: 1,
+  accel: 100,
+  v0: 100,
+  vmax: 310,
+  turn: 1.15,
+  corkRadius: 12,
+  corkSpin: 4.2,
+  jukes: true,
+}
+const WAVE_CLASS = [JUNK, SURPLUS, MILSPEC]
+const WAVE_NAMES = ['CIVILIAN JUNK', 'NAVAL SURPLUS', 'MIL-SPEC SALVO']
 
 const _q = new Quaternion()
 const _v = new Vector3()
@@ -137,6 +180,9 @@ const _color = new Color()
 const _up = new Vector3(0, 1, 0)
 const _perp = new Vector3()
 const _dummy = new Object3D()
+/** ship world velocity, rebuilt each frame for the intercept solutions */
+const _tv = new Vector3()
+const _dog = new Vector3()
 
 /**
  * Torpedo body from "Low Poly Missiles and Torpedos" by sakigakefuruzawa
@@ -213,10 +259,7 @@ export function GunneryRange() {
       Array.from({ length: TORP_POOL }, () => ({
         position: new Vector3(),
         velocity: new Vector3(),
-        speed: 50,
-        turnRate: 1,
-        weave: 0,
-        weavePhase: 0,
+        brain: createBrain(),
         alive: false,
         launchAt: 0,
         launched: false,
@@ -301,6 +344,11 @@ export function GunneryRange() {
       game.current.kills++
       spawnExplosion(position, 0.9)
     }
+    // the duel: rounds that pass close make a juking class flinch
+    pdcFire.onNearMiss = (idx) => {
+      const torp = torpedoes[idx]
+      if (torp.alive && torp.launched) reportNearMiss(torp.brain, torp.velocity)
+    }
   }, [pdcFire, torpedoes])
 
   useFrame(({ clock, camera }, dt) => {
@@ -336,13 +384,23 @@ export function GunneryRange() {
       g.phase = 'wave'
       if (g.wave > 1) triggerKlaxon()
       activityState.banner = {
-        text: `WAVE ${g.wave} / ${WAVES.length}`,
+        // the class name is the drill's fiction AND its difficulty telegraph
+        text: `WAVE ${g.wave} / ${WAVES.length} — ${WAVE_NAMES[g.wave - 1]}`,
         kind: 'battle',
         until: t + 1.7,
       }
       const specs = WAVES[g.wave - 1]
-      const speedBase = BASE_SPEED[g.wave - 1] * (g.veteran ? 1.35 : 1)
-      const turnBase = BASE_TURN[g.wave - 1] * (g.veteran ? 1.2 : 1)
+      const base = WAVE_CLASS[g.wave - 1]
+      // veteran drills run the same classes hotter
+      const cls: TorpClass = g.veteran
+        ? {
+            ...base,
+            v0: base.v0 * 1.2,
+            vmax: base.vmax * 1.35,
+            accel: base.accel * 1.35,
+            turn: base.turn * 1.2,
+          }
+        : base
       const shipYaw = shipRig.yaw
       specs.forEach((spec, i) => {
         const torp = torpedoes[i]
@@ -353,15 +411,53 @@ export function GunneryRange() {
         torp.position
           .copy(shipRig.position)
           .addScaledVector(_v, spec.speedMult ? SPAWN_DISTANCE * 0.8 : SPAWN_DISTANCE)
-        torp.speed = speedBase * (spec.speedMult ?? 1)
-        torp.turnRate = turnBase * (spec.turnMult ?? 1)
-        torp.weave = g.wave === 1 || spec.speedMult ? 0 : 48
-        torp.weavePhase = i * 2.1
-        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(torp.speed)
+        // the runner keeps its identity: much faster, half the steering,
+        // no corkscrew — the one you dodge, not out-shoot
+        const tc: TorpClass =
+          spec.speedMult || spec.turnMult
+            ? {
+                ...cls,
+                v0: cls.v0 * (spec.speedMult ?? 1),
+                vmax: cls.vmax * (spec.speedMult ?? 1),
+                accel: cls.accel * (spec.speedMult ?? 1),
+                turn: cls.turn * (spec.turnMult ?? 1),
+                corkRadius: 0,
+                jukes: false,
+              }
+            : cls
+        // W3 flies as two flights of SIX: one torpedo per turret, so the
+        // guns cannot double-team anything while the quad… hexad is in
+        // terminal. Equal spawn range and equal dogleg length keep a
+        // flight's arrival synchronized, the doglegs fan the TERMINAL
+        // bearings away from the launch axes, and the flights land 5 s
+        // apart — two coordinated slams that a parked ship eats
+        // simultaneously and a moving ship smears apart. (Three flights
+        // of four measured 2026-08-05: zero leaks — six turrets eat four
+        // torpedoes trivially. Saturation must MATCH the mount count.)
+        const flight = Math.floor(i / 6)
+        let dogleg: Vector3 | null = null
+        if (g.wave >= 3 && !spec.speedMult) {
+          _perp.crossVectors(_v, _up)
+          if (_perp.lengthSq() < 1e-6) _perp.set(1, 0, 0)
+          _perp.normalize()
+          _q.setFromAxisAngle(_v, i * 2.4)
+          _perp.applyQuaternion(_q)
+          dogleg = _dog
+            .copy(shipRig.position)
+            .addScaledVector(_v, SPAWN_DISTANCE * 0.55)
+            .addScaledVector(_perp, 280)
+        }
+        armBrain(torp.brain, tc, {
+          boost: 0.5 + Math.random() * 0.3,
+          dogleg,
+          corkPhase: i * 2.1,
+        })
+        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(tc.v0)
         torp.alive = true
         torp.launched = i === 0
-        // the final wave rolls in on a wider stagger — a storm, not a volley
-        torp.launchAt = t + i * (g.wave >= 3 ? 0.1 : 0.15)
+        // 3.5 s between hexads: the second slam arrives while the guns are
+        // still clearing the first's jukers — parked has no recovery beat
+        torp.launchAt = g.wave >= 3 ? t + flight * 3.5 + (i % 6) * 0.1 : t + i * 0.15
         torp.tracked = false
       })
       for (let i = specs.length; i < TORP_POOL; i++) torpedoes[i].alive = false
@@ -485,29 +581,24 @@ export function GunneryRange() {
       }
     }
 
-    // ---- torpedoes: staggered launch, weaving pursuit ----
+    // ---- torpedoes: staggered launch, brain-steered pursuit ----
+    _tv.copy(shipRig.velocityDir).multiplyScalar(shipRig.speed)
     let incoming = 0
     for (const torp of torpedoes) {
       if (!torp.alive) continue
       if (!torp.launched) {
         if (now >= torp.launchAt) torp.launched = true
-        else continue
+        else {
+          // queued is still incoming: with W3's flights 5 s apart, a wave
+          // must not read "clear" between flight A dying and flight B
+          // leaving the rail (measured doing exactly that: 17-kill
+          // "completion" 4.6 s into W3)
+          incoming++
+          continue
+        }
       }
       incoming++
-      _v.copy(shipRig.position).sub(torp.position).normalize()
-      if (torp.weave > 0) {
-        const wob = Math.sin(now * 2.3 + torp.weavePhase) * torp.weave
-        const wobV = Math.cos(now * 1.7 + torp.weavePhase) * torp.weave * 0.6
-        _perp.set(-_v.z, 0, _v.x).normalize()
-        _v.multiplyScalar(torp.speed).addScaledVector(_perp, wob)
-        _v.y += wobV
-        _v.setLength(torp.speed)
-      } else {
-        _v.multiplyScalar(torp.speed)
-      }
-      const maxStep = torp.turnRate * torp.speed * dt
-      _v.sub(torp.velocity).clampLength(0, maxStep)
-      torp.velocity.add(_v).setLength(torp.speed)
+      steerTorpedo(torp.brain, torp.position, torp.velocity, shipRig.position, _tv, dt)
       torp.position.addScaledVector(torp.velocity, dt)
       if (g.phase === 'wave' && torp.position.distanceTo(shipRig.position) < TORP_HIT_SHIP) {
         shipHit(torp)
