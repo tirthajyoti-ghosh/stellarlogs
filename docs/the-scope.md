@@ -319,3 +319,111 @@ instrument taking a breath before the fight.
 9. Intercept-leg picture (her track + rendezvous ∘ on the disc) — NEW
    (P2.6).
 10. Ghost-track glyph reserved for DARK RUNNER — UNCHANGED.
+
+
+---
+
+# PASS 3 — the research pass
+
+*Same day, after Tirtha's bench verdict on the free cylinder ("doesn't
+look like an actual cylinder… I do think having a proper plane is
+necessary") and his mandate: stop mocking, research how fighters, games,
+and the show actually do this. Mock untouched this pass.*
+
+## P3.1 Fighter avionics: they never draw the volume
+
+Air-to-air radar displays are **B-scopes** — azimuth across, range up,
+a flat Cartesian plot — and elevation is carried as DATA, not geometry:
+an antenna-elevation caret on the display edge, and per-target
+altitude/Mach printed as digits (the F/A-18's TWS prints bearing,
+range, altitude, Mach beside the track). Where aviation needs the
+vertical picture it adds a SEPARATE side-profile view (the Vertical
+Situation Display) — the "coplanar" pattern — rather than tilting the
+plot into perspective. Nobody who does this for a living renders a
+free volume. ([B-scope primer](https://codex.uoaf.net/index.php/Air-to-air_radar),
+[DCS F/A-18 radar](https://dcs.man-sim.org/en/fa18c/11.a-t-a/))
+
+## P3.2 The human-factors literature has a name for our problem
+
+The free-cylinder's weakness isn't taste — it's **line-of-sight
+ambiguity** (Boyer & Wickens 1994; Sedgwick's "projective ambiguity"):
+in any static perspective projection, position along the depth axis is
+under-determined, so relative-position judgments — exactly a combat
+scope's job — degrade. Wickens' cockpit-display studies find coplanar
+(map + side view) beats 3D perspective for precise horizontal AND
+vertical judgments; 3D's ambiguity cost disappears only with
+INTERACTIVE viewpoint rotation — affordable in Homeworld's fullscreen
+sensors manager, not in a corner instrument. ([Wickens CDTI study](https://www.researchgate.net/publication/253458007_Cockpit_Display_of_Traffic_Information_The_Effects_of_Traffic_Load_Dimensionality_and_Vertical_Profile_Orientation),
+[Olmos & Wickens on tactical displays](https://www.semanticscholar.org/paper/Tactical-Displays-for-Combat-Awareness:-An-of-and-Olmos-Wickens/0a612e1187e138110c713b5ea481fb6a873fd184))
+
+## P3.3 Games: forty years of the same verdict
+
+- **Elite (1984 → Dangerous)**: the enduring, beloved solution is the
+  plane + stem — the community explains it exactly as the anchor
+  mechanism ("the other end shows where the object is on the horizontal
+  plane; the length shows how far above or below").
+  ([Elite scanner guide](http://nosuchwebpage.com/index.php?post_id=107))
+- **Sphere/orb radars** (FreeSpace's optional orb and kin) are
+  community-rated "hardcore," harder to read, and a plane that moves
+  with ship rotation is called out as confusing — supporting both the
+  plane AND the lane-stable vertical.
+  ([design thread](https://gamedev.net/forums/topic/486579-opinions-on-space-radar-style/4179375/))
+- **Homeworld's sensors manager** earns its 3D by being fullscreen and
+  freely rotatable — the interactive-rotation exception from P3.2,
+  unaffordable at minimap scale.
+
+## P3.4 The show: volumes always carry reference structure
+
+The Expanse's UI language (HUDS+GUIS breakdown): the Roci's screens are
+functional, under-the-hood, command-line-flavored — our HUD already
+speaks this. Its holograms are for MAPS ("a 2D map is simply not
+adequate"), and even those always include **orbit lines and a faint
+grid for distance reference** — the show never floats naked dots in a
+volume. Reference structure inside the volume IS the show's look.
+([HUDS+GUIS on The Expanse](https://www.hudsandguis.com/home/2021/theexpanse))
+
+## P3.5 Synthesis — the cylinder is the vessel, the plane is the truth
+
+Tirtha's two instincts after seeing the naked cylinder — "it needs the
+plane" and "the cylinder should look like a real cylinder, edges
+colored, fading toward the middle" — are exactly what the research
+supports, and they are not in tension:
+
+- **The DATA layer** (what the eye measures): the ship-level PLANE,
+  stems anchoring every contract threat, the PDC ring on the plane,
+  corridor axes, TEWA tint. This is Elite's law, the fighters' law,
+  and Wickens' law.
+- **The VESSEL layer** (what makes it a cylinder): edge-lit walls —
+  rim color strongest at the caps and walls, **fading to nothing
+  toward the middle** (his image), drawn as gradient strokes. The
+  cylinder look without a single pixel of data ambiguity. The show's
+  precedent: structure, not naked space.
+- **Simplification** (his ask): default ink shrinks to FIVE things —
+  plane, ring, stems+dots, corridor axes (escort only), vessel edges.
+  Wedges, rim-cap scale marks, velocity ticks become off-by-default
+  toggles. Fighter practice suggests one optional NUMBER: the soonest
+  threat's time digit, nothing else.
+- **A BIGGER combat scope** (his ask): the morph grows the panel —
+  nav stays 132 px; combat expands the instrument (~200 px, panel
+  priority) the way a fighter gives the fight a dedicated MFD page.
+  The picture-cut morph already provides the beat where growth reads
+  naturally.
+- Considered and set aside: the full aviation **coplanar** answer (a
+  separate side-profile strip) — highest measurement precision, but
+  Wickens' own finding is that scanning between views costs under
+  load, and at minimap scale the scanning cost dominates. Revisit only
+  if playtest shows elevation misreads.
+
+## P3.6 What this changes in the decision list
+
+Supersedes P2.9 items 1 and pass-1's geometry framing where they
+conflict; everything else stands:
+
+1. Representation: **plane + stems inside an edge-lit cylinder vessel**
+   (fading walls, his aesthetic; the data layer untouched by it).
+2. Combat scope SIZE: morph 132 px → ~200 px panel expansion.
+3. Default ink: the five-element kit; everything else opt-in.
+4. Optional single digit: soonest-impact seconds beside its stem.
+All other pass-2 decisions (outer-weighted mapping, ring status light,
+corridor read, lane-stable nose-up, ambient grammar, ghost tracks)
+survive the research unchanged.
