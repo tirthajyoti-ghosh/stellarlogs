@@ -24,9 +24,18 @@ import { shipRig } from '../../state/shipRig'
  * honestly; per-turret aim error CONVERGES while a mount holds one track, so
  * fresh sprays hose wide and settle on.
  *
- * The streaks are SHORT — small hot bullets, not bars. A 2.6-unit streak was
- * over half a torpedo long and a stream of them read as a beam ("it's like a
- * straight line... not that").
+ * RENDERED AS SHUTTER STREAKS. A fixed-length dash could never form the
+ * show's ribbon of fire — at 800 u/s and 30 rounds/s the dashes sit 27 units
+ * apart, so 98% of the stream is empty space, and each round jumps 24 of its
+ * own body-lengths per frame, far too fast for the eye to chain into a line.
+ * What makes the show's PDC fire read as a hose is the CAMERA: film
+ * integrates everything a round did during the shutter, so a fast round is a
+ * long streak. We render the same truth — each round draws the path it swept
+ * during one shutter (a fixed 1/60 s, framerate-independent), tail fading,
+ * head at the bullet's true position, clamped at birth so it grows out of
+ * the muzzle instead of poking through it. At 60 fps the new tail lands
+ * where the last head was, so every round draws a continuous line on the
+ * retina, and the 30/s stream becomes a ~50% duty-cycle dashed ribbon.
  *
  * REMOTE BATTERIES: the same ballistics fired by somebody else — the Drift's
  * mount, a freighter's own gunner. They use this pool and this integrator but
@@ -62,8 +71,14 @@ const LETHAL_TIME = 1.7
  */
 const SIBLINGS_PER_ROUND = 2
 const SIBLING_ERR_MULT = 1.4
-const ROUND_LEN = 0.55
-const ROUND_RADIUS = 0.026
+const ROUND_LEN = 0.55 // the physical tracer; also the streak's minimum length
+/** The virtual shutter: streak length = speed × SHUTTER. Fixed, so the look
+ *  does not change with framerate. 800 u/s → 13.3 u streaks. */
+const SHUTTER = 1 / 60
+const STREAK_MAX = 34 // battery rounds with a hot shooter fold can sweep ~33 u
+const ROUND_RADIUS = 0.034
+/** brightness ramp-out over the last moments of life — no pop-out, ever */
+const FADE_OUT = 0.35
 const POOL = 1024
 const ROUNDS_PER_SEC = 10
 const KILL_RADIUS = 3.4
@@ -91,8 +106,10 @@ const BATTERY_RATE = 10
 const BATTERY_ERR = 45
 const BATTERY_SOLUTION = 0.55
 
-const GOLD = new Color(0.98, 0.82, 0.5)
-const EMBER = new Color(1.0, 0.55, 0.35)
+// HDR: the composer blooms above 1.0, and tracers are the hottest metal in
+// the sky — pushed well past threshold so every dash carries a glowing halo.
+const GOLD = new Color(2.35, 1.95, 1.15)
+const EMBER = new Color(2.7, 1.4, 0.85)
 
 export interface PdcSource {
   position: Vector3
@@ -143,6 +160,32 @@ interface Round {
   /** 0 = ember (somebody else's), 1 = gold (yours); per-round flicker baked in */
   heat: number
   brightness: number
+  /** |velocity| cached at spawn — ballistic, so it never changes */
+  speed: number
+  /** distance flown since the muzzle; clamps the streak at birth */
+  traveled: number
+}
+
+/** Head-bright, tail-fading ramp shared by every streak. The gradient is
+ *  what makes a stretched cylinder read as MOTION instead of a rod: the
+ *  bright end is the bullet, the dimming tail is where it just was. */
+function makeStreakTexture(): CanvasTexture {
+  const w = 2
+  const h = 128
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')!
+  // CanvasTexture flips Y: canvas top row = v=1 = the cylinder's +Y = the head
+  const g = ctx.createLinearGradient(0, 0, 0, h)
+  g.addColorStop(0, 'rgba(255,255,255,1)')
+  g.addColorStop(0.12, 'rgba(255,244,225,0.95)')
+  g.addColorStop(0.38, 'rgba(255,225,180,0.5)')
+  g.addColorStop(0.72, 'rgba(255,205,150,0.16)')
+  g.addColorStop(1, 'rgba(0,0,0,0)')
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, w, h)
+  return new CanvasTexture(canvas)
 }
 
 function makeFlashTexture(): CanvasTexture {
@@ -162,6 +205,7 @@ function makeFlashTexture(): CanvasTexture {
 const _m = new Matrix4()
 const _q = new Quaternion()
 const _v = new Vector3()
+const _pos = new Vector3()
 const _aim = new Vector3()
 const _jitter = new Vector3()
 const _scale = new Vector3(1, 1, 1)
@@ -172,6 +216,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
   const meshRef = useRef<InstancedMesh>(null)
   const flashRefs = useRef<(Sprite | null)[]>([])
   const flashTexture = useMemo(() => makeFlashTexture(), [])
+  const streakTexture = useMemo(() => makeStreakTexture(), [])
 
   const state = useRef({
     rounds: Array.from(
@@ -185,6 +230,8 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         sourceIdx: -1,
         heat: 1,
         brightness: 1,
+        speed: 0,
+        traveled: 0,
       }),
     ),
     fireAccum: [0, 0, 0, 0, 0, 0],
@@ -204,6 +251,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         round.fresh = false
       } else {
         round.position.addScaledVector(round.velocity, dt)
+        round.traveled += round.speed * dt
         round.life -= dt
       }
       if (round.life <= 0) {
@@ -256,6 +304,8 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         round.velocity.add(_v2spawn)
       }
       round.position.copy(origin).addScaledVector(_v, ROUND_LEN / 2)
+      round.speed = round.velocity.length()
+      round.traveled = 0
     }
 
     // ---- your turrets: aim error converges while a mount holds one track ----
@@ -316,15 +366,21 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         if (!round.active) continue
         _v.copy(round.velocity).normalize()
         _q.setFromUnitVectors(_up, _v)
-        // Battery tracers render longer and hotter: they are watched from
-        // hundreds of units away, where a bullet-length streak reads as dust.
-        // Your own rounds stay short — they are seen from the gun.
-        _scale.set(1, round.heat < 0.5 ? 2.6 : 1, 1)
-        _m.compose(round.position, _q, _scale)
-        mesh.setMatrixAt(n, _m)
-        _c.copy(EMBER).lerp(GOLD, round.heat).multiplyScalar(
-          round.brightness * (round.heat < 0.5 ? 1.35 : 1),
+        // The swept path: as long as the round flew during one shutter, but
+        // never reaching back past the muzzle it just left. Battery rounds
+        // fold a hot shooter velocity, so their streaks run naturally longer
+        // — no special casing needed, speed IS the length.
+        const len = Math.max(
+          ROUND_LEN,
+          Math.min(round.speed * SHUTTER, round.traveled + ROUND_LEN, STREAK_MAX),
         )
+        _scale.set(1, len / ROUND_LEN, 1)
+        // head of the streak = the bullet's true position; the tail trails it
+        _pos.copy(round.position).addScaledVector(_v, -len / 2)
+        _m.compose(_pos, _q, _scale)
+        mesh.setMatrixAt(n, _m)
+        const fade = round.life < FADE_OUT ? round.life / FADE_OUT : 1
+        _c.copy(EMBER).lerp(GOLD, round.heat).multiplyScalar(round.brightness * fade)
         mesh.setColorAt(n, _c)
         n++
       }
@@ -353,6 +409,7 @@ export function PdcRounds({ fire }: { fire: PdcFire }) {
         <cylinderGeometry args={[ROUND_RADIUS, ROUND_RADIUS, ROUND_LEN, 4, 1, true]} />
         <meshBasicMaterial
           color="#ffffff"
+          map={streakTexture}
           transparent
           opacity={0.9}
           blending={AdditiveBlending}
