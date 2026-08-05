@@ -30,6 +30,10 @@ interface TurretRig {
   restDir: Vector3
   /** Arc cone axis, pivot-local — where this mount can cover */
   arcDir: Vector3
+  /** World-space mount position, cached once per frame for THE SCOPE */
+  worldPos: Vector3
+  /** World-space arc axis, cached once per frame for THE SCOPE */
+  worldArc: Vector3
   spinAngle: number
   targetIndex: number
   heat: number
@@ -70,6 +74,8 @@ export function discoverTurrets(model: Object3D): void {
       barrels,
       restDir,
       arcDir,
+      worldPos: new Vector3(),
+      worldArc: new Vector3(),
       spinAngle: 0,
       targetIndex: -1,
       heat: 0,
@@ -99,6 +105,8 @@ export function updateTurrets(dt: number): void {
   for (let i = 0; i < rigs.length; i++) {
     const rig = rigs[i]
     rig.pivot.getWorldPosition(_pivotWorld)
+    rig.worldPos.copy(_pivotWorld)
+    rig.worldArc.copy(rig.arcDir).transformDirection(rig.pivot.matrixWorld)
 
     // Fire control (TEWA): each mount takes the LEAST-COVERED valid threat,
     // nearest first among equals — spreading six guns across the raid
@@ -205,6 +213,32 @@ export interface TurretArc {
 const _arcs: TurretArc[] = []
 
 /** World-space horizontal turret coverage, for the battle radar's arc wedges. */
+const COS_ARC_HALF = Math.cos(ARC_HALF)
+
+/**
+ * THE SCOPE's coverage truth for one world position, as the mounts stand
+ * THIS frame: 3 = beyond every mount's range (not yet the guns' problem,
+ * drawn dim), 1 = in range and inside at least one cool mount's 75° arc
+ * (covered — queued or waiting out heat), 0 = in range but no mount can
+ * answer (uncovered: the geometry is failing). Engagement itself is the
+ * activity's `tracked` stamp — the caller checks that first.
+ */
+export function assessThreat(pos: { x: number; y: number; z: number }): 0 | 1 | 3 {
+  let anyInRange = false
+  for (const rig of rigs) {
+    const dx = pos.x - rig.worldPos.x
+    const dy = pos.y - rig.worldPos.y
+    const dz = pos.z - rig.worldPos.z
+    const d = Math.hypot(dx, dy, dz)
+    if (d >= RANGE) continue
+    anyInRange = true
+    if (rig.overheated) continue
+    const cos = (dx * rig.worldArc.x + dy * rig.worldArc.y + dz * rig.worldArc.z) / (d || 1e-6)
+    if (cos >= COS_ARC_HALF) return 1
+  }
+  return anyInRange ? 0 : 3
+}
+
 export function turretArcsWorld(): TurretArc[] {
   _arcs.length = 0
   for (const rig of rigs) {
