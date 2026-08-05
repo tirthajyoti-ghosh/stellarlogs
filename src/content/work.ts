@@ -8,7 +8,7 @@ export const WORK: SystemContent = {
   items: [
     {
       title: 'Senior AI Engineer',
-      subtitle: 'Suzega · June 2025 – May 2026',
+      subtitle: 'Suzega · June 2025 – June 2026',
       tech: 'Python, FastAPI, PostgreSQL, TypeScript, React, Claude (Anthropic), OpenAI, Vertex AI, Azure, Pydantic, Alembic, Langfuse',
       overview: 'Primary architect of an AI platform powering 30+ enterprise agents at Suzega (2025-2026)',
       bullets: [
