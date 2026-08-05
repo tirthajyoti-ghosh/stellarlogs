@@ -195,3 +195,127 @@ per-threat `inArc` stamp written where `tracked` is already written.
    (Alternative: numeric ladder — declined v1.)
 7. **Ghost-track glyph reserved for DARK RUNNER** — recommend YES;
    design now, wire at THE HUNT.
+
+
+---
+
+# PASS 2 — the adversarial pass
+
+*Same day. Method: attack pass 1's conclusions with arithmetic and
+eye-flow reasoning; keep what survives, overturn what doesn't, add what
+the attack uncovers.*
+
+## P2.1 The tilt is a trade, and 58° pays too much
+
+A tilt compresses the depth axis by cos(tilt). At 58°, bearings ahead
+and astern — the sectors that matter most — keep only 53% of their
+plot resolution. Elite runs much shallower than people remember,
+precisely for this reason. **Revised: tilt ≈ 40–42°** (76% depth
+resolution kept, height still clearly a separate axis), and an explicit
+**ink z-order law** so W3's twelve stems survive the tilt's overlap:
+ring > stems+tips > threat axes > wedge underlay > rim ghosts.
+Stems get a 1px dark outline so they cross plane ink without tangling.
+
+## P2.2 OVERTURNED: the decisions live OUTSIDE the ring
+
+Pass 1 enlarged the inner PDC disc "because that's where the guns
+decide." Run the numbers and it's backwards. A mil-spec closes at
+~200–310 u/s: the outer approach (300–1,800 u) is **~7 seconds of
+pilot decision time** — geometry shaping, de-syncing flights, flying
+onto threat axes. Inside the ring everything resolves in **~1.5
+seconds** and the pilot's choices are already spent; that zone is the
+guns' show. Pass 1 would have crammed seven decision-seconds into 20 px
+and spent 40 px on a spectacle zone.
+
+**Revised mapping: outer annulus gets ~70% of the radius (linear,
+300–1,800 u); the inner PDC disc gets ~30% (compressed but present).**
+The RING keeps the emphasis instead: thick, bright, and it flashes once
+as a stem crosses it — the fight changing owners is a drawn beat, not a
+zone size.
+
+## P2.3 NEW — the corridor read (the escort's whole job, one glance)
+
+The stationing truth pass 1 under-used: you intercept a torpedo when
+its **threat axis passes through your PDC bubble** — and your PDC
+bubble IS the ring, because the scope is ego-centered. So tint each
+threat axis by a trivial segment-circle test:
+
+- axis **passes through your ring** → solid teal-tinted: this corridor
+  is yours; the guns will get their chance.
+- axis **misses your ring** → red-dashed: this one reaches her without
+  ever entering your reach. Fly onto it.
+
+The escort's entire positioning loop becomes one glyph rule: **keep the
+red dashes at zero.** Read truth (one intersection test), zero new
+data, and it composes with the ring emphasis above. This is the
+strongest single addition of the pass.
+
+## P2.4 The ring is also the master status light
+
+Six mounts, up to twelve stems — counting red stems under fire is
+still counting. Give the global answer to the one line the eye already
+owns: **the ring's own color** = white/teal when every live threat is
+answerable, amber when queues or thermal lockouts are strained, red
+while anything is uncovered. Zero added ink; the scope's most prominent
+element becomes its one-glance verdict.
+
+## P2.5 Eye-flow law: the scope is the SECOND glance
+
+Combat attention lives center-screen (the reticle cluster, the strip,
+damage direction) — that is standing battle-HUD anatomy. The scope
+cannot and should not compete for urgency. **Its unique jobs are the
+two things the center cannot say: coverage and geometry.** Urgency
+stays center (the existing INBOUND strip); the soonest-stem pulse
+remains only as a cross-reference when the eye arrives. This finally
+settles the numeric-ladder question for good: numbers on the scope
+would duplicate the center at a worse address.
+
+## P2.6 NEW — the intercept leg gets a picture
+
+Pass 1 left escort's quiet leg as a bare nav disc. But the intercept
+leg has a scope-shaped job: close a moving rendezvous. While the job is
+'intercept': her blip, her track line, and the computed rendezvous
+point ∘ drawn on the disc — the mission strip keeps the numbers, the
+scope shows the geometry, and the pilot learns scope-reading in calm
+before the same instrument goes loud. Cheap ink, big continuity.
+
+## P2.7 Symbology amendments
+
+- **Ambient ordnance: REVERSED.** Pass 1 said undrawn; that makes the
+  instrument lie about a torpedo crossing your bow while you spectate.
+  Instruments report the world; GRAMMAR reports concern. Ambient
+  ordnance and traffic both appear as the same faint anchorless dots —
+  alive, stemless, tintless, silent.
+- **The rim ghosts are the elevation scale**: drawn at the ±45° caps
+  only, so a stem "touching the ceiling" reads as a steep threat
+  without any numbers.
+- **Palette law**: gold belongs to the WORLD's gunfire and is banned on
+  the scope. Instrument palette: teal = handled/yours, amber =
+  strained, red = threat/unhandled, white = reference geometry.
+
+## P2.8 The morph is a picture-cut, not a data-morph
+
+Animating the range remap would slide every blip mid-transition —
+disorienting exactly at the klaxon moment. CICs don't morph pictures;
+they switch them. **Revised: nav ink fades out (~100 ms), the empty
+plane tilts (~200 ms), combat ink fades in (~100 ms).** Same 400 ms
+envelope, nothing slides, and the empty-plane beat reads as the
+instrument taking a breath before the fight.
+
+## P2.9 Consolidated decisions (supersedes pass 1's list)
+
+1. Tilt ≈ 40–42° with the ink z-order law — NEW verdict of P2.1.
+2. **Outer-weighted two-zone mapping** + ring flash on crossing —
+   SUPERSEDES pass 1's enlarged inner disc (P2.2).
+3. **Corridor read**: threat axes tinted by ring intersection; the
+   escort loop = keep red dashes at zero — NEW (P2.3).
+4. Ring as master coverage light + per-stem TEWA tint — refined (P2.4).
+5. Combat morph as picture-cut, battle-flag driven — refined (P2.8).
+6. Nose-up bearing + lane-stable vertical — UNCHANGED, survived attack.
+7. Ambient = faint anchorless dots INCLUDING ordnance — REVERSED
+   (P2.7).
+8. Urgency stays center-screen; scope pulse is cross-reference only —
+   sharpened (P2.5).
+9. Intercept-leg picture (her track + rendezvous ∘ on the disc) — NEW
+   (P2.6).
+10. Ghost-track glyph reserved for DARK RUNNER — UNCHANGED.
