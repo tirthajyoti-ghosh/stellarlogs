@@ -437,3 +437,22 @@ the plane survives as an IMPLIED surface — every stem foot sits on it
 and the PDC ring lives on it, so the eye reconstructs it without a third
 circle competing with the caps. Ink count drops again. Design LOCKED;
 build on his word.
+
+
+## P3.8 — Build-go amendments (Tirtha, 2026-08-05 evening)
+
+1. **The plane returns as a SURFACE, not a circle.** No mid-height
+   ellipse outline — instead a tinted, faintly opaque disc the ship
+   sits on. Contacts below the plane are seen THROUGH the tint, so
+   "she dipped below" is a material fact, not an inference. Draw
+   order: below-plane ink → plane fill → ring/feet/marker → above-
+   plane ink.
+2. **The morph is THE COLLAPSE**: one continuous camera move. Combat
+   engages and the top-down disc tilts open into the cylinder (~450 ms,
+   stems growing as it opens); combat ends and the cylinder collapses
+   flat to 90° top-down. Content crossfades near the flat pole, where
+   3D structure is invisible anyway — replacing pass 2's picture-cut,
+   superseded by Tirtha's better idea.
+3. Frame constancy restated: plane, cylinder, own-ship marker are the
+   constant stage; only the world moves.
+4. Bigger combat scope confirmed (132 → 200 px on engage).

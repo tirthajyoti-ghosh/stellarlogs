@@ -141,7 +141,10 @@ let torps = []   // {p:[x,y,z], v, vmax, cork:{r,spin,ang,dir}, tgt:'self'|'esc'
 let escortee = null // {p, v[]}
 let traffic = []  // ambient: {p, v, kind:'ship'|'torp', tgtIdx}
 let scenario = 'w3'
-let morph = { v: 1, to: 1, phase: 'idle', t: 0 } // 0 = nav picture, 1 = combat picture
+/** THE COLLAPSE: one continuous camera move. 0 = flat top-down (nav),
+ *  1 = the open cylinder (combat). morph.v chases morph.to over ~450 ms;
+ *  content crossfades near the flat pole where 3D structure vanishes. */
+let morph = { v: 1, to: 1 }
 let scnT = 0
 
 // ============================================================ scenarios
@@ -165,7 +168,7 @@ const SCN = {
     setup() { torps = []; traffic = []; escortee = null },
   },
   morph: {
-    cap: '<b>THE MORPH — a picture-cut, not a data-morph.</b> Nav ink fades (100 ms), the empty plane tilts (200 ms), combat ink fades in (100 ms). Nothing slides mid-klaxon; the instrument takes a breath and switches pictures, CIC-style. Loops.',
+    cap: '<b>THE COLLAPSE — one continuous camera move.</b> Combat engages and the flat top-down disc tilts open into the cylinder, stems growing as it opens; combat ends and the cylinder folds flat again to a proper 2D radar. Content crossfades at the flat pole, where 3D structure is invisible anyway. Loops.',
     combat: true,
     setup() { torps = [mkTorp(40, 18, 900, { cork: 26 }), mkTorp(-70, -12, 1200, { cork: 26 })]; traffic = []; escortee = null; this._next = 2.4 },
     tick(dt) { this._next -= dt; if (this._next < 0) { setMorph(morph.to === 1 ? 0 : 1); this._next = 3.2 } },
@@ -261,7 +264,7 @@ const SCN = {
   },
 }
 
-function setMorph(to) { morph.to = to; morph.phase = 'fadeOut'; morph.t = 0 }
+function setMorph(to) { morph.to = to }
 function setScenario(name) {
   scenario = name
   document.querySelectorAll('button.scn').forEach(b => b.classList.toggle('on', b.dataset.s === name))
@@ -390,13 +393,13 @@ function project(p, R, tiltRad, sq) {
 function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
   const cx = size / 2, cy = size / 2 + size * 0.03
   const R = size * 0.40
-  const combat = morph.v > 0.5
-  const tiltRad = ((combat ? CFG.tilt : 0) * Math.PI) / 180
-  // ink alpha during the picture-cut
-  let alpha = 1
-  if (morph.phase === 'fadeOut') alpha = 1 - morph.t / 0.1
-  if (morph.phase === 'fadeIn') alpha = morph.t / 0.1
-  if (morph.phase === 'tilt') alpha = 0.12
+  // THE COLLAPSE: k = 0 flat top-down (nav), k = 1 the open cylinder.
+  // One continuous camera move; content crossfades near the flat pole.
+  const k0 = morph.v
+  const k = k0 * k0 * (3 - 2 * k0)
+  const navAlpha = Math.max(0, 1 - k / 0.3)
+  const combatAlpha = Math.max(0, (k - 0.28) / 0.72)
+  const tiltRad = ((CFG.tilt * Math.PI) / 180) * k
 
   ctx.clearRect(0, 0, size, size)
   ctx.save()
@@ -405,99 +408,106 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
   const ell = (r, style, width, dash) => {
     ctx.strokeStyle = style; ctx.lineWidth = width
     ctx.setLineDash(dash || [])
-    ctx.beginPath(); ctx.ellipse(0, 0, r, r * Math.cos(tiltRad), 0, 0, Math.PI * 2); ctx.stroke()
+    ctx.beginPath(); ctx.ellipse(0, 0, r, Math.max(2, r * Math.cos(tiltRad)), 0, 0, Math.PI * 2); ctx.stroke()
     ctx.setLineDash([])
+  }
+  const statusCol = (st) => !CFG.tewa
+    ? COL.red
+    : st === 3
+      ? 'rgba(159,178,200,0.75)'
+      : st === 2
+        ? COL.teal
+        : st === 1
+          ? COL.amber
+          : COL.red
+  const ownMarker = () => {
+    ctx.fillStyle = COL.white
+    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
+    if (!CFG.noseUp) {
+      ctx.strokeStyle = COL.white
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
+    }
   }
 
   // chrome: outer boundary always
   ell(R, COL.dim + '0.35)', 1)
 
-  if (!combat || alpha < 1) {
-    // ---- NAV PICTURE ----
-    ctx.globalAlpha = combat ? 0 : alpha
-    if (!combat) {
-      // sweep
-      const sweep = (now * 0.9) % (Math.PI * 2)
-      ctx.strokeStyle = COL.dim + '0.5)'
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(sweep) * R, -Math.cos(sweep) * R * Math.cos(tiltRad)); ctx.stroke()
-      ell(R * 0.55, COL.dim + '0.18)', 1)
-      // fake system blips
-      const blips = [[-0.62, -0.3, '#8fb8e8'], [0.44, -0.52, '#ffd9a0'], [0.7, 0.3, '#e0708f'], [-0.3, 0.55, '#57e6c4'], [0.1, -0.08, '#dce8f4']]
-      for (const [bx, by, c] of blips) {
-        ctx.fillStyle = c
-        ctx.beginPath(); ctx.arc(bx * R, by * R * Math.cos(tiltRad), size * 0.008, 0, 6.3); ctx.fill()
-      }
-      // intercept-leg picture
-      if (scenario === 'intercept' && escortee) {
-        const e = project(escortee.p, R, tiltRad)
-        // her track line
-        const e2 = project([escortee.p[0] + escortee.v[0] * 9, escortee.p[1] + escortee.v[1] * 9, escortee.p[2] + escortee.v[2] * 9], R, tiltRad)
-        ctx.strokeStyle = 'rgba(87,230,196,0.4)'
-        ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e2.fx, e2.fy); ctx.stroke()
-        // rendezvous ∘ leads her
-        const lead = project([escortee.p[0] + escortee.v[0] * 5.5, escortee.p[1] + escortee.v[1] * 5.5, escortee.p[2] + escortee.v[2] * 5.5], R, tiltRad)
-        ctx.strokeStyle = COL.white
-        ctx.beginPath(); ctx.arc(lead.fx, lead.fy, size * 0.014, 0, 6.3); ctx.stroke()
-        // her diamond
-        ctx.fillStyle = COL.teal
-        ctx.save(); ctx.translate(e.fx, e.fy); ctx.rotate(Math.PI / 4); const s = size * 0.011; ctx.fillRect(-s, -s, s * 2, s * 2); ctx.restore()
-        // own closing vector
-        ctx.strokeStyle = COL.dim + '0.6)'; ctx.setLineDash([3, 4])
-        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(lead.fx * 0.85, lead.fy * 0.85); ctx.stroke(); ctx.setLineDash([])
-      }
+  if (navAlpha > 0) {
+    // ---- NAV PICTURE (the flat pole of the collapse) ----
+    ctx.globalAlpha = navAlpha
+    const sweep = (now * 0.9) % (Math.PI * 2)
+    ctx.strokeStyle = COL.dim + '0.5)'
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(sweep) * R, -Math.cos(sweep) * R * Math.cos(tiltRad)); ctx.stroke()
+    ell(R * 0.55, COL.dim + '0.18)', 1)
+    const blips = [[-0.62, -0.3, '#8fb8e8'], [0.44, -0.52, '#ffd9a0'], [0.7, 0.3, '#e0708f'], [-0.3, 0.55, '#57e6c4'], [0.1, -0.08, '#dce8f4']]
+    for (const [bx, by, c] of blips) {
+      ctx.fillStyle = c
+      ctx.beginPath(); ctx.arc(bx * R, by * R * Math.cos(tiltRad), size * 0.008, 0, 6.3); ctx.fill()
     }
+    if (scenario === 'intercept' && escortee) {
+      const e = project(escortee.p, R, tiltRad)
+      const e2 = project([escortee.p[0] + escortee.v[0] * 9, escortee.p[1] + escortee.v[1] * 9, escortee.p[2] + escortee.v[2] * 9], R, tiltRad)
+      ctx.strokeStyle = 'rgba(87,230,196,0.4)'
+      ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e2.fx, e2.fy); ctx.stroke()
+      const lead = project([escortee.p[0] + escortee.v[0] * 5.5, escortee.p[1] + escortee.v[1] * 5.5, escortee.p[2] + escortee.v[2] * 5.5], R, tiltRad)
+      ctx.strokeStyle = COL.white
+      ctx.beginPath(); ctx.arc(lead.fx, lead.fy, size * 0.014, 0, 6.3); ctx.stroke()
+      ctx.fillStyle = COL.teal
+      ctx.save(); ctx.translate(e.fx, e.fy); ctx.rotate(Math.PI / 4); const s = size * 0.011; ctx.fillRect(-s, -s, s * 2, s * 2); ctx.restore()
+      ctx.strokeStyle = COL.dim + '0.6)'; ctx.setLineDash([3, 4])
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(lead.fx * 0.85, lead.fy * 0.85); ctx.stroke(); ctx.setLineDash([])
+    }
+    ownMarker()
     ctx.globalAlpha = 1
   }
 
-  if (combat && CFG.rep === 'vessel') {
-    // ---- COMBAT PICTURE · THE SYNTHESIS (pass 3) ----
-    // The cylinder is the VESSEL: edge-lit walls fading to nothing at
-    // mid-height. The plane is the TRUTH: ship-level reference, PDC
-    // ring, anchored stems. Five-element default ink.
+  if (combatAlpha > 0 && CFG.rep === 'vessel') {
+    // ---- COMBAT · THE SYNTHESIS (locked design, P3.8) ----
+    // Vessel: cap rims + edge-lit walls fading at mid-height. Plane: a
+    // tinted SURFACE the ship sits on — below-plane ink drawn first and
+    // seen THROUGH the tint, so a dip below is a material fact.
+    const alpha = combatAlpha
     ctx.globalAlpha = alpha
     const rp = ringPx(R)
-    const capH = R * 0.52
     const cosT = Math.cos(tiltRad)
-    const capRy = R * (0.1 + 0.35 * (1 - cosT))
-    const sq = capRy / R
-    const sep = morph.phase === 'tilt' ? morph.t / 0.2 : 1
+    const capH = R * 0.52 * k
+    const capRy = R * (0.1 + 0.35 * (1 - cosT)) * Math.min(1, k * 2)
+    const sq = Math.max(0.02, capRy / R)
     const EDGE = 'rgba(140,220,230,'
 
-    // vessel: cap rims
+    // vessel rims
     const rim = (dy, a) => {
       ctx.strokeStyle = EDGE + a + ')'
       ctx.lineWidth = 1.2
-      ctx.beginPath(); ctx.ellipse(0, dy * sep, R, Math.max(2, capRy), 0, 0, Math.PI * 2); ctx.stroke()
+      ctx.beginPath(); ctx.ellipse(0, dy, R, Math.max(2, capRy), 0, 0, Math.PI * 2); ctx.stroke()
     }
     rim(-capH, 0.5)
     rim(capH, 0.32)
-    // vessel walls: verticals falling from each rim, fading toward the
-    // middle; the back half dimmer than the front — the edge-lit tube
-    for (let k = 0; k < 24; k++) {
-      const th = (k / 24) * Math.PI * 2
+    // edge-lit walls fading toward mid-height; back half dimmer
+    for (let w = 0; w < 24; w++) {
+      const th = (w / 24) * Math.PI * 2
       const x = Math.sin(th) * R
       const yOff = Math.cos(th) * capRy
       const base = Math.cos(th) > 0 ? 0.3 : 0.13
-      const yTop = -capH * sep + yOff
-      const gTop = ctx.createLinearGradient(0, yTop, 0, yTop * 0.3)
-      gTop.addColorStop(0, EDGE + base + ')')
-      gTop.addColorStop(1, EDGE + '0)')
-      ctx.strokeStyle = gTop; ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, yTop * 0.3); ctx.stroke()
-      const yBot = capH * sep + yOff
-      const gBot = ctx.createLinearGradient(0, yBot, 0, yBot * 0.3)
-      gBot.addColorStop(0, EDGE + base * 0.75 + ')')
-      gBot.addColorStop(1, EDGE + '0)')
-      ctx.strokeStyle = gBot
-      ctx.beginPath(); ctx.moveTo(x, yBot); ctx.lineTo(x, yBot * 0.3); ctx.stroke()
+      const yTop = -capH + yOff
+      if (Math.abs(yTop) > 2) {
+        const gTop = ctx.createLinearGradient(0, yTop, 0, yTop * 0.3)
+        gTop.addColorStop(0, EDGE + base + ')')
+        gTop.addColorStop(1, EDGE + '0)')
+        ctx.strokeStyle = gTop; ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(x, yTop); ctx.lineTo(x, yTop * 0.3); ctx.stroke()
+      }
+      const yBot = capH + yOff
+      if (Math.abs(yBot) > 2) {
+        const gBot = ctx.createLinearGradient(0, yBot, 0, yBot * 0.3)
+        gBot.addColorStop(0, EDGE + base * 0.75 + ')')
+        gBot.addColorStop(1, EDGE + '0)')
+        ctx.strokeStyle = gBot
+        ctx.beginPath(); ctx.moveTo(x, yBot); ctx.lineTo(x, yBot * 0.3); ctx.stroke()
+      }
     }
 
-    // THE PLANE at ship level — the truth surface
-    ctx.strokeStyle = COL.dim + '0.38)'
-    ctx.lineWidth = 1
-    ctx.beginPath(); ctx.ellipse(0, 0, R, Math.max(2, capRy), 0, 0, Math.PI * 2); ctx.stroke()
-
-    // opt-in: mount-facing wedges on the plane
+    // opt-in: mount-facing wedges, under the surface
     if (CFG.wedges) {
       for (const m of MOUNTS) {
         let dx = m.dir[0], dz = m.dir[2]
@@ -510,7 +520,76 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
       }
     }
 
-    // the PDC ring on the plane — master status light + crossing flash
+    // project everything once
+    const pts = []
+    for (let i = 0; i < torps.length; i++) {
+      const t = torps[i]
+      pts[i] = t.dead || t.ghost ? null : project(t.p, R, tiltRad, sq)
+      if (pts[i]) t._lastEh = pts[i].eh * k
+    }
+    const ePt = escortee ? project(escortee.p, R, tiltRad, sq) : null
+    const trafficPts = traffic.map((a) => project(a.p, R, tiltRad, sq))
+
+    const stemDot = (f, col) => {
+      const eh = f.eh * k
+      ctx.strokeStyle = 'rgba(2,8,20,0.9)'; ctx.lineWidth = 3
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - eh); ctx.stroke()
+      ctx.strokeStyle = col; ctx.lineWidth = 1.3
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - eh); ctx.stroke()
+      ctx.fillStyle = col
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - eh, size * 0.0075, 0, 6.3); ctx.fill()
+    }
+    const halfPass = (below) => {
+      for (let i = 0; i < torps.length; i++) {
+        const t = torps[i], f = pts[i]
+        if (!f) continue
+        if (f.eh < 0 !== below) continue
+        let a2 = 1
+        if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
+        ctx.globalAlpha = alpha * a2
+        if (CFG.trails && t.trail.length > 1) {
+          for (let s = 1; s < t.trail.length; s++) {
+            const q0 = project(t.trail[s - 1], R, tiltRad, sq)
+            const q1 = project(t.trail[s], R, tiltRad, sq)
+            if ((q0.eh + q1.eh) / 2 < 0 !== below) continue
+            ctx.strokeStyle = 'rgba(255,110,90,' + (0.05 + (s / t.trail.length) * 0.28) + ')'
+            ctx.lineWidth = 1
+            ctx.beginPath(); ctx.moveTo(q0.fx, q0.fy - q0.eh * k); ctx.lineTo(q1.fx, q1.fy - q1.eh * k); ctx.stroke()
+          }
+        }
+        stemDot(f, statusCol(statuses[i]))
+        ctx.globalAlpha = alpha
+      }
+      for (let j = 0; j < traffic.length; j++) {
+        const f = trafficPts[j]
+        if (f.eh < 0 !== below) continue
+        ctx.fillStyle = COL.dim + '0.4)'
+        ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * k, size * (traffic[j].kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
+      }
+      if (ePt && ePt.eh < 0 === below) {
+        const eh = ePt.eh * k
+        ctx.strokeStyle = 'rgba(87,230,196,0.5)'
+        ctx.beginPath(); ctx.moveTo(ePt.fx, ePt.fy); ctx.lineTo(ePt.fx, ePt.fy - eh); ctx.stroke()
+        ctx.fillStyle = COL.teal
+        ctx.save(); ctx.translate(ePt.fx, ePt.fy - eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
+      }
+    }
+
+    // BELOW the surface first — the tint will sit over it
+    halfPass(true)
+
+    // THE PLANE: a surface, not a circle
+    ctx.save()
+    ctx.scale(1, sq)
+    const pg = ctx.createRadialGradient(0, 0, R * 0.15, 0, 0, R)
+    pg.addColorStop(0, 'rgba(96,158,178,0.07)')
+    pg.addColorStop(0.85, 'rgba(96,158,178,0.16)')
+    pg.addColorStop(1, 'rgba(120,190,205,0.05)')
+    ctx.fillStyle = pg
+    ctx.beginPath(); ctx.arc(0, 0, R, 0, Math.PI * 2); ctx.fill()
+    ctx.restore()
+
+    // plane-level ink: the ring (master status + crossing flash)
     let ringCol = COL.white, worst = 2, anyNear = false
     if (CFG.ringLight) {
       for (let i = 0; i < torps.length; i++) {
@@ -531,142 +610,93 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
       }
     }
 
-    // corridor axes on the plane (test in true 3D)
-    if (escortee) {
-      const e = project(escortee.p, R, tiltRad, sq)
+    // corridor axes on the plane (tested in true 3D)
+    if (escortee && ePt) {
       for (let i = 0; i < torps.length; i++) {
-        const t = torps[i]; if (t.dead || t.ghost || t.tgt !== 'esc') continue
-        const f = project(t.p, R, tiltRad, sq)
+        const t = torps[i], f = pts[i]
+        if (!f || t.tgt !== 'esc') continue
         let covered = true
         if (CFG.corridor) {
           const abx = escortee.p[0] - t.p[0], aby = escortee.p[1] - t.p[1], abz = escortee.p[2] - t.p[2]
           const len2 = abx * abx + aby * aby + abz * abz || 1
-          const tt = Math.max(0, Math.min(1, (-(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz)) / len2))
+          const tt = Math.max(0, Math.min(1, -(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz) / len2))
           covered = Math.hypot(t.p[0] + abx * tt, t.p[1] + aby * tt, t.p[2] + abz * tt) < WORLD.RING
         }
         ctx.strokeStyle = CFG.corridor ? (covered ? 'rgba(87,230,196,0.55)' : 'rgba(255,80,64,0.75)') : 'rgba(255,80,64,0.3)'
         ctx.lineWidth = covered ? 1 : 1.4
         ctx.setLineDash(covered || !CFG.corridor ? [] : [4, 4])
-        ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(e.fx, e.fy); ctx.stroke()
+        ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(ePt.fx, ePt.fy); ctx.stroke()
         ctx.setLineDash([])
       }
-      // escortee: foot on the plane, stem, diamond
-      ctx.strokeStyle = 'rgba(87,230,196,0.5)'
-      ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e.fx, e.fy - e.eh); ctx.stroke()
-      ctx.fillStyle = COL.teal
-      ctx.save(); ctx.translate(e.fx, e.fy - e.eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
     }
 
-    // ambient grammar: faint anchorless dots
-    for (const a of traffic) {
-      const f = project(a.p, R, tiltRad, sq)
-      ctx.fillStyle = COL.dim + '0.4)'
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
-    }
-
-    // threats: foot on the plane, outlined stem, TEWA-tinted contact
+    // feet on the surface
     for (let i = 0; i < torps.length; i++) {
-      const t = torps[i]
-      if (t.dead) {
-        if (t.deadT < 0.5) {
-          const f = project(t.p, R, tiltRad, sq)
-          ctx.strokeStyle = 'rgba(255,180,90,' + (0.8 - t.deadT * 1.6) + ')'
-          ctx.beginPath(); ctx.arc(f.fx, f.fy - (t._lastEh || 0), size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
-        }
-        continue
-      }
-      if (t.ghost) {
-        const f = project(t.lastFoot, R, tiltRad, sq)
-        ctx.strokeStyle = 'rgba(220,232,244,0.55)'
-        const s3 = size * 0.012
-        ctx.beginPath()
-        ctx.moveTo(f.fx - s3, f.fy - s3); ctx.lineTo(f.fx + s3, f.fy + s3)
-        ctx.moveTo(f.fx + s3, f.fy - s3); ctx.lineTo(f.fx - s3, f.fy + s3)
-        ctx.stroke()
-        continue
-      }
-      const f = project(t.p, R, tiltRad, sq)
-      t._lastEh = f.eh
-      const st = statuses[i]
-      const col = !CFG.tewa
-        ? COL.red
-        : st === 3
-          ? 'rgba(159,178,200,0.75)'
-          : st === 2
-            ? COL.teal
-            : st === 1
-              ? COL.amber
-              : COL.red
-      let a2 = 1
-      if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
-      ctx.globalAlpha = alpha * a2
-      if (CFG.trails && t.trail.length > 1) {
-        for (let k = 1; k < t.trail.length; k++) {
-          const p0 = project(t.trail[k - 1], R, tiltRad, sq)
-          const p1 = project(t.trail[k], R, tiltRad, sq)
-          ctx.strokeStyle = 'rgba(255,110,90,' + (0.05 + (k / t.trail.length) * 0.28) + ')'
-          ctx.lineWidth = 1
-          ctx.beginPath(); ctx.moveTo(p0.fx, p0.fy - p0.eh); ctx.lineTo(p1.fx, p1.fy - p1.eh); ctx.stroke()
-        }
-      }
-      // stem with dark outline; foot on the plane
-      ctx.strokeStyle = 'rgba(2,8,20,0.9)'; ctx.lineWidth = 3
-      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
-      ctx.strokeStyle = col; ctx.lineWidth = 1.3
-      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
-      ctx.fillStyle = col
+      const f = pts[i]
+      if (!f) continue
+      ctx.fillStyle = statusCol(statuses[i])
       ctx.fillRect(f.fx - 1.5, f.fy - 1.5, 3, 3)
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * 0.0075, 0, 6.3); ctx.fill()
-      // fighter practice: ONE digit, the soonest impact, nothing else
-      if (CFG.digit && i === soonestIdx && size >= 160) {
-        const tgo = Math.ceil(Math.hypot(...t.p) / (t.speed || 1))
-        ctx.font = '10px "Space Mono", monospace'
-        ctx.fillStyle = COL.white
-        ctx.fillText('T-' + tgo, f.fx + 9, f.fy - f.eh - 6)
-      }
-      ctx.globalAlpha = alpha
     }
+    if (ePt) { ctx.fillStyle = COL.teal; ctx.fillRect(ePt.fx - 1.5, ePt.fy - 1.5, 3, 3) }
 
-    // own-ship marker: the center of the volume, on the plane
-    ctx.fillStyle = COL.white
-    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
-    if (!CFG.noseUp) {
-      ctx.strokeStyle = COL.white
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
+    // ghost tracks: hollow x at last-known, on the surface
+    for (const t of torps) {
+      if (!t.ghost || !t.lastFoot) continue
+      const f = project(t.lastFoot, R, tiltRad, sq)
+      ctx.strokeStyle = 'rgba(220,232,244,0.55)'
+      const s3 = size * 0.012
+      ctx.beginPath()
+      ctx.moveTo(f.fx - s3, f.fy - s3); ctx.lineTo(f.fx + s3, f.fy + s3)
+      ctx.moveTo(f.fx + s3, f.fy - s3); ctx.lineTo(f.fx - s3, f.fy + s3)
+      ctx.stroke()
+    }
+    ownMarker()
+
+    // ABOVE the surface
+    halfPass(false)
+
+    // kill blooms + the one digit
+    for (const t of torps) {
+      if (!t.dead || t.deadT >= 0.5) continue
+      const f = project(t.p, R, tiltRad, sq)
+      ctx.strokeStyle = 'rgba(255,180,90,' + (0.8 - t.deadT * 1.6) + ')'
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - (t._lastEh || 0), size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
+    }
+    if (CFG.digit && soonestIdx >= 0 && pts[soonestIdx] && size >= 160) {
+      const t = torps[soonestIdx], f = pts[soonestIdx]
+      const tgo = Math.ceil(Math.hypot(t.p[0], t.p[1], t.p[2]) / (t.speed || 1))
+      ctx.font = '10px "Space Mono", monospace'
+      ctx.fillStyle = COL.white
+      ctx.fillText('T-' + tgo, f.fx + 9, f.fy - f.eh * k - 6)
     }
     ctx.globalAlpha = 1
-  } else if (combat && CFG.rep === 'cyl') {
-    // ---- COMBAT PICTURE · FREE CYLINDER (Tirtha's vision) ----
-    // No plane, no stems. Contacts fly the volume; motion trails carry
-    // depth and paint the corkscrews as visible helixes.
+  } else if (combatAlpha > 0 && CFG.rep === 'cyl') {
+    // ---- COMBAT · FREE CYLINDER (comparison mode) ----
+    const alpha = combatAlpha
     ctx.globalAlpha = alpha
     const rp = ringPx(R)
-    const capH = R * 0.52
+    const capH = R * 0.52 * k
     const cosT = Math.cos(tiltRad)
-    const capRy = R * (0.1 + 0.35 * (1 - cosT))
-    const sq = capRy / R
-    const sep = morph.phase === 'tilt' ? morph.t / 0.2 : 1
+    const capRy = R * (0.1 + 0.35 * (1 - cosT)) * Math.min(1, k * 2)
+    const sq = Math.max(0.02, capRy / R)
     const capEll = (dy, style, width, dash) => {
-      ctx.save(); ctx.translate(0, dy * sep)
+      ctx.save(); ctx.translate(0, dy)
       ctx.strokeStyle = style; ctx.lineWidth = width; ctx.setLineDash(dash || [])
       ctx.beginPath(); ctx.ellipse(0, 0, R, Math.max(2, capRy), 0, 0, Math.PI * 2); ctx.stroke()
       ctx.setLineDash([]); ctx.restore()
     }
-    // chrome: caps, rails, center axis
     capEll(-capH, COL.dim + '0.4)', 1)
     capEll(capH, COL.dim + '0.22)', 1)
     if (CFG.midring) capEll(0, COL.dim + '0.1)', 1, [3, 6])
     if (CFG.rails) {
       ctx.strokeStyle = COL.dim + '0.16)'
       ctx.beginPath()
-      ctx.moveTo(-R, -capH * sep); ctx.lineTo(-R, capH * sep)
-      ctx.moveTo(R, -capH * sep); ctx.lineTo(R, capH * sep)
+      ctx.moveTo(-R, -capH); ctx.lineTo(-R, capH)
+      ctx.moveTo(R, -capH); ctx.lineTo(R, capH)
       ctx.stroke()
       ctx.strokeStyle = COL.dim + '0.12)'
-      ctx.beginPath(); ctx.moveTo(0, -capH * sep); ctx.lineTo(0, capH * sep); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(0, -capH); ctx.lineTo(0, capH); ctx.stroke()
     }
-
-    // the PDC bubble's equator — your 300 u reach, on your level
     let ringCol = COL.white, worst = 2, anyNear = false
     if (CFG.ringLight) {
       for (let i = 0; i < torps.length; i++) {
@@ -677,51 +707,36 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
       ringCol = anyNear ? (worst === 2 ? COL.teal : worst === 1 ? COL.amber : COL.red) : COL.white
     }
     if (CFG.bubble) {
-      ctx.strokeStyle = ringCol; ctx.lineWidth = size > 200 ? 2 : 1.3
+      ctx.strokeStyle = ringCol; ctx.lineWidth = size > 160 ? 2 : 1.3
       ctx.beginPath(); ctx.ellipse(0, 0, rp, Math.max(2, rp * sq), 0, 0, Math.PI * 2); ctx.stroke()
-      for (const t of torps) {
-        if (t.dead || t.ghost) continue
-        if (Math.abs(Math.hypot(...t.p) - WORLD.RING) < 26) {
-          ctx.strokeStyle = 'rgba(220,232,244,0.5)'; ctx.lineWidth = 4
-          ctx.beginPath(); ctx.ellipse(0, 0, rp, Math.max(2, rp * sq), 0, 0, Math.PI * 2); ctx.stroke()
-          break
-        }
-      }
     }
-
-    // corridor axes in true 3D: torpedo dot → her dot; the test is the
-    // real one (does the 3D segment pass inside my 300 u sphere)
     if (escortee) {
       const e = project(escortee.p, R, tiltRad, sq)
       for (let i = 0; i < torps.length; i++) {
-        const t = torps[i]; if (t.dead || t.ghost || t.tgt !== 'esc') continue
+        const t = torps[i]
+        if (t.dead || t.ghost || t.tgt !== 'esc') continue
         const f = project(t.p, R, tiltRad, sq)
         let covered = true
         if (CFG.corridor) {
           const abx = escortee.p[0] - t.p[0], aby = escortee.p[1] - t.p[1], abz = escortee.p[2] - t.p[2]
           const len2 = abx * abx + aby * aby + abz * abz || 1
-          const tt = Math.max(0, Math.min(1, (-(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz)) / len2))
+          const tt = Math.max(0, Math.min(1, -(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz) / len2))
           covered = Math.hypot(t.p[0] + abx * tt, t.p[1] + aby * tt, t.p[2] + abz * tt) < WORLD.RING
         }
         ctx.strokeStyle = CFG.corridor ? (covered ? 'rgba(87,230,196,0.55)' : 'rgba(255,80,64,0.75)') : 'rgba(255,80,64,0.3)'
         ctx.lineWidth = covered ? 1 : 1.4
         ctx.setLineDash(covered || !CFG.corridor ? [] : [4, 4])
-        ctx.beginPath(); ctx.moveTo(f.fx, f.fy - f.eh); ctx.lineTo(e.fx, e.fy - e.eh); ctx.stroke()
+        ctx.beginPath(); ctx.moveTo(f.fx, f.fy - f.eh * k); ctx.lineTo(e.fx, e.fy - e.eh * k); ctx.stroke()
         ctx.setLineDash([])
       }
       ctx.fillStyle = COL.teal
-      ctx.save(); ctx.translate(e.fx, e.fy - e.eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
+      ctx.save(); ctx.translate(e.fx, e.fy - e.eh * k); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
     }
-
-    // ambient grammar: still faint, still anchorless — everything is
-    // anchorless here; the grammar survives as size and silence
     for (const a of traffic) {
       const f = project(a.p, R, tiltRad, sq)
       ctx.fillStyle = COL.dim + '0.4)'
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * k, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
     }
-
-    // threats: trail first (the depth cue), then the contact
     for (let i = 0; i < torps.length; i++) {
       const t = torps[i]
       if (t.dead) {
@@ -737,54 +752,37 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
         ctx.strokeStyle = 'rgba(220,232,244,0.55)'
         const s3 = size * 0.012
         ctx.beginPath()
-        ctx.moveTo(f.fx - s3, f.fy - f.eh - s3); ctx.lineTo(f.fx + s3, f.fy - f.eh + s3)
-        ctx.moveTo(f.fx + s3, f.fy - f.eh - s3); ctx.lineTo(f.fx - s3, f.fy - f.eh + s3)
+        ctx.moveTo(f.fx - s3, f.fy - f.eh * k - s3); ctx.lineTo(f.fx + s3, f.fy - f.eh * k + s3)
+        ctx.moveTo(f.fx + s3, f.fy - f.eh * k - s3); ctx.lineTo(f.fx - s3, f.fy - f.eh * k + s3)
         ctx.stroke()
         continue
       }
       const f = project(t.p, R, tiltRad, sq)
-      t._lastEh = f.eh
-      const st = statuses[i]
-      const col = !CFG.tewa
-        ? COL.red
-        : st === 3
-          ? 'rgba(159,178,200,0.75)'
-          : st === 2
-            ? COL.teal
-            : st === 1
-              ? COL.amber
-              : COL.red
+      t._lastEh = f.eh * k
       let a2 = 1
       if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
       ctx.globalAlpha = alpha * a2
       if (CFG.trails && t.trail.length > 1) {
-        for (let k = 1; k < t.trail.length; k++) {
-          const p0 = project(t.trail[k - 1], R, tiltRad, sq)
-          const p1 = project(t.trail[k], R, tiltRad, sq)
-          ctx.strokeStyle = 'rgba(255,110,90,' + (0.05 + (k / t.trail.length) * 0.3) + ')'
+        for (let s = 1; s < t.trail.length; s++) {
+          const q0 = project(t.trail[s - 1], R, tiltRad, sq)
+          const q1 = project(t.trail[s], R, tiltRad, sq)
+          ctx.strokeStyle = 'rgba(255,110,90,' + (0.05 + (s / t.trail.length) * 0.28) + ')'
           ctx.lineWidth = 1
-          ctx.beginPath(); ctx.moveTo(p0.fx, p0.fy - p0.eh); ctx.lineTo(p1.fx, p1.fy - p1.eh); ctx.stroke()
+          ctx.beginPath(); ctx.moveTo(q0.fx, q0.fy - q0.eh * k); ctx.lineTo(q1.fx, q1.fy - q1.eh * k); ctx.stroke()
         }
       }
-      ctx.fillStyle = col
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * 0.008, 0, 6.3); ctx.fill()
+      ctx.fillStyle = statusCol(statuses[i])
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * k, size * 0.008, 0, 6.3); ctx.fill()
       ctx.globalAlpha = alpha
     }
-
-    // own-ship marker: always the center of the volume
-    ctx.fillStyle = COL.white
-    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
-    if (!CFG.noseUp) {
-      ctx.strokeStyle = COL.white
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
-    }
+    ownMarker()
     ctx.globalAlpha = 1
-  } else if (combat) {
-    // ---- COMBAT PICTURE · TILTED DISC + STEMS (pass 2) ----
+  } else if (combatAlpha > 0) {
+    // ---- COMBAT · TILTED DISC + STEMS (comparison mode) ----
+    const alpha = combatAlpha
     ctx.globalAlpha = alpha
     const rp = ringPx(R)
 
-    // z1: mount-facing wedges (dim underlay)
     if (CFG.wedges) {
       for (const m of MOUNTS) {
         let dx = m.dir[0], dz = m.dir[2]
@@ -797,7 +795,6 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
       }
     }
 
-    // z2: THE RING (master status light)
     let ringCol = COL.white, worst = 2, anyNear = false
     if (CFG.ringLight) {
       for (let i = 0; i < torps.length; i++) {
@@ -807,34 +804,30 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
       }
       ringCol = anyNear ? (worst === 2 ? COL.teal : worst === 1 ? COL.amber : COL.red) : COL.white
     }
-    ell(rp, ringCol, size > 200 ? 2.2 : 1.4)
-    // ring-crossing flash
+    ell(rp, ringCol, size > 160 ? 2.2 : 1.4)
     for (const t of torps) {
       if (t.dead || t.ghost) continue
-      const g = Math.hypot(t.p[0], t.p[2])
-      if (Math.abs(g - WORLD.RING) < 26) { ell(rp, 'rgba(220,232,244,0.5)', 5); break }
+      if (Math.abs(Math.hypot(t.p[0], t.p[2]) - WORLD.RING) < 26) { ell(rp, 'rgba(220,232,244,0.5)', 5); break }
     }
 
-    // z2b: rim caps = the ±45° elevation scale
     if (CFG.rims && tiltRad > 0.06) {
-      const capH = R * 0.52
-      ctx.save(); ctx.translate(0, -capH); ell(R * 0.985, COL.dim + '0.14)', 1); ctx.restore()
-      ctx.save(); ctx.translate(0, capH); ell(R * 0.985, COL.dim + '0.10)', 1, [3, 5]); ctx.restore()
+      const capH2 = R * 0.52 * k
+      ctx.save(); ctx.translate(0, -capH2); ell(R * 0.985, COL.dim + '0.14)', 1); ctx.restore()
+      ctx.save(); ctx.translate(0, capH2); ell(R * 0.985, COL.dim + '0.10)', 1, [3, 5]); ctx.restore()
     }
 
-    // z3: threat axes (+ corridor read)
     if (escortee) {
       const e = project(escortee.p, R, tiltRad)
       for (let i = 0; i < torps.length; i++) {
-        const t = torps[i]; if (t.dead || t.ghost || t.tgt !== 'esc') continue
+        const t = torps[i]
+        if (t.dead || t.ghost || t.tgt !== 'esc') continue
         const f = project(t.p, R, tiltRad)
-        // corridor: does the WORLD segment torp→escortee pass within RING of me (origin)?
         let covered = true
         if (CFG.corridor) {
-          const ax = t.p[0], az = t.p[2], bx = escortee.p[0], bz = escortee.p[2]
-          const abx = bx - ax, abz = bz - az
-          const tt = Math.max(0, Math.min(1, (-(ax * abx + az * abz)) / (abx * abx + abz * abz || 1)))
-          covered = Math.hypot(ax + abx * tt, az + abz * tt) < WORLD.RING
+          const abx = escortee.p[0] - t.p[0], aby = escortee.p[1] - t.p[1], abz = escortee.p[2] - t.p[2]
+          const len2 = abx * abx + aby * aby + abz * abz || 1
+          const tt = Math.max(0, Math.min(1, -(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz) / len2))
+          covered = Math.hypot(t.p[0] + abx * tt, t.p[1] + aby * tt, t.p[2] + abz * tt) < WORLD.RING
         }
         ctx.strokeStyle = CFG.corridor ? (covered ? 'rgba(87,230,196,0.55)' : 'rgba(255,80,64,0.75)') : 'rgba(255,80,64,0.3)'
         ctx.lineWidth = covered ? 1 : 1.4
@@ -842,34 +835,29 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
         ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(e.fx, e.fy); ctx.stroke()
         ctx.setLineDash([])
       }
-      // escortee diamond + stem
       ctx.strokeStyle = 'rgba(87,230,196,0.5)'
-      ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e.fx, e.fy - e.eh); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e.fx, e.fy - e.eh * k); ctx.stroke()
       ctx.fillStyle = COL.teal
-      ctx.save(); ctx.translate(e.fx, e.fy - e.eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
+      ctx.save(); ctx.translate(e.fx, e.fy - e.eh * k); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
     }
 
-    // z3b: ambient grammar — anchorless faint dots (ships AND ordnance)
     for (const a of traffic) {
       const f = project(a.p, R, tiltRad)
       ctx.fillStyle = COL.dim + '0.4)'
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * 0.4, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * 0.4 * k, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
     }
 
-    // z4: threat stems
     for (let i = 0; i < torps.length; i++) {
       const t = torps[i]
       if (t.dead) {
-        // brief kill bloom
         if (t.deadT < 0.5) {
           const f = project(t.p, R, tiltRad)
           ctx.strokeStyle = 'rgba(255,180,90,' + (0.8 - t.deadT * 1.6) + ')'
-          ctx.beginPath(); ctx.arc(f.fx, f.fy - t._lastEh, size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
+          ctx.beginPath(); ctx.arc(f.fx, f.fy - (t._lastEh || 0), size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
         }
         continue
       }
       if (t.ghost) {
-        // hollow × at last-known foot
         const f = project(t.lastFoot, R, tiltRad)
         ctx.strokeStyle = 'rgba(220,232,244,0.55)'
         const s3 = size * 0.012
@@ -880,56 +868,34 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
         continue
       }
       const f = project(t.p, R, tiltRad)
-      t._lastEh = f.eh
-      const st = statuses[i]
-      const col = !CFG.tewa
-        ? COL.red
-        : st === 3
-          ? 'rgba(159,178,200,0.75)'
-          : st === 2
-            ? COL.teal
-            : st === 1
-              ? COL.amber
-              : COL.red
+      t._lastEh = f.eh * k
+      const col = statusCol(statuses[i])
       let a2 = 1
       if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
-      // stem with dark outline (the z-order law)
       ctx.globalAlpha = alpha * a2
       ctx.strokeStyle = 'rgba(2,8,20,0.9)'; ctx.lineWidth = 3
-      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh * k); ctx.stroke()
       ctx.strokeStyle = col; ctx.lineWidth = 1.3
-      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
-      // foot + tip
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh * k); ctx.stroke()
       ctx.fillStyle = col
       ctx.fillRect(f.fx - 1.5, f.fy - 1.5, 3, 3)
-      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * 0.0075, 0, 6.3); ctx.fill()
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * k, size * 0.0075, 0, 6.3); ctx.fill()
       ctx.globalAlpha = alpha
     }
-
-    // own-ship marker (+ nose tick when north-up)
-    ctx.fillStyle = COL.white
-    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
-    if (!CFG.noseUp) {
-      ctx.strokeStyle = COL.white
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
-    }
+    ownMarker()
     ctx.globalAlpha = 1
-  } else {
-    // own marker on nav picture too
-    ctx.fillStyle = COL.white
-    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
   }
   ctx.restore()
 
   // status text (big scope only)
-  if (size > 200 && combat && CFG.ringLight) {
+  if (size > 200 && combatAlpha > 0.5 && CFG.ringLight) {
     let un = 0, am = 0
     torps.forEach((t, i) => { if (!t.dead && !t.ghost && statuses[i] !== 3) { if (statuses[i] === 0) un++; else if (statuses[i] === 1) am++ } })
     ctx.font = '10px "Space Mono", monospace'
     ctx.fillStyle = un > 0 ? COL.red : am > 0 ? COL.amber : COL.teal
     ctx.fillText(un > 0 ? 'UNCOVERED ' + un : am > 0 ? 'STRAINED ' + am : 'ALL TRACKS HELD', 14, 20)
     const hots = MOUNTS.filter(m => m.hot).length
-    if (hots) { ctx.fillStyle = COL.amber; ctx.fillText('THERMAL LOCKOUT ×' + hots, 14, 34) }
+    if (hots) { ctx.fillStyle = COL.amber; ctx.fillText('THERMAL LOCKOUT x' + hots, 14, 34) }
   }
 }
 
@@ -950,12 +916,11 @@ function frame(nowMs) {
   if (CFG.wobble) { ship.pitch = Math.sin(ship.t * 0.5) * 0.5; ship.roll = Math.sin(ship.t * 0.33) * 0.7 }
   else { ship.pitch = 0; ship.roll = 0 }
 
-  // morph state machine (the picture-cut)
-  if (morph.phase !== 'idle') {
-    morph.t += dt
-    if (morph.phase === 'fadeOut' && morph.t >= 0.1) { morph.phase = 'tilt'; morph.t = 0; morph.v = morph.to }
-    else if (morph.phase === 'tilt' && morph.t >= 0.2) { morph.phase = 'fadeIn'; morph.t = 0 }
-    else if (morph.phase === 'fadeIn' && morph.t >= 0.1) { morph.phase = 'idle' }
+  // THE COLLAPSE: chase the target picture over ~450 ms
+  if (morph.v !== morph.to) {
+    morph.v = morph.to > morph.v
+      ? Math.min(morph.to, morph.v + dt / 0.45)
+      : Math.max(morph.to, morph.v - dt / 0.45)
   }
 
   // scenario sim
