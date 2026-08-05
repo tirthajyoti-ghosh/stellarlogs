@@ -427,3 +427,13 @@ conflict; everything else stands:
 All other pass-2 decisions (outer-weighted mapping, ring status light,
 corridor read, lane-stable nose-up, ambient grammar, ghost tracks)
 survive the research unchanged.
+
+
+## P3.7 — Tirtha's bench verdict (2026-08-05, final)
+
+The synthesis approved with one amendment: **the full-width mid-height
+ellipse (the drawn plane) goes.** The cylinder is only its two cap rims;
+the plane survives as an IMPLIED surface — every stem foot sits on it
+and the PDC ring lives on it, so the eye reconstructs it without a third
+circle competing with the caps. Ink count drops again. Design LOCKED;
+build on his word.

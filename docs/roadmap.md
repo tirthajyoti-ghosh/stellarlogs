@@ -150,7 +150,17 @@ The flow:
    expires without ceremony and the board posts the next. No punishment;
    the lane keeps its own schedule.
 
-### 5. Cylindrical combat radar — DISCUSSION AGENDA (needs Tirtha)
+### 5. Cylindrical combat radar — DESIGN LOCKED 2026-08-05 (docs/the-scope.md)
+*Settled through three exploration passes + a live judging bench
+(radar.html, permanent): edge-lit vessel (cap rims only, walls fading at
+mid-height, NO drawn plane — implied by stem feet + ring), plane-anchored
+stems, outer-weighted range with the PDC ring as master status light and
+crossing-flash beat, corridor read (threat axis × ring), TEWA stem tint
+read live from fire control, one soonest-impact digit, combat grows the
+panel 132→200 px, picture-cut morph, nose-up + lane-stable, ambient as
+anchorless dots, ghost tracks reserved for DARK RUNNER. Research pass:
+B-scopes, Wickens' line-of-sight ambiguity, Elite's stems, the show's
+reference-structure law. Build on Tirtha's go.*
 Confirmed shape: in combat, the minimap becomes a cylinder — bearing around
 the rim, elevation as stem height above/below the reference disc, range
 radial; torpedo tracks visibly corkscrew. New requirement from feedback:
