@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>THE SCOPE — live bench</title>
+<style>
+  :root {
+    --bg: #020814; --panel: #06101f; --line: #12253d; --ink: #9fb2c8;
+    --teal: #57e6c4; --amber: #ffb454; --red: #ff5040; --white: #dce8f4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: "Space Mono", ui-monospace, Menlo, monospace;
+    min-height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    padding: 14px 22px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  header h1 { font-size: 15px; letter-spacing: 0.35em; color: var(--white); }
+  header span { font-size: 10px; letter-spacing: 0.15em; opacity: 0.6; }
+  main { flex: 1; display: flex; gap: 0; min-height: 0; }
+  aside {
+    width: 235px; padding: 16px 14px; border-right: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 6px; overflow-y: auto;
+  }
+  aside.right { border-right: 0; border-left: 1px solid var(--line); width: 265px; }
+  .grp { font-size: 9px; letter-spacing: 0.3em; opacity: 0.55; margin: 12px 0 4px; }
+  .grp:first-child { margin-top: 0; }
+  button.scn {
+    background: transparent; border: 1px solid var(--line); color: var(--ink);
+    font-family: inherit; font-size: 11px; letter-spacing: 0.08em;
+    padding: 9px 10px; text-align: left; cursor: pointer;
+  }
+  button.scn:hover { border-color: var(--ink); }
+  button.scn.on { border-color: var(--amber); color: var(--amber); }
+  label.tg {
+    display: flex; align-items: center; gap: 8px; font-size: 11px;
+    padding: 5px 2px; cursor: pointer; user-select: none;
+  }
+  label.tg input { accent-color: #57e6c4; }
+  .sld { display: flex; align-items: center; gap: 8px; font-size: 11px; padding: 4px 2px; }
+  .sld input { flex: 1; accent-color: #57e6c4; }
+  .sld output { width: 34px; text-align: right; color: var(--white); }
+  section#stage {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 10px; padding: 10px; position: relative;
+  }
+  canvas#big { background: transparent; }
+  #insetWrap {
+    position: absolute; right: 26px; bottom: 22px; text-align: center;
+    border: 1px solid var(--line); padding: 8px; background: rgba(2,8,20,0.7);
+  }
+  #insetWrap div { font-size: 8px; letter-spacing: 0.2em; opacity: 0.6; margin-top: 5px; }
+  footer {
+    border-top: 1px solid var(--line); padding: 12px 22px; min-height: 58px;
+    font-size: 11.5px; line-height: 1.55; color: var(--ink); max-width: 100%;
+  }
+  footer b { color: var(--white); font-weight: 400; }
+</style>
+</head>
+<body>
+<header><h1>THE SCOPE</h1><span>live bench — every pass-2 idea, selectable and moving · docs/the-scope.md</span></header>
+<main>
+  <aside>
+    <div class="grp">SCENARIOS</div>
+    <button class="scn" data-s="nav">NAV DISC (today's calm mode)</button>
+    <button class="scn" data-s="morph">THE MORPH (picture-cut)</button>
+    <button class="scn" data-s="w1">CERT W1 — JUNK ASTERN</button>
+    <button class="scn on" data-s="w3">CERT W3 — MIL-SPEC STORM</button>
+    <button class="scn" data-s="station">ESCORT — THE CORRIDOR READ</button>
+    <button class="scn" data-s="intercept">ESCORT — INTERCEPT LEG</button>
+    <button class="scn" data-s="ambient">SOUND LAW — AMBIENT GRAMMAR</button>
+    <button class="scn" data-s="ghost">DARK RUNNER — GHOST TRACK</button>
+    <div class="grp">SHIP</div>
+    <label class="tg"><input type="checkbox" id="autoyaw" checked />ship slowly turning</label>
+    <label class="tg"><input type="checkbox" id="wobble" checked />pitch/roll wobble (test the vertical law)</label>
+  </aside>
+  <section id="stage">
+    <canvas id="big" width="620" height="620"></canvas>
+    <div id="insetWrap"><canvas id="inset" width="132" height="132"></canvas><div>1:1 IN-GAME SIZE</div></div>
+  </section>
+  <aside class="right">
+    <div class="grp">REPRESENTATION</div>
+    <label class="tg"><input type="radio" name="rep" value="cyl" checked />FREE CYLINDER — contacts fly the volume (Tirtha)</label>
+    <label class="tg"><input type="radio" name="rep" value="disc" />TILTED DISC + STEMS (pass 2)</label>
+    <div class="grp">CYLINDER AIDS</div>
+    <label class="tg"><input type="checkbox" id="trails" checked />motion trails (corkscrews paint helixes)</label>
+    <label class="tg"><input type="checkbox" id="bubble" checked />PDC bubble ghost (the 300 u sphere)</label>
+    <label class="tg"><input type="checkbox" id="rails" checked />side rails + center axis</label>
+    <label class="tg"><input type="checkbox" id="midring" />faint mid-height ring</label>
+    <div class="grp">GEOMETRY</div>
+    <div class="sld">tilt <input type="range" id="tilt" min="0" max="58" value="42" /><output id="tiltOut">42°</output></div>
+    <label class="tg"><input type="checkbox" id="noseup" checked />nose-up bearing (off = north-up)</label>
+    <label class="tg"><input type="checkbox" id="lanestable" checked />lane-stable vertical (off = ship-frame tumble)</label>
+    <label class="tg"><input type="checkbox" id="rims" checked />rim caps = ±45° elevation scale</label>
+    <div class="grp">RANGE MAPPING</div>
+    <label class="tg"><input type="radio" name="map" value="outer" checked />outer-weighted (pass 2: decisions outside)</label>
+    <label class="tg"><input type="radio" name="map" value="inner" />inner-enlarged (pass 1 — overturned)</label>
+    <label class="tg"><input type="radio" name="map" value="linear" />plain linear</label>
+    <div class="grp">COVERAGE &amp; INK</div>
+    <label class="tg"><input type="checkbox" id="tewa" checked />TEWA stem tint (teal/amber/red)</label>
+    <label class="tg"><input type="checkbox" id="ringlight" checked />ring = master status light</label>
+    <label class="tg"><input type="checkbox" id="corridor" checked />corridor read (axis × ring test)</label>
+    <label class="tg"><input type="checkbox" id="wedges" checked />mount-facing wedge underlay</label>
+    <label class="tg"><input type="checkbox" id="pulse" checked />pulse the soonest stem</label>
+  </aside>
+</main>
+<footer id="caption"></footer>
+<script>
+'use strict'
+// ============================================================ state & config
+const CFG = {
+  rep: 'cyl', trails: true, bubble: true, rails: true, midring: false,
+  tilt: 42, noseUp: true, laneStable: true, rims: true,
+  map: 'outer', tewa: true, ringLight: true, corridor: true, wedges: true, pulse: true,
+  autoYaw: true, wobble: true,
+}
+const WORLD = { RING: 300, HORIZON: 1800, CAP_DEG: 45 }
+const COL = { teal: '#57e6c4', amber: '#ffb454', red: '#ff5040', white: '#dce8f4', dim: 'rgba(159,178,200,' }
+
+// ship (always at origin; the scope is ego-centered)
+const ship = { yaw: 0, pitch: 0, roll: 0, t: 0 }
+
+// six mock mounts — arc axes spread over the sphere, 75° cones (the real law)
+const MOUNTS = [
+  [0.05, 0.45, -0.89], [0.05, 0.45, 0.89], [-0.9, 0.35, 0], [0.9, 0.35, 0],
+  [-0.45, -0.8, -0.4], [0.45, -0.8, 0.4],
+].map(v => { const l = Math.hypot(...v); return { dir: v.map(c => c / l), heat: 0, hot: false, tgt: -1 } })
+const COS_ARC = Math.cos((75 * Math.PI) / 180)
+const TRACK_RANGE = 1000
+
+// entities
+let torps = []   // {p:[x,y,z], v, vmax, cork:{r,spin,ang,dir}, tgt:'self'|'esc', ghost, ghostAt, lastFoot, state, hue}
+let escortee = null // {p, v[]}
+let traffic = []  // ambient: {p, v, kind:'ship'|'torp', tgtIdx}
+let scenario = 'w3'
+let morph = { v: 1, to: 1, phase: 'idle', t: 0 } // 0 = nav picture, 1 = combat picture
+let scnT = 0
+
+// ============================================================ scenarios
+function vec(bearingDeg, elevDeg, range) {
+  const b = (bearingDeg * Math.PI) / 180, e = (elevDeg * Math.PI) / 180
+  return [Math.sin(b) * Math.cos(e) * range, Math.sin(e) * range, -Math.cos(b) * Math.cos(e) * range]
+}
+function mkTorp(bearing, elev, range, opts = {}) {
+  const p = vec(bearing, elev, range)
+  return {
+    p, vmax: opts.vmax ?? 210, speed: opts.v0 ?? 120,
+    cork: { r: opts.cork ?? 0, spin: opts.spin ?? 3.2, ang: Math.random() * 6.28, dir: Math.random() < 0.5 ? 1 : -1 },
+    tgt: opts.tgt ?? 'self', ghost: false, ghostAt: opts.ghostAt ?? 0, relitAt: 0, lastFoot: null,
+    dead: false, deadT: 0, trail: [], trailT: 0,
+  }
+}
+const SCN = {
+  nav: {
+    cap: '<b>NAV DISC — what exists today.</b> Flat top-down plot, click-to-jump blips, the sweep. The combat instrument below is a different PICTURE of the same panel, never a different panel.',
+    combat: false,
+    setup() { torps = []; traffic = []; escortee = null },
+  },
+  morph: {
+    cap: '<b>THE MORPH — a picture-cut, not a data-morph.</b> Nav ink fades (100 ms), the empty plane tilts (200 ms), combat ink fades in (100 ms). Nothing slides mid-klaxon; the instrument takes a breath and switches pictures, CIC-style. Loops.',
+    combat: true,
+    setup() { torps = [mkTorp(40, 18, 900, { cork: 26 }), mkTorp(-70, -12, 1200, { cork: 26 })]; traffic = []; escortee = null; this._next = 2.4 },
+    tick(dt) { this._next -= dt; if (this._next < 0) { setMorph(morph.to === 1 ? 0 : 1); this._next = 3.2 } },
+  },
+  w1: {
+    cap: '<b>CERT WAVE 1 — CIVILIAN JUNK from astern.</b> Straight tail-chasers, slow. Watch the stems: everything tints teal almost immediately — the guns hold every track, sitting is safe, the wave exists to teach the instrument. Bearing is nose-up: astern = bottom.',
+    combat: true,
+    setup() { torps = [0, 1, 2, 3].map(i => mkTorp(160 + i * 12, [-8, 6, 14, -3][i], 1500, { vmax: 105, v0: 70 })); traffic = []; escortee = null },
+    respawn() { return [0, 1, 2, 3].map(i => mkTorp(150 + Math.random() * 50, -14 + Math.random() * 28, 1500, { vmax: 105, v0: 70 })) },
+  },
+  w3: {
+    cap: '<b>CERT WAVE 3 — MIL-SPEC STORM.</b> Two flights of six on fanned bearings, corkscrews wiggling the stems, heat armed. TEWA truth on every stem: <b style="color:#57e6c4">teal</b> = a mount holds it, <b style="color:#ffb454">amber</b> = in arc but queued or guns overheated, <b style="color:#ff5040">red</b> = your geometry has orphaned it. The ring is the verdict at a glance. Soonest impact pulses.',
+    combat: true,
+    setup() {
+      torps = []
+      for (let i = 0; i < 6; i++) torps.push(mkTorp(i * 60 + 10, -30 + Math.random() * 60, 1700, { cork: 30, vmax: 240, v0: 130 }))
+      this._flightB = 3.4
+      traffic = []; escortee = null
+      MOUNTS.forEach(m => { m.heat = 0.3 + Math.random() * 0.3; m.hot = false })
+    },
+    tick(dt) {
+      if (this._flightB > 0) { this._flightB -= dt; if (this._flightB <= 0) for (let i = 0; i < 6; i++) torps.push(mkTorp(i * 60 + 40, -35 + Math.random() * 70, 1700, { cork: 30, vmax: 240, v0: 130 })) }
+    },
+    respawn() { this.setup(); return torps },
+    heat: true,
+  },
+  station: {
+    cap: '<b>ESCORT — THE CORRIDOR READ.</b> Her diamond rides the lane; torpedoes fly threat axes at HER. An axis that crosses your ring is a corridor your guns will get a chance at (<b style="color:#57e6c4">solid teal</b>). An axis that misses your ring reaches her untouched (<b style="color:#ff5040">red dashes</b>). The ship auto-flies off station and back — watch the dashes flip. The whole escort job is: keep the red dashes at zero.',
+    combat: true,
+    setup() {
+      escortee = { p: [430, -25, -260], drift: 0 }
+      torps = [mkTorp(70, 12, 1500, { tgt: 'esc', cork: 18, vmax: 175, v0 : 110 }), mkTorp(150, -18, 1350, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 }), mkTorp(-30, 25, 1600, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 })]
+      traffic = []
+      this._cycle = 0
+    },
+    tick(dt) {
+      // scripted stationing: drift off her side, then fly back onto the axes
+      this._cycle = (this._cycle + dt) % 9
+      const off = this._cycle < 4.5 ? this._cycle / 4.5 : (9 - this._cycle * 1) / 4.5
+      const k = Math.min(1, Math.max(0, off))
+      escortee.p[0] = 240 + 420 * k
+      escortee.p[2] = -160 - 290 * k
+      // demo torpedoes never impact — the axes ARE the exhibit; recycle
+      // each bird to a fresh bearing as it reaches her
+      for (let i = 0; i < torps.length; i++) {
+        const t = torps[i]
+        const d = Math.hypot(t.p[0] - escortee.p[0], t.p[1] - escortee.p[1], t.p[2] - escortee.p[2])
+        if (t.dead || d < 95) {
+          torps[i] = mkTorp(Math.random() * 360, -25 + Math.random() * 50, 1450 + Math.random() * 250, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 })
+        }
+      }
+    },
+    respawn() {
+      return [mkTorp(30 + Math.random() * 120, -20 + Math.random() * 45, 1550, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 }),
+              mkTorp(120 + Math.random() * 90, -20 + Math.random() * 45, 1400, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 }),
+              mkTorp(-60 + Math.random() * 60, -10 + Math.random() * 40, 1650, { tgt: 'esc', cork: 18, vmax: 175, v0: 110 })]
+    },
+  },
+  intercept: {
+    cap: '<b>ESCORT — INTERCEPT LEG (calm disc).</b> Before anything goes loud: her blip, her track line, and the computed rendezvous ∘ leading her. The mission strip keeps the numbers; the scope shows the geometry — and you learn to read the instrument in peace, on the same panel that will later go loud.',
+    combat: false,
+    setup() { torps = []; traffic = []; escortee = { p: [1500, 40, -900], v: [-95, -3, 62] }; this._t = 0 },
+    tick(dt) {
+      escortee.p[0] += escortee.v[0] * dt; escortee.p[1] += escortee.v[1] * dt; escortee.p[2] += escortee.v[2] * dt
+      const d = Math.hypot(...escortee.p)
+      if (d < 260 || d > 2100) this.setup()
+    },
+  },
+  ambient: {
+    cap: '<b>SOUND LAW — THE GRAMMAR.</b> Instruments report the world; GRAMMAR reports concern. Ambient traffic and even ambient torpedoes are faint anchorless dots — alive, stemless, tintless, silent. The one contract threat wears a stem. Stems mean: this one is yours.',
+    combat: true,
+    setup() {
+      torps = [mkTorp(55, 20, 1300, { cork: 22, vmax: 190, v0: 110 })]
+      traffic = [
+        { p: [-1300, 60, 700], v: [70, 0, -38], kind: 'ship' },
+        { p: [900, -90, 1200], v: [-52, 2, -64], kind: 'ship' },
+        { p: [-500, 30, -1500], v: [64, -1, 58], kind: 'ship' },
+        { p: [-1500, 10, 300], v: [110, 4, -20], kind: 'torp' },
+        { p: [-1450, -40, 420], v: [108, 8, -26], kind: 'torp' },
+      ]
+      escortee = null
+    },
+    tick(dt) {
+      for (const a of traffic) { a.p[0] += a.v[0] * dt; a.p[1] += a.v[1] * dt; a.p[2] += a.v[2] * dt; if (Math.hypot(...a.p) > 2400) { a.p[0] *= -0.95; a.p[2] *= -0.95 } }
+    },
+    respawn() { return [mkTorp(30 + Math.random() * 60, 10 + Math.random() * 20, 1300, { cork: 22, vmax: 190, v0: 110 })] },
+  },
+  ghost: {
+    cap: '<b>DARK RUNNER — GHOST TRACK (reserved for THE HUNT).</b> The drive cuts mid-approach: the stem fades, a hollow × holds the last-known foot, the contact is GONE — then it relights terminal, closer than comfort. The scope must know how to draw uncertainty before the Hunt needs it.',
+    combat: true,
+    setup() { torps = [mkTorp(35, 15, 1700, { cork: 24, vmax: 220, v0: 120, ghostAt: 1050 })]; traffic = []; escortee = null },
+    respawn() { return [mkTorp(20 + Math.random() * 60, 5 + Math.random() * 25, 1700, { cork: 24, vmax: 220, v0: 120, ghostAt: 950 + Math.random() * 200 })] },
+  },
+}
+
+function setMorph(to) { morph.to = to; morph.phase = 'fadeOut'; morph.t = 0 }
+function setScenario(name) {
+  scenario = name
+  document.querySelectorAll('button.scn').forEach(b => b.classList.toggle('on', b.dataset.s === name))
+  document.getElementById('caption').innerHTML = SCN[name].cap
+  SCN[name].setup()
+  scnT = 0
+  const wantCombat = SCN[name].combat ? 1 : 0
+  if (wantCombat !== morph.v) setMorph(wantCombat)
+}
+
+// ============================================================ simulation
+function simTorp(t, dt) {
+  const tgt = t.tgt === 'esc' && escortee ? escortee.p : [0, 0, 0]
+  const dx = tgt[0] - t.p[0], dy = tgt[1] - t.p[1], dz = tgt[2] - t.p[2]
+  const d = Math.hypot(dx, dy, dz) || 1
+  // ghost logic
+  if (t.ghostAt && !t.ghost && d < t.ghostAt) { t.ghost = true; t.relitAt = d - 520; t.lastFoot = [...t.p] }
+  if (t.ghost && d < Math.max(360, t.relitAt)) t.ghost = false
+  t.speed = Math.min(t.vmax, t.speed + 65 * dt)
+  // aim = target + corkscrew offset that spirals in
+  let ax = tgt[0], ay = tgt[1], az = tgt[2]
+  if (t.cork.r > 0 && d < 950) {
+    t.cork.ang += t.cork.spin * t.cork.dir * dt
+    const R = t.cork.r * Math.min(1, d / 620)
+    // basis ⊥ line of sight
+    let px = -dz / d, py = 0, pz = dx / d
+    const pl = Math.hypot(px, py, pz) || 1; px /= pl; pz /= pl
+    const qx = (dy * pz - dz * py) / d, qy = (dz * px - dx * pz) / d, qz = (dx * py - dy * px) / d
+    ax += Math.cos(t.cork.ang) * R * px + Math.sin(t.cork.ang) * R * qx
+    ay += Math.cos(t.cork.ang) * R * py + Math.sin(t.cork.ang) * R * qy
+    az += Math.cos(t.cork.ang) * R * pz + Math.sin(t.cork.ang) * R * qz
+  }
+  const ddx = ax - t.p[0], ddy = ay - t.p[1], ddz = az - t.p[2]
+  const dd = Math.hypot(ddx, ddy, ddz) || 1
+  t.p[0] += (ddx / dd) * t.speed * dt
+  t.p[1] += (ddy / dd) * t.speed * dt
+  t.p[2] += (ddz / dd) * t.speed * dt
+  // motion trail — the free cylinder's depth cue, and the helix made visible
+  t.trailT += dt
+  if (t.trailT > 0.07 && !t.ghost) {
+    t.trailT = 0
+    t.trail.push([t.p[0], t.p[1], t.p[2]])
+    if (t.trail.length > 16) t.trail.shift()
+  }
+  if (d < 26) { t.dead = true; t.deadT = 0.001 }
+}
+
+function assignMounts() {
+  MOUNTS.forEach(m => { m.tgt = -1 })
+  const order = torps.map((t, i) => ({ i, d: Math.hypot(...t.p) })).filter(o => !torps[o.i].dead && !torps[o.i].ghost && o.d < TRACK_RANGE).sort((a, b) => a.d - b.d)
+  for (const o of order) {
+    const t = torps[o.i]
+    const dir = [t.p[0] / o.d, t.p[1] / o.d, t.p[2] / o.d]
+    let best = -1, bestScore = -2
+    for (let mi = 0; mi < MOUNTS.length; mi++) {
+      const m = MOUNTS[mi]
+      if (m.tgt >= 0 || m.hot) continue
+      const c = m.dir[0] * dir[0] + m.dir[1] * dir[1] + m.dir[2] * dir[2]
+      if (c < COS_ARC) continue
+      if (c > bestScore) { bestScore = c; best = mi }
+    }
+    if (best >= 0) MOUNTS[best].tgt = o.i
+  }
+  // per-threat status: 3 far (tracked, not yet engageable) · 2 engaged ·
+  // 1 in-arc waiting/hot · 0 uncovered. RED means actionable NOW — a
+  // threat still beyond track range is dim, not screaming (bench-taught:
+  // painting spawn-distance threats red made the ring cry wolf).
+  return torps.map((t, i) => {
+    if (t.dead || t.ghost) return -1
+    if (MOUNTS.some(m => m.tgt === i)) return 2
+    const d = Math.hypot(...t.p) || 1
+    if (d >= TRACK_RANGE) return 3
+    const dir = [t.p[0] / d, t.p[1] / d, t.p[2] / d]
+    const inArc = MOUNTS.some(m => !m.hot && m.dir[0] * dir[0] + m.dir[1] * dir[1] + m.dir[2] * dir[2] >= COS_ARC)
+    return inArc ? 1 : 0
+  })
+}
+
+function simHeat(dt, armed) {
+  for (const m of MOUNTS) {
+    if (armed && m.tgt >= 0 && !m.hot) { m.heat += 0.16 * dt; if (m.heat >= 1) { m.hot = true } }
+    else { m.heat = Math.max(0, m.heat - 0.1 * dt); if (m.hot && m.heat < 0.35) m.hot = false }
+  }
+}
+
+// ============================================================ projection & draw
+function mapRange(r, R) {
+  const ring = WORLD.RING, hor = WORLD.HORIZON
+  if (CFG.map === 'outer') {
+    return r <= ring ? (r / ring) * 0.3 * R : (0.3 + Math.min(1, (r - ring) / (hor - ring)) * 0.7) * R
+  }
+  if (CFG.map === 'inner') {
+    return r <= ring ? (r / ring) * 0.62 * R : (0.62 + Math.min(1, (r - ring) / (hor - ring)) * 0.38) * R
+  }
+  return Math.min(1, r / hor) * R
+}
+function ringPx(R) { return CFG.map === 'outer' ? 0.3 * R : CFG.map === 'inner' ? 0.62 * R : (WORLD.RING / WORLD.HORIZON) * R }
+
+function project(p, R, tiltRad, sq) {
+  // world-relative → instrument space. Nose-up: rotate by -yaw.
+  let x = p[0], y = p[1], z = p[2]
+  if (!CFG.laneStable) {
+    // ship-frame: the whole plot tumbles with pitch/roll (the rejected law, feelable)
+    const cp = Math.cos(ship.pitch), sp = Math.sin(ship.pitch)
+    const cr = Math.cos(ship.roll), sr = Math.sin(ship.roll)
+    let y2 = y * cp - z * sp, z2 = y * sp + z * cp; y = y2; z = z2
+    let x2 = x * cr - y * sr; y2 = x * sr + y * cr; x = x2; y = y2
+  }
+  if (CFG.noseUp) {
+    const c = Math.cos(-ship.yaw), s = Math.sin(-ship.yaw)
+    const x2 = x * c - z * s, z2 = x * s + z * c
+    x = x2; z = z2
+  }
+  const ground = Math.hypot(x, z) || 1e-6
+  const dist = Math.hypot(x, y, z) || 1e-6
+  const r = mapRange(ground, R)
+  const px = (x / ground) * r
+  const pz = (z / ground) * r
+  // elevation ANGLE, clamped ±45°, mapped to cap height
+  const elev = Math.asin(Math.max(-1, Math.min(1, y / dist)))
+  const capH = R * 0.52
+  const eh = Math.max(-1, Math.min(1, elev / ((WORLD.CAP_DEG * Math.PI) / 180))) * capH
+  return { fx: px, fy: pz * (sq ?? Math.cos(tiltRad)), eh, ground }
+}
+
+function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
+  const cx = size / 2, cy = size / 2 + size * 0.03
+  const R = size * 0.40
+  const combat = morph.v > 0.5
+  const tiltRad = ((combat ? CFG.tilt : 0) * Math.PI) / 180
+  // ink alpha during the picture-cut
+  let alpha = 1
+  if (morph.phase === 'fadeOut') alpha = 1 - morph.t / 0.1
+  if (morph.phase === 'fadeIn') alpha = morph.t / 0.1
+  if (morph.phase === 'tilt') alpha = 0.12
+
+  ctx.clearRect(0, 0, size, size)
+  ctx.save()
+  ctx.translate(cx, cy)
+
+  const ell = (r, style, width, dash) => {
+    ctx.strokeStyle = style; ctx.lineWidth = width
+    ctx.setLineDash(dash || [])
+    ctx.beginPath(); ctx.ellipse(0, 0, r, r * Math.cos(tiltRad), 0, 0, Math.PI * 2); ctx.stroke()
+    ctx.setLineDash([])
+  }
+
+  // chrome: outer boundary always
+  ell(R, COL.dim + '0.35)', 1)
+
+  if (!combat || alpha < 1) {
+    // ---- NAV PICTURE ----
+    ctx.globalAlpha = combat ? 0 : alpha
+    if (!combat) {
+      // sweep
+      const sweep = (now * 0.9) % (Math.PI * 2)
+      ctx.strokeStyle = COL.dim + '0.5)'
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(sweep) * R, -Math.cos(sweep) * R * Math.cos(tiltRad)); ctx.stroke()
+      ell(R * 0.55, COL.dim + '0.18)', 1)
+      // fake system blips
+      const blips = [[-0.62, -0.3, '#8fb8e8'], [0.44, -0.52, '#ffd9a0'], [0.7, 0.3, '#e0708f'], [-0.3, 0.55, '#57e6c4'], [0.1, -0.08, '#dce8f4']]
+      for (const [bx, by, c] of blips) {
+        ctx.fillStyle = c
+        ctx.beginPath(); ctx.arc(bx * R, by * R * Math.cos(tiltRad), size * 0.008, 0, 6.3); ctx.fill()
+      }
+      // intercept-leg picture
+      if (scenario === 'intercept' && escortee) {
+        const e = project(escortee.p, R, tiltRad)
+        // her track line
+        const e2 = project([escortee.p[0] + escortee.v[0] * 9, escortee.p[1] + escortee.v[1] * 9, escortee.p[2] + escortee.v[2] * 9], R, tiltRad)
+        ctx.strokeStyle = 'rgba(87,230,196,0.4)'
+        ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e2.fx, e2.fy); ctx.stroke()
+        // rendezvous ∘ leads her
+        const lead = project([escortee.p[0] + escortee.v[0] * 5.5, escortee.p[1] + escortee.v[1] * 5.5, escortee.p[2] + escortee.v[2] * 5.5], R, tiltRad)
+        ctx.strokeStyle = COL.white
+        ctx.beginPath(); ctx.arc(lead.fx, lead.fy, size * 0.014, 0, 6.3); ctx.stroke()
+        // her diamond
+        ctx.fillStyle = COL.teal
+        ctx.save(); ctx.translate(e.fx, e.fy); ctx.rotate(Math.PI / 4); const s = size * 0.011; ctx.fillRect(-s, -s, s * 2, s * 2); ctx.restore()
+        // own closing vector
+        ctx.strokeStyle = COL.dim + '0.6)'; ctx.setLineDash([3, 4])
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(lead.fx * 0.85, lead.fy * 0.85); ctx.stroke(); ctx.setLineDash([])
+      }
+    }
+    ctx.globalAlpha = 1
+  }
+
+  if (combat && CFG.rep === 'cyl') {
+    // ---- COMBAT PICTURE · FREE CYLINDER (Tirtha's vision) ----
+    // No plane, no stems. Contacts fly the volume; motion trails carry
+    // depth and paint the corkscrews as visible helixes.
+    ctx.globalAlpha = alpha
+    const rp = ringPx(R)
+    const capH = R * 0.52
+    const cosT = Math.cos(tiltRad)
+    const capRy = R * (0.1 + 0.35 * (1 - cosT))
+    const sq = capRy / R
+    const sep = morph.phase === 'tilt' ? morph.t / 0.2 : 1
+    const capEll = (dy, style, width, dash) => {
+      ctx.save(); ctx.translate(0, dy * sep)
+      ctx.strokeStyle = style; ctx.lineWidth = width; ctx.setLineDash(dash || [])
+      ctx.beginPath(); ctx.ellipse(0, 0, R, Math.max(2, capRy), 0, 0, Math.PI * 2); ctx.stroke()
+      ctx.setLineDash([]); ctx.restore()
+    }
+    // chrome: caps, rails, center axis
+    capEll(-capH, COL.dim + '0.4)', 1)
+    capEll(capH, COL.dim + '0.22)', 1)
+    if (CFG.midring) capEll(0, COL.dim + '0.1)', 1, [3, 6])
+    if (CFG.rails) {
+      ctx.strokeStyle = COL.dim + '0.16)'
+      ctx.beginPath()
+      ctx.moveTo(-R, -capH * sep); ctx.lineTo(-R, capH * sep)
+      ctx.moveTo(R, -capH * sep); ctx.lineTo(R, capH * sep)
+      ctx.stroke()
+      ctx.strokeStyle = COL.dim + '0.12)'
+      ctx.beginPath(); ctx.moveTo(0, -capH * sep); ctx.lineTo(0, capH * sep); ctx.stroke()
+    }
+
+    // the PDC bubble's equator — your 300 u reach, on your level
+    let ringCol = COL.white, worst = 2, anyNear = false
+    if (CFG.ringLight) {
+      for (let i = 0; i < torps.length; i++) {
+        if (torps[i].dead || torps[i].ghost || statuses[i] < 0 || statuses[i] === 3) continue
+        anyNear = true
+        worst = Math.min(worst, statuses[i])
+      }
+      ringCol = anyNear ? (worst === 2 ? COL.teal : worst === 1 ? COL.amber : COL.red) : COL.white
+    }
+    if (CFG.bubble) {
+      ctx.strokeStyle = ringCol; ctx.lineWidth = size > 200 ? 2 : 1.3
+      ctx.beginPath(); ctx.ellipse(0, 0, rp, Math.max(2, rp * sq), 0, 0, Math.PI * 2); ctx.stroke()
+      for (const t of torps) {
+        if (t.dead || t.ghost) continue
+        if (Math.abs(Math.hypot(...t.p) - WORLD.RING) < 26) {
+          ctx.strokeStyle = 'rgba(220,232,244,0.5)'; ctx.lineWidth = 4
+          ctx.beginPath(); ctx.ellipse(0, 0, rp, Math.max(2, rp * sq), 0, 0, Math.PI * 2); ctx.stroke()
+          break
+        }
+      }
+    }
+
+    // corridor axes in true 3D: torpedo dot → her dot; the test is the
+    // real one (does the 3D segment pass inside my 300 u sphere)
+    if (escortee) {
+      const e = project(escortee.p, R, tiltRad, sq)
+      for (let i = 0; i < torps.length; i++) {
+        const t = torps[i]; if (t.dead || t.ghost || t.tgt !== 'esc') continue
+        const f = project(t.p, R, tiltRad, sq)
+        let covered = true
+        if (CFG.corridor) {
+          const abx = escortee.p[0] - t.p[0], aby = escortee.p[1] - t.p[1], abz = escortee.p[2] - t.p[2]
+          const len2 = abx * abx + aby * aby + abz * abz || 1
+          const tt = Math.max(0, Math.min(1, (-(t.p[0] * abx + t.p[1] * aby + t.p[2] * abz)) / len2))
+          covered = Math.hypot(t.p[0] + abx * tt, t.p[1] + aby * tt, t.p[2] + abz * tt) < WORLD.RING
+        }
+        ctx.strokeStyle = CFG.corridor ? (covered ? 'rgba(87,230,196,0.55)' : 'rgba(255,80,64,0.75)') : 'rgba(255,80,64,0.3)'
+        ctx.lineWidth = covered ? 1 : 1.4
+        ctx.setLineDash(covered || !CFG.corridor ? [] : [4, 4])
+        ctx.beginPath(); ctx.moveTo(f.fx, f.fy - f.eh); ctx.lineTo(e.fx, e.fy - e.eh); ctx.stroke()
+        ctx.setLineDash([])
+      }
+      ctx.fillStyle = COL.teal
+      ctx.save(); ctx.translate(e.fx, e.fy - e.eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
+    }
+
+    // ambient grammar: still faint, still anchorless — everything is
+    // anchorless here; the grammar survives as size and silence
+    for (const a of traffic) {
+      const f = project(a.p, R, tiltRad, sq)
+      ctx.fillStyle = COL.dim + '0.4)'
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
+    }
+
+    // threats: trail first (the depth cue), then the contact
+    for (let i = 0; i < torps.length; i++) {
+      const t = torps[i]
+      if (t.dead) {
+        if (t.deadT < 0.5) {
+          const f = project(t.p, R, tiltRad, sq)
+          ctx.strokeStyle = 'rgba(255,180,90,' + (0.8 - t.deadT * 1.6) + ')'
+          ctx.beginPath(); ctx.arc(f.fx, f.fy - (t._lastEh || 0), size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
+        }
+        continue
+      }
+      if (t.ghost) {
+        const f = project(t.lastFoot, R, tiltRad, sq)
+        ctx.strokeStyle = 'rgba(220,232,244,0.55)'
+        const s3 = size * 0.012
+        ctx.beginPath()
+        ctx.moveTo(f.fx - s3, f.fy - f.eh - s3); ctx.lineTo(f.fx + s3, f.fy - f.eh + s3)
+        ctx.moveTo(f.fx + s3, f.fy - f.eh - s3); ctx.lineTo(f.fx - s3, f.fy - f.eh + s3)
+        ctx.stroke()
+        continue
+      }
+      const f = project(t.p, R, tiltRad, sq)
+      t._lastEh = f.eh
+      const st = statuses[i]
+      const col = !CFG.tewa
+        ? COL.red
+        : st === 3
+          ? 'rgba(159,178,200,0.75)'
+          : st === 2
+            ? COL.teal
+            : st === 1
+              ? COL.amber
+              : COL.red
+      let a2 = 1
+      if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
+      ctx.globalAlpha = alpha * a2
+      if (CFG.trails && t.trail.length > 1) {
+        for (let k = 1; k < t.trail.length; k++) {
+          const p0 = project(t.trail[k - 1], R, tiltRad, sq)
+          const p1 = project(t.trail[k], R, tiltRad, sq)
+          ctx.strokeStyle = 'rgba(255,110,90,' + (0.05 + (k / t.trail.length) * 0.3) + ')'
+          ctx.lineWidth = 1
+          ctx.beginPath(); ctx.moveTo(p0.fx, p0.fy - p0.eh); ctx.lineTo(p1.fx, p1.fy - p1.eh); ctx.stroke()
+        }
+      }
+      ctx.fillStyle = col
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * 0.008, 0, 6.3); ctx.fill()
+      ctx.globalAlpha = alpha
+    }
+
+    // own-ship marker: always the center of the volume
+    ctx.fillStyle = COL.white
+    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
+    if (!CFG.noseUp) {
+      ctx.strokeStyle = COL.white
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  } else if (combat) {
+    // ---- COMBAT PICTURE · TILTED DISC + STEMS (pass 2) ----
+    ctx.globalAlpha = alpha
+    const rp = ringPx(R)
+
+    // z1: mount-facing wedges (dim underlay)
+    if (CFG.wedges) {
+      for (const m of MOUNTS) {
+        let dx = m.dir[0], dz = m.dir[2]
+        if (CFG.noseUp) { const c = Math.cos(-ship.yaw), s = Math.sin(-ship.yaw); const x2 = dx * c - dz * s; dz = dx * s + dz * c; dx = x2 }
+        const th = Math.atan2(dx, -dz) - Math.PI / 2
+        ctx.fillStyle = m.hot ? 'rgba(255,80,64,0.06)' : m.tgt >= 0 ? 'rgba(232,150,60,0.10)' : 'rgba(159,178,200,0.045)'
+        ctx.beginPath(); ctx.moveTo(0, 0)
+        ctx.ellipse(0, 0, R - 2, (R - 2) * Math.cos(tiltRad), 0, th - 0.5, th + 0.5)
+        ctx.closePath(); ctx.fill()
+      }
+    }
+
+    // z2: THE RING (master status light)
+    let ringCol = COL.white, worst = 2, anyNear = false
+    if (CFG.ringLight) {
+      for (let i = 0; i < torps.length; i++) {
+        if (torps[i].dead || torps[i].ghost || statuses[i] < 0 || statuses[i] === 3) continue
+        anyNear = true
+        worst = Math.min(worst, statuses[i])
+      }
+      ringCol = anyNear ? (worst === 2 ? COL.teal : worst === 1 ? COL.amber : COL.red) : COL.white
+    }
+    ell(rp, ringCol, size > 200 ? 2.2 : 1.4)
+    // ring-crossing flash
+    for (const t of torps) {
+      if (t.dead || t.ghost) continue
+      const g = Math.hypot(t.p[0], t.p[2])
+      if (Math.abs(g - WORLD.RING) < 26) { ell(rp, 'rgba(220,232,244,0.5)', 5); break }
+    }
+
+    // z2b: rim caps = the ±45° elevation scale
+    if (CFG.rims && tiltRad > 0.06) {
+      const capH = R * 0.52
+      ctx.save(); ctx.translate(0, -capH); ell(R * 0.985, COL.dim + '0.14)', 1); ctx.restore()
+      ctx.save(); ctx.translate(0, capH); ell(R * 0.985, COL.dim + '0.10)', 1, [3, 5]); ctx.restore()
+    }
+
+    // z3: threat axes (+ corridor read)
+    if (escortee) {
+      const e = project(escortee.p, R, tiltRad)
+      for (let i = 0; i < torps.length; i++) {
+        const t = torps[i]; if (t.dead || t.ghost || t.tgt !== 'esc') continue
+        const f = project(t.p, R, tiltRad)
+        // corridor: does the WORLD segment torp→escortee pass within RING of me (origin)?
+        let covered = true
+        if (CFG.corridor) {
+          const ax = t.p[0], az = t.p[2], bx = escortee.p[0], bz = escortee.p[2]
+          const abx = bx - ax, abz = bz - az
+          const tt = Math.max(0, Math.min(1, (-(ax * abx + az * abz)) / (abx * abx + abz * abz || 1)))
+          covered = Math.hypot(ax + abx * tt, az + abz * tt) < WORLD.RING
+        }
+        ctx.strokeStyle = CFG.corridor ? (covered ? 'rgba(87,230,196,0.55)' : 'rgba(255,80,64,0.75)') : 'rgba(255,80,64,0.3)'
+        ctx.lineWidth = covered ? 1 : 1.4
+        ctx.setLineDash(covered || !CFG.corridor ? [] : [4, 4])
+        ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(e.fx, e.fy); ctx.stroke()
+        ctx.setLineDash([])
+      }
+      // escortee diamond + stem
+      ctx.strokeStyle = 'rgba(87,230,196,0.5)'
+      ctx.beginPath(); ctx.moveTo(e.fx, e.fy); ctx.lineTo(e.fx, e.fy - e.eh); ctx.stroke()
+      ctx.fillStyle = COL.teal
+      ctx.save(); ctx.translate(e.fx, e.fy - e.eh); ctx.rotate(Math.PI / 4); const s2 = size * 0.011; ctx.fillRect(-s2, -s2, s2 * 2, s2 * 2); ctx.restore()
+    }
+
+    // z3b: ambient grammar — anchorless faint dots (ships AND ordnance)
+    for (const a of traffic) {
+      const f = project(a.p, R, tiltRad)
+      ctx.fillStyle = COL.dim + '0.4)'
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh * 0.4, size * (a.kind === 'ship' ? 0.006 : 0.004), 0, 6.3); ctx.fill()
+    }
+
+    // z4: threat stems
+    for (let i = 0; i < torps.length; i++) {
+      const t = torps[i]
+      if (t.dead) {
+        // brief kill bloom
+        if (t.deadT < 0.5) {
+          const f = project(t.p, R, tiltRad)
+          ctx.strokeStyle = 'rgba(255,180,90,' + (0.8 - t.deadT * 1.6) + ')'
+          ctx.beginPath(); ctx.arc(f.fx, f.fy - t._lastEh, size * 0.012 + t.deadT * size * 0.05, 0, 6.3); ctx.stroke()
+        }
+        continue
+      }
+      if (t.ghost) {
+        // hollow × at last-known foot
+        const f = project(t.lastFoot, R, tiltRad)
+        ctx.strokeStyle = 'rgba(220,232,244,0.55)'
+        const s3 = size * 0.012
+        ctx.beginPath()
+        ctx.moveTo(f.fx - s3, f.fy - s3); ctx.lineTo(f.fx + s3, f.fy + s3)
+        ctx.moveTo(f.fx + s3, f.fy - s3); ctx.lineTo(f.fx - s3, f.fy + s3)
+        ctx.stroke()
+        continue
+      }
+      const f = project(t.p, R, tiltRad)
+      t._lastEh = f.eh
+      const st = statuses[i]
+      const col = !CFG.tewa
+        ? COL.red
+        : st === 3
+          ? 'rgba(159,178,200,0.75)'
+          : st === 2
+            ? COL.teal
+            : st === 1
+              ? COL.amber
+              : COL.red
+      let a2 = 1
+      if (CFG.pulse && i === soonestIdx) a2 = 0.45 + 0.55 * Math.abs(Math.sin(now * 9))
+      // stem with dark outline (the z-order law)
+      ctx.globalAlpha = alpha * a2
+      ctx.strokeStyle = 'rgba(2,8,20,0.9)'; ctx.lineWidth = 3
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
+      ctx.strokeStyle = col; ctx.lineWidth = 1.3
+      ctx.beginPath(); ctx.moveTo(f.fx, f.fy); ctx.lineTo(f.fx, f.fy - f.eh); ctx.stroke()
+      // foot + tip
+      ctx.fillStyle = col
+      ctx.fillRect(f.fx - 1.5, f.fy - 1.5, 3, 3)
+      ctx.beginPath(); ctx.arc(f.fx, f.fy - f.eh, size * 0.0075, 0, 6.3); ctx.fill()
+      ctx.globalAlpha = alpha
+    }
+
+    // own-ship marker (+ nose tick when north-up)
+    ctx.fillStyle = COL.white
+    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
+    if (!CFG.noseUp) {
+      ctx.strokeStyle = COL.white
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.sin(ship.yaw) * size * 0.03, -Math.cos(ship.yaw) * size * 0.03); ctx.stroke()
+    }
+    ctx.globalAlpha = 1
+  } else {
+    // own marker on nav picture too
+    ctx.fillStyle = COL.white
+    ctx.beginPath(); ctx.moveTo(0, -size * 0.012); ctx.lineTo(size * 0.008, size * 0.008); ctx.lineTo(-size * 0.008, size * 0.008); ctx.closePath(); ctx.fill()
+  }
+  ctx.restore()
+
+  // status text (big scope only)
+  if (size > 200 && combat && CFG.ringLight) {
+    let un = 0, am = 0
+    torps.forEach((t, i) => { if (!t.dead && !t.ghost && statuses[i] !== 3) { if (statuses[i] === 0) un++; else if (statuses[i] === 1) am++ } })
+    ctx.font = '10px "Space Mono", monospace'
+    ctx.fillStyle = un > 0 ? COL.red : am > 0 ? COL.amber : COL.teal
+    ctx.fillText(un > 0 ? 'UNCOVERED ' + un : am > 0 ? 'STRAINED ' + am : 'ALL TRACKS HELD', 14, 20)
+    const hots = MOUNTS.filter(m => m.hot).length
+    if (hots) { ctx.fillStyle = COL.amber; ctx.fillText('THERMAL LOCKOUT ×' + hots, 14, 34) }
+  }
+}
+
+// ============================================================ main loop
+const big = document.getElementById('big').getContext('2d')
+const inset = document.getElementById('inset').getContext('2d')
+let last = performance.now()
+function frame(nowMs) {
+  requestAnimationFrame(frame)
+  const now = nowMs / 1000
+  const dt = Math.min(0.05, (nowMs - last) / 1000); last = nowMs
+  scnT += dt
+
+  // ship motion
+  ship.t += dt
+  if (CFG.autoYaw) ship.yaw += 0.14 * dt
+  if (CFG.wobble) { ship.pitch = Math.sin(ship.t * 0.5) * 0.5; ship.roll = Math.sin(ship.t * 0.33) * 0.7 }
+  else { ship.pitch = 0; ship.roll = 0 }
+
+  // morph state machine (the picture-cut)
+  if (morph.phase !== 'idle') {
+    morph.t += dt
+    if (morph.phase === 'fadeOut' && morph.t >= 0.1) { morph.phase = 'tilt'; morph.t = 0; morph.v = morph.to }
+    else if (morph.phase === 'tilt' && morph.t >= 0.2) { morph.phase = 'fadeIn'; morph.t = 0 }
+    else if (morph.phase === 'fadeIn' && morph.t >= 0.1) { morph.phase = 'idle' }
+  }
+
+  // scenario sim
+  const scn = SCN[scenario]
+  if (scn.tick) scn.tick.call(scn, dt)
+  let liveCount = 0
+  for (const t of torps) {
+    if (t.dead) { t.deadT += dt; continue }
+    liveCount++
+    simTorp(t, dt)
+  }
+  if (liveCount === 0 && torps.length > 0 && scn.respawn) {
+    if (!scn._respawnT) scn._respawnT = 0
+    scn._respawnT += dt
+    if (scn._respawnT > 1.4) { torps = scn.respawn(); scn._respawnT = 0 }
+  }
+  const statuses = assignMounts()
+  simHeat(dt, !!scn.heat)
+  // soonest impact
+  let soonestIdx = -1, soonest = Infinity
+  torps.forEach((t, i) => {
+    if (t.dead || t.ghost) return
+    const d = Math.hypot(...t.p); const tgo = d / (t.speed || 1)
+    if (tgo < soonest) { soonest = tgo; soonestIdx = i }
+  })
+
+  drawScope(big, 620, dt, statuses, soonestIdx, now)
+  drawScope(inset, 132, dt, statuses, soonestIdx, now)
+}
+
+// ============================================================ controls
+document.querySelectorAll('button.scn').forEach(b => b.addEventListener('click', () => setScenario(b.dataset.s)))
+const bind = (id, key) => document.getElementById(id).addEventListener('input', e => { CFG[key] = e.target.checked })
+bind('noseup', 'noseUp'); bind('lanestable', 'laneStable'); bind('rims', 'rims')
+bind('tewa', 'tewa'); bind('ringlight', 'ringLight'); bind('corridor', 'corridor')
+bind('wedges', 'wedges'); bind('pulse', 'pulse'); bind('autoyaw', 'autoYaw'); bind('wobble', 'wobble')
+bind('trails', 'trails'); bind('bubble', 'bubble'); bind('rails', 'rails'); bind('midring', 'midring')
+document.querySelectorAll('input[name=rep]').forEach(r => r.addEventListener('input', e => { CFG.rep = e.target.value }))
+const tiltEl = document.getElementById('tilt')
+const syncTilt = () => {
+  tiltEl.value = String(CFG.tilt)
+  document.getElementById('tiltOut').textContent = CFG.tilt + '°'
+}
+tiltEl.addEventListener('input', e => {
+  // browsers restore form state after script init and some fire input for
+  // it — only a real hand on the slider may change the design default
+  if (!e.isTrusted) return
+  CFG.tilt = +e.target.value
+  document.getElementById('tiltOut').textContent = e.target.value + '°'
+})
+syncTilt()
+window.addEventListener('pageshow', () => setTimeout(syncTilt, 0))
+setTimeout(syncTilt, 50)
+document.querySelectorAll('input[name=map]').forEach(r => r.addEventListener('input', e => { CFG.map = e.target.value }))
+
+setScenario('w3')
+requestAnimationFrame(frame)
+</script>
+</body>
+</html>
