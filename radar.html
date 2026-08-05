@@ -89,13 +89,13 @@
     <label class="tg"><input type="radio" name="rep" value="disc" />TILTED DISC + STEMS (pass 2)</label>
     <div class="grp">AIDS</div>
     <label class="tg"><input type="checkbox" id="digit" checked />soonest-impact digit (fighter practice)</label>
-    <label class="tg"><input type="checkbox" id="bigscope" checked />combat grows the scope (132 → 200 px)</label>
+    <label class="tg"><input type="checkbox" id="bigscope" checked />combat grows the scope (132 → 260 px)</label>
     <label class="tg"><input type="checkbox" id="trails" />motion trails (helixes; opt-in)</label>
     <label class="tg"><input type="checkbox" id="bubble" checked />PDC bubble ghost (free cylinder only)</label>
     <label class="tg"><input type="checkbox" id="rails" checked />side rails (free cylinder only)</label>
     <label class="tg"><input type="checkbox" id="midring" />faint mid-height ring (free cylinder only)</label>
     <div class="grp">GEOMETRY</div>
-    <div class="sld">tilt <input type="range" id="tilt" min="0" max="58" value="42" /><output id="tiltOut">42°</output></div>
+    <div class="sld">tilt <input type="range" id="tilt" min="0" max="58" value="58" /><output id="tiltOut">58°</output></div>
     <label class="tg"><input type="checkbox" id="noseup" checked />nose-up bearing (off = north-up)</label>
     <label class="tg"><input type="checkbox" id="lanestable" checked />lane-stable vertical (off = ship-frame tumble)</label>
     <label class="tg"><input type="checkbox" id="rims" checked />rim caps = ±45° elevation scale</label>
@@ -118,7 +118,7 @@
 const CFG = {
   rep: 'vessel', trails: false, bubble: true, rails: true, midring: false,
   digit: true, bigscope: true,
-  tilt: 42, noseUp: true, laneStable: true, rims: true,
+  tilt: 58, noseUp: true, laneStable: true, rims: true,
   map: 'outer', tewa: true, ringLight: true, corridor: true, wedges: false, pulse: true,
   autoYaw: true, wobble: true,
 }
@@ -429,8 +429,13 @@ function drawScope(ctx, size, dt, statuses, soonestIdx, now) {
     }
   }
 
-  // chrome: outer boundary always
-  ell(R, COL.dim + '0.35)', 1)
+  // chrome boundary belongs to the NAV picture only — in combat it reads
+  // as a phantom mid-cylinder ellipse
+  if (navAlpha > 0) {
+    ctx.globalAlpha = navAlpha
+    ell(R, COL.dim + '0.35)', 1)
+    ctx.globalAlpha = 1
+  }
 
   if (navAlpha > 0) {
     // ---- NAV PICTURE (the flat pole of the collapse) ----
@@ -949,7 +954,7 @@ function frame(nowMs) {
 
   drawScope(big, 620, dt, statuses, soonestIdx, now)
   // the combat morph grows the in-game instrument: nav 132 px, fight 200 px
-  const iSize = morph.v > 0.5 && CFG.bigscope ? 200 : 132
+  const iSize = morph.v > 0.5 && CFG.bigscope ? 260 : 132
   if (insetCv.width !== iSize) { insetCv.width = iSize; insetCv.height = iSize }
   drawScope(inset, iSize, dt, statuses, soonestIdx, now)
 }

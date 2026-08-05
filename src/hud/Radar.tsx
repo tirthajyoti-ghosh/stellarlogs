@@ -75,7 +75,7 @@ export function Radar() {
             : Math.max(mTarget, morphV - dtMs / 450)
       }
       // combat grows the instrument: nav 132 px, the fight gets 200
-      const wantSize = battle || morphV > 0.02 ? 200 : SIZE
+      const wantSize = battle || morphV > 0.02 ? 260 : SIZE
       if (canvas.width !== wantSize) {
         canvas.width = wantSize
         canvas.height = wantSize
@@ -88,21 +88,25 @@ export function Radar() {
       const k = k0 * k0 * (3 - 2 * k0)
       const navAlpha = Math.max(0, 1 - k / 0.3)
       const combatAlpha = Math.max(0, (k - 0.28) / 0.72)
-      const tiltRad = (42 * Math.PI / 180) * k
+      const tiltRad = (58 * Math.PI / 180) * k
       const cosT = Math.cos(tiltRad)
 
       ctx.clearRect(0, 0, size, size)
       blips.current.length = 0
       const battleTheme = battle
 
-      // chrome rings — shared by both pictures; they squash as the disc
-      // tilts open, which IS the collapse made visible
-      ctx.strokeStyle = battleTheme ? 'rgba(240, 150, 110, 0.3)' : 'rgba(150, 190, 225, 0.2)'
-      ctx.lineWidth = 1
-      for (const r of [RR, RR * 0.66, RR * 0.33]) {
-        ctx.beginPath()
-        ctx.ellipse(cx, cy, r, Math.max(2, r * cosT), 0, 0, Math.PI * 2)
-        ctx.stroke()
+      // chrome rings belong to the NAV picture only — in combat they read
+      // as a phantom mid-cylinder ellipse (Tirtha caught it live)
+      if (navAlpha > 0) {
+        ctx.globalAlpha = navAlpha
+        ctx.strokeStyle = battleTheme ? 'rgba(240, 150, 110, 0.3)' : 'rgba(150, 190, 225, 0.2)'
+        ctx.lineWidth = 1
+        for (const r of [RR, RR * 0.66, RR * 0.33]) {
+          ctx.beginPath()
+          ctx.ellipse(cx, cy, r, Math.max(2, r * cosT), 0, 0, Math.PI * 2)
+          ctx.stroke()
+        }
+        ctx.globalAlpha = 1
       }
 
       const yaw = shipRig.yaw
@@ -245,7 +249,7 @@ export function Radar() {
         ctx.translate(cx, cy)
         ctx.globalAlpha = combatAlpha
         const RINGU = 300
-        const HORIZON = 1800
+        const HORIZON = 2000
         const capH = RR * 0.52 * k
         const capRy = RR * (0.1 + 0.35 * (1 - cosT)) * Math.min(1, k * 2)
         const sq = Math.max(0.02, capRy / RR)
@@ -474,6 +478,27 @@ export function Radar() {
         if (ePt) {
           ctx.fillStyle = '#57e6c4'
           ctx.fillRect(ePt.fx - 1.5, ePt.fy - 1.5, 3, 3)
+        }
+
+        // dead reckoning: where I will be in three seconds — combat is
+        // geometry, and a Newtonian pilot needs to see their own drift
+        if (shipRig.speed > 5) {
+          const f = proj(
+            shipRig.position.x + shipRig.velocityDir.x * shipRig.speed * 3,
+            shipRig.position.y + shipRig.velocityDir.y * shipRig.speed * 3,
+            shipRig.position.z + shipRig.velocityDir.z * shipRig.speed * 3,
+          )
+          ctx.strokeStyle = 'rgba(220,232,244,0.55)'
+          ctx.lineWidth = 1
+          ctx.setLineDash([2, 3])
+          ctx.beginPath()
+          ctx.moveTo(0, 0)
+          ctx.lineTo(f.fx, f.fy - f.eh)
+          ctx.stroke()
+          ctx.setLineDash([])
+          ctx.beginPath()
+          ctx.arc(f.fx, f.fy - f.eh, size * 0.007, 0, Math.PI * 2)
+          ctx.stroke()
         }
 
         // ABOVE the surface
