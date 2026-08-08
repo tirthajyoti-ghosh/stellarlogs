@@ -542,3 +542,87 @@ His phone read: runs smooth, buttons make no sense in portrait. The shape
    acceptance (4.4 + 4.5). The big build; harness first-class.
 5. **Controls feel bench** — after v3 flies (4.6). Then his ruling.
 6. **Mobile landscape pass** — scheduled on the roadmap, anytime (4.7).
+
+# Pass 4 amendments — bench verdicts and the turn-trigger design (2026-08-08, late)
+
+Tirtha judged both mocks. Locked and still-open, in his words where it
+matters:
+
+## A. Pursuit assist: ON — but a hand, not a magnet
+
+- The mock's failure named precisely: "it's kind of snapping me back into
+  the center — that's what was too easy." The assist SURVIVES; the snap
+  dies. V2 behavior: **hold, never center** — feed-forward on her angular
+  rate with only a whisper of centering; offset inside the cone is
+  tolerated. The player still earns the capture and re-earns it after
+  every break.
+- **The capture cone (his geometry)**: apex at our nose, and the drawn
+  ring is a **fixed WORLD-radius capture disc around her** (~150–200u,
+  tuned on the bench), projected on the HUD — small and demanding at
+  range, wide and forgiving up close. Self-balancing skill curve, honest
+  instrument, sibling of the lock sphere.
+- Ring = proper HUD element (from the mock's look); brightens when the
+  nose is inside; solid while the assist holds.
+
+## B. THE HUNT FOCUS state (locked last turn, restated)
+
+Taking the case strips the world's tourist signage — project/work labels,
+POI pointers, uninvolved ship tags — leaving mission truth only. Trail =
+focus (nav scope + console in a quiet world); contact = battle mode.
+
+## C. When does she turn? — decisions, never noise
+
+Every hard break must be READABLE. Four triggers, all observable:
+
+1. **Anchor breaks** (the backbone) — she turns at scenery. Geometry
+   teaches corner-cutting.
+2. **Proximity break** — you inside ~900 with a speed edge → she snaps
+   perpendicular to your approach line. Newcomer-readable cause/effect.
+3. **Lock panic** — the lock timer IS her fear meter: hold the envelope
+   and she breaks to shatter it. The player's success forces her hand.
+4. **Fire-and-turn** — she breaks behind her own salvo, forcing the
+   choice: dodge the birds or hold the line.
+
+Temperaments reweight the triggers (CAGEY schedules, BRAZEN reacts);
+the dice become personality, not noise.
+
+- **The tell**: ~0.3 s of visible drive torch before every hard break —
+  the same honest telegraph grammar as the cert range's launch flash.
+  Newcomers learn her body language; veterans pre-turn with her.
+- **The keystone: turns cost her.** She is CREWED — G-limits her
+  torpedoes don't have (fiction-true, and the balancing law). Every hard
+  break bleeds her speed; she re-accelerates at only 55 u/s². Therefore:
+  no chained breaks (cooldown → break/sprint/break rhythm), and every
+  evasion CLOSES the gap for a clean pursuer — the chase carries a
+  built-in convergence arc. Dogged newcomers win slowly; corner-cutting
+  veterans win fast; only lost gap discipline lets her go. Escalation
+  (caught-count) tunes ferocity.
+
+## D. The name: THE REVENANT
+
+His instinct, my endorsement: draugr literally MEANS revenant — the
+rename is the translation. The repeatability fiction depends on players
+getting "you can't impound a name," and REVENANT does that in plain
+English. Locked direction: displayed name THE REVENANT everywhere
+(board, labels, VOICE, case rows); *draugr* demoted to belter flavor
+(T3: "belters call her kind draugr — the walking dead"). Storage keys
+stay as-is; only display strings move.
+
+## E. Clues — final asset rulings
+
+- **THE SPILL (cargo)**: mixture locked from crates.html — begle's
+  container, edwincgstudio's container, andreas9343's crate, ul1tka's
+  boxes. EXCLUDED: the standardized red/yellow set, the NASA-styled
+  crate, the last sci-fi crate. Bake a small variant set via the
+  build-*.mjs pipeline, instance along her line.
+- **THE SCORCH**: approved with the placement law — never in empty
+  space: it carries its own cold un-burnt gravel pocket with the cooked
+  lane cut through it, and trail generation prefers belt-adjacent hops.
+- **THE PICKET (buoy)**: fiction locked — the sonobuoy pattern. Tightbeams
+  are line-of-sight; after each raid the militia scatters passive
+  listeners along her likely egress lines; one caught a fragment because
+  her beam swept it. It hears, it cannot chase — hence the posting.
+  Existing buoy hardware in militia paint. VOICE: "MILITIA PICKET — SHE
+  TALKED TO SOMEBODY, AND THIS EAR WAS IN THE BEAM."
+- Floodlight in the bench = judging tool only (asset under close light vs
+  starlight); NOT a game feature.
