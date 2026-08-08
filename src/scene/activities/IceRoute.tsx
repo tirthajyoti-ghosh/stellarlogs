@@ -667,13 +667,13 @@ export function IceRoute() {
         s.huntPostedUntil = now + 300
       } else if (result === 'lost') {
         s.flashText = 'THE LANE TAKES ANOTHER'
-        say(2, `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`, 'fail', 3.6)
+        say(2, `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`, 'fail', 5.5)
       } else if (result === 'crippled') {
         s.flashText = 'ESCORT DOWN'
-        say(2, `SHIP CRIPPLED — ${name} FLIES ALONE`, 'fail', 3)
+        say(2, `SHIP CRIPPLED — ${name} FLIES ALONE`, 'fail', 5)
       } else {
         s.flashText = ''
-        say(2, 'ESCORT BROKEN OFF — SHE RUNS FOR THE DOCKS', 'info', 2.4)
+        say(2, 'ESCORT BROKEN OFF — SHE RUNS FOR THE DOCKS', 'info', 3.5)
       }
       s.flashUntil = now + 3.2
       s.job = 'over'
@@ -718,7 +718,7 @@ export function IceRoute() {
       // only when she is yours — through your own radio watch.
       if (ships.indexOf(ship) === s.escort && s.job === 'escort') triggerImpact()
       if (ship.hull === 3 && ships.indexOf(ship) === s.escort) {
-        say(0, 'HULL FAILING — CLOSE UP', 'fail', 2)
+        say(0, 'HULL FAILING — CLOSE UP', 'fail', 4)
       }
       if (ship.hull <= 0) {
         for (let i = 0; i < 5; i++) {

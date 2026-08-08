@@ -485,7 +485,7 @@ export function GunneryRange() {
         }
       } else if (result === 'failed') {
         g.flashText = 'DRILL ABORTED'
-        say(0, 'HULL CRITICAL', 'fail', 3)
+        say(0, 'HULL CRITICAL', 'fail', 5)
       } else {
         g.flashText = ''
         say(2, 'DRILL ABANDONED', 'info', 2.2)
@@ -525,7 +525,7 @@ export function GunneryRange() {
       if (g.hull <= 0) {
         endDrill('failed')
       } else if (g.hull === 1) {
-        say(0, 'HULL CRITICAL', 'fail', 1.8)
+        say(0, 'HULL CRITICAL', 'fail', 5)
       }
     }
 
@@ -688,7 +688,7 @@ export function GunneryRange() {
       // one-time coach the first time a mount cooks off
       if (!g.heatWarned && turretControl.muzzles.some((m) => m.overheated)) {
         g.heatWarned = true
-        say(0, 'PDC OVERHEAT — COVER THE GAPS', 'fail', 2.2)
+        say(0, 'PDC OVERHEAT — COVER THE GAPS', 'fail', 3.5)
       }
     } else if (turretControl.targets.length > 0) {
       turretControl.targets = []

@@ -823,7 +823,7 @@ body[data-hit='1'] .hud-activity {
 .hud-coach {
   position: fixed;
   left: 50%;
-  top: 72%;
+  top: 84%;
   transform: translateX(-50%);
   max-width: 70vw;
   text-align: center;

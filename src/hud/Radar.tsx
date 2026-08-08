@@ -11,10 +11,10 @@ import { assessThreat } from '../scene/shipTurrets'
 import { startWarp, warp } from '../physics/warp'
 
 const SIZE = 132
-/** The PDC ring's share of the scope radius. Raised 0.3 → 0.42 (Tirtha:
+/** The PDC ring's share of the scope radius. Raised 0.3 → 0.42 → 0.48 (Tirtha:
  *  the reach should read big); the range mapping below derives from it,
  *  so feet, stems, corridors and the crossing flash all follow. */
-const RING_FRAC = 0.42
+const RING_FRAC = 0.48
 const _rel = new Vector3()
 
 interface RadarBlip {
