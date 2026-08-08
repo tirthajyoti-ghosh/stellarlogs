@@ -594,3 +594,115 @@ The marketing shape his instinct is pointing at, made explicit:
 - v0.2 — First Survey: unchanged, plus the engineering notes and the
   announcement moment (5.5).
 - v0.3+ — unchanged (Atlas, small Nilaks, deep time).
+
+# Sixth pass — the dice: where entropy enters, and where it never may (2026-08-08)
+
+Prompted by Tirtha's question during THE HUNT's trail redesign: *"generation
+from a deterministic seed, fine — but how do we get the seed? If the seed is
+also deterministic, every system in this universe is deterministic, and the
+universe here is completely random. We need to make sure that this is the
+case."* He is right, and the answer is a law worth writing down.
+
+## 6.1 The law of two randomnesses: entropy at birth, determinism for life
+
+A system's life has exactly one moment of genuine chance — the moment its
+seed is drawn. Everything after is replay.
+
+- **Birth**: the seed is drawn from true entropy (OS hardware entropy on
+  the server, or a public beacon round — 6.4) at the moment the system
+  first *needs to exist* (someone crosses the rim toward uncharted space,
+  a survey window opens). Nobody — including the author — knows what is
+  out there until the draw happens. That is Tirtha's requirement, and it
+  is also the dream from pass one: a universe its own builder explores
+  surprised.
+- **Life**: from that seed, generation is pure function, forever. The same
+  seed replays the same system for every visitor for all time — the Elite
+  trick, and the entire basis of shared discovery, Atlas links, and the
+  Registry. Runtime code inside a system's life may never call unseeded
+  randomness for anything that persists or that two visitors could compare.
+- **Permitted ephemera**: cosmetic jitter that dies with the frame
+  (particle phases, cork angles, dust shimmer) may stay unseeded — it has
+  no identity to disagree about.
+
+So the universe is random the way the real one is: the dice were genuinely
+rolled, once, and the results are now facts.
+
+## 6.2 The seed ledger
+
+The DB table that makes the law operational — append-only, never updated:
+
+    { systemId, seed (256-bit), source ({kind:'drand', round, signature} |
+      {kind:'os-entropy'}), generatorVersion, drawnAt }
+
+- Append-only means the universe only ever *accretes* facts — matching the
+  Registry's fiction (surveys are records; records don't un-happen).
+- **Named child streams, not one shared sequence**: planets, biology,
+  history, story hooks each derive their stream as hash(seed, streamName,
+  index). Consuming one more roll in the biology stream can never reshuffle
+  the planets — generators stay independently evolvable and testable, and
+  deep.html (5.4) can bench each stream alone.
+
+## 6.3 The generator-version problem (determinism is only as stable as the code)
+
+The trap nobody mentions: a "deterministic" seed replays the same world only
+through the same code. Ship generator v2 with one extra roll in it and every
+surveyed world silently mutates — the Registry becomes a book of lies.
+Hence `generatorVersion` in the ledger, and the law that resolves it:
+
+**The survey freezes the world.** A surveyed system is forever rendered by
+the generator version that first surveyed it (kept alive as a versioned
+module). New generator versions apply only to unsurveyed space. This is
+fiction-true — the survey record IS the truth of record, exactly as pass
+three framed the Registry — and it converts the versioning problem into
+lore: charts drawn by older instruments remain the charts.
+
+## 6.4 The beacon becomes fiction: THE DRAW
+
+Tirtha's question: is "you can audit the dice" a UI sentence, or fiction —
+and if fiction, how? Answer: **two layers, and the game only ever speaks the
+fiction layer.** The word "random" never appears in-world.
+
+- **The fiction**: the frontier allocates survey windows by public lottery,
+  because a frontier full of prospectors trusts no queue it cannot audit —
+  a charter company that could bribe the draw would own the Deep in a year.
+  This slots straight into the Belter-commons fiction from pass two. The
+  institution: **THE DRAW** — the Astrogation Bureau draws coordinates in
+  the open, and its entropy source is the sky itself: the timing jitter of
+  a monitored millisecond pulsar. (Science-true twice over: millisecond
+  pulsars are real precision clocks whose residuals are genuinely
+  unpredictable, and pulsar-based navigation is real spacefaring
+  engineering — the Voyager plaque's map is a pulsar map.) A board at the
+  Drift posts it like weather:
+
+      NEXT SURVEY WINDOW — SECTOR DRAWN 03:00 STANDARD
+      SOURCE: PSR J0437-4715 · DRAW 4,182,997 · BUREAU-WITNESSED
+
+  Nobody in-world says "randomness beacon." They say *the Draw*, the way
+  sailors say *the tide*.
+- **The truth**: under the hood the draw is a drand round (a real,
+  free, distributed randomness beacon — publicly verifiable, unforgeable
+  even by us), or server entropy where verifiability isn't worth the
+  dependency. The mapping pulsar-draw-number → drand round is disclosed
+  in one place only: the engineering notes (5.5), where "the lottery in
+  the fiction is a verifiable-randomness beacon in production, and you
+  can audit it" is precisely the kind of sentence the notes exist for.
+  Fiction in the world, truth in the notes — the two-layer honesty the
+  whole portfolio already runs on.
+
+Where each source belongs: **drand** for scheduled public events (survey
+windows, weekly expedition targets — things players could feel cheated
+about), **os-entropy** for the long tail of individual system births
+(auditability buys nothing there; the ledger row is still the proof the
+draw happened once).
+
+## 6.5 What runs today, before any backend
+
+- The client already holds a hardware-entropy CSPRNG:
+  `crypto.getRandomValues()`. Ephemeral events (hunt temperaments, trail
+  shapes) draw from it directly — no ledger needed for events that are
+  designed to be unrepeatable.
+- THE HUNT's build (locked 2026-08-08, build deferred by Tirtha) will
+  surface its roll as a **case number** on the board posting — the first
+  in-world appearance of "a draw has an identity," costing nothing and
+  rehearsing the ledger idiom the Deep will need.
+
