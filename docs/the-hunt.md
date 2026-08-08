@@ -334,3 +334,52 @@ Build notes and honest debts for Tirtha's first flight:
 - The revenant board line ("YOU CAN IMPOUND A SHIP…") arrives as the
   impound flavor; the standing painted tally on the militia board
   waits for the toys/boards pass.
+
+# Pass 3 + build — THE TRAIL (2026-08-08, same night)
+
+Tirtha's redesign, replacing the announce-it-louder fix: **the manhunt is a
+standing posting, and a cold case is solved with evidence, not coordinates.**
+"The joy of chasing down a lead is also pretty good fiction, pretty good
+gameplay." Locked and built:
+
+- **Standing case** — the board's top row is always `MANHUNT · DRAUGR ·
+  CASE XXXX · TRAIL HOT/COLD`. A newcomer at the board on day one sees the
+  story; the five-minute guillotine is gone. Case numbers are drawn from
+  `crypto.getRandomValues` — the first in-world rehearsal of the Deep's
+  seed-ledger idiom (the-deep.md, pass six).
+- **Hot/cold gradient** — a delivery (witnessed raid) makes the trail HOT
+  for five minutes: accept and the militia hands you a live vector,
+  straight to the chase, dawdle still buying her head start. Cold: one or
+  two evidence hops (65% two), legs 2.3–3.4k, seeded from her recorded
+  escape line, each dogleg a burn she "actually flew."
+- **Evidence you can see** — one prop at the working mark, oriented along
+  the line it points: vented cargo tumbling in a string, exhaust-scorched
+  dust dispersing behind her, a militia relay buoy with a patient lamp
+  replaying a tightbeam fragment. Each clue speaks a plain-language T2
+  line; the HUD mark does the pointing (LAST CONTACT → HER TRAIL). Props
+  linger until you burn away — you found it, you get to look at it.
+- **She is always at the end** — the dice decide trail LENGTH, never
+  whether the hunt pays. The final site seeds the chase off the last leg
+  (~1.1–1.8k gap): "DRIVE FLARE ON HER LINE — THERE SHE IS."
+- **The trail is nav, not battle** — scope stays in nav mode, the drive
+  console stays up (its new law: the console clears only for battle);
+  battle begins at contact.
+- **Shelving** — wander 9k off the working mark for 12 s (trail phase, or a
+  chase you never joined) and the case shelves: no tally, same case number,
+  the posting stands. The escape clock arms only on first contact, so a far
+  hot seed can't expire before you reach her — and an accepted-then-ignored
+  hunt can no longer softlock the job machine (harness catch).
+- **The revenant law** — a closed case (caught or escaped) reposts under a
+  NEW number with a synthesized last contact off the lane. The board is
+  never empty.
+- **One key, two jobs** — when a live escort and the manhunt are both on
+  offer, the board scrolls between them every 6 s (hot outranks); the hint
+  always names what G takes. Escort accept verified unchanged.
+
+Harness (probe build, Playwright): cold end-to-end — standing offer →
+accept → two hops read (dust, cargo) → chase seeded at gap 1502 with
+contact armed; hot accept → immediate chase; post-contact escape → tally +
+repost under new case; both shelve paths keep the case and skip the tally;
+offer alternation observed (-2 ↔ escort) and escort accept still lands
+`intercept`. Open on Tirtha's live read: alternation cadence feel, clue
+prop staging, trail length against Bruno's law.

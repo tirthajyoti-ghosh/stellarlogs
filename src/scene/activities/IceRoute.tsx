@@ -4,6 +4,7 @@ import { Text, useGLTF } from '@react-three/drei'
 import {
   AdditiveBlending,
   BufferGeometry,
+  DoubleSide,
   Group,
   InstancedMesh,
   Material,
@@ -201,6 +202,54 @@ const ESCAPE_SECONDS = 12
 const DESPERATE_RANGE = 800
 const CAUGHT_KEY = 'stellarlogs-draugr-caught'
 const ESCAPED_KEY = 'stellarlogs-draugr-escaped'
+
+/**
+ * THE TRAIL (pass 3, locked 2026-08-08). The manhunt is a STANDING posting —
+ * the board always carries the Draugr's case, so the story is discoverable by
+ * anyone who walks up to it. What the freshness of her trail decides is how
+ * much detective work stands between you and her:
+ *
+ *   HOT  — you just watched her raid (a delivery inside the fresh window):
+ *          the militia hands you a live vector. Straight to the chase.
+ *   COLD — the posting names only her LAST CONTACT. You fly to the evidence
+ *          and read what she left behind — vented cargo, exhaust-scorched
+ *          dust, an intercepted tightbeam — each clue pointing her line,
+ *          the way dark ships are actually found: you find the fire, never
+ *          the ship. One or two hops, then contact. She is ALWAYS at the
+ *          end of the trail; the dice only decide its length.
+ */
+const TRAIL_ARRIVE = 260
+const TRAIL_LEG_MIN = 2300
+const TRAIL_LEG_SPAN = 1100
+/** wander this far off the working mark for this long and the case shelves —
+ *  quietly, no tally; the posting stands and you can take it up again */
+const TRAIL_SHELVE_DIST = 9000
+const TRAIL_SHELVE_SECONDS = 12
+/** when the board holds BOTH a live escort and the standing manhunt, the
+ *  offer alternates on this cadence — a scrolling job board, one accept key */
+const OFFER_FLIP = 6
+/** what each kind of evidence says when you reach it (plain language, and
+ *  every clue names the direction story — the marker does the pointing) */
+const CLUE_SAY = [
+  'VENTED CARGO — SHE DUMPED MASS FOR A HARD BURN. THE SPILL POINTS HER LINE.',
+  'SCORCHED DUST — HER EXHAUST COOKED THIS CLOUD ON THE WAY THROUGH.',
+  'RELAY BUOY — TIGHTBEAM FRAGMENT: "…RUNNING DARK TILL THE POINT…"',
+]
+
+/** The dice for identity-bearing rolls (case numbers, temperament, trail
+ *  shape) draw from the platform's hardware-entropy CSPRNG — the first
+ *  in-world rehearsal of the Deep's seed-ledger idiom (the-deep.md pass 6).
+ *  Frame-level cosmetics stay on Math.random. */
+function croll(): number {
+  const u = new Uint32Array(1)
+  crypto.getRandomValues(u)
+  return u[0] / 4294967296
+}
+function rollCase(): string {
+  const u = new Uint16Array(1)
+  crypto.getRandomValues(u)
+  return u[0].toString(16).toUpperCase().padStart(4, '0')
+}
 
 /** Her ordnance on the hunt: the DARK RUNNER — drive cuts midcourse, the
  *  track drops to a ghost, terminal relight closer than comfort. */
@@ -501,10 +550,17 @@ export function IceRoute() {
     flashText: '',
     raiderUntil: 0,
     raiderFiring: false,
-    huntPostedUntil: 0,
+    huntFreshUntil: 0,
     huntBearing: 0,
     huntPostedAt: 0,
-    huntPhase: 'chase' as 'chase' | 'squawked' | 'tow-fly' | 'tow-harpoon' | 'tow-haul',
+    huntCase: rollCase(),
+    huntSeeded: false,
+    huntContact: false,
+    trailCount: 0,
+    trailIdx: 0,
+    trailShelveT: 0,
+    trailClues: [0, 0, 0],
+    huntPhase: 'chase' as 'trail' | 'chase' | 'squawked' | 'tow-fly' | 'tow-harpoon' | 'tow-haul',
     huntTemper: 0,
     huntMagazine: 0,
     huntNextSalvoAt: 0,
@@ -527,6 +583,17 @@ export function IceRoute() {
   const tugVel = useMemo(() => new Vector3(), [])
   const tugRef = useRef<Group>(null)
   const cableRef = useRef<Mesh>(null)
+  /** the cold case's evidence sites and the onward line each one points */
+  const trailHops = useMemo(() => [new Vector3(), new Vector3(), new Vector3()], [])
+  const trailDirs = useMemo(
+    () => [new Vector3(1, 0, 0), new Vector3(1, 0, 0), new Vector3(1, 0, 0)],
+    [],
+  )
+  const clueRef = useRef<Group>(null)
+  const clueCargoRef = useRef<Group>(null)
+  const clueDustRef = useRef<Mesh>(null)
+  const clueBuoyRef = useRef<Group>(null)
+  const clueLampRef = useRef<Mesh>(null)
   /** the live rendezvous point the intercept marker leads to */
   const interceptPoint = useMemo(() => new Vector3(), [])
 
@@ -583,9 +650,11 @@ export function IceRoute() {
       w.__huntVel = huntVel
       w.__huntSeed = huntSeedPos
       w.__huntSeedDir = huntSeedDir
+      w.__huntHops = trailHops
+      w.__huntDirs = trailDirs
       w.__torps = torpedoes
     }
-  }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels])
+  }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels, trailHops, trailDirs])
 
   useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
@@ -593,6 +662,20 @@ export function IceRoute() {
     const distToDrift = shipRig.position.distanceTo(DRIFT)
     const escorted = s.escort >= 0 ? ships[s.escort] : null
     const escorting = s.job === 'escort' && !!escorted
+
+    // The standing posting always has a last contact to name. When no
+    // witnessed raid has pinned one (fresh session, or a closed case
+    // reposting), the militia's record is synthesized off the lane — the
+    // revenant is always out there somewhere, and always trail-cold.
+    if (!s.huntSeeded) {
+      _q.setFromAxisAngle(_up, croll() * Math.PI * 2)
+      _v.set(1, 0, 0).applyQuaternion(_q)
+      _v.y = (croll() - 0.5) * 0.35
+      _v.normalize()
+      huntSeedPos.copy(DRIFT).addScaledVector(_v, 2800 + croll() * 1400)
+      huntSeedDir.copy(_v)
+      s.huntSeeded = true
+    }
 
     // ---------- traffic ----------
     function spawn() {
@@ -738,7 +821,7 @@ export function IceRoute() {
       }
     }
 
-    function endHunt(result: 'caught' | 'escaped' | 'crippled') {
+    function endHunt(result: 'caught' | 'escaped' | 'crippled' | 'shelved') {
       if (result === 'caught') {
         s.draugrCaught++
         localStorage.setItem(CAUGHT_KEY, String(s.draugrCaught))
@@ -748,14 +831,24 @@ export function IceRoute() {
         s.draugrEscaped++
         localStorage.setItem(ESCAPED_KEY, String(s.draugrEscaped))
         say(2, "SHE'S GONE DARK — THE LANE REMEMBERS", 'fail', 5)
-      } else {
+      } else if (result === 'crippled') {
         s.draugrEscaped++
         localStorage.setItem(ESCAPED_KEY, String(s.draugrEscaped))
         say(2, 'HULL FAILING — SHE RUNS FREE', 'fail', 5)
+      } else {
+        // walking away from a cold case costs nothing but the walk
+        say(2, 'TRAIL SHELVED — THE POSTING STANDS', 'info', 4)
       }
       s.job = 'over'
       s.holdUntil = now + 3.4
-      s.huntPostedUntil = 0
+      s.huntFreshUntil = 0
+      // the revenant law: the board is never empty. A closed case reposts
+      // under a new number with a fresh synthesized last-contact; a shelved
+      // one keeps its number and its evidence.
+      if (result !== 'shelved') {
+        s.huntCase = rollCase()
+        s.huntSeeded = false
+      }
       activityState.hostile = null
       activityState.hostileLock = 0
       for (const torp of torpedoes) if (torp.target === -1) torp.alive = false
@@ -766,31 +859,20 @@ export function IceRoute() {
       }
     }
 
-    function startHunt() {
-      // The revenant answers the posting. Roll WHICH Draugr showed up —
-      // the escalation cap (+3 on your record) widens her bands: whoever
-      // they are, they know your callsign now.
+    function beginChase(extraHead: number) {
       const esc = Math.min(3, s.draugrCaught)
-      const T = TEMPERAMENTS[Math.floor(Math.random() * TEMPERAMENTS.length)]
-      s.huntTemper = TEMPERAMENTS.indexOf(T)
-      s.job = 'hunt'
+      const T = TEMPERAMENTS[s.huntTemper]
       s.huntPhase = 'chase'
-      s.playerHull = 3
-      damageFx.clear()
-      s.huntMagazine = T.magazine + esc
-      s.huntLockT = 0
-      s.huntEscapeT = 0
-      s.huntHarpoonT = 0
-      // seeded from the last raid's truth + the head start you gave her
-      const dawdle = Math.max(0, now - s.huntPostedAt)
-      const head = T.headStart * (1 + esc * 0.1) + dawdle * 15
+      const head = T.headStart * (1 + esc * 0.1) + extraHead
       raiderPos.copy(huntSeedPos).addScaledVector(huntSeedDir, head)
       fleeDir.copy(huntSeedDir)
       huntVel.copy(fleeDir).multiplyScalar(DRAUGR_VMAX * 0.7)
       s.huntNextDoglegAt = now + T.dlMin
       s.huntNextSalvoAt = now + 6 + Math.random() * 6
       s.huntLastGap = raiderPos.distanceTo(shipRig.position)
-      say(1, 'INTERDICTION LOGGED — RUN HER DOWN', 'battle', 3)
+      // the escape clock arms only after first contact — a far hot seed
+      // must not run out before you have even reached her
+      s.huntContact = s.huntLastGap < ESCAPE_GAP
       raiderLabel.current?.()
       raiderLabel.current = registerHudLabel({
         id: 'ship-draugr',
@@ -803,6 +885,53 @@ export function IceRoute() {
         detail: 'RAIDER · NO TRANSPONDER · WEAPONS FREE',
       })
       labelsChanged()
+    }
+
+    function startHunt() {
+      // The revenant answers the posting. Roll WHICH Draugr showed up —
+      // the escalation cap (+3 on your record) widens her bands: whoever
+      // they are, they know your callsign now.
+      const esc = Math.min(3, s.draugrCaught)
+      const T = TEMPERAMENTS[Math.floor(croll() * TEMPERAMENTS.length)]
+      s.huntTemper = TEMPERAMENTS.indexOf(T)
+      s.job = 'hunt'
+      s.playerHull = 3
+      damageFx.clear()
+      s.huntMagazine = T.magazine + esc
+      s.huntLockT = 0
+      s.huntEscapeT = 0
+      s.huntHarpoonT = 0
+      s.trailShelveT = 0
+      if (now < s.huntFreshUntil) {
+        // HOT: her raid is minutes old — the militia hands you a live
+        // vector, and every second you dawdled at the board is head start
+        say(1, 'INTERDICTION LOGGED — RUN HER DOWN', 'battle', 3)
+        beginChase(Math.max(0, now - s.huntPostedAt) * 15)
+        return
+      }
+      // COLD: evidence, not coordinates. Build the trail she left — each
+      // leg is a burn she actually flew, each site the evidence it shed.
+      s.huntPhase = 'trail'
+      s.trailIdx = 0
+      s.trailCount = croll() < 0.65 ? 2 : 1
+      trailHops[0].copy(huntSeedPos)
+      _v.copy(huntSeedDir)
+      const kinds = [0, 1, 2]
+      for (let k = 0; k < s.trailCount; k++) {
+        const pick = k + Math.floor(croll() * (3 - k))
+        const tmp = kinds[k]
+        kinds[k] = kinds[pick]
+        kinds[pick] = tmp
+        s.trailClues[k] = kinds[k]
+        _q.setFromAxisAngle(_up, (croll() < 0.5 ? -1 : 1) * (0.35 + croll() * 0.55))
+        _v.applyQuaternion(_q)
+        _v.y = (croll() - 0.5) * 0.4
+        _v.normalize()
+        trailDirs[k].copy(_v)
+        if (k + 1 < s.trailCount)
+          trailHops[k + 1].copy(trailHops[k]).addScaledVector(_v, TRAIL_LEG_MIN + croll() * TRAIL_LEG_SPAN)
+      }
+      say(1, `CASE ${s.huntCase} LOGGED — WORK HER TRAIL`, 'info', 3.2)
     }
 
     function raiderSalvo(target: number) {
@@ -847,8 +976,13 @@ export function IceRoute() {
         triggerFanfare()
         say(2, `${ship.cargo} DELIVERED`, 'win', 3.2)
         say(3, CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON', 'win', 5)
-        s.huntPostedUntil = now + 300
+        // the raid you just fought refreshes the standing case: real
+        // last-contact truth, and a hot window where the chase needs no
+        // detective work
+        s.huntFreshUntil = now + 300
         s.huntPostedAt = now
+        s.huntCase = rollCase()
+        s.huntSeeded = true
         huntSeedPos.copy(raiderPos)
         huntSeedDir.copy(raiderDir).negate()
       } else if (result === 'lost') {
@@ -1056,11 +1190,8 @@ export function IceRoute() {
     // hulls first (that is WHY escort is wanted), longest transit first.
     const distToBoard = shipRig.position.distanceTo(_v.set(DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210))
     s.offer = -1
-    if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE && now < s.huntPostedUntil) {
-      // the interdiction outranks escort work while the posting stands
-      s.offer = -2
-    }
-    if (s.job === 'none' && s.offer === -1 && !shipRig.warping && distToBoard < BOARD_RANGE) {
+    if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE) {
+      let cand = -1
       let bestScore = -1
       for (let i = 0; i < ships.length; i++) {
         const ship = ships[i]
@@ -1070,9 +1201,16 @@ export function IceRoute() {
         const score = (ship.marked ? 10000 : 0) + range
         if (score > bestScore) {
           bestScore = score
-          s.offer = i
+          cand = i
         }
       }
+      // The manhunt is a STANDING posting. Hot trail = dockmaster priority,
+      // it owns the board; otherwise the board scrolls between the live
+      // escort and the case on the OFFER_FLIP cadence — one key, the hint
+      // always names what G takes.
+      const hot = now < s.huntFreshUntil
+      if (hot || cand === -1 || Math.floor(now / OFFER_FLIP) % 2 === 0) s.offer = -2
+      else s.offer = cand
     }
     if (s.offer === -2 && (s.accept || activityState.acceptRequest)) {
       startHunt()
@@ -1168,7 +1306,31 @@ export function IceRoute() {
     }
 
     // ---------- THE HUNT ----------
-    if (s.job === 'hunt') {
+    if (s.job === 'hunt' && s.huntPhase === 'trail') {
+      // the detective act: fly the mark, read what she left, follow her line
+      const mark = trailHops[s.trailIdx]
+      const d = shipRig.position.distanceTo(mark)
+      if (d < TRAIL_ARRIVE) {
+        const kind = s.trailClues[s.trailIdx]
+        const last = s.trailIdx >= s.trailCount - 1
+        s.trailIdx++
+        if (last) {
+          // the trail ends where she is: seed the chase off the final leg
+          huntSeedPos.copy(mark)
+          huntSeedDir.copy(trailDirs[s.trailCount - 1])
+          say(1, 'DRIVE FLARE ON HER LINE — THERE SHE IS', 'battle', 3)
+          beginChase(0)
+        } else {
+          say(2, CLUE_SAY[kind], 'info', 5)
+        }
+      } else if (d > TRAIL_SHELVE_DIST) {
+        s.trailShelveT += dt
+        if (s.trailShelveT >= TRAIL_SHELVE_SECONDS) endHunt('shelved')
+      } else {
+        s.trailShelveT = 0
+      }
+      activityState.hostileLock = 0
+    } else if (s.job === 'hunt') {
       const gap = raiderPos.distanceTo(shipRig.position)
       const T = TEMPERAMENTS[s.huntTemper]
       if (s.huntPhase === 'chase') {
@@ -1209,11 +1371,21 @@ export function IceRoute() {
           tugPos.copy(DRIFT).add(_v.set(120, 60, 80))
           tugVel.set(0, 0, 0)
         }
-        // the escape: fall too far behind for too long and she is gone
-        if (gap > ESCAPE_GAP) {
+        // the escape: fall too far behind for too long and she is gone —
+        // but the clock only runs once you have HAD her (first contact).
+        // A chase you never joined shelves instead: walk away from a hot
+        // posting and the case goes back on the board, no tally, no shame.
+        if (gap < ESCAPE_GAP) s.huntContact = true
+        if (s.huntContact && gap > ESCAPE_GAP) {
           s.huntEscapeT += dt
           if (s.huntEscapeT >= ESCAPE_SECONDS) endHunt('escaped')
         } else s.huntEscapeT = 0
+        if (!s.huntContact && gap > TRAIL_SHELVE_DIST) {
+          s.trailShelveT += dt
+          if (s.trailShelveT >= TRAIL_SHELVE_SECONDS) endHunt('shelved')
+        } else if (!s.huntContact) {
+          s.trailShelveT = 0
+        }
         s.huntClosing = dt > 0 ? (s.huntLastGap - gap) / dt : 0
         s.huntLastGap = gap
       } else {
@@ -1340,7 +1512,9 @@ export function IceRoute() {
     activityState.bannerClock = now
     const onContract = s.job === 'intercept' || s.job === 'escort' || s.job === 'hunt'
     const hunting = s.job === 'hunt'
-    const battle = (escorting && torpedoes.some((t) => t.alive && !t.ambient)) || hunting
+    // the trail is detective work, not a gunfight: nav scope, console up
+    const huntLive = hunting && s.huntPhase !== 'trail'
+    const battle = (escorting && torpedoes.some((t) => t.alive && !t.ambient)) || huntLive
     const engaged = onContract || s.job === 'over' || distToBoard < BOARD_RANGE
     if (engaged) {
       activityState.owner = 'iceroute'
@@ -1354,9 +1528,11 @@ export function IceRoute() {
       activityState.waveLabel = 'SALVO'
       activityState.canRestart = false
       activityState.offer =
-        s.offer === -2 ? 'INTERDICTION — DRAUGR' : s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
+        s.offer === -2 ? `MANHUNT — DRAUGR · ${s.huntCase}` : s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
       activityState.title = hunting
-        ? 'INTERDICTION — DRAUGR'
+        ? s.huntPhase === 'trail'
+          ? `MANHUNT — CASE ${s.huntCase}`
+          : 'INTERDICTION — DRAUGR'
         : escorting && escorted
           ? `ESCORT — ${escorted.name}`
           : intercepting && escorted
@@ -1365,7 +1541,9 @@ export function IceRoute() {
       const range = escorted ? shipRig.position.distanceTo(escorted.position) : 0
       const huntGap = hunting ? raiderPos.distanceTo(shipRig.position) : 0
       activityState.hint = hunting
-        ? s.huntPhase !== 'chase'
+        ? s.huntPhase === 'trail'
+          ? 'FLY THE MARK — READ WHAT SHE LEFT BEHIND'
+          : s.huntPhase !== 'chase'
           ? 'THE MILITIA HAS HER — WATCH OR GO'
           : huntGap < LOCK_RING
             ? 'MATCH HER SPEED — HOLD THE RING'
@@ -1381,11 +1559,25 @@ export function IceRoute() {
           : intercepting
             ? 'FLY THE MARKER — MEET HER ON THE WAY IN'
             : s.offer === -2
-              ? `INTERDICTION POSTED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN HER DOWN`
+              ? now < s.huntFreshUntil
+                ? `HER TRAIL IS HOT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN HER DOWN`
+                : `MANHUNT POSTED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO WORK THE CASE`
               : s.offer >= 0
                 ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO TAKE HER`
                 : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
-      if (hunting) {
+      if (hunting && s.huntPhase === 'trail') {
+        activityState.lines = [
+          {
+            label: 'THE TRAIL',
+            value: `${s.trailIdx}/${s.trailCount} READ`,
+          },
+          {
+            label: 'MARK',
+            value: `${(shipRig.position.distanceTo(trailHops[s.trailIdx]) / 1000).toFixed(1)}K`,
+          },
+          { label: 'RECORD', value: `${s.draugrCaught} HELD · ${s.draugrEscaped} FLED` },
+        ]
+      } else if (hunting) {
         activityState.lines = [
           { label: 'DRAUGR', value: `${(huntGap / 1000).toFixed(1)}K` },
           {
@@ -1417,7 +1609,10 @@ export function IceRoute() {
       } else {
         activityState.lines = [
           { label: 'IN LANE', value: String(activeCount) },
-          { label: 'ON BOARD', value: s.offer >= 0 ? ships[s.offer].name : '—' },
+          {
+            label: 'MANHUNT',
+            value: `CASE ${s.huntCase} · ${now < s.huntFreshUntil ? 'HOT' : 'COLD'}`,
+          },
           { label: 'BEST', value: s.best > 0 ? `${s.best}/${HULL_MAX}` : '—' },
         ]
       }
@@ -1428,6 +1623,9 @@ export function IceRoute() {
       } else if (intercepting && escorted) {
         activityState.raceTarget = interceptPoint
         activityState.raceTargetLabel = `MEET ${escorted.name}`
+      } else if (hunting && s.huntPhase === 'trail') {
+        activityState.raceTarget = trailHops[s.trailIdx]
+        activityState.raceTargetLabel = s.trailIdx === 0 ? 'LAST CONTACT' : 'HER TRAIL'
       } else {
         activityState.raceTarget = null
       }
@@ -1515,9 +1713,11 @@ export function IceRoute() {
     // ---------- render: the Draugr ----------
     const raider = raiderRef.current
     if (raider) {
-      const showing = s.raiderUntil > 0 || s.job === 'hunt'
+      // on the trail she is exactly what she claims to be: not there
+      const huntShown = s.job === 'hunt' && s.huntPhase !== 'trail'
+      const showing = s.raiderUntil > 0 || huntShown
       raider.visible = showing
-      if (s.job === 'hunt') {
+      if (huntShown) {
         raider.position.copy(raiderPos)
         if (huntVel.lengthSq() > 1) {
           _v.copy(huntVel).normalize()
@@ -1540,7 +1740,11 @@ export function IceRoute() {
     // ---------- render: the militia tug + the harpoon cable ----------
     const tug = tugRef.current
     if (tug) {
-      const towing = s.job === 'hunt' && s.huntPhase !== 'chase' && s.huntPhase !== 'squawked'
+      const towing =
+        s.job === 'hunt' &&
+        s.huntPhase !== 'trail' &&
+        s.huntPhase !== 'chase' &&
+        s.huntPhase !== 'squawked'
       tug.visible = towing
       if (towing) {
         tug.position.copy(tugPos)
@@ -1567,6 +1771,37 @@ export function IceRoute() {
         _q.setFromUnitVectors(_up, _v)
         cable.quaternion.copy(_q)
         cable.scale.set(1, Math.max(0.1, len), 1)
+      }
+    }
+
+    // ---------- render: the trail's evidence ----------
+    // One prop at the working mark, oriented along the line it points. After
+    // a clue reads, it lingers until you burn away — you found it, you get
+    // to look at it — then the next site's evidence takes over.
+    const clue = clueRef.current
+    if (clue) {
+      const onTrail = s.job === 'hunt' && s.huntPhase === 'trail'
+      clue.visible = onTrail
+      if (onTrail) {
+        let k = Math.min(s.trailIdx, s.trailCount - 1)
+        if (s.trailIdx > 0 && shipRig.position.distanceTo(trailHops[s.trailIdx - 1]) < 700)
+          k = s.trailIdx - 1
+        clue.position.copy(trailHops[k])
+        _q.setFromUnitVectors(_xAxis, trailDirs[k])
+        clue.quaternion.copy(_q)
+        const kind = s.trailClues[k]
+        if (clueCargoRef.current) clueCargoRef.current.visible = kind === 0
+        if (clueDustRef.current) clueDustRef.current.visible = kind === 1
+        if (clueBuoyRef.current) clueBuoyRef.current.visible = kind === 2
+        if (kind === 0 && clueCargoRef.current) {
+          // dead cargo tumbles; nobody claims salvage on evidence
+          for (const box of clueCargoRef.current.children) {
+            box.rotation.x += dt * 0.25
+            box.rotation.y += dt * 0.17
+          }
+        }
+        if (kind === 2 && clueLampRef.current)
+          clueLampRef.current.visible = Math.sin(now * 5) > 0.2
       }
     }
 
@@ -1632,8 +1867,10 @@ export function IceRoute() {
       )
     }
     const rows: string[] = []
-    if (now < s.huntPostedUntil)
-      rows.push(`INTERDICTION · DRAUGR · LAST BEARING ${s.huntBearing}°`)
+    // the manhunt is a standing posting — the top row of the board, always
+    rows.push(
+      `MANHUNT · DRAUGR · CASE ${s.huntCase} · ${now < s.huntFreshUntil ? 'TRAIL HOT' : 'TRAIL COLD'}`,
+    )
     for (const ship of ships) {
       if (!ship.active || rows.length >= 3) continue
       const range = ship.position.distanceTo(DRIFT)
@@ -1706,6 +1943,51 @@ export function IceRoute() {
         <cylinderGeometry args={[0.14, 0.14, 1, 4, 1, true]} />
         <meshBasicMaterial color="#8fa8b8" transparent opacity={0.85} toneMapped={false} />
       </mesh>
+
+      {/* THE TRAIL's evidence — three kinds, one shown at the working mark.
+          Local +X is the line the evidence points (her onward burn). */}
+      <group ref={clueRef} visible={false}>
+        {/* vented cargo: dumped mass strung out along her burn line */}
+        <group ref={clueCargoRef}>
+          {[
+            [-36, 5, -8, 4.2],
+            [-18, -7, 10, 5.5],
+            [-2, 2, -14, 3.4],
+            [14, 9, 4, 6.2],
+            [30, -4, -5, 4.8],
+            [44, 6, 12, 3.8],
+          ].map(([x, y, z, sc], i) => (
+            <mesh key={i} position={[x, y, z]} rotation={[i * 0.9, i * 1.7, i * 0.4]}>
+              <boxGeometry args={[sc, sc * 0.8, sc * 1.2]} />
+              <meshStandardMaterial color="#4a525e" metalness={0.4} roughness={0.8} flatShading />
+            </mesh>
+          ))}
+        </group>
+        {/* exhaust-scorched dust: a faint smear, dispersing behind her */}
+        <mesh ref={clueDustRef} rotation={[0, 0, -Math.PI / 2]}>
+          <cylinderGeometry args={[5, 11, 360, 8, 1, true]} />
+          <meshBasicMaterial
+            color={[1.3, 0.72, 0.34]}
+            transparent
+            opacity={0.05}
+            blending={AdditiveBlending}
+            depthWrite={false}
+            toneMapped={false}
+            side={DoubleSide}
+          />
+        </mesh>
+        {/* militia relay buoy: dark hardware, one patient blinking lamp */}
+        <group ref={clueBuoyRef}>
+          <mesh>
+            <octahedronGeometry args={[3]} />
+            <meshStandardMaterial color="#2a3644" metalness={0.6} roughness={0.5} flatShading />
+          </mesh>
+          <mesh ref={clueLampRef} position={[0, 4.4, 0]}>
+            <sphereGeometry args={[0.9, 8, 8]} />
+            <meshBasicMaterial color={[0.4, 3.2, 2.6]} toneMapped={false} />
+          </mesh>
+        </group>
+      </group>
 
       {/* Torpedoes + trails + our rounds */}
       <instancedMesh
