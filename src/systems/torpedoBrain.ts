@@ -53,6 +53,10 @@ export interface TorpClass {
   corkSpin: number
   /** reacts to near misses from the player's fire */
   jukes: boolean
+  /** DARK RUNNER: range to target at which the drive cuts (undefined = never) */
+  darkAt?: number
+  /** range at which a dark runner relights for terminal */
+  relightAt?: number
 }
 
 export interface TorpBrain {
@@ -70,6 +74,10 @@ export interface TorpBrain {
    *  parked harness */
   jukesLeft: number
   jukeDir: Vector3
+  /** drive cut: ballistic coast, no burn, no steering, no track */
+  dark: boolean
+  /** a runner goes dark only once per flight */
+  wentDark: boolean
   nearMisses: number
   nearWindow: number
   dogleg: Vector3
@@ -117,6 +125,8 @@ export function createBrain(): TorpBrain {
     jukeCooldown: 0,
     jukesLeft: 0,
     jukeDir: new Vector3(),
+    dark: false,
+    wentDark: false,
     nearMisses: 0,
     nearWindow: 0,
     dogleg: new Vector3(),
@@ -140,6 +150,8 @@ export function armBrain(
   brain.jukeLeft = 0
   brain.jukeCooldown = 0
   brain.jukesLeft = 3
+  brain.dark = false
+  brain.wentDark = false
   brain.nearMisses = 0
   brain.nearWindow = 0
   if (opts?.dogleg) {
@@ -163,6 +175,21 @@ export function steerTorpedo(
   dt: number,
 ): void {
   const cls = brain.cls
+  _R.copy(targetPos).sub(pos)
+  const r = Math.max(_R.length(), 1e-6)
+
+  // DARK RUNNER: between darkAt and relight the drive is CUT — pure
+  // ballistic coast, no burn, no steering, and (the activity's half) no
+  // track for the guns or the scope. THE HUNT's signature ordnance.
+  if (brain.dark) {
+    if (r < (cls.relightAt ?? 420)) brain.dark = false
+    else return
+  } else if (cls.darkAt !== undefined && !brain.wentDark && brain.boostLeft <= 0 && r < cls.darkAt) {
+    brain.dark = true
+    brain.wentDark = true
+    return
+  }
+
   brain.speed = Math.min(cls.vmax, brain.speed + cls.accel * dt)
 
   // BOOST: hold the rail bearing, just burn
@@ -172,8 +199,6 @@ export function steerTorpedo(
     return
   }
 
-  _R.copy(targetPos).sub(pos)
-  const r = Math.max(_R.length(), 1e-6)
   _rel.copy(vel).sub(targetVel)
   // closing speed along the line of sight; floored so tgo stays sane when
   // geometry momentarily opens (a juking torpedo can point away briefly)

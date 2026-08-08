@@ -304,3 +304,33 @@ New from this pass:
 5. **Watchability**: after the squawk the player is free but the tow
    takes ~40 s to play out fully — is that the right length for the
    ones who stay to watch?
+
+
+---
+
+## BUILT — 2026-08-08, the same night as pass 2
+
+Shipped end-to-end and verified on the harness: staged posting → board
+accept (the interdiction outranks escort offers while posted) → BRAZEN
+temperament rolled → chase with dark-runner salvos (drive-cut ghosts on
+the scope, guns dropping the track, terminal relight) → the ring lock
+accumulated 8 s → TARGET SQUAWKING SURRENDER → the tug flew out from
+the Drift → harpoon crossed → tow-haul on the cable → DRAUGR IMPOUNDED,
+tally persisted (1 HELD · 0 FLED, localStorage), board cycling again.
+Baseline regression ride after: the cert ladder unchanged (parked died
+at W3 on schedule).
+
+Build notes and honest debts for Tirtha's first flight:
+- **LOCK_RELSPEED went 60 → 110 during verification**: thrust is a
+  binary key and flight assist brakes hard on release, so a real pilot
+  FEATHERS around her speed, oscillating ±80–100. Sixty was
+  script-only. The matching FEEL is the first thing his live flight
+  should judge.
+- The tug (Titan, 10 u — half the Draugr, real-tug proportion) and the
+  harpoon cable shipped verified-in-code but barely glimpsed by eye;
+  the tow procedure plays out over ~40 s and is his to watch.
+- Escalation (+3 cap) and the CAGEY/SPENDTHRIFT temperaments are
+  built but only BRAZEN has flown.
+- The revenant board line ("YOU CAN IMPOUND A SHIP…") arrives as the
+  impound flavor; the standing painted tally on the militia board
+  waits for the toys/boards pass.

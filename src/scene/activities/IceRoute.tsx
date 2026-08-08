@@ -92,6 +92,7 @@ import { FONT_BOLD } from '../boards/font'
  */
 
 const RAIDER_URL = '/models/draugr.glb'
+const TUG_URL = '/models/tug.glb'
 const TORPEDO_URL = '/models/torpedo.glb'
 
 /** The three classes working these lanes. Bow is +X on all of them. */
@@ -179,6 +180,62 @@ const LANE_MILSPEC: TorpClass = {
   jukes: true,
 }
 const HIDDEN_LAUNCH = 1700
+
+/**
+ * THE HUNT (docs/the-hunt.md, both passes locked 2026-08-08). Her flight
+ * numbers: catchable by delta-v arithmetic (420 vs the player's 520),
+ * never by rubber-band. The win is a solved rendezvous: hold her inside
+ * the PDC ring with matched velocity and the gun to the head does the
+ * rest — the shot never comes.
+ */
+const DRAUGR_VMAX = 420
+const DRAUGR_ACCEL = 55
+const LOCK_RING = 300
+const LOCK_SECONDS = 8
+/** Pacing envelope, not perfection: thrust is a binary key and flight
+ *  assist brakes hard on release, so a real pilot FEATHERS around her
+ *  speed — oscillating ±80-100. 60 was unachievable outside a script. */
+const LOCK_RELSPEED = 110
+const ESCAPE_GAP = 4000
+const ESCAPE_SECONDS = 12
+const DESPERATE_RANGE = 800
+const CAUGHT_KEY = 'stellarlogs-draugr-caught'
+const ESCAPED_KEY = 'stellarlogs-draugr-escaped'
+
+/** Her ordnance on the hunt: the DARK RUNNER — drive cuts midcourse, the
+ *  track drops to a ghost, terminal relight closer than comfort. */
+const HUNT_RUNNER: TorpClass = {
+  lead: 1,
+  accel: 30,
+  v0: 110,
+  vmax: 200,
+  turn: 1.0,
+  corkRadius: 6,
+  corkSpin: 2.2,
+  jukes: true,
+  darkAt: 950,
+  relightAt: 430,
+}
+
+/** Which Draugr showed up this time? Rolled per hunt, readable only
+ *  through behavior — the revenant fiction licenses the dice. */
+interface Temperament {
+  headStart: number
+  dlMin: number
+  dlMax: number
+  dlAngle: number
+  magazine: number
+  salvoMin: number
+  salvoMax: number
+}
+const TEMPERAMENTS: Temperament[] = [
+  // CAGEY — the long patient chase
+  { headStart: 1600, dlMin: 18, dlMax: 26, dlAngle: 0.7, magazine: 8, salvoMin: 24, salvoMax: 34 },
+  // BRAZEN — lets you close, breaks violently late
+  { headStart: 1000, dlMin: 8, dlMax: 14, dlAngle: 1.2, magazine: 10, salvoMin: 14, salvoMax: 22 },
+  // SPENDTHRIFT — empties the magazine early, then runs clean
+  { headStart: 1200, dlMin: 12, dlMax: 20, dlAngle: 0.85, magazine: 12, salvoMin: 8, salvoMax: 12 },
+]
 /** the mark: how likely the Draugr wants a given cargo */
 const MARK_ODDS: Record<string, number> = {
   VOLATILES: 0.6,
@@ -261,9 +318,14 @@ interface Torpedo {
   launched: boolean
   tracked: boolean
   ambient: boolean
-  /** which ship it is hunting */
+  /** which ship it is hunting; -1 = the PLAYER (the hunt's dark runners) */
   target: number
-  targetPos: Vector3
+  /** mirror of brain.dark for the HUD layers (Threat contract) */
+  dark?: boolean
+  lastKnown?: { x: number; y: number; z: number }
+  /** her prey's live position (ship-targeted torps); ABSENT on the hunt's
+   *  player-targeted runners so the scope never mistakes you for an escortee */
+  targetPos?: Vector3
 }
 
 const _v = new Vector3()
@@ -344,6 +406,7 @@ export function IceRoute() {
   const hullB = useGLTF(CLASSES[1].url)
   const hullC = useGLTF(CLASSES[2].url)
   const raiderGltf = useGLTF(RAIDER_URL)
+  const tugGltf = useGLTF(TUG_URL)
   const raiderHull = useMemo(() => raiderGltf.scene.getObjectByName('hull') as Object3D, [raiderGltf])
   const torpedoBody = useTorpedoBody()
   const pdcFire = useMemo(() => createPdcFire(), [])
@@ -425,7 +488,7 @@ export function IceRoute() {
     escort: -1, // slot index of the contracted ship, or -1
     offer: -1, // the job on the board in front of us, waiting on an answer
     accept: false, // one-shot: the pilot pressed accept
-    job: 'none' as 'none' | 'intercept' | 'escort' | 'over',
+    job: 'none' as 'none' | 'intercept' | 'escort' | 'hunt' | 'over',
     playerHull: 3,
     intercepts: 0,
     salvos: 0,
@@ -440,9 +503,30 @@ export function IceRoute() {
     raiderFiring: false,
     huntPostedUntil: 0,
     huntBearing: 0,
+    huntPostedAt: 0,
+    huntPhase: 'chase' as 'chase' | 'squawked' | 'tow-fly' | 'tow-harpoon' | 'tow-haul',
+    huntTemper: 0,
+    huntMagazine: 0,
+    huntNextSalvoAt: 0,
+    huntNextDoglegAt: 0,
+    huntLockT: 0,
+    huntEscapeT: 0,
+    huntHarpoonT: 0,
+    huntLastGap: 0,
+    huntClosing: 0,
+    draugrCaught: Number(localStorage.getItem(CAUGHT_KEY) ?? 0),
+    draugrEscaped: Number(localStorage.getItem(ESCAPED_KEY) ?? 0),
     best: Number(localStorage.getItem(BEST_KEY) ?? 0),
   })
   const raiderLabel = useRef<(() => void) | null>(null)
+  const huntVel = useMemo(() => new Vector3(), [])
+  const fleeDir = useMemo(() => new Vector3(1, 0, 0), [])
+  const huntSeedPos = useMemo(() => new Vector3(), [])
+  const huntSeedDir = useMemo(() => new Vector3(1, 0, 0), [])
+  const tugPos = useMemo(() => new Vector3(), [])
+  const tugVel = useMemo(() => new Vector3(), [])
+  const tugRef = useRef<Group>(null)
+  const cableRef = useRef<Mesh>(null)
   /** the live rendezvous point the intercept marker leads to */
   const interceptPoint = useMemo(() => new Vector3(), [])
 
@@ -466,7 +550,7 @@ export function IceRoute() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'KeyG' || e.repeat) return
-      if (g.current.offer >= 0) g.current.accept = true
+      if (g.current.offer !== -1) g.current.accept = true
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
@@ -495,6 +579,10 @@ export function IceRoute() {
       w.__lanes = g
       w.__ships = ships
       w.__raider = raiderPos
+      w.__hunt = g
+      w.__huntVel = huntVel
+      w.__huntSeed = huntSeedPos
+      w.__huntSeedDir = huntSeedDir
       w.__torps = torpedoes
     }
   }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels])
@@ -622,6 +710,101 @@ export function IceRoute() {
       }
     }
 
+    function shipRigNoop() {
+      // the harpoon thunk: a visible spark only — her hull barely answers
+    }
+
+    function fireHuntSalvo(count: number) {
+      // Her wake ordnance: DARK RUNNERS at the PLAYER, from her position.
+      let spawned = 0
+      for (const torp of torpedoes) {
+        if (torp.alive || spawned >= count) continue
+        torp.position.copy(raiderPos)
+        torp.position.x += (Math.random() - 0.5) * 30
+        torp.position.y += (Math.random() - 0.5) * 20
+        torp.position.z += (Math.random() - 0.5) * 30
+        torp.aimOffset.set(0, 0, 0)
+        const tc: TorpClass = { ...HUNT_RUNNER, vmax: HUNT_RUNNER.vmax * (0.94 + Math.random() * 0.12) }
+        armBrain(torp.brain, tc, { boost: 0.5 + Math.random() * 0.2 })
+        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(tc.v0)
+        torp.alive = true
+        torp.launched = false
+        torp.launchAt = now + spawned * 0.4
+        torp.tracked = false
+        torp.ambient = false
+        torp.target = -1
+        torp.dark = false
+        spawned++
+      }
+    }
+
+    function endHunt(result: 'caught' | 'escaped' | 'crippled') {
+      if (result === 'caught') {
+        s.draugrCaught++
+        localStorage.setItem(CAUGHT_KEY, String(s.draugrCaught))
+        say(2, 'DRAUGR IMPOUNDED — ORDNANCE STRIPPED', 'win', 4.5)
+        say(3, "YOU CAN IMPOUND A SHIP. YOU CAN'T IMPOUND A NAME.", 'info', 6)
+      } else if (result === 'escaped') {
+        s.draugrEscaped++
+        localStorage.setItem(ESCAPED_KEY, String(s.draugrEscaped))
+        say(2, "SHE'S GONE DARK — THE LANE REMEMBERS", 'fail', 5)
+      } else {
+        s.draugrEscaped++
+        localStorage.setItem(ESCAPED_KEY, String(s.draugrEscaped))
+        say(2, 'HULL FAILING — SHE RUNS FREE', 'fail', 5)
+      }
+      s.job = 'over'
+      s.holdUntil = now + 3.4
+      s.huntPostedUntil = 0
+      activityState.hostile = null
+      activityState.hostileLock = 0
+      for (const torp of torpedoes) if (torp.target === -1) torp.alive = false
+      if (result !== 'caught') raiderLabel.current?.()
+      if (result !== 'caught') {
+        raiderLabel.current = null
+        labelsChanged()
+      }
+    }
+
+    function startHunt() {
+      // The revenant answers the posting. Roll WHICH Draugr showed up —
+      // the escalation cap (+3 on your record) widens her bands: whoever
+      // they are, they know your callsign now.
+      const esc = Math.min(3, s.draugrCaught)
+      const T = TEMPERAMENTS[Math.floor(Math.random() * TEMPERAMENTS.length)]
+      s.huntTemper = TEMPERAMENTS.indexOf(T)
+      s.job = 'hunt'
+      s.huntPhase = 'chase'
+      s.playerHull = 3
+      damageFx.clear()
+      s.huntMagazine = T.magazine + esc
+      s.huntLockT = 0
+      s.huntEscapeT = 0
+      s.huntHarpoonT = 0
+      // seeded from the last raid's truth + the head start you gave her
+      const dawdle = Math.max(0, now - s.huntPostedAt)
+      const head = T.headStart * (1 + esc * 0.1) + dawdle * 15
+      raiderPos.copy(huntSeedPos).addScaledVector(huntSeedDir, head)
+      fleeDir.copy(huntSeedDir)
+      huntVel.copy(fleeDir).multiplyScalar(DRAUGR_VMAX * 0.7)
+      s.huntNextDoglegAt = now + T.dlMin
+      s.huntNextSalvoAt = now + 6 + Math.random() * 6
+      s.huntLastGap = raiderPos.distanceTo(shipRig.position)
+      say(1, 'INTERDICTION LOGGED — RUN HER DOWN', 'battle', 3)
+      raiderLabel.current?.()
+      raiderLabel.current = registerHudLabel({
+        id: 'ship-draugr',
+        name: 'DRAUGR',
+        color: '#e0708f',
+        kind: 'poi',
+        position: raiderPos,
+        yOffset: 16,
+        el: null,
+        detail: 'RAIDER · NO TRANSPONDER · WEAPONS FREE',
+      })
+      labelsChanged()
+    }
+
     function raiderSalvo(target: number) {
       const ship = ships[target]
       // Her own launch — the only one anyone ever sees. A kilometre off the
@@ -665,6 +848,9 @@ export function IceRoute() {
         say(2, `${ship.cargo} DELIVERED`, 'win', 3.2)
         say(3, CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON', 'win', 5)
         s.huntPostedUntil = now + 300
+        s.huntPostedAt = now
+        huntSeedPos.copy(raiderPos)
+        huntSeedDir.copy(raiderDir).negate()
       } else if (result === 'lost') {
         s.flashText = 'THE LANE TAKES ANOTHER'
         say(2, `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`, 'fail', 5.5)
@@ -705,9 +891,12 @@ export function IceRoute() {
       _v.copy(torp.velocity).normalize().multiplyScalar(-4).add(shipRig.position)
       spawnExplosion(_v, 1.6)
       damageFx.add(torp.velocity)
-      if (s.playerHull <= 0) endJob('crippled')
-      else
+      if (s.playerHull <= 0) {
+        if (s.job === 'hunt') endHunt('crippled')
+        else endJob('crippled')
+      } else if (s.job !== 'hunt') {
         say(3, 'YOU TOOK THAT ONE FOR HER', 'info', 2.6)
+      }
     }
 
     function shipHit(ship: Ship, torp: Torpedo, hitPoint: Vector3) {
@@ -867,7 +1056,11 @@ export function IceRoute() {
     // hulls first (that is WHY escort is wanted), longest transit first.
     const distToBoard = shipRig.position.distanceTo(_v.set(DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210))
     s.offer = -1
-    if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE) {
+    if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE && now < s.huntPostedUntil) {
+      // the interdiction outranks escort work while the posting stands
+      s.offer = -2
+    }
+    if (s.job === 'none' && s.offer === -1 && !shipRig.warping && distToBoard < BOARD_RANGE) {
       let bestScore = -1
       for (let i = 0; i < ships.length; i++) {
         const ship = ships[i]
@@ -880,6 +1073,10 @@ export function IceRoute() {
           s.offer = i
         }
       }
+    }
+    if (s.offer === -2 && (s.accept || activityState.acceptRequest)) {
+      startHunt()
+      s.offer = -1
     }
     if (s.offer >= 0 && (s.accept || activityState.acceptRequest)) {
       const i = s.offer
@@ -970,14 +1167,140 @@ export function IceRoute() {
       }
     }
 
+    // ---------- THE HUNT ----------
+    if (s.job === 'hunt') {
+      const gap = raiderPos.distanceTo(shipRig.position)
+      const T = TEMPERAMENTS[s.huntTemper]
+      if (s.huntPhase === 'chase') {
+        // her flight: hard burn away, doglegs on temperament cadence,
+        // desperate jinks when cornered
+        const desperate = gap < DESPERATE_RANGE
+        if (now >= s.huntNextDoglegAt) {
+          const band = desperate ? 0.5 : 1
+          const ang = (Math.random() - 0.5) * 2 * T.dlAngle * (desperate ? 1.4 : 1)
+          _q.setFromAxisAngle(_up, ang)
+          fleeDir.copy(huntSeedDir).applyQuaternion(_q)
+          fleeDir.y = (Math.random() - 0.5) * 0.5
+          fleeDir.normalize()
+          s.huntNextDoglegAt = now + (T.dlMin + Math.random() * (T.dlMax - T.dlMin)) * band
+        }
+        _v.copy(fleeDir).multiplyScalar(DRAUGR_VMAX)
+        _v.sub(huntVel).clampLength(0, DRAUGR_ACCEL * dt)
+        huntVel.add(_v)
+        raiderPos.addScaledVector(huntVel, dt)
+        // her wake ordnance
+        if (s.huntMagazine > 0 && now >= s.huntNextSalvoAt) {
+          const birds = Math.min(s.huntMagazine, desperate ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0))
+          fireHuntSalvo(birds)
+          s.huntMagazine -= birds
+          const cad = T.salvoMin + Math.random() * (T.salvoMax - T.salvoMin)
+          s.huntNextSalvoAt = now + (desperate ? cad * 0.5 : cad)
+        }
+        // the surrender lock: inside the ring, velocity matched, held
+        _v.copy(shipRig.velocityDir).multiplyScalar(shipRig.speed).sub(huntVel)
+        const relSpeed = _v.length()
+        if (gap < LOCK_RING && relSpeed < LOCK_RELSPEED) s.huntLockT += dt
+        else s.huntLockT = Math.max(0, s.huntLockT - dt * 0.6)
+        activityState.hostileLock = Math.min(1, s.huntLockT / LOCK_SECONDS)
+        if (s.huntLockT >= LOCK_SECONDS) {
+          s.huntPhase = 'squawked'
+          s.huntHarpoonT = 0
+          say(1, 'TARGET SQUAWKING SURRENDER — MILITIA TUG INBOUND', 'win', 4)
+          tugPos.copy(DRIFT).add(_v.set(120, 60, 80))
+          tugVel.set(0, 0, 0)
+        }
+        // the escape: fall too far behind for too long and she is gone
+        if (gap > ESCAPE_GAP) {
+          s.huntEscapeT += dt
+          if (s.huntEscapeT >= ESCAPE_SECONDS) endHunt('escaped')
+        } else s.huntEscapeT = 0
+        s.huntClosing = dt > 0 ? (s.huntLastGap - gap) / dt : 0
+        s.huntLastGap = gap
+      } else {
+        // squawked / tow: she drifts, drive dark
+        huntVel.multiplyScalar(Math.max(0, 1 - dt * 0.5))
+        raiderPos.addScaledVector(huntVel, dt)
+        activityState.hostileLock = 1
+        if (s.huntPhase === 'squawked') {
+          s.huntPhase = 'tow-fly'
+        } else if (s.huntPhase === 'tow-fly') {
+          // the tug flies out and stations off her beam
+          _v.copy(raiderPos).sub(tugPos)
+          const d = _v.length()
+          const speed = Math.min(260, Math.max(40, d * 0.25))
+          _v.normalize().multiplyScalar(speed)
+          tugVel.lerp(_v, Math.min(1, dt * 1.5))
+          tugPos.addScaledVector(tugVel, dt)
+          if (d < 90) {
+            s.huntPhase = 'tow-harpoon'
+            s.huntHarpoonT = 0
+          }
+        } else if (s.huntPhase === 'tow-harpoon') {
+          // the shot: ~1.5 s of cable crossing, then the thunk
+          s.huntHarpoonT += dt / 1.5
+          tugVel.multiplyScalar(Math.max(0, 1 - dt * 2))
+          tugPos.addScaledVector(tugVel, dt)
+          if (s.huntHarpoonT >= 1) {
+            spawnExplosion(_v.copy(raiderPos), 0.4)
+            shipRigNoop()
+            s.huntPhase = 'tow-haul'
+          }
+        } else if (s.huntPhase === 'tow-haul') {
+          // the long haul: tug leads, her hull follows on the cable
+          _v.copy(DRIFT).sub(tugPos).normalize().multiplyScalar(140)
+          tugVel.lerp(_v, Math.min(1, dt * 0.8))
+          tugPos.addScaledVector(tugVel, dt)
+          _v.copy(tugPos).sub(raiderPos)
+          const cd = _v.length()
+          if (cd > 26) raiderPos.addScaledVector(_v.normalize(), (cd - 26) * Math.min(1, dt * 3))
+          if (tugPos.distanceTo(DRIFT) < 420) endHunt('caught')
+        }
+      }
+      // live refs for the scope
+      activityState.hostile = raiderPos
+      activityState.hostileVel.x = huntVel.x
+      activityState.hostileVel.y = huntVel.y
+      activityState.hostileVel.z = huntVel.z
+    } else if (activityState.owner === 'iceroute' && activityState.hostile) {
+      activityState.hostile = null
+      activityState.hostileLock = 0
+    }
+
     // ---------- torpedoes ----------
     for (const torp of torpedoes) {
       if (!torp.alive) continue
+      if (torp.target === -1) {
+        // THE HUNT's dark runners fly at the PLAYER
+        if (s.job !== 'hunt' || s.huntPhase !== 'chase') {
+          torp.alive = false
+          continue
+        }
+        if (!torp.launched) {
+          if (now >= torp.launchAt) torp.launched = true
+          else continue
+        }
+        _tVel.copy(shipRig.velocityDir).multiplyScalar(shipRig.speed)
+        steerTorpedo(torp.brain, torp.position, torp.velocity, shipRig.position, _tVel, dt)
+        torp.position.addScaledVector(torp.velocity, dt)
+        // the ghost bookkeeping: drive cut = track dropped
+        if (torp.brain.dark && !torp.dark) {
+          torp.dark = true
+          torp.lastKnown = { x: torp.position.x, y: torp.position.y, z: torp.position.z }
+        } else if (!torp.brain.dark && torp.dark) {
+          torp.dark = false
+        }
+        torp.targetPos = undefined
+        if (torp.position.distanceTo(shipRig.position) < PLAYER_HIT_RADIUS) {
+          playerHit(torp)
+        }
+        continue
+      }
       const ship = ships[torp.target]
       if (!ship?.active) {
         torp.alive = false
         continue
       }
+      if (!torp.targetPos) torp.targetPos = new Vector3()
       torp.targetPos.copy(ship.position)
       if (!torp.launched) {
         if (now >= torp.launchAt) torp.launched = true
@@ -1015,8 +1338,9 @@ export function IceRoute() {
     // panel wakes for your contract, or when you are standing at the board
     // where jobs are taken. Ambient raids play out with no readouts at all.
     activityState.bannerClock = now
-    const onContract = s.job === 'intercept' || s.job === 'escort'
-    const battle = escorting && torpedoes.some((t) => t.alive && !t.ambient)
+    const onContract = s.job === 'intercept' || s.job === 'escort' || s.job === 'hunt'
+    const hunting = s.job === 'hunt'
+    const battle = (escorting && torpedoes.some((t) => t.alive && !t.ambient)) || hunting
     const engaged = onContract || s.job === 'over' || distToBoard < BOARD_RANGE
     if (engaged) {
       activityState.owner = 'iceroute'
@@ -1029,24 +1353,48 @@ export function IceRoute() {
       activityState.waveMax = Math.max(s.salvos, 4)
       activityState.waveLabel = 'SALVO'
       activityState.canRestart = false
-      activityState.offer = s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
-      activityState.title =
-        escorting && escorted
+      activityState.offer =
+        s.offer === -2 ? 'INTERDICTION — DRAUGR' : s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
+      activityState.title = hunting
+        ? 'INTERDICTION — DRAUGR'
+        : escorting && escorted
           ? `ESCORT — ${escorted.name}`
           : intercepting && escorted
             ? `CONTRACT — ${escorted.name}`
             : 'AMNIA DOCKS'
       const range = escorted ? shipRig.position.distanceTo(escorted.position) : 0
-      activityState.hint = battle
+      const huntGap = hunting ? raiderPos.distanceTo(shipRig.position) : 0
+      activityState.hint = hunting
+        ? s.huntPhase !== 'chase'
+          ? 'THE MILITIA HAS HER — WATCH OR GO'
+          : huntGap < LOCK_RING
+            ? 'MATCH HER SPEED — HOLD THE RING'
+            : s.huntClosing > 250 && huntGap < 1500
+              ? 'TOO FAST — YOU WILL OVERSHOOT'
+              : s.huntClosing < -30 && huntGap > 2500
+                ? 'SHE IS PULLING AWAY — FULL BURN'
+                : 'RUN HER DOWN'
+        : battle
         ? 'STATION BETWEEN THE TORPEDOES AND HER HULL'
         : escorting
           ? 'HOLD FORMATION — RAIDERS WORK THESE LANES'
           : intercepting
             ? 'FLY THE MARKER — MEET HER ON THE WAY IN'
-            : s.offer >= 0
-              ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO TAKE HER`
-              : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
-      if (intercepting && escorted) {
+            : s.offer === -2
+              ? `INTERDICTION POSTED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN HER DOWN`
+              : s.offer >= 0
+                ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO TAKE HER`
+                : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
+      if (hunting) {
+        activityState.lines = [
+          { label: 'DRAUGR', value: `${(huntGap / 1000).toFixed(1)}K` },
+          {
+            label: s.huntClosing >= 0 ? 'CLOSING' : 'OPENING',
+            value: `${Math.abs(Math.round(s.huntClosing))} M/S`,
+          },
+          { label: 'RECORD', value: `${s.draugrCaught} HELD · ${s.draugrEscaped} FLED` },
+        ]
+      } else if (intercepting && escorted) {
         const closing = dt > 0 ? (s.lastRange - range) / dt : 0
         s.lastRange = range
         activityState.lines = [
@@ -1098,7 +1446,12 @@ export function IceRoute() {
         const targets: { position: Vector3 }[] = []
         pdcFire.slotSource.length = 0
         for (let i = 0; i < torpedoes.length; i++) {
-          if (torpedoes[i].alive && torpedoes[i].launched && !torpedoes[i].ambient) {
+          if (
+            torpedoes[i].alive &&
+            torpedoes[i].launched &&
+            !torpedoes[i].ambient &&
+            !torpedoes[i].brain.dark
+          ) {
             targets.push(targetSlots[i])
             pdcFire.slotSource.push(i)
           }
@@ -1162,9 +1515,18 @@ export function IceRoute() {
     // ---------- render: the Draugr ----------
     const raider = raiderRef.current
     if (raider) {
-      const showing = s.raiderUntil > 0
+      const showing = s.raiderUntil > 0 || s.job === 'hunt'
       raider.visible = showing
-      if (showing) {
+      if (s.job === 'hunt') {
+        raider.position.copy(raiderPos)
+        if (huntVel.lengthSq() > 1) {
+          _v.copy(huntVel).normalize()
+          _q.setFromUnitVectors(_xAxis, _v)
+          raider.quaternion.copy(_q)
+        }
+        // running hard on the chase; drive dark once she strikes colors
+        raiderDrive.power = s.huntPhase === 'chase' ? 1 : 0
+      } else if (showing) {
         raider.position.copy(raiderPos)
         _q.setFromUnitVectors(_xAxis, raiderDir)
         raider.quaternion.copy(_q)
@@ -1172,6 +1534,39 @@ export function IceRoute() {
         raiderDrive.power = s.raiderFiring ? 0.22 : 1
       } else {
         raiderDrive.power = 0
+      }
+    }
+
+    // ---------- render: the militia tug + the harpoon cable ----------
+    const tug = tugRef.current
+    if (tug) {
+      const towing = s.job === 'hunt' && s.huntPhase !== 'chase' && s.huntPhase !== 'squawked'
+      tug.visible = towing
+      if (towing) {
+        tug.position.copy(tugPos)
+        if (tugVel.lengthSq() > 0.5) {
+          _v.copy(tugVel).normalize()
+          _q.setFromUnitVectors(_xAxis, _v)
+          tug.quaternion.slerp(_q, Math.min(1, dt * 3))
+        }
+      }
+    }
+    const cable = cableRef.current
+    if (cable) {
+      const firing = s.job === 'hunt' && s.huntPhase === 'tow-harpoon'
+      const hauling = s.job === 'hunt' && s.huntPhase === 'tow-haul'
+      cable.visible = firing || hauling
+      if (cable.visible) {
+        // from the tug's bow to her hull — partial while the shot crosses
+        _v.copy(raiderPos).sub(tugPos)
+        const full = _v.length()
+        const len = firing ? full * Math.min(1, s.huntHarpoonT) : full
+        _v.normalize()
+        _v2.copy(tugPos).addScaledVector(_v, len / 2)
+        cable.position.copy(_v2)
+        _q.setFromUnitVectors(_up, _v)
+        cable.quaternion.copy(_q)
+        cable.scale.set(1, Math.max(0.1, len), 1)
       }
     }
 
@@ -1297,11 +1692,20 @@ export function IceRoute() {
         </group>
       ))}
 
-      {/* THE DRAUGR — seen only at the braking burn, and only for a moment */}
+      {/* THE DRAUGR — the braking-burn reveal, and the hunt's quarry */}
       <group ref={raiderRef} visible={false}>
         <primitive object={raiderHull} />
         <DraugrPlumes drive={raiderDrive} />
       </group>
+
+      {/* THE MILITIA TUG — a working boat with one weapon: the harpoon */}
+      <group ref={tugRef} visible={false}>
+        <primitive object={tugGltf.scene} />
+      </group>
+      <mesh ref={cableRef} visible={false} frustumCulled={false}>
+        <cylinderGeometry args={[0.14, 0.14, 1, 4, 1, true]} />
+        <meshBasicMaterial color="#8fa8b8" transparent opacity={0.85} toneMapped={false} />
+      </mesh>
 
       {/* Torpedoes + trails + our rounds */}
       <instancedMesh
@@ -1368,4 +1772,5 @@ useGLTF.preload(CLASSES[0].url)
 useGLTF.preload(CLASSES[1].url)
 useGLTF.preload(CLASSES[2].url)
 useGLTF.preload(RAIDER_URL)
+useGLTF.preload(TUG_URL)
 useGLTF.preload(TORPEDO_URL)

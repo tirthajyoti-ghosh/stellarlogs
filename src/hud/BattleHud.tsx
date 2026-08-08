@@ -45,6 +45,7 @@ export function BattleHud() {
       let soonest = Infinity
       for (const threat of activityState.threats) {
         if (!threat.alive || !threat.launched) continue
+        if (threat.dark) continue // a lost track is not a counted inbound
         count++
         const dx = threat.position.x - shipRig.position.x
         const dy = threat.position.y - shipRig.position.y

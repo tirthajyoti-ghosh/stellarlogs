@@ -16,6 +16,10 @@ export interface Threat {
   launched: boolean
   /** A turret is currently locked onto this threat */
   tracked?: boolean
+  /** DARK RUNNER coast: track lost — the scope draws a ghost, guns drop it */
+  dark?: boolean
+  /** last known position at the moment the track dropped */
+  lastKnown?: { x: number; y: number; z: number }
   /**
    * What this torpedo is homing on when it is NOT the player (escort work:
    * the hauler's live position ref). The battle radar draws the threat axis
@@ -70,6 +74,11 @@ export const activityState = {
   offer: '',
   /** One-shot accept (G / touch button), consumed by the offering activity */
   acceptRequest: false,
+  /** THE HUNT's hostile hull (live position ref) — the scope's only ship glyph */
+  hostile: null as null | { x: number; y: number; z: number },
+  hostileVel: { x: 0, y: 0, z: 0 },
+  /** surrender-lock progress 0..1, drawn as an arc around the hostile glyph */
+  hostileLock: 0,
   /** Race guidance: world position of the next gate (null = no marker) */
   raceTarget: null as { x: number; y: number; z: number } | null,
   /** Label shown on the race marker ("START", "GATE 4", "FINISH") */

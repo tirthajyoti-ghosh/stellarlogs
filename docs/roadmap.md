@@ -240,7 +240,7 @@ joins them.* No staging point, no set-piece, no memorisable pattern.
 *Assets: NekoKuroHB Cargo Hauler (the Imiq, sister of the Nilak, 72u);
 "Stealth Ship - Vehicle Design" (the Draugr, 14u, runs dark), both CC-BY.*
 
-### F.3 — THE HUNT (interdiction) — build next; already posted in-world
+### F.3 — THE HUNT (interdiction) — BUILT 2026-08-08 (docs/the-hunt.md, two passes + same-night build)
 *The dock board posts this job with the Draugr's last bearing the moment an
 escort succeeds, so the hand-off exists before the mission does.*
 The inverse geometry: the Draugr runs, you chase. She fires torpedoes back

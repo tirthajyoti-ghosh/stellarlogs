@@ -327,7 +327,7 @@ export function Radar() {
         let soonest = Infinity
         for (let i = 0; i < threats.length; i++) {
           const th = threats[i]
-          if (!th.alive || !th.launched) {
+          if (!th.alive || !th.launched || th.dark) {
             stats.push(-1)
             continue
           }
@@ -482,6 +482,62 @@ export function Radar() {
         if (ePt) {
           ctx.fillStyle = '#57e6c4'
           ctx.fillRect(ePt.fx - 1.5, ePt.fy - 1.5, 3, 3)
+        }
+
+        // ghost tracks: a DARK RUNNER's drive cut drops the track — a
+        // hollow x holds the last-known foot until it relights
+        for (const th of threats) {
+          if (!th.alive || !th.launched || !th.dark || !th.lastKnown) continue
+          const f = proj(th.lastKnown.x, th.lastKnown.y, th.lastKnown.z)
+          ctx.strokeStyle = 'rgba(220,232,244,0.55)'
+          ctx.lineWidth = 1.2
+          const s3 = size * 0.011
+          ctx.beginPath()
+          ctx.moveTo(f.fx - s3, f.fy - s3)
+          ctx.lineTo(f.fx + s3, f.fy + s3)
+          ctx.moveTo(f.fx + s3, f.fy - s3)
+          ctx.lineTo(f.fx - s3, f.fy + s3)
+          ctx.stroke()
+        }
+
+        // THE HOSTILE — the game's only ship glyph (THE HUNT's Draugr):
+        // hollow red square on a stem, velocity tick, and the surrender
+        // lock closing as an arc around her
+        const H = activityState.hostile
+        if (H) {
+          const f = proj(H.x, H.y, H.z)
+          const eh = f.eh * k
+          ctx.strokeStyle = 'rgba(2,8,20,0.9)'
+          ctx.lineWidth = 3
+          ctx.beginPath()
+          ctx.moveTo(f.fx, f.fy)
+          ctx.lineTo(f.fx, f.fy - eh)
+          ctx.stroke()
+          ctx.strokeStyle = '#ff5040'
+          ctx.lineWidth = 1.3
+          ctx.beginPath()
+          ctx.moveTo(f.fx, f.fy)
+          ctx.lineTo(f.fx, f.fy - eh)
+          ctx.stroke()
+          ctx.fillStyle = '#ff5040'
+          ctx.fillRect(f.fx - 1.5, f.fy - 1.5, 3, 3)
+          const s4 = size * 0.011
+          ctx.strokeRect(f.fx - s4, f.fy - eh - s4, s4 * 2, s4 * 2)
+          const hv = activityState.hostileVel
+          const rvx = hv.x * Math.cos(yaw) - hv.z * Math.sin(yaw)
+          const rvz = hv.x * Math.sin(yaw) + hv.z * Math.cos(yaw)
+          const vl = Math.hypot(rvx, rvz) || 1
+          ctx.beginPath()
+          ctx.moveTo(f.fx, f.fy - eh)
+          ctx.lineTo(f.fx + (rvx / vl) * size * 0.02, f.fy - eh + (rvz / vl) * size * 0.02 * sq)
+          ctx.stroke()
+          if (activityState.hostileLock > 0) {
+            ctx.strokeStyle = '#57e6c4'
+            ctx.lineWidth = 2
+            ctx.beginPath()
+            ctx.arc(f.fx, f.fy - eh, s4 * 2.1, -Math.PI / 2, -Math.PI / 2 + activityState.hostileLock * Math.PI * 2)
+            ctx.stroke()
+          }
         }
 
         // ABOVE the surface
