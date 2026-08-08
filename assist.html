@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>PURSUIT ASSIST — feel bench</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #020610; color: #9fb2c8; overflow: hidden;
+         font-family: "Space Mono", ui-monospace, Menlo, monospace; }
+  canvas { display: block; }
+  .hud { position: fixed; pointer-events: none; letter-spacing: 0.14em; }
+  .title { top: 16px; left: 20px; }
+  .title h1 { font-size: 13px; letter-spacing: 0.3em; color: #6fd3e8; }
+  .title p { margin-top: 6px; font-size: 10.5px; line-height: 1.6; color: #6f8296; max-width: 520px; }
+  .keys { bottom: 16px; left: 20px; font-size: 10px; line-height: 1.8; color: #6f8296; }
+  .keys b { color: #cfe0ee; font-weight: 400; }
+  .state { top: 16px; right: 20px; text-align: right; font-size: 11px; line-height: 1.9; }
+  .state b { color: #ffc06e; font-weight: 400; }
+  #assistState { font-size: 12px; }
+  #assistState.on { color: #57e6c4; }
+  #assistState.off { color: #8698ac; }
+  .reset { position: fixed; bottom: 16px; right: 20px; pointer-events: auto;
+           background: rgba(18,28,40,.9); color: #9fc4de; cursor: pointer;
+           border: 1px solid rgba(120,170,210,.28); border-radius: 3px;
+           padding: 8px 14px; font: inherit; font-size: 11px; letter-spacing: .14em; }
+  .reset:hover { border-color: rgba(120,200,240,.7); color: #dff0ff; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud title">
+  <h1>PURSUIT ASSIST — FEEL BENCH</h1>
+  <p>The chase's skill is the THROTTLE, not pixel-aiming a keyboard yaw.
+     Steer your nose into the teal ring around her: the flight computer takes
+     the tracking and HOLDS it. Touch any steering key and it lets go
+     instantly — you are always in command. Then fly the real lock game:
+     match her speed inside 300 with the ring held.</p>
+</div>
+<div class="hud keys">
+  <b>W/S</b> burn / brake &nbsp; <b>SHIFT</b> boost (needed — she runs 420)<br/>
+  <b>A/D</b> yaw &nbsp; <b>R/F</b> pitch — same authority as the game (1.7 / 1.15 rad/s)<br/>
+  <b>ENTER</b> reset
+</div>
+<div class="hud state">
+  <div id="assistState" class="off">ASSIST: OFF — ENTER THE RING</div>
+  <div>SPEED <b id="spd">0</b> · HER <b id="tspd">420</b></div>
+  <div>GAP <b id="gap">1.5K</b> · REL <b id="rel">—</b></div>
+  <div>LOCK <b id="lock">0.0 / 8S</b></div>
+</div>
+<button class="reset" id="reset">RESET RUN</button>
+<script>
+'use strict'
+const cv = document.getElementById('c')
+const cx2 = cv.getContext('2d')
+let W = 0, H = 0, pxPerDeg = 10
+function resize() {
+  W = cv.width = innerWidth * devicePixelRatio
+  H = cv.height = innerHeight * devicePixelRatio
+  cv.style.width = innerWidth + 'px'
+  cv.style.height = innerHeight + 'px'
+  pxPerDeg = H / 50 // ~50° vertical field
+}
+addEventListener('resize', resize); resize()
+
+const D2R = Math.PI / 180, R2D = 180 / Math.PI
+const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a }
+
+// ---- the numbers are the GAME's numbers ----
+const YAW = 1.7, PITCH = 1.15            // rad/s, keyboard authority
+const THRUST = 140, BOOST_MULT = 3.2
+const MAX = 210, BOOST_MAX = 520, BLEED = 0.6
+const T_SPEED = 420                       // her pace
+const LOCK_RING = 300, LOCK_REL = 110, LOCK_S = 8, LOCK_DECAY = 0.6
+const ASSIST_CONE = 10 * D2R              // enter within 10° and it holds
+const ASSIST_RATE = 2.2                   // rad/s — RCS authority of the hold
+const ASSIST_GAIN = 6
+
+// ---- state ----
+const keys = new Set()
+let nose = { az: 0, el: 0 }
+let speed = 0, gap = 1500, lockT = 0, done = false
+let assist = false
+// her angular path: a weaving base with Azure Dragon slews
+let base = { az: 0, el: 0 }, slewFrom = { az: 0, el: 0 }, slewT = 1, nextSlewAt = 5
+let tSpd = T_SPEED
+// stars: fixed angular field
+const stars = []
+for (let i = 0; i < 420; i++)
+  stars.push({ az: (Math.random() * 2 - 1) * Math.PI, el: (Math.random() * 2 - 1) * 1.2,
+               m: 0.4 + Math.random() * 0.8 })
+
+addEventListener('keydown', e => {
+  if (e.code === 'Enter') reset()
+  keys.add(e.code)
+  if (['KeyW','KeyS','KeyA','KeyD','KeyR','KeyF','ShiftLeft','ShiftRight','Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault()
+})
+addEventListener('keyup', e => keys.delete(e.code))
+document.getElementById('reset').addEventListener('click', reset)
+function reset() {
+  nose = { az: 0, el: 0 }; speed = 0; gap = 1500; lockT = 0; done = false
+  base = { az: 0.3, el: 0.06 }; slewT = 1; nextSlewAt = now + 4
+}
+
+let now = 0, last = performance.now()
+function targetAngles(t) {
+  // weave rides the base; amplitude grows as you close (true geometry:
+  // the same lateral jink is a wider angle up close)
+  const ampl = Math.min(2, Math.max(0.4, 900 / gap))
+  const k = slewT < 1 ? (1 - Math.cos(Math.min(1, slewT) * Math.PI)) / 2 : 1
+  const az = slewFrom.az + (base.az - slewFrom.az) * k
+    + (Math.sin(t * 0.5) * 6 + Math.sin(t * 1.7) * 2.2) * D2R * ampl
+  const el = slewFrom.el + (base.el - slewFrom.el) * k
+    + (Math.sin(t * 0.37 + 2) * 3 + Math.sin(t * 1.3 + 1) * 1.2) * D2R * ampl
+  return { az, el }
+}
+
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000); last = ts; now += dt
+
+  // ---- her flight ----
+  if (!done && now >= nextSlewAt) {
+    // the Azure Dragon move: slam the vector over, hard
+    slewFrom = targetAngles(now)
+    base = { az: base.az + (Math.random() < 0.5 ? -1 : 1) * (22 + Math.random() * 26) * D2R,
+             el: Math.max(-0.5, Math.min(0.5, base.el + (Math.random() < 0.5 ? -1 : 1) * (8 + Math.random() * 10) * D2R)) }
+    slewT = 0; nextSlewAt = now + 6 + Math.random() * 4
+  }
+  slewT = Math.min(1, slewT + dt / 0.8)
+  tSpd = T_SPEED + Math.sin(now * 0.9) * 12
+  const tgt = done ? targetAngles(nextSlewAt) : targetAngles(now)
+
+  // ---- steering ----
+  const dAz = wrap(tgt.az - nose.az), dEl = tgt.el - nose.el
+  const sep = Math.hypot(dAz, dEl)
+  const handsOn = keys.has('KeyA') || keys.has('KeyD') || keys.has('KeyR') || keys.has('KeyF')
+  if (handsOn) {
+    assist = false
+    nose.az += ((keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0)) * YAW * dt
+    nose.el += ((keys.has('KeyR') ? 1 : 0) - (keys.has('KeyF') ? 1 : 0)) * PITCH * dt
+  } else if (sep < ASSIST_CONE) {
+    assist = true
+  }
+  if (assist && !handsOn) {
+    // the hold: proportional track, honest rate cap — never a snap
+    const step = Math.min(ASSIST_RATE * dt, ASSIST_GAIN * sep * dt)
+    if (sep > 1e-5) { nose.az += (dAz / sep) * step; nose.el += (dEl / sep) * step }
+  }
+  nose.el = Math.max(-1.2, Math.min(1.2, nose.el))
+
+  // ---- throttle ----
+  const boosting = keys.has('ShiftLeft') || keys.has('ShiftRight')
+  const maxV = boosting ? BOOST_MAX : MAX
+  if (keys.has('KeyW')) speed += THRUST * (boosting ? BOOST_MULT : 1) * dt
+  if (keys.has('KeyS')) speed -= 100 * dt
+  if (speed > maxV) speed = Math.max(maxV, speed - speed * BLEED * dt)
+  speed = Math.max(0, speed)
+
+  // ---- the pursuit triangle ----
+  const alongMe = speed * Math.cos(Math.min(sep, Math.PI / 2))
+  const across = speed * Math.sin(Math.min(sep, Math.PI / 2))
+  if (!done) gap = Math.max(60, Math.min(6000, gap - (alongMe - tSpd) * dt))
+  const rel = Math.hypot(alongMe - tSpd, across)
+
+  // ---- the lock ----
+  if (!done) {
+    if (gap < LOCK_RING && rel < LOCK_REL) lockT += dt
+    else lockT = Math.max(0, lockT - dt * LOCK_DECAY)
+    if (lockT >= LOCK_S) done = true
+  }
+
+  draw(tgt, sep, rel)
+  hud(sep, rel)
+  requestAnimationFrame(frame)
+}
+
+function project(az, el) {
+  const dx = wrap(az - nose.az), dy = el - nose.el
+  return { x: W / 2 + dx * R2D * pxPerDeg, y: H / 2 - dy * R2D * pxPerDeg,
+           vis: Math.abs(dx) < 1.2 && Math.abs(dy) < 1.0 }
+}
+
+function draw(tgt, sep, rel) {
+  cx2.clearRect(0, 0, W, H)
+  cx2.fillStyle = '#020610'; cx2.fillRect(0, 0, W, H)
+  // stars — parallax of the nose
+  cx2.fillStyle = '#8fa8c0'
+  for (const s of stars) {
+    const p = project(s.az, s.el)
+    if (!p.vis) continue
+    cx2.globalAlpha = 0.25 * s.m
+    cx2.fillRect(p.x, p.y, s.m * devicePixelRatio, s.m * devicePixelRatio)
+  }
+  cx2.globalAlpha = 1
+
+  // the reticle — your nose
+  const cx = W / 2, cy = H / 2, u = devicePixelRatio
+  cx2.strokeStyle = 'rgba(160,200,230,.8)'; cx2.lineWidth = 1.4 * u
+  cx2.beginPath()
+  cx2.moveTo(cx - 14 * u, cy); cx2.lineTo(cx - 5 * u, cy)
+  cx2.moveTo(cx + 5 * u, cy); cx2.lineTo(cx + 14 * u, cy)
+  cx2.moveTo(cx, cy - 14 * u); cx2.lineTo(cx, cy - 5 * u)
+  cx2.moveTo(cx, cy + 5 * u); cx2.lineTo(cx, cy + 14 * u)
+  cx2.stroke()
+
+  // HER — glyph scaled by gap, drive flare on the weave
+  const p = project(tgt.az, tgt.el)
+  const s = Math.max(8, Math.min(90, 9000 / gap)) * u
+  if (p.vis) {
+    cx2.save()
+    cx2.translate(p.x, p.y)
+    cx2.strokeStyle = done ? '#57e6c4' : '#e0708f'
+    cx2.lineWidth = 2 * u
+    cx2.strokeRect(-s / 2, -s / 2, s, s)
+    cx2.fillStyle = 'rgba(255,170,90,.9)'
+    cx2.beginPath(); cx2.arc(-s * 0.62, 0, s * 0.13 * (0.7 + Math.random() * 0.5), 0, 7); cx2.fill()
+    cx2.fillStyle = done ? '#57e6c4' : '#e0708f'
+    cx2.font = `${11 * u}px "Space Mono", monospace`
+    cx2.textAlign = 'center'
+    cx2.fillText(done ? 'DRAUGR — COLORS STRUCK' : 'DRAUGR', 0, -s / 2 - 8 * u)
+    cx2.restore()
+
+    // THE ASSIST RING — 10° around her. Nose inside = the computer holds.
+    const r = 10 * pxPerDeg
+    cx2.save()
+    cx2.translate(p.x, p.y)
+    if (assist) {
+      cx2.strokeStyle = 'rgba(87,230,196,.9)'; cx2.lineWidth = 2 * u; cx2.setLineDash([])
+    } else {
+      cx2.strokeStyle = 'rgba(87,230,196,.38)'; cx2.lineWidth = 1.4 * u
+      cx2.setLineDash([7 * u, 8 * u]); cx2.lineDashOffset = -now * 24 * u
+    }
+    cx2.beginPath(); cx2.arc(0, 0, r, 0, 7); cx2.stroke()
+    cx2.setLineDash([])
+    cx2.restore()
+
+    // the LOCK ring readout rides her glyph — fill arc, game grammar
+    if (lockT > 0.05) {
+      cx2.strokeStyle = '#57e6c4'; cx2.lineWidth = 2.4 * u
+      cx2.beginPath()
+      cx2.arc(p.x, p.y, s * 0.85, -Math.PI / 2, -Math.PI / 2 + (Math.min(1, lockT / LOCK_S)) * 2 * Math.PI)
+      cx2.stroke()
+    }
+  } else {
+    // off-screen: edge arrow
+    const ang = Math.atan2(p.y - cy, p.x - cx)
+    const ex = cx + Math.cos(ang) * (Math.min(W, H) * 0.42)
+    const ey = cy + Math.sin(ang) * (Math.min(W, H) * 0.42)
+    cx2.save(); cx2.translate(ex, ey); cx2.rotate(ang)
+    cx2.fillStyle = '#e0708f'
+    cx2.beginPath(); cx2.moveTo(10 * u, 0); cx2.lineTo(-6 * u, 6 * u); cx2.lineTo(-6 * u, -6 * u); cx2.fill()
+    cx2.restore()
+  }
+
+  if (done) {
+    cx2.fillStyle = '#57e6c4'
+    cx2.font = `${15 * u}px "Space Mono", monospace`
+    cx2.textAlign = 'center'
+    cx2.fillText('LOCK HELD 8 SECONDS — SHE SQUAWKS SURRENDER', cx, cy + H * 0.18)
+    cx2.font = `${11 * u}px "Space Mono", monospace`
+    cx2.fillStyle = '#8fb8d8'
+    cx2.fillText('ENTER TO RESET', cx, cy + H * 0.18 + 24 * u)
+  } else if (gap > 4000) {
+    cx2.fillStyle = '#e0708f'
+    cx2.font = `${12 * u}px "Space Mono", monospace`
+    cx2.textAlign = 'center'
+    cx2.fillText('SHE IS PULLING AWAY — IN THE GAME THE ESCAPE CLOCK WOULD RUN', cx, cy + H * 0.2)
+  }
+}
+
+let lockT_el = document.getElementById('lock')
+function hud(sep, rel) {
+  document.getElementById('spd').textContent = Math.round(speed)
+  document.getElementById('tspd').textContent = Math.round(tSpd)
+  document.getElementById('gap').textContent = gap >= 1000 ? (gap / 1000).toFixed(1) + 'K' : Math.round(gap)
+  document.getElementById('rel').textContent = Math.round(rel)
+  lockT_el.textContent = lockT.toFixed(1) + ' / 8S'
+  const el = document.getElementById('assistState')
+  if (assist) { el.textContent = 'ASSIST: HOLDING — STEER TO BREAK'; el.className = 'on' }
+  else { el.textContent = `ASSIST: OFF — ENTER THE RING (${(sep * R2D).toFixed(0)}°)`; el.className = 'off' }
+}
+
+reset()
+requestAnimationFrame(frame)
+</script>
+</body>
+</html>
