@@ -14,7 +14,7 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
-import { activityState } from '../../state/activityState'
+import { activityState, say } from '../../state/activityState'
 import { registerHudLabel, hudLabels } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerFanfare, triggerGatePing } from '../../audio/engine'
@@ -169,7 +169,7 @@ export function BeltRun() {
     mesh.instanceMatrix.needsUpdate = true
   }, [gates, staging])
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, dt) => {
     const now = clock.elapsedTime
     const g = game.current
     const running = g.phase === 'running'
@@ -216,7 +216,7 @@ export function BeltRun() {
       g.deadSince = 0
       driveLock.locked = false
       flightAssist.enabled = true
-      activityState.banner = { text: banner, kind, until: now + 2.4 }
+      say(2, banner, kind, 2.4)
     }
 
     function startRun(restart: boolean) {
@@ -228,13 +228,7 @@ export function BeltRun() {
       driveLock.locked = true
       flightAssist.enabled = false
       triggerGatePing(0)
-      activityState.banner = {
-        text: restart
-          ? 'RESTART — DRIVE DARK'
-          : `DRIVE DARK — ${Math.round(shipRig.speed)} M/S ENTRY`,
-        kind: 'battle',
-        until: now + 2.2,
-      }
+      say(1, restart ? 'RESTART — DRIVE DARK' : `DRIVE DARK — ${Math.round(shipRig.speed)} M/S ENTRY`, 'battle', 2.2)
       g.flashText = ''
       g.flashUntil = 0
     }
@@ -263,11 +257,7 @@ export function BeltRun() {
             triggerFanfare()
             driveLock.locked = false
             flightAssist.enabled = true
-            activityState.banner = {
-              text: `RUN COMPLETE — ${time.toFixed(1)}S`,
-              kind: 'win',
-              until: now + 3.2,
-            }
+            say(2, `RUN COMPLETE — ${time.toFixed(1)}S`, 'win', 3.2)
             g.phase = 'over'
             g.phaseUntil = now + 4
           } else {
@@ -286,17 +276,20 @@ export function BeltRun() {
         endRun('RUN VOID — LEFT THE COURSE', 'info')
       } else {
         // Course corridor: wandering off the line warns, then voids the run
-        if (shipRig.position.distanceTo(gates[g.next].position) > CORRIDOR) {
+        const gateDist = shipRig.position.distanceTo(gates[g.next].position)
+        if (gateDist > CORRIDOR) {
           if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
           const left = Math.max(0, g.graceUntil - now)
-          activityState.banner = {
-            text: `RETURN TO COURSE — ${Math.ceil(left)}S`,
-            kind: 'fail',
-            until: now + 0.4,
-          }
+          say(0, `RETURN TO COURSE — ${Math.ceil(left)}S`, 'fail', 0.4)
           if (now >= g.graceUntil) endRun('RUN ABANDONED', 'info')
         } else if (g.graceUntil !== 0) {
-          g.graceUntil = 0
+          if (gateDist < CORRIDOR - 200) {
+            g.graceUntil = 0
+          } else {
+            // boundary band: hold, never reset (docs/the-voice.md D2)
+            g.graceUntil += dt
+            say(0, `RETURN TO COURSE — ${Math.ceil(Math.max(0, g.graceUntil - now))}S`, 'fail', 0.4)
+          }
         }
         // Dead drift: too slow to finish with the drive dark — void the run
         if (shipRig.speed < DEAD_DRIFT_SPEED) {

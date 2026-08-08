@@ -801,6 +801,15 @@ body[data-hit='1'] .hud-activity {
   text-shadow: 0 0 12px rgba(232, 161, 60, 0.6);
 }
 .hud-activity-flash[data-on='1'] { display: block; }
+.hud-activity-flavor {
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(111, 232, 200, 0.75);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+.hud-activity-flavor[data-on='1'] { opacity: 1; }
 .hud-activity-hint {
   margin-top: 6px;
   font-size: 9px;

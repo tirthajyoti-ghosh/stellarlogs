@@ -12,6 +12,7 @@ export function ActivityPanel() {
   const linesRef = useRef<HTMLDivElement>(null)
   const hintRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
+  const flavorRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let raf = 0
@@ -27,6 +28,12 @@ export function ActivityPanel() {
       if (flash) {
         flash.textContent = activityState.flash
         flash.dataset.on = activityState.flash ? '1' : ''
+      }
+      const flavor = flavorRef.current
+      if (flavor) {
+        const on = activityState.flavor.text !== '' && activityState.flavor.until > activityState.bannerClock
+        if (on && flavor.textContent !== activityState.flavor.text) flavor.textContent = activityState.flavor.text
+        flavor.dataset.on = on ? '1' : ''
       }
       const lines = linesRef.current
       if (lines) {
@@ -63,6 +70,7 @@ export function ActivityPanel() {
       <div className="hud-mfd-title" ref={titleRef} />
       <div className="hud-activity-lines" ref={linesRef} />
       <div className="hud-activity-flash" ref={flashRef} />
+      <div className="hud-activity-flavor" ref={flavorRef} />
       <div className="hud-activity-hint" ref={hintRef} />
     </div>
   )

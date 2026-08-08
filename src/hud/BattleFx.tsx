@@ -17,6 +17,14 @@ export function BattleFx() {
       raf = requestAnimationFrame(tick)
       const banner = bannerRef.current
       if (banner) {
+        // a queued outcome follows the alarm out the moment it clears
+        const st = activityState
+        if (st.pendingOutcome && (st.banner.text === '' || st.banner.until <= st.bannerClock)) {
+          const q = st.pendingOutcome
+          st.pendingOutcome = null
+          st.banner = { text: q.text, kind: q.kind, until: st.bannerClock + q.seconds }
+          st.bannerTier = 2
+        }
         const b = activityState.banner
         banner.dataset.kind = b.kind
         const show = b.text !== '' && b.until > activityState.bannerClock

@@ -108,3 +108,29 @@ boundary flicker.
 3. D2 fix (hysteresis + persistent countdown) — build with the tiers?
 4. His stuck-banner recipe: which activity, and how did he leave — to
    confirm D2 is the whole story.
+
+
+---
+
+## BUILT — 2026-08-08, same day as pass 1
+
+The four-tier law shipped as `say(tier, text, kind, seconds)` in
+activityState (one arbiter, ~30 lines) with outcome promotion in
+BattleFx and the T3 flavor line rendered in the activity panel's quiet
+region. All ~25 writers across the three activities migrated. Verified
+on the harness:
+
+- Cert ride: plain coach ("THREATS BEHIND YOU — TURN"), the W1
+  instructor rotation cycling all three lines, "YOU'RE SITTING STILL —
+  BURN" firing on a stationary hit, tier banners sequencing cleanly.
+- **D2 flap test: the pin is dead.** Six boundary weaves mid-countdown
+  and it ran 10→0 monotonically — the hold-band pauses the clock while
+  weaving (2-second digits visible in the log), never resets it — then
+  DRILL ABANDONED on schedule. Hysteresis + hold-band shipped in all
+  three graces (range, convoy, course).
+- Escort: CONTRACT LOGGED held the center while "GLAD FOR THE COMPANY,
+  BOSMANG" arrived in the flavor line; the cargo toast now travels the
+  same quiet channel, split off the DELIVERED outcome.
+
+Still open for Tirtha's live read: whether T1 drops feel right in a
+loud fight, and the flavor line's placement/size at his screen.

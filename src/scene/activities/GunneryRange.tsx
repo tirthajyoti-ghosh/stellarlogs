@@ -19,7 +19,7 @@ import {
 import { shipRig } from '../../state/shipRig'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
-import { activityState } from '../../state/activityState'
+import { activityState, say } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { triggerImpact, triggerFanfare, triggerKlaxon } from '../../audio/engine'
@@ -172,6 +172,12 @@ const MILSPEC: TorpClass = {
   jukes: true,
 }
 const WAVE_CLASS = [JUNK, SURPLUS, MILSPEC]
+/** Plain language only — no aft, no port, no starboard, ever */
+const INSTRUCTOR_LINES = [
+  'GUNS ARE AUTOMATIC — FLYING IS YOUR JOB',
+  'SCOPE: TEAL = A GUN HAS IT · RED = OUTFLY IT',
+  "THE RING IS YOUR GUNS' REACH",
+]
 const WAVE_NAMES = ['CIVILIAN JUNK', 'NAVAL SURPLUS', 'MIL-SPEC SALVO']
 
 const _q = new Quaternion()
@@ -279,6 +285,8 @@ export function GunneryRange() {
     nextVeteran: false,
     /** First-overheat coach shown this run */
     heatWarned: false,
+    /** "you're sitting still" coach window after a stationary hit */
+    sitCoachUntil: 0,
     /** Drill just ended inside the zone — wait for an explicit re-run */
     armedAt: 0,
     bestTime: Number(localStorage.getItem(BEST_TIME_KEY) ?? 0),
@@ -370,11 +378,7 @@ export function GunneryRange() {
       g.graceUntil = 0
       g.phaseUntil = now + 3.0
       triggerKlaxon()
-      activityState.banner = {
-        text: g.veteran ? 'VETERAN DRILL — TORPEDOES INBOUND' : 'GUNNERY RANGE — TORPEDOES INBOUND',
-        kind: 'battle',
-        until: now + 2.7,
-      }
+      say(1, g.veteran ? 'VETERAN DRILL — TORPEDOES INBOUND' : 'GUNNERY RANGE — TORPEDOES INBOUND', 'battle', 2.7)
       g.flashText = ''
       g.flashUntil = 0
     }
@@ -383,12 +387,8 @@ export function GunneryRange() {
       g.wave++
       g.phase = 'wave'
       if (g.wave > 1) triggerKlaxon()
-      activityState.banner = {
-        // the class name is the drill's fiction AND its difficulty telegraph
-        text: `WAVE ${g.wave} / ${WAVES.length} — ${WAVE_NAMES[g.wave - 1]}`,
-        kind: 'battle',
-        until: t + 1.7,
-      }
+      // the class name is the drill's fiction AND its difficulty telegraph
+      say(1, `WAVE ${g.wave} / ${WAVES.length} — ${WAVE_NAMES[g.wave - 1]}`, 'battle', 1.7)
       const specs = WAVES[g.wave - 1]
       const base = WAVE_CLASS[g.wave - 1]
       // veteran drills run the same classes hotter
@@ -476,11 +476,7 @@ export function GunneryRange() {
         g.flashText = text
         g.nextVeteran = !g.veteran
         triggerFanfare()
-        activityState.banner = {
-          text: g.veteran ? 'VETERAN DRILL COMPLETE' : 'DRILL COMPLETE',
-          kind: 'win',
-          until: now + 3,
-        }
+        say(2, g.veteran ? 'VETERAN DRILL COMPLETE' : 'DRILL COMPLETE', 'win', 3)
         // celebration: ring of fireballs around the ship
         for (let i = 0; i < 6; i++) {
           const a = (i / 6) * Math.PI * 2
@@ -489,10 +485,10 @@ export function GunneryRange() {
         }
       } else if (result === 'failed') {
         g.flashText = 'DRILL ABORTED'
-        activityState.banner = { text: 'HULL CRITICAL', kind: 'fail', until: now + 3 }
+        say(0, 'HULL CRITICAL', 'fail', 3)
       } else {
         g.flashText = ''
-        activityState.banner = { text: 'DRILL ABANDONED', kind: 'info', until: now + 2.2 }
+        say(2, 'DRILL ABANDONED', 'info', 2.2)
       }
       g.flashUntil = now + 3
       g.phase = 'over'
@@ -524,10 +520,12 @@ export function GunneryRange() {
       _v.copy(torp.velocity).normalize().multiplyScalar(-4).add(shipRig.position)
       spawnExplosion(_v, 1.6)
       damageFx.add(torp.velocity)
+      // the death law, taught at the only moment it can land
+      if (shipRig.speed < 40) g.sitCoachUntil = now + 3
       if (g.hull <= 0) {
         endDrill('failed')
       } else if (g.hull === 1) {
-        activityState.banner = { text: 'HULL CRITICAL', kind: 'fail', until: now + 1.8 }
+        say(0, 'HULL CRITICAL', 'fail', 1.8)
       }
     }
 
@@ -570,14 +568,19 @@ export function GunneryRange() {
       if (distToCenter > LIVE_RADIUS) {
         if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
         const left = Math.max(0, g.graceUntil - now)
-        activityState.banner = {
-          text: `RETURN TO RANGE — ${Math.ceil(left)}S`,
-          kind: 'fail',
-          until: now + 0.4,
-        }
+        say(0, `RETURN TO RANGE — ${Math.ceil(left)}S`, 'fail', 0.4)
         if (now >= g.graceUntil) endDrill('abandoned')
       } else if (g.graceUntil !== 0) {
-        g.graceUntil = 0
+        if (distToCenter < LIVE_RADIUS - 200) {
+          // well inside again: stand down
+          g.graceUntil = 0
+        } else {
+          // the boundary band: the clock HOLDS. Weaving the edge can pause
+          // the countdown, never reset it — the 10S-pin bug died here
+          // (docs/the-voice.md D2).
+          g.graceUntil += dt
+          say(0, `RETURN TO RANGE — ${Math.ceil(Math.max(0, g.graceUntil - now))}S`, 'fail', 0.4)
+        }
       }
     }
 
@@ -612,7 +615,7 @@ export function GunneryRange() {
       } else {
         g.phase = 'breather'
         g.phaseUntil = now + 4.0
-        activityState.banner = { text: `WAVE ${g.wave} CLEARED`, kind: 'info', until: now + 2 }
+        say(1, `WAVE ${g.wave} CLEARED`, 'info', 2)
       }
     }
 
@@ -638,13 +641,21 @@ export function GunneryRange() {
         g.veteran && battleRunning ? 'MILITIA CERT — VETERAN' : 'MILITIA PDC CERTIFICATION'
       const coach =
         battleRunning && g.wave === 1 && g.phase === 'wave' && turretControl.locks === 0 && incoming > 0
+      // W1 of a first-timer's drill is an instructor's pause: the militia
+      // narrates the two sentences the whole game runs on, then shuts up
+      const instructor =
+        battleRunning && !g.veteran && g.wave === 1 && g.phase === 'wave'
+          ? INSTRUCTOR_LINES[Math.floor(now / 3.6) % INSTRUCTOR_LINES.length]
+          : ''
       activityState.hint = offering
         ? g.nextVeteran
           ? `VETERAN DRILL LOADED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN IT`
           : `RANGE COLD — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN THE DRILL`
-        : coach
-          ? `THREATS AFT — TURN THE SHIP${IS_TOUCH ? '' : ' (A / D)'}`
-          : ''
+        : now < g.sitCoachUntil
+          ? "YOU'RE SITTING STILL — BURN"
+          : coach
+            ? `THREATS BEHIND YOU — TURN${IS_TOUCH ? '' : ' (A / D)'}`
+            : instructor
       activityState.lines = [
         { label: 'BEST TIME', value: g.bestTime > 0 ? `${g.bestTime.toFixed(1)}S` : '—' },
         { label: 'KILLS', value: String(g.kills) },
@@ -677,7 +688,7 @@ export function GunneryRange() {
       // one-time coach the first time a mount cooks off
       if (!g.heatWarned && turretControl.muzzles.some((m) => m.overheated)) {
         g.heatWarned = true
-        activityState.banner = { text: 'PDC OVERHEAT — COVER THE GAPS', kind: 'fail', until: now + 2.2 }
+        say(0, 'PDC OVERHEAT — COVER THE GAPS', 'fail', 2.2)
       }
     } else if (turretControl.targets.length > 0) {
       turretControl.targets = []

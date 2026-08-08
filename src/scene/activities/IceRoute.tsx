@@ -17,7 +17,7 @@ import {
 import { shipRig } from '../../state/shipRig'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
-import { activityState } from '../../state/activityState'
+import { activityState, say } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
 import { registerCollider } from '../../physics/gravity'
@@ -635,7 +635,7 @@ export function IceRoute() {
       fireSalvo(4, raiderPos, false, target, LANE_MILSPEC)
       s.salvos++
       triggerKlaxon()
-      activityState.banner = { text: 'THERE — THE DRAUGR', kind: 'battle', until: now + 2.6 }
+      say(1, 'THERE — THE DRAUGR', 'battle', 2.6)
       raiderLabel.current?.()
       raiderLabel.current = registerHudLabel({
         id: 'ship-draugr',
@@ -662,33 +662,18 @@ export function IceRoute() {
         }
         s.flashText = text
         triggerFanfare()
-        activityState.banner = {
-          text: `${ship.cargo} DELIVERED — ${CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON'}`,
-          kind: 'win',
-          until: now + 3.2,
-        }
+        say(2, `${ship.cargo} DELIVERED`, 'win', 3.2)
+        say(3, CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON', 'win', 5)
         s.huntPostedUntil = now + 300
       } else if (result === 'lost') {
         s.flashText = 'THE LANE TAKES ANOTHER'
-        activityState.banner = {
-          text: `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`,
-          kind: 'fail',
-          until: now + 3.6,
-        }
+        say(2, `${name} IS GONE — ANOTHER HULL LOST ON THIS LANE`, 'fail', 3.6)
       } else if (result === 'crippled') {
         s.flashText = 'ESCORT DOWN'
-        activityState.banner = {
-          text: `SHIP CRIPPLED — ${name} FLIES ALONE`,
-          kind: 'fail',
-          until: now + 3,
-        }
+        say(2, `SHIP CRIPPLED — ${name} FLIES ALONE`, 'fail', 3)
       } else {
         s.flashText = ''
-        activityState.banner = {
-          text: 'ESCORT BROKEN OFF — SHE RUNS FOR THE DOCKS',
-          kind: 'info',
-          until: now + 2.4,
-        }
+        say(2, 'ESCORT BROKEN OFF — SHE RUNS FOR THE DOCKS', 'info', 2.4)
       }
       s.flashUntil = now + 3.2
       s.job = 'over'
@@ -722,7 +707,7 @@ export function IceRoute() {
       damageFx.add(torp.velocity)
       if (s.playerHull <= 0) endJob('crippled')
       else
-        activityState.banner = { text: 'YOU TOOK THAT ONE FOR HER', kind: 'info', until: now + 1.8 }
+        say(3, 'YOU TOOK THAT ONE FOR HER', 'info', 2.6)
     }
 
     function shipHit(ship: Ship, torp: Torpedo, hitPoint: Vector3) {
@@ -733,7 +718,7 @@ export function IceRoute() {
       // only when she is yours — through your own radio watch.
       if (ships.indexOf(ship) === s.escort && s.job === 'escort') triggerImpact()
       if (ship.hull === 3 && ships.indexOf(ship) === s.escort) {
-        activityState.banner = { text: 'HULL FAILING — CLOSE UP', kind: 'fail', until: now + 2 }
+        say(0, 'HULL FAILING — CLOSE UP', 'fail', 2)
       }
       if (ship.hull <= 0) {
         for (let i = 0; i < 5; i++) {
@@ -847,11 +832,7 @@ export function IceRoute() {
           if (isContract) {
             s.salvos++
             triggerKlaxon()
-            activityState.banner = {
-              text: 'TORPEDOES INBOUND — BEARING UNKNOWN',
-              kind: 'battle',
-              until: now + 2.2,
-            }
+            say(1, 'TORPEDOES INBOUND — BEARING UNKNOWN', 'battle', 2.2)
           }
         }
       } else if (ship.phase === 'docked') {
@@ -909,11 +890,7 @@ export function IceRoute() {
       s.salvos = 0
       s.finaleDone = false
       s.lastRange = shipRig.position.distanceTo(ship.position)
-      activityState.banner = {
-        text: `CONTRACT LOGGED — INTERCEPT ${ship.name}`,
-        kind: 'info',
-        until: now + 3,
-      }
+      say(1, `CONTRACT LOGGED — INTERCEPT ${ship.name}`, 'info', 3)
       s.flashText = ''
       s.flashUntil = 0
     }
@@ -927,11 +904,7 @@ export function IceRoute() {
     if (intercepting && escorted) {
       if (escorted.phase !== 'inbound') {
         // she made the docks without you — no ceremony, the lane moves on
-        activityState.banner = {
-          text: `${escorted.name} MADE THE DOCKS WITHOUT YOU`,
-          kind: 'info',
-          until: now + 2.6,
-        }
+        say(2, `${escorted.name} MADE THE DOCKS WITHOUT YOU`, 'info', 2.6)
         s.job = 'over'
         s.holdUntil = now + 2.6
         s.escort = -1
@@ -960,11 +933,7 @@ export function IceRoute() {
             CONTRACT_WAVES_MIN + Math.floor(Math.random() * 2),
           )
           escorted.nextAttackAt = now + CONTRACT_FIRST_MIN + Math.random() * CONTRACT_FIRST_JITTER
-          activityState.banner = {
-            text: `${escorted.name}: "GLAD FOR THE COMPANY, BOSMANG"`,
-            kind: 'win',
-            until: now + 3,
-          }
+          say(3, `${escorted.name}: "GLAD FOR THE COMPANY, BOSMANG"`, 'win', 4)
         }
       }
     }
@@ -973,14 +942,16 @@ export function IceRoute() {
       const d = shipRig.position.distanceTo(escorted.position)
       if (d > CONVOY_RADIUS) {
         if (s.graceUntil === 0) s.graceUntil = now + GRACE_SECONDS
-        activityState.banner = {
-          text: `RETURN TO THE CONVOY — ${Math.ceil(Math.max(0, s.graceUntil - now))}S`,
-          kind: 'fail',
-          until: now + 0.4,
-        }
+        say(0, `RETURN TO THE CONVOY — ${Math.ceil(Math.max(0, s.graceUntil - now))}S`, 'fail', 0.4)
         if (now >= s.graceUntil) endJob('abandoned')
       } else if (s.graceUntil !== 0) {
-        s.graceUntil = 0
+        if (d < CONVOY_RADIUS - 150) {
+          s.graceUntil = 0
+        } else {
+          // boundary band: the clock holds — weaving pauses, never resets
+          s.graceUntil += dt
+          say(0, `RETURN TO THE CONVOY — ${Math.ceil(Math.max(0, s.graceUntil - now))}S`, 'fail', 0.4)
+        }
       }
       damageFx.severity = Math.min(1, (3 - s.playerHull) / 2)
     }
