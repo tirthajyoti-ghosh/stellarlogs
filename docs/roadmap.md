@@ -412,6 +412,11 @@ Architecture sketch (the two-layer split that makes it feasible):
 
 ---
 
+*Sequencing reaffirmed 2026-08-08: the roadmap runs as written and the
+portfolio COMPLETES before the Deep build begins — full focus, nothing in
+the way (Tirtha). Deep exploration passes continue between builds
+(the-deep.md pass 5 = the approach vector); Deep code waits for the gate.*
+
 ## Build order
 
 0. **Performance passes** (all of them) + the **billboard freeze** —

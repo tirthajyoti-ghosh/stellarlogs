@@ -449,3 +449,148 @@ constraint) refined into the working rule:
 - **Temperature only seasons the prose** — moderate-high for survey voice;
   hotter allowed for Cartographer bulletins and conjecture phrasing (they
   are speculation, labeled as such); cooler for body physical descriptions.
+
+
+---
+
+# Fifth pass — the approach vector (2026-08-08)
+
+*First pass written since the combat arc shipped. Everything below is new
+context the July passes could not have had: the torpedo brain, THE SCOPE,
+THE VOICE, the bench method, and a closed performance audit with real
+numbers. Also records the sequencing decision: portfolio complete FIRST,
+then the Deep with full focus (Tirtha, 2026-08-08 — "get everything out
+of my way to focus on the Deep").*
+
+## 5.1 The estate the Deep inherits (new since July)
+
+The July passes designed onto a bare world. The Deep now lands on:
+
+- **THE SCOPE** — the instrument already has the collapse grammar (one
+  canvas, multiple pictures). The Deep's arrival ping is a THIRD picture
+  of the same instrument: bodies as unknowns on the nav disc, filling in
+  as probes report. The Chart screen (pass 4's jump interface) is not a
+  new HUD organ — it is the scope's fullscreen moment, and the morph
+  between them is already a solved design.
+- **THE VOICE** — the tier law answers where survey prose lives: nowhere
+  in it. Survey text is not banner material; it is a READING surface —
+  a fifth channel, **THE LEDGER**: the survey panel where cached prose
+  streams in, voluntary, never interrupting, never expiring. Alarms
+  interrupt; ledgers wait. (One new law, zero conflicts.)
+- **The torpedo brain's pool machinery** — the survey probe is literally
+  a torpedo that photographs instead of detonating: pooled projectile,
+  ballistic flight, gravity bend, arrival event. The launch-to-arrival
+  skeleton is shipped code (PdcRounds/torpedo pools); the probe reuses
+  the pattern, not a new system.
+- **The bench method** — textures.html → shipyard.html → radar.html
+  proved the judging pattern: every contested design gets a standalone
+  page where options MOVE and Tirtha rules with his eyes. The Deep's
+  version is the most important one yet (5.4).
+- **The Sound Law + danger law compose cleanly**: the Deep is ambient
+  register everywhere — nothing engages the battle HUD past the rim.
+  The contemplative mood is not a new rule; it is the Sound Law's
+  quiet half, which already exists.
+
+## 5.2 The performance contract (measured, not assumed)
+
+Pass 4 asserted "generation needs 2–3 s worst case; hides inside the
+jump comfortably." The audit (2026-08-08) lets us replace assertion with
+arithmetic, and the arithmetic pushes back:
+
+- The cold start measures **7.6–8.1 s of pure compute** — dominated by
+  planet BAKES and shader warmup for the charted systems. A Deep jump
+  must build a fresh system in the ~8–11 s cinematic **without missing
+  vsync** — and we know from the billboard-freeze war that naive
+  same-frame work produces exactly the freeze the Delight Line bans.
+- The standing frame runs **vsync-locked with ~2.5× pixel headroom** —
+  the budget exists, but it is a PER-FRAME budget. The law from the
+  warmup discipline therefore applies wholesale: **staged everything.**
+  Bake render-targets across cinematic frames (n ms per frame, never
+  more), compileAsync before reveal, mount one body per frame. The
+  transit cinematic is 500+ frames of cover; the Deep's generator must
+  be written as a per-frame incremental machine from day one, not
+  retrofitted into one.
+- **Deep worlds get a bake tier**: rim systems never need the charted
+  core's 2048 bakes on arrival — bake at 1024 during transit, upgrade
+  in place during the arrival reveal's first quiet seconds if the
+  visitor closes in. (Delight guard: upgrade must land before any
+  approach could resolve the difference; the PlanetBoards 3× activation
+  pattern is the precedent.)
+- **VRAM discipline**: charted core keeps ~400 MB of bakes alive; Deep
+  systems are one-at-a-time and DISPOSED on leave (already the streaming
+  law) — the Deep adds no standing memory, ever.
+- Acceptance test (write it before the generator): jump → arrival with
+  worst frame ≤ 20 ms on the probe harness, ten seeds in a row. The
+  harness rides that verified the ladder verify this the same way.
+
+## 5.3 Fiction = infrastructure, applied to the new estate
+
+- The probe's flight IS the survey pacing (pass 1) — and now also the
+  rate limiter for the meaning layer (pass 1) — and now ALSO the reuse
+  of the ballistic pool (5.1). One mechanic, three jobs. Law holds.
+- THE LEDGER's fiction: the co-op's survey terminal — which is also
+  exactly the CMS shape the Atlas pages server-render from. The panel
+  the pilot reads and the page the recruiter lands on are one data
+  structure wearing two faces (third-pass synthesis, now concrete).
+- The transit-as-generation-window survives the audit numbers ONLY via
+  staging (5.2) — fiction and architecture stay the same thing, but the
+  architecture must be incremental to keep the promise.
+
+## 5.4 The generator bench — deep.html (v0.05, before everything)
+
+The July "immediate spike" matures into the bench pattern. Before any
+3D, any backend, any LLM: **a standalone page that rolls seeds and shows
+the truth about the dice.**
+
+- Roll N=1,000 seeds → the achieved rarity distribution as a histogram
+  against the pyramid targets (70 / 25 / 4.9 / 0.1 / anomaly) — the
+  tuning dashboard for the dice.
+- Any seed inspectable: the full fact sheet (founder, constraints,
+  bauplan, history, niche graph) rendered as template prose — the
+  oatmeal test in its rawest form.
+- **An oatmeal METER**: pairwise similarity over fact-sheet features
+  across the sample (bauplan class, energy basis, event types, niche
+  shapes) — a number that says "your last 50 living worlds were 80%
+  ocean-chemosynthetic; fix the dice." Kate Compton's law, instrumented.
+- A side-by-side seed comparator (two fact sheets, spot the sameness) —
+  the judging drill Tirtha already knows from every bench.
+- Committed permanently like the others. The generator does not touch
+  the game until its bench survives his eyes.
+
+## 5.5 The completion gate and the launch story (the strategic frame)
+
+Recorded decision (2026-08-08): the roadmap runs AS WRITTEN — THE HUNT,
+debris storm, slag skeet, density/toys, liveness backend, achievements
+verdict — and only then the Deep build begins, with total focus.
+Exploration passes (like this one) are free anytime; code waits.
+
+The marketing shape his instinct is pointing at, made explicit:
+
+- **The completed portfolio is the launch platform, the Deep is the
+  launch.** Ship the polished charted world quietly; the announcement
+  moment is **First Survey (v0.2)** — the day the universe starts
+  growing because strangers visit. "A portfolio that strangers expand"
+  is a story tech media and timelines actually carry.
+- The Atlas (pass 1) is the built-in distribution engine: every shared
+  discovery link lands a reader inside the game at that system, and
+  every generated page compounds the domain's SEO.
+- **The engineering notes are recruiter bait by design**: the Deep is a
+  production agentic-LLM pipeline (schema-forcing, graph-walking agent,
+  caching, versioning, cost bounds, graceful degradation) running live —
+  the 30-agents résumé line, demonstrated instead of claimed. Write the
+  "HOW THE SURVEY WORKS" notes as part of v0.2, not after.
+- Personal-brand cadence during the pre-Deep stretch: each remaining
+  roadmap item is itself postable material (the scope's design trail,
+  the voice law, the cert ladder's measured honesty). The marketing
+  can start before the Deep does — the build diary is the content.
+
+## 5.6 Revised phasing (only where it changed)
+
+- **v0.05 — deep.html**: the generator bench (5.4). Pure TypeScript +
+  templates. THE gate for everything after; can be built the week the
+  portfolio completes, judged in an evening.
+- v0.1 — The Rim: unchanged, plus the performance contract (5.2) as its
+  acceptance test and the LEDGER panel in its simplest form.
+- v0.2 — First Survey: unchanged, plus the engineering notes and the
+  announcement moment (5.5).
+- v0.3+ — unchanged (Atlas, small Nilaks, deep time).
