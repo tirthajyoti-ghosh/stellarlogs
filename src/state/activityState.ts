@@ -74,6 +74,13 @@ export const activityState = {
   offer: '',
   /** One-shot accept (G / touch button), consumed by the offering activity */
   acceptRequest: false,
+  /** The STANDING manhunt on the same board (label; empty when none) */
+  offerHunt: '',
+  /** One-shot accept for the manhunt (H / its touch button) */
+  acceptHuntRequest: false,
+  /** THE HUNT FOCUS: on contract the world's tourist signage goes dark —
+   *  only mission labels survive (the bridge clears the board for a hunt) */
+  focus: false,
   /** THE HUNT's hostile hull (live position ref) — the scope's only ship glyph */
   hostile: null as null | { x: number; y: number; z: number },
   hostileVel: { x: 0, y: 0, z: 0 },

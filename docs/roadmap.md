@@ -424,11 +424,10 @@ the way (Tirtha). Deep exploration passes continue between builds
 1. **The 2026-08-04 corrections**: escort-from-the-board with an intercept
    heading, torpedo/ship pairing, PDC tracer rework, cylindrical radar
    (after the design conversation).
-2. **F.3 THE HUNT** — trail build SHIPPED 2026-08-08; hunt v3 remains
-   (the-hunt.md pass 4): clues bench → real evidence assets, G/H accept
-   keys, scope lock-sphere read, CHASE v3 (Azure Dragon anchor arena +
-   fast-finite torpedo doctrine, measured), then the controls feel bench
-   ruling (pursuit assist / mouse steering).
+2. **F.3 THE HUNT** — trail build SHIPPED 2026-08-08; hunt v3 SHIPPED
+   2026-08-09 (the-hunt.md pass 4 BUILT): real evidence assets, G/H keys,
+   THE REVENANT, hunt focus, scope sphere read, Azure Dragon chase,
+   fast-finite torpedoes, pursuit assist v2. Awaiting Tirtha's live ride.
 3. Debris storm + slag skeet + density/toys pass
 3.5. **MOBILE — the bridge flies landscape** (Tirtha, 2026-08-08 phone
    read: runs smooth, portrait buttons make no sense). Portrait touch →

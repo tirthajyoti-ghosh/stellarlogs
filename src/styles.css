@@ -854,6 +854,47 @@ body[data-hit='1'] .hud-activity {
 
 /* ---------- Race guidance marker ---------- */
 
+/* THE HUNT's capture ring — the pursuit-assist disc around the quarry.
+   Dashed while offered; solid + labeled while the computer holds. */
+.hud-capture {
+  position: fixed;
+  top: 0;
+  left: 0;
+  border: 1.4px dashed rgba(87, 230, 196, 0.4);
+  border-radius: 50%;
+  pointer-events: none;
+  transition: opacity 0.25s;
+}
+.hud-capture[data-hold='1'] {
+  border-style: solid;
+  border-color: rgba(87, 230, 196, 0.85);
+  box-shadow: 0 0 14px rgba(87, 230, 196, 0.18) inset;
+}
+.hud-capture[data-hold='1']::after {
+  content: 'ASSIST HOLDING — STEER TO BREAK';
+  position: absolute;
+  left: 50%;
+  bottom: -22px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: #57e6c4;
+}
+
+/* THE HUNT FOCUS: on contract the world's tourist signage goes dark —
+   only mission-flagged labels survive (inline opacity is per-frame, so
+   the override must win). */
+body[data-focus='1'] .hud-label:not([data-mission='1']) {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+/* the tactical contact box is tourist signage too — the bridge is hunting */
+body[data-focus='1'] .hud-target {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+
 .hud-race {
   position: absolute;
   top: 0;

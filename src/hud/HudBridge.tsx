@@ -2,7 +2,8 @@ import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
 import { hudLabels, hudReadouts } from './hudState'
 import { threatEls } from './ThreatLayer'
-import { raceEls } from './RaceLayer'
+import { raceEls, captureEls } from './RaceLayer'
+import { pursuit } from '../physics/pursuit'
 import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
@@ -14,6 +15,8 @@ import { ALL_SYSTEMS } from '../config/systems'
 import { GUNNERY_POI } from '../config/pois'
 
 const _p = new Vector3()
+const _pr = new Vector3()
+const _camRight = new Vector3()
 const EDGE = 96 // px margin when clamping off-screen markers
 // Closing-speed estimate state for the nearest contact
 let lastTargetId = ''
@@ -92,6 +95,37 @@ export function HudBridge() {
     document.body.dataset.warp = shipRig.warping ? '1' : ''
     document.body.dataset.warpphase = warp.phase
     document.body.dataset.battle = activityState.battle ? '1' : ''
+    document.body.dataset.focus = activityState.focus ? '1' : ''
+
+    // THE HUNT's capture ring: the pursuit-assist disc projected around the
+    // quarry. Fixed world radius — small at range, wide up close (the cone).
+    {
+      const el = captureEls.root
+      if (el) {
+        const t = pursuit.target
+        if (t && activityState.battle) {
+          _p.copy(t).project(camera)
+          if (_p.z > 1) {
+            el.style.opacity = '0'
+          } else {
+            const x = (_p.x * 0.5 + 0.5) * size.width
+            const y = (-_p.y * 0.5 + 0.5) * size.height
+            _camRight.setFromMatrixColumn(camera.matrixWorld, 0)
+            _pr.copy(t).addScaledVector(_camRight, pursuit.captureRadius).project(camera)
+            const rx = (_pr.x * 0.5 + 0.5) * size.width - x
+            const ry = (-_pr.y * 0.5 + 0.5) * size.height - y
+            const r = Math.min(size.height * 0.42, Math.max(14, Math.hypot(rx, ry)))
+            el.style.opacity = '1'
+            el.style.width = `${(r * 2).toFixed(0)}px`
+            el.style.height = `${(r * 2).toFixed(0)}px`
+            el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+            el.dataset.hold = pursuit.engaged ? '1' : ''
+          }
+        } else {
+          el.style.opacity = '0'
+        }
+      }
+    }
 
     // Battle mode: project live threats into the pooled marker layer
     {

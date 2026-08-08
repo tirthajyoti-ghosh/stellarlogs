@@ -3,8 +3,10 @@ import { useFrame } from '@react-three/fiber'
 import { Text, useGLTF } from '@react-three/drei'
 import {
   AdditiveBlending,
+  Box3,
+  BufferAttribute,
   BufferGeometry,
-  DoubleSide,
+  Color,
   Group,
   InstancedMesh,
   Material,
@@ -12,6 +14,8 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  Points,
+  PointsMaterial,
   Quaternion,
   Vector3,
 } from 'three'
@@ -36,7 +40,9 @@ import {
   type TorpClass,
 } from '../../systems/torpedoBrain'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
-import { DRIFT_POI, WRECK_POI } from '../../config/pois'
+import { pursuit } from '../../physics/pursuit'
+import { useRockVariants } from '../Asteroids'
+import { DRIFT_POI, WRECK_POI, GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
 import { PROBES } from '../../config/probes'
 import { FONT_BOLD } from '../boards/font'
@@ -94,6 +100,9 @@ import { FONT_BOLD } from '../boards/font'
 
 const RAIDER_URL = '/models/draugr.glb'
 const TUG_URL = '/models/tug.glb'
+/** THE TRAIL's evidence hardware: real containers, the fleet's buoy */
+const CRATES_URL = '/models/crates.glb'
+const BUOY_URL = '/models/buoy.glb'
 const TORPEDO_URL = '/models/torpedo.glb'
 
 /** The three classes working these lanes. Bow is +X on all of them. */
@@ -225,9 +234,6 @@ const TRAIL_LEG_SPAN = 1100
  *  quietly, no tally; the posting stands and you can take it up again */
 const TRAIL_SHELVE_DIST = 9000
 const TRAIL_SHELVE_SECONDS = 12
-/** when the board holds BOTH a live escort and the standing manhunt, the
- *  offer alternates on this cadence — a scrolling job board, one accept key */
-const OFFER_FLIP = 6
 /** what each kind of evidence says when you reach it (plain language, and
  *  every clue names the direction story — the marker does the pointing) */
 const CLUE_SAY = [
@@ -251,23 +257,52 @@ function rollCase(): string {
   return u[0].toString(16).toUpperCase().padStart(4, '0')
 }
 
-/** Her ordnance on the hunt: the DARK RUNNER — drive cuts midcourse, the
- *  track drops to a ghost, terminal relight closer than comfort. */
+/** Her ordnance on the hunt: the DARK RUNNER v2 (pass 4: "insanely fast,
+ *  honestly finite"). A torpedo carries no crew — it out-accelerates and
+ *  out-runs every hull in the lane (720 vs her 420, your 520), but the
+ *  drive is a BUDGET: ~6 s of powered flight, then ballistic coast on
+ *  fins. Mid-course drive cut still ghosts the track; the dark coast
+ *  doesn't spend the clock. */
 const HUNT_RUNNER: TorpClass = {
   lead: 1,
-  accel: 30,
-  v0: 110,
-  vmax: 200,
-  turn: 1.0,
-  corkRadius: 6,
-  corkSpin: 2.2,
+  accel: 260,
+  v0: 150,
+  vmax: 720,
+  turn: 1.1,
+  corkRadius: 7,
+  corkSpin: 2.4,
   jukes: true,
-  darkAt: 950,
-  relightAt: 430,
+  darkAt: 1100,
+  relightAt: 500,
+  burnFor: 6,
 }
+/** Launch DOCTRINE, not a timer: she spends a bird only when the geometry
+ *  works — the pursuer closing in her stern cone, near enough that the
+ *  head-on meeting happens inside the burn+coast envelope. */
+const SALVO_MAX_GAP = 2600
+const SALVO_MIN_CLOSING = 40
 
-/** Which Draugr showed up this time? Rolled per hunt, readable only
- *  through behavior — the revenant fiction licenses the dice. */
+/** THE ARENA (the Azure Dragon rule): the chase runs THROUGH the world.
+ *  She flies legs between NAV ANCHORS — real scenery — and never leaves
+ *  the cluster: the lane is her larder and the pickets hem the dark. */
+const ARENA_R = 12000
+const ANCHOR_ARRIVE = 500
+/** the tell: her drive torches this long before every hard break */
+const BREAK_TELL = 0.3
+/** turns cost her: a hard break bleeds this fraction of her way off —
+ *  she is CREWED, and the convergence arc of the whole chase lives here */
+const BREAK_BLEED = 0.55
+/** post-break window of violent turn authority (the slam itself) */
+const BREAK_SLEW_S = 0.7
+/** reactive break triggers */
+const PROX_BREAK_GAP = 900
+const PROX_BREAK_CLOSING = 120
+const LOCK_PANIC_T = 3.5
+
+/** Which REVENANT showed up this time? Rolled per hunt, readable only
+ *  through behavior — the revenant fiction licenses the dice. dlMin/dlMax
+ *  are now the REACTIVE-break cooldown bounds (anchor breaks ride the
+ *  geometry and owe no cooldown). */
 interface Temperament {
   headStart: number
   dlMin: number
@@ -278,12 +313,12 @@ interface Temperament {
   salvoMax: number
 }
 const TEMPERAMENTS: Temperament[] = [
-  // CAGEY — the long patient chase
-  { headStart: 1600, dlMin: 18, dlMax: 26, dlAngle: 0.7, magazine: 8, salvoMin: 24, salvoMax: 34 },
-  // BRAZEN — lets you close, breaks violently late
-  { headStart: 1000, dlMin: 8, dlMax: 14, dlAngle: 1.2, magazine: 10, salvoMin: 14, salvoMax: 22 },
+  // CAGEY — the long patient chase, breaks mostly at scenery
+  { headStart: 1600, dlMin: 14, dlMax: 22, dlAngle: 0.7, magazine: 8, salvoMin: 24, salvoMax: 34 },
+  // BRAZEN — lets you close, breaks violently and often
+  { headStart: 1000, dlMin: 6, dlMax: 10, dlAngle: 1.2, magazine: 10, salvoMin: 14, salvoMax: 22 },
   // SPENDTHRIFT — empties the magazine early, then runs clean
-  { headStart: 1200, dlMin: 12, dlMax: 20, dlAngle: 0.85, magazine: 12, salvoMin: 8, salvoMax: 12 },
+  { headStart: 1200, dlMin: 10, dlMax: 16, dlAngle: 0.85, magazine: 12, salvoMin: 8, salvoMax: 12 },
 ]
 /** the mark: how likely the Draugr wants a given cargo */
 const MARK_ODDS: Record<string, number> = {
@@ -561,6 +596,16 @@ export function IceRoute() {
     trailShelveT: 0,
     trailClues: [0, 0, 0],
     huntPhase: 'chase' as 'trail' | 'chase' | 'squawked' | 'tow-fly' | 'tow-harpoon' | 'tow-haul',
+    /** the manhunt stands on the board (own accept key: H) */
+    huntOffered: false,
+    acceptHunt: false,
+    /** the Azure Dragon machinery: current nav anchor, the scheduled
+     *  break (0 = none; while set, her drive torches — the tell), the
+     *  violent-slew window after a break, reactive-break cooldown */
+    huntAnchor: -1,
+    huntBreakAt: 0,
+    huntSlewUntil: 0,
+    huntCooldownUntil: 0,
     huntTemper: 0,
     huntMagazine: 0,
     huntNextSalvoAt: 0,
@@ -591,9 +636,158 @@ export function IceRoute() {
   )
   const clueRef = useRef<Group>(null)
   const clueCargoRef = useRef<Group>(null)
-  const clueDustRef = useRef<Mesh>(null)
+  const clueDustRef = useRef<Group>(null)
   const clueBuoyRef = useRef<Group>(null)
   const clueLampRef = useRef<Mesh>(null)
+
+  // NAV ANCHORS — the scenery her legs run between. Real POIs plus a
+  // synthetic ring of dark waypoints, all inside the arena.
+  const anchors = useMemo(() => {
+    let sd = 4241
+    const rng = () => {
+      sd = (sd * 1103515245 + 12345) & 0x7fffffff
+      return sd / 0x7fffffff
+    }
+    const pts: Vector3[] = [
+      new Vector3(...GUNNERY_POI.position),
+      new Vector3(...WRECK_POI.position),
+    ]
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2
+      const r = 3500 + rng() * 4000
+      pts.push(
+        new Vector3(
+          DRIFT.x + Math.cos(a) * r,
+          DRIFT.y + (rng() - 0.5) * 1000,
+          DRIFT.z + Math.sin(a) * r,
+        ),
+      )
+    }
+    return pts
+  }, [])
+
+  // THE TRAIL's evidence, made of real matter (clues.html verdicts):
+  const cratesGltf = useGLTF(CRATES_URL)
+  const buoyGltf = useGLTF(BUOY_URL)
+  const rockVariants = useRockVariants()
+
+  /** THE SPILL — locked crate mixture, strung along her line */
+  const spillGroup = useMemo(() => {
+    let sd = 971
+    const rng = () => {
+      sd = (sd * 1103515245 + 12345) & 0x7fffffff
+      return sd / 0x7fffffff
+    }
+    const g = new Group()
+    const byName: Record<string, Object3D> = {}
+    cratesGltf.scene.traverse((o) => {
+      if ((o as Mesh).isMesh || o.children.length) byName[o.name] = o
+    })
+    const mix = ['container', 'crate', 'crate', 'box', 'crate', 'ammo', 'box', 'ammo', 'container']
+    for (let i = 0; i < mix.length; i++) {
+      const src = byName[mix[i]]
+      if (!src) continue
+      const c = src.clone(true)
+      const t = i / (mix.length - 1) - 0.5
+      c.position.set(t * 200 + (rng() - 0.5) * 18, (rng() - 0.5) * 24, (rng() - 0.5) * 24)
+      c.rotation.set(rng() * 3, rng() * 3, rng() * 3)
+      const s = 0.85 + rng() * 0.5
+      c.scale.multiplyScalar(s)
+      g.add(c)
+    }
+    return g
+  }, [cratesGltf])
+
+  /** THE SCORCH — a burnt lane through a cold gravel pocket (never in
+   *  empty space: the un-burnt surroundings ARE the story's contrast) */
+  const scorchGroup = useMemo(() => {
+    let sd = 1877
+    const rng = () => {
+      sd = (sd * 1103515245 + 12345) & 0x7fffffff
+      return sd / 0x7fffffff
+    }
+    const g = new Group()
+    const dummy = new Object3D()
+    const m4 = new Matrix4()
+    for (const v of rockVariants) {
+      // the burnt line: rubble strung 420 along her track
+      const line = new InstancedMesh(v.geometry, v.material, 8)
+      for (let i = 0; i < 8; i++) {
+        const t = Math.pow(rng(), 0.85) - 0.5
+        const spread = 10 + (t + 0.5) * 40
+        dummy.position.set(-t * 420, (rng() - 0.5) * spread, (rng() - 0.5) * spread)
+        dummy.rotation.set(rng() * 3, rng() * 3, rng() * 3)
+        dummy.scale.setScalar((rng() < 0.1 ? 8 + rng() * 5 : 1.4 + rng() * 3.2) * v.norm)
+        dummy.updateMatrix()
+        m4.copy(dummy.matrix).multiply(v.base)
+        line.setMatrixAt(i, m4)
+      }
+      line.instanceMatrix.needsUpdate = true
+      g.add(line)
+      // the cold pocket: ordinary gravel, wider, un-cooked
+      const pocket = new InstancedMesh(v.geometry, v.material, 5)
+      for (let i = 0; i < 5; i++) {
+        dummy.position.set(
+          (rng() - 0.5) * 900,
+          (rng() - 0.5) * 420,
+          120 + rng() * 320 * (rng() < 0.5 ? -1 : 1),
+        )
+        dummy.rotation.set(rng() * 3, rng() * 3, rng() * 3)
+        dummy.scale.setScalar((2 + rng() * 5) * v.norm)
+        dummy.updateMatrix()
+        m4.copy(dummy.matrix).multiply(v.base)
+        pocket.setMatrixAt(i, m4)
+      }
+      pocket.instanceMatrix.needsUpdate = true
+      g.add(pocket)
+    }
+    // the shimmer: exhaust-cooked fines still glinting, two phase-offset
+    // clouds twinkled in the render loop
+    for (let layer = 0; layer < 2; layer++) {
+      const n = 420
+      const pos = new Float32Array(n * 3)
+      for (let i = 0; i < n; i++) {
+        const t = Math.pow(rng(), 0.8) - 0.5
+        const spread = 14 + (t + 0.5) * 46
+        pos[i * 3] = -t * 420
+        pos[i * 3 + 1] = (rng() - 0.5) * spread
+        pos[i * 3 + 2] = (rng() - 0.5) * spread
+      }
+      const geo = new BufferGeometry()
+      geo.setAttribute('position', new BufferAttribute(pos, 3))
+      const p = new Points(
+        geo,
+        new PointsMaterial({
+          color: new Color(1.25, 0.52, 0.18),
+          size: 1.25,
+          transparent: true,
+          opacity: 0.4,
+          blending: AdditiveBlending,
+          depthWrite: false,
+        }),
+      )
+      p.userData.phase = layer * Math.PI
+      p.frustumCulled = false
+      g.add(p)
+    }
+    return g
+  }, [rockVariants])
+
+  /** THE PICKET — the fleet's buoy in militia service */
+  const picketGroup = useMemo(() => {
+    const hull = buoyGltf.scene.clone(true)
+    const g = new Group()
+    // normalize to ~12 units and recenter so it reads at approach range
+    hull.updateMatrixWorld(true)
+    const bounds = new Box3().setFromObject(hull)
+    const size = bounds.getSize(new Vector3())
+    const maxDim = Math.max(size.x, size.y, size.z)
+    if (maxDim > 0) hull.scale.setScalar(12 / maxDim)
+    const center = bounds.getCenter(new Vector3()).multiplyScalar(hull.scale.x)
+    hull.position.sub(center)
+    g.add(hull)
+    return g
+  }, [buoyGltf])
   /** the live rendezvous point the intercept marker leads to */
   const interceptPoint = useMemo(() => new Vector3(), [])
 
@@ -612,16 +806,26 @@ export function IceRoute() {
     }
   }, [ships])
 
-  // Accepting a contract is a decision, so it takes a keypress. G — the only
-  // letter near the flight keys that nothing else has claimed.
+  // Accepting a contract is a decision, so it takes a keypress. Two
+  // standing jobs, two keys, side by side: G takes the escort, H takes
+  // the hunt. The scrolling single-offer board died in pass 4.
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
-      if (e.code !== 'KeyG' || e.repeat) return
-      if (g.current.offer !== -1) g.current.accept = true
+      if (e.repeat) return
+      if (e.code === 'KeyG' && g.current.offer >= 0) g.current.accept = true
+      if (e.code === 'KeyH' && g.current.huntOffered) g.current.acceptHunt = true
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)
   }, [])
+
+  // the assist belongs to the contract: never leave it armed on unmount
+  useEffect(
+    () => () => {
+      pursuit.target = null
+    },
+    [],
+  )
 
   useEffect(() => {
     pdcFire.sources = torpedoes
@@ -653,8 +857,10 @@ export function IceRoute() {
       w.__huntHops = trailHops
       w.__huntDirs = trailDirs
       w.__torps = torpedoes
+      w.__pursuit = pursuit
+      w.__anchors = anchors
     }
-  }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels, trailHops, trailDirs])
+  }, [pdcFire, torpedoes, ships, raiderPos, batteries, gunnerVels, trailHops, trailDirs, anchors])
 
   useFrame(({ clock, camera }, dt) => {
     const now = clock.elapsedTime
@@ -825,7 +1031,7 @@ export function IceRoute() {
       if (result === 'caught') {
         s.draugrCaught++
         localStorage.setItem(CAUGHT_KEY, String(s.draugrCaught))
-        say(2, 'DRAUGR IMPOUNDED — ORDNANCE STRIPPED', 'win', 4.5)
+        say(2, 'REVENANT IMPOUNDED — ORDNANCE STRIPPED', 'win', 4.5)
         say(3, "YOU CAN IMPOUND A SHIP. YOU CAN'T IMPOUND A NAME.", 'info', 6)
       } else if (result === 'escaped') {
         s.draugrEscaped++
@@ -851,12 +1057,59 @@ export function IceRoute() {
       }
       activityState.hostile = null
       activityState.hostileLock = 0
+      pursuit.target = null
       for (const torp of torpedoes) if (torp.target === -1) torp.alive = false
       if (result !== 'caught') raiderLabel.current?.()
       if (result !== 'caught') {
         raiderLabel.current = null
         labelsChanged()
       }
+    }
+
+    function pickAnchor(): number {
+      // her next leg: a hard turn (50–130°) onto real scenery, inside the
+      // arena, never the leg she is on
+      let best = -1
+      let bestScore = -Infinity
+      for (let i = 0; i < anchors.length; i++) {
+        if (i === s.huntAnchor) continue
+        const a = anchors[i]
+        _v2.copy(a).sub(raiderPos)
+        const d = _v2.length()
+        if (d < 1500) continue
+        if (a.distanceTo(DRIFT) > ARENA_R - 1500) continue
+        const ang = _v2.normalize().angleTo(fleeDir)
+        // want 50–130°: violent enough to be the Azure Dragon, never a
+        // reverse that hands her to the pursuer
+        const angScore = -Math.abs(ang - Math.PI * 0.5)
+        const legScore = d > 5500 ? -0.6 : 0
+        const score = angScore + legScore + Math.random() * 0.35
+        if (score > bestScore) {
+          bestScore = score
+          best = i
+        }
+      }
+      // cornered at the arena rim with nothing sideways: run back through
+      // the middle — the lane is her larder
+      return best >= 0 ? best : (s.huntAnchor + 1) % anchors.length
+    }
+
+    function scheduleBreak() {
+      if (s.huntBreakAt > 0) return
+      s.huntBreakAt = now + BREAK_TELL // her drive torches: the tell
+    }
+
+    function executeBreak() {
+      const T = TEMPERAMENTS[s.huntTemper]
+      s.huntBreakAt = 0
+      s.huntAnchor = pickAnchor()
+      // turns cost her: she is crewed — the bleed is the chase's
+      // convergence arc. Floored so chained breaks read as a ship
+      // fighting for her life, never a stall.
+      huntVel.multiplyScalar(BREAK_BLEED)
+      if (huntVel.length() < 140) huntVel.setLength(140)
+      s.huntSlewUntil = now + BREAK_SLEW_S
+      s.huntCooldownUntil = now + T.dlMin + Math.random() * (T.dlMax - T.dlMin)
     }
 
     function beginChase(extraHead: number) {
@@ -867,7 +1120,11 @@ export function IceRoute() {
       raiderPos.copy(huntSeedPos).addScaledVector(huntSeedDir, head)
       fleeDir.copy(huntSeedDir)
       huntVel.copy(fleeDir).multiplyScalar(DRAUGR_VMAX * 0.7)
-      s.huntNextDoglegAt = now + T.dlMin
+      s.huntAnchor = -1
+      s.huntAnchor = pickAnchor()
+      s.huntBreakAt = 0
+      s.huntSlewUntil = 0
+      s.huntCooldownUntil = now + 4
       s.huntNextSalvoAt = now + 6 + Math.random() * 6
       s.huntLastGap = raiderPos.distanceTo(shipRig.position)
       // the escape clock arms only after first contact — a far hot seed
@@ -876,13 +1133,14 @@ export function IceRoute() {
       raiderLabel.current?.()
       raiderLabel.current = registerHudLabel({
         id: 'ship-draugr',
-        name: 'DRAUGR',
+        name: 'THE REVENANT',
         color: '#e0708f',
         kind: 'poi',
         position: raiderPos,
         yOffset: 16,
         el: null,
         detail: 'RAIDER · NO TRANSPONDER · WEAPONS FREE',
+        mission: true,
       })
       labelsChanged()
     }
@@ -932,6 +1190,7 @@ export function IceRoute() {
           trailHops[k + 1].copy(trailHops[k]).addScaledVector(_v, TRAIL_LEG_MIN + croll() * TRAIL_LEG_SPAN)
       }
       say(1, `CASE ${s.huntCase} LOGGED — WORK HER TRAIL`, 'info', 3.2)
+      say(3, 'BELTERS CALL HER KIND DRAUGR — THE WALKING DEAD', 'info', 7)
     }
 
     function raiderSalvo(target: number) {
@@ -951,13 +1210,14 @@ export function IceRoute() {
       raiderLabel.current?.()
       raiderLabel.current = registerHudLabel({
         id: 'ship-draugr',
-        name: 'DRAUGR',
+        name: 'THE REVENANT',
         color: '#e0708f',
         kind: 'poi',
         position: raiderPos,
         yOffset: 16,
         el: null,
         detail: 'RAIDER · NO TRANSPONDER · WEAPONS FREE',
+        mission: true,
       })
       labelsChanged()
     }
@@ -1190,8 +1450,10 @@ export function IceRoute() {
     // hulls first (that is WHY escort is wanted), longest transit first.
     const distToBoard = shipRig.position.distanceTo(_v.set(DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210))
     s.offer = -1
+    s.huntOffered = false
     if (s.job === 'none' && !shipRig.warping && distToBoard < BOARD_RANGE) {
-      let cand = -1
+      // the manhunt STANDS; the escort rides beside it — G and H
+      s.huntOffered = true
       let bestScore = -1
       for (let i = 0; i < ships.length; i++) {
         const ship = ships[i]
@@ -1201,20 +1463,14 @@ export function IceRoute() {
         const score = (ship.marked ? 10000 : 0) + range
         if (score > bestScore) {
           bestScore = score
-          cand = i
+          s.offer = i
         }
       }
-      // The manhunt is a STANDING posting. Hot trail = dockmaster priority,
-      // it owns the board; otherwise the board scrolls between the live
-      // escort and the case on the OFFER_FLIP cadence — one key, the hint
-      // always names what G takes.
-      const hot = now < s.huntFreshUntil
-      if (hot || cand === -1 || Math.floor(now / OFFER_FLIP) % 2 === 0) s.offer = -2
-      else s.offer = cand
     }
-    if (s.offer === -2 && (s.accept || activityState.acceptRequest)) {
+    if (s.huntOffered && (s.acceptHunt || activityState.acceptHuntRequest)) {
       startHunt()
       s.offer = -1
+      s.huntOffered = false
     }
     if (s.offer >= 0 && (s.accept || activityState.acceptRequest)) {
       const i = s.offer
@@ -1230,7 +1486,9 @@ export function IceRoute() {
       s.flashUntil = 0
     }
     s.accept = false
+    s.acceptHunt = false
     activityState.acceptRequest = false
+    activityState.acceptHuntRequest = false
     if (s.job === 'over' && now >= s.holdUntil) s.job = 'none'
 
     // The intercept leg: fly out and MEET her. The marker leads her track —
@@ -1334,29 +1592,51 @@ export function IceRoute() {
       const gap = raiderPos.distanceTo(shipRig.position)
       const T = TEMPERAMENTS[s.huntTemper]
       if (s.huntPhase === 'chase') {
-        // her flight: hard burn away, doglegs on temperament cadence,
-        // desperate jinks when cornered
+        // THE AZURE DRAGON: she runs legs between real scenery, and every
+        // hard break is a readable decision — anchor reached, pursuer too
+        // close, lock climbing, or masking behind her own salvo. The tell
+        // precedes every break; the break bleeds her speed. Decisions,
+        // never noise.
         const desperate = gap < DESPERATE_RANGE
-        if (now >= s.huntNextDoglegAt) {
-          const band = desperate ? 0.5 : 1
-          const ang = (Math.random() - 0.5) * 2 * T.dlAngle * (desperate ? 1.4 : 1)
-          _q.setFromAxisAngle(_up, ang)
-          fleeDir.copy(huntSeedDir).applyQuaternion(_q)
-          fleeDir.y = (Math.random() - 0.5) * 0.5
-          fleeDir.normalize()
-          s.huntNextDoglegAt = now + (T.dlMin + Math.random() * (T.dlMax - T.dlMin)) * band
+        if (s.huntBreakAt > 0 && now >= s.huntBreakAt) executeBreak()
+        const anchor = anchors[s.huntAnchor] ?? DRIFT
+        if (s.huntBreakAt === 0) {
+          // triggers — anchor arrival ignores the reactive cooldown
+          if (raiderPos.distanceTo(anchor) < ANCHOR_ARRIVE) scheduleBreak()
+          else if (now >= s.huntCooldownUntil) {
+            if (gap < PROX_BREAK_GAP && s.huntClosing > PROX_BREAK_CLOSING) scheduleBreak()
+            else if (s.huntLockT > LOCK_PANIC_T) scheduleBreak()
+          }
         }
+        // steer the leg: gentle en route, violent in the slam window
+        _v2.copy(anchor).sub(raiderPos).normalize()
+        const turnRate = now < s.huntSlewUntil ? 4.2 : 0.9
+        const ang = fleeDir.angleTo(_v2)
+        if (ang > 1e-3) fleeDir.lerp(_v2, Math.min(1, (turnRate * dt) / ang)).normalize()
         _v.copy(fleeDir).multiplyScalar(DRAUGR_VMAX)
         _v.sub(huntVel).clampLength(0, DRAUGR_ACCEL * dt)
         huntVel.add(_v)
+        // a crewed hull mid-slam sheds way, but she NEVER reads stalled
+        if (huntVel.length() < 140) huntVel.setLength(140)
         raiderPos.addScaledVector(huntVel, dt)
-        // her wake ordnance
+        // her wake ordnance flies on DOCTRINE, not a timer: only when the
+        // head-on meeting exists — the pursuer closing, near enough that
+        // the burn+coast envelope covers the intercept
         if (s.huntMagazine > 0 && now >= s.huntNextSalvoAt) {
-          const birds = Math.min(s.huntMagazine, desperate ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0))
-          fireHuntSalvo(birds)
-          s.huntMagazine -= birds
-          const cad = T.salvoMin + Math.random() * (T.salvoMax - T.salvoMin)
-          s.huntNextSalvoAt = now + (desperate ? cad * 0.5 : cad)
+          // doctrine: a closing pursuer gets met head-on; a matched-speed
+          // shadow INSIDE her skirts gets the point-blank desperation —
+          // the lock is exactly when the gun to her head must answer
+          if ((gap < SALVO_MAX_GAP && s.huntClosing > SALVO_MIN_CLOSING) || desperate) {
+            const birds = Math.min(s.huntMagazine, desperate ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0))
+            fireHuntSalvo(birds)
+            s.huntMagazine -= birds
+            const cad = T.salvoMin + Math.random() * (T.salvoMax - T.salvoMin)
+            s.huntNextSalvoAt = now + (desperate ? cad * 0.5 : cad)
+            // fire-and-turn: break behind her own birds
+            if (Math.random() < 0.6) scheduleBreak()
+          } else {
+            s.huntNextSalvoAt = now + 2 // geometry's wrong — hold the bird
+          }
         }
         // the surrender lock: inside the ring, velocity matched, held
         _v.copy(shipRig.velocityDir).multiplyScalar(shipRig.speed).sub(huntVel)
@@ -1428,14 +1708,17 @@ export function IceRoute() {
           if (tugPos.distanceTo(DRIFT) < 420) endHunt('caught')
         }
       }
-      // live refs for the scope
+      // live refs for the scope + the pursuit assist (chase only: the
+      // computer offers the hold exactly while there is a chase to hold)
       activityState.hostile = raiderPos
       activityState.hostileVel.x = huntVel.x
       activityState.hostileVel.y = huntVel.y
       activityState.hostileVel.z = huntVel.z
+      pursuit.target = s.huntPhase === 'chase' ? raiderPos : null
     } else if (activityState.owner === 'iceroute' && activityState.hostile) {
       activityState.hostile = null
       activityState.hostileLock = 0
+      pursuit.target = null
     }
 
     // ---------- torpedoes ----------
@@ -1527,12 +1810,13 @@ export function IceRoute() {
       activityState.waveMax = Math.max(s.salvos, 4)
       activityState.waveLabel = 'SALVO'
       activityState.canRestart = false
-      activityState.offer =
-        s.offer === -2 ? `MANHUNT — DRAUGR · ${s.huntCase}` : s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
+      activityState.offer = s.offer >= 0 ? `ESCORT ${ships[s.offer].name}` : ''
+      activityState.offerHunt = s.huntOffered ? `MANHUNT — ${s.huntCase}` : ''
+      activityState.focus = hunting
       activityState.title = hunting
         ? s.huntPhase === 'trail'
           ? `MANHUNT — CASE ${s.huntCase}`
-          : 'INTERDICTION — DRAUGR'
+          : 'INTERDICTION — THE REVENANT'
         : escorting && escorted
           ? `ESCORT — ${escorted.name}`
           : intercepting && escorted
@@ -1558,13 +1842,17 @@ export function IceRoute() {
           ? 'HOLD FORMATION — RAIDERS WORK THESE LANES'
           : intercepting
             ? 'FLY THE MARKER — MEET HER ON THE WAY IN'
-            : s.offer === -2
-              ? now < s.huntFreshUntil
-                ? `HER TRAIL IS HOT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO RUN HER DOWN`
-                : `MANHUNT POSTED — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO WORK THE CASE`
-              : s.offer >= 0
-                ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ACCEPT' : 'PRESS G'} TO TAKE HER`
-                : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
+            : s.huntOffered && s.offer >= 0
+              ? IS_TOUCH
+                ? 'TWO JOBS POSTED — TAP ONE'
+                : `G ESCORT ${ships[s.offer].name} · H MANHUNT${now < s.huntFreshUntil ? ' (TRAIL HOT)' : ''}`
+              : s.huntOffered
+                ? now < s.huntFreshUntil
+                  ? `HER TRAIL IS HOT — ${IS_TOUCH ? 'TAP MANHUNT' : 'PRESS H'} TO RUN HER DOWN`
+                  : `MANHUNT POSTED — ${IS_TOUCH ? 'TAP MANHUNT' : 'PRESS H'} TO WORK THE CASE`
+                : s.offer >= 0
+                  ? `${ships[s.offer].name} WANTS ESCORT — ${IS_TOUCH ? 'TAP ESCORT' : 'PRESS G'} TO TAKE HER`
+                  : 'TRAFFIC ON FINAL — THE COLONY HAS THEM'
       if (hunting && s.huntPhase === 'trail') {
         activityState.lines = [
           {
@@ -1579,7 +1867,7 @@ export function IceRoute() {
         ]
       } else if (hunting) {
         activityState.lines = [
-          { label: 'DRAUGR', value: `${(huntGap / 1000).toFixed(1)}K` },
+          { label: 'REVENANT', value: `${(huntGap / 1000).toFixed(1)}K` },
           {
             label: s.huntClosing >= 0 ? 'CLOSING' : 'OPENING',
             value: `${Math.abs(Math.round(s.huntClosing))} M/S`,
@@ -1633,9 +1921,11 @@ export function IceRoute() {
       activityState.owner = ''
       activityState.active = false
       activityState.battle = false
+      activityState.focus = false
       activityState.raceTarget = null
       activityState.threats = []
       activityState.offer = ''
+      activityState.offerHunt = ''
     }
 
     pdcFire.firing = battle
@@ -1724,8 +2014,10 @@ export function IceRoute() {
           _q.setFromUnitVectors(_xAxis, _v)
           raider.quaternion.copy(_q)
         }
-        // running hard on the chase; drive dark once she strikes colors
-        raiderDrive.power = s.huntPhase === 'chase' ? 1 : 0
+        // running hard on the chase; the TELL torches the drive for the
+        // 0.3 s before every hard break; dark once she strikes colors
+        raiderDrive.power =
+          s.huntPhase === 'chase' ? (s.huntBreakAt > 0 ? 2.4 : 1) : 0
       } else if (showing) {
         raider.position.copy(raiderPos)
         _q.setFromUnitVectors(_xAxis, raiderDir)
@@ -1795,9 +2087,18 @@ export function IceRoute() {
         if (clueBuoyRef.current) clueBuoyRef.current.visible = kind === 2
         if (kind === 0 && clueCargoRef.current) {
           // dead cargo tumbles; nobody claims salvage on evidence
-          for (const box of clueCargoRef.current.children) {
-            box.rotation.x += dt * 0.25
-            box.rotation.y += dt * 0.17
+          for (const box of spillGroup.children) {
+            box.rotation.x += dt * 0.2
+            box.rotation.y += dt * 0.13
+          }
+        }
+        if (kind === 1) {
+          // the fines still glint: two clouds, twinkled out of phase
+          for (const o of scorchGroup.children) {
+            const pt = o as Points
+            if (!(pt as { isPoints?: boolean }).isPoints) continue
+            const mat = pt.material as PointsMaterial
+            mat.opacity = 0.16 + 0.3 * (0.5 + 0.5 * Math.sin(now * 2.1 + (pt.userData.phase as number)))
           }
         }
         if (kind === 2 && clueLampRef.current)
@@ -1869,7 +2170,7 @@ export function IceRoute() {
     const rows: string[] = []
     // the manhunt is a standing posting — the top row of the board, always
     rows.push(
-      `MANHUNT · DRAUGR · CASE ${s.huntCase} · ${now < s.huntFreshUntil ? 'TRAIL HOT' : 'TRAIL COLD'}`,
+      `MANHUNT · THE REVENANT · CASE ${s.huntCase} · ${now < s.huntFreshUntil ? 'TRAIL HOT' : 'TRAIL COLD'}`,
     )
     for (const ship of ships) {
       if (!ship.active || rows.length >= 3) continue
@@ -1944,46 +2245,22 @@ export function IceRoute() {
         <meshBasicMaterial color="#8fa8b8" transparent opacity={0.85} toneMapped={false} />
       </mesh>
 
-      {/* THE TRAIL's evidence — three kinds, one shown at the working mark.
+      {/* THE TRAIL's evidence — real matter only (clues.html verdicts).
           Local +X is the line the evidence points (her onward burn). */}
       <group ref={clueRef} visible={false}>
-        {/* vented cargo: dumped mass strung out along her burn line */}
+        {/* THE SPILL: the locked crate mixture, tumbling in a string */}
         <group ref={clueCargoRef}>
-          {[
-            [-36, 5, -8, 4.2],
-            [-18, -7, 10, 5.5],
-            [-2, 2, -14, 3.4],
-            [14, 9, 4, 6.2],
-            [30, -4, -5, 4.8],
-            [44, 6, 12, 3.8],
-          ].map(([x, y, z, sc], i) => (
-            <mesh key={i} position={[x, y, z]} rotation={[i * 0.9, i * 1.7, i * 0.4]}>
-              <boxGeometry args={[sc, sc * 0.8, sc * 1.2]} />
-              <meshStandardMaterial color="#4a525e" metalness={0.4} roughness={0.8} flatShading />
-            </mesh>
-          ))}
+          <primitive object={spillGroup} />
         </group>
-        {/* exhaust-scorched dust: a faint smear, dispersing behind her */}
-        <mesh ref={clueDustRef} rotation={[0, 0, -Math.PI / 2]}>
-          <cylinderGeometry args={[5, 11, 360, 8, 1, true]} />
-          <meshBasicMaterial
-            color={[1.3, 0.72, 0.34]}
-            transparent
-            opacity={0.05}
-            blending={AdditiveBlending}
-            depthWrite={false}
-            toneMapped={false}
-            side={DoubleSide}
-          />
-        </mesh>
-        {/* militia relay buoy: dark hardware, one patient blinking lamp */}
+        {/* THE SCORCH: a burnt lane of real rock through a cold pocket */}
+        <group ref={clueDustRef}>
+          <primitive object={scorchGroup} />
+        </group>
+        {/* THE PICKET: the fleet's buoy in militia service, patient lamp */}
         <group ref={clueBuoyRef}>
-          <mesh>
-            <octahedronGeometry args={[3]} />
-            <meshStandardMaterial color="#2a3644" metalness={0.6} roughness={0.5} flatShading />
-          </mesh>
-          <mesh ref={clueLampRef} position={[0, 4.4, 0]}>
-            <sphereGeometry args={[0.9, 8, 8]} />
+          <primitive object={picketGroup} />
+          <mesh ref={clueLampRef} position={[0, 7.4, 0]}>
+            <sphereGeometry args={[0.7, 10, 10]} />
             <meshBasicMaterial color={[0.4, 3.2, 2.6]} toneMapped={false} />
           </mesh>
         </group>
@@ -2055,4 +2332,6 @@ useGLTF.preload(CLASSES[1].url)
 useGLTF.preload(CLASSES[2].url)
 useGLTF.preload(RAIDER_URL)
 useGLTF.preload(TUG_URL)
+useGLTF.preload(CRATES_URL)
+useGLTF.preload(BUOY_URL)
 useGLTF.preload(TORPEDO_URL)

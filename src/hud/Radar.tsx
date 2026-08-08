@@ -507,6 +507,23 @@ export function Radar() {
         if (H) {
           const f = proj(H.x, H.y, H.z)
           const eh = f.eh * k
+          // THE LOCK IS A SPHERE, and the instrument says so: the sphere's
+          // cross-section AT HER HEIGHT, drawn at her level around us —
+          // radius sqrt(R² − dy²). She climbs off-plane, the circle
+          // tightens; past 300 of height offset it ceases to exist:
+          // lock impossible there, and the scope shows it without a word.
+          const dyh = H.y - shipRig.position.y
+          const rc2 = RINGU * RINGU - dyh * dyh
+          if (rc2 > 0) {
+            const rc = mapR(Math.sqrt(rc2))
+            ctx.strokeStyle = 'rgba(87,230,196,0.45)'
+            ctx.lineWidth = 1.2
+            ctx.setLineDash([5, 6])
+            ctx.beginPath()
+            ctx.ellipse(0, -eh, rc, Math.max(2, rc * sq), 0, 0, Math.PI * 2)
+            ctx.stroke()
+            ctx.setLineDash([])
+          }
           ctx.strokeStyle = 'rgba(2,8,20,0.9)'
           ctx.lineWidth = 3
           ctx.beginPath()

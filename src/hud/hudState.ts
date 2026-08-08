@@ -30,6 +30,8 @@ export interface HudLabel {
   readRange?: number
   /** POIs: warp arrival distance (lands clear of auto-start triggers) */
   jumpStandoff?: number
+  /** Survives THE HUNT FOCUS (mission truth; everything else goes dark) */
+  mission?: boolean
 }
 
 export const hudLabels: HudLabel[] = [

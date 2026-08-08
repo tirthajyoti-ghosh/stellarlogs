@@ -57,6 +57,12 @@ export interface TorpClass {
   darkAt?: number
   /** range at which a dark runner relights for terminal */
   relightAt?: number
+  /** BURN BUDGET, seconds: a torpedo carries no crew — it burns at Gs that
+   *  would kill, but not forever. Past this the drive is spent: ballistic
+   *  coast at whatever speed it built, steering authority cut to fins
+   *  (×0.3). A dark coast doesn't spend the clock — the drive is off.
+   *  undefined = the old infinite burn. */
+  burnFor?: number
 }
 
 export interface TorpBrain {
@@ -78,6 +84,8 @@ export interface TorpBrain {
   dark: boolean
   /** a runner goes dark only once per flight */
   wentDark: boolean
+  /** seconds of powered flight spent (dark coast excluded) */
+  age: number
   nearMisses: number
   nearWindow: number
   dogleg: Vector3
@@ -127,6 +135,7 @@ export function createBrain(): TorpBrain {
     jukeDir: new Vector3(),
     dark: false,
     wentDark: false,
+    age: 0,
     nearMisses: 0,
     nearWindow: 0,
     dogleg: new Vector3(),
@@ -152,6 +161,7 @@ export function armBrain(
   brain.jukesLeft = 3
   brain.dark = false
   brain.wentDark = false
+  brain.age = 0
   brain.nearMisses = 0
   brain.nearWindow = 0
   if (opts?.dogleg) {
@@ -190,7 +200,10 @@ export function steerTorpedo(
     return
   }
 
-  brain.speed = Math.min(cls.vmax, brain.speed + cls.accel * dt)
+  // the burn budget: powered flight spends it; a dark coast does not
+  brain.age += dt
+  const spent = cls.burnFor !== undefined && brain.age > cls.burnFor
+  if (!spent) brain.speed = Math.min(cls.vmax, brain.speed + cls.accel * dt)
 
   // BOOST: hold the rail bearing, just burn
   if (brain.boostLeft > 0) {
@@ -242,7 +255,8 @@ export function steerTorpedo(
   // steer with a turn budget (an acceleration clamp, same idiom the old
   // integrators used) — terminal phase gets more authority
   _des.copy(_aim).sub(pos).normalize().multiplyScalar(brain.speed)
-  const maxStep = cls.turn * brain.speed * dt * (brain.terminal ? TERMINAL_GAIN : 1)
+  let maxStep = cls.turn * brain.speed * dt * (brain.terminal ? TERMINAL_GAIN : 1)
+  if (spent) maxStep *= 0.3 // spent drive: fins only
   _des.sub(vel).clampLength(0, maxStep)
   vel.add(_des).setLength(brain.speed)
 }

@@ -16,8 +16,9 @@ import { createShipState, shipQuaternion, stepShip } from '../physics/integrator
 import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
 import { turretControl } from '../state/turretControl'
 import { warp, warpTurn, stepWarp, warpBurning } from '../physics/warp'
-import { flip, flipStick, cancelFlip } from '../physics/flip'
+import { flip, flipStick, cancelFlip, wrapAngle } from '../physics/flip'
 import { driveLock } from '../physics/driveLock'
+import { pursuit } from '../physics/pursuit'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
@@ -51,6 +52,16 @@ const flipInputObj: ShipInput = {
   pitch: 0,
   boost: false,
 }
+/** Reused container for the PURSUIT ASSIST's synthetic stick */
+const assistInputObj: ShipInput = {
+  thrust: 0,
+  reverse: 0,
+  strafeX: 0,
+  yaw: 0,
+  pitch: 0,
+  boost: false,
+}
+const _los = new Vector3()
 /** Reused container for the drive-dark racing lock (no per-frame alloc) */
 const lockInputObj: ShipInput = {
   thrust: 0,
@@ -196,6 +207,42 @@ export function Ship() {
       flipInputObj.pitch = stick.pitch
       activeInput = flipInputObj
     }
+    // PURSUIT ASSIST: the flight computer's HOLD (the-hunt.md pass 4).
+    // Capture = nose inside the fixed world-radius disc around the quarry
+    // (tight cone at range, forgiving up close). The hold is a hand, never
+    // a magnet: deadband + soft capped gain — and the pilot's hands win
+    // the instant any yaw/pitch key is touched.
+    if (pursuit.target && !flip.active && warp.phase === 'idle') {
+      _los.copy(pursuit.target).sub(state.position)
+      const dist = _los.length()
+      if (dist > 1) {
+        _los.multiplyScalar(1 / dist)
+        const desYaw = Math.atan2(-_los.x, -_los.z)
+        const desPitch = Math.asin(Math.max(-1, Math.min(1, _los.y)))
+        const dy = wrapAngle(desYaw - state.yaw)
+        const dp = wrapAngle(desPitch - state.pitch)
+        const sep = Math.hypot(dy, dp)
+        pursuit.sep = sep
+        const cone = Math.atan(pursuit.captureRadius / dist)
+        const handsOn = shipInput.yaw !== 0 || shipInput.pitch !== 0
+        if (handsOn) pursuit.engaged = false
+        else if (sep < cone) pursuit.engaged = true
+        else if (sep > cone * 2.2) pursuit.engaged = false
+        if (pursuit.engaged && !handsOn) {
+          const DEAD = 0.018
+          assistInputObj.thrust = activeInput.thrust
+          assistInputObj.reverse = activeInput.reverse
+          assistInputObj.strafeX = activeInput.strafeX
+          assistInputObj.boost = activeInput.boost
+          assistInputObj.yaw = Math.abs(dy) < DEAD ? 0 : Math.max(-0.55, Math.min(0.55, dy * 1.1))
+          assistInputObj.pitch = Math.abs(dp) < DEAD ? 0 : Math.max(-0.55, Math.min(0.55, dp * 1.4))
+          activeInput = assistInputObj
+        }
+      }
+    } else {
+      pursuit.engaged = false
+    }
+
     // Drive-dark racing: main drive dead, translation RCS at trim authority
     if (driveLock.locked) {
       lockInputObj.thrust = 0

@@ -626,3 +626,43 @@ stay as-is; only display strings move.
   TALKED TO SOMEBODY, AND THIS EAR WAS IN THE BEAM."
 - Floodlight in the bench = judging tool only (asset under close light vs
   starlight); NOT a game feature.
+
+## Pass 4 — BUILT (2026-08-09, same night)
+
+Everything blessed shipped in one build, harness-verified end to end:
+
+- **G escorts, H hunts** — both jobs stand on the board at once; the hint
+  reads `G ESCORT KOSMO · H MANHUNT`; touch gets two pills. The scrolling
+  offer is gone.
+- **THE REVENANT** — displayed name everywhere (board, label, title,
+  lines); the draugr survives as the T3 lore line on a cold accept.
+- **HUNT FOCUS** — on contract, world labels and the tactical contact box
+  go dark (CSS `body[data-focus]`); only mission labels survive. Trail =
+  nav instruments in a quiet world; contact = battle mode.
+- **CHASE v3, the Azure Dragon** — she runs legs between NAV ANCHORS
+  (gunnery arena, the wreck, ten dark waypoints) inside a 12k arena;
+  breaks at anchors, on proximity (<900 closing >120), on lock panic
+  (>3.5 s), and behind her own salvos (60%); every break preceded by a
+  0.3 s drive torch (the tell) and paid for in speed (×0.55, floored at
+  140 so she never reads stalled). Cooldowns per temperament.
+- **Torpedo doctrine v2** — HUNT RUNNER: accel 260, vmax 720, 6 s burn
+  budget then ballistic coast on fins (dark coast doesn't spend the
+  clock). She fires on GEOMETRY: closing pursuer inside 2.6k, or the
+  point-blank desperation inside 800 — the harness caught that a
+  matched-speed shadow in her skirts was never getting shot at, which is
+  exactly when the gun to her head must answer.
+- **Pursuit assist v2** — capture disc (world R=180) around her; the HUD
+  ring scales with range (measured 186→354 px as the gap closed); hold is
+  deadbanded soft-gain, capped at 0.55 stick; any yaw/pitch input breaks
+  it. Bench snap is gone.
+- **The scope's sphere read** — lock-sphere cross-section at her height,
+  √(300²−dy²), dashed teal at her level.
+- **Clues of real matter** — THE SPILL instanced from crates.glb (the
+  locked four-variant mixture, 667 KB, credited in README); THE SCORCH
+  from the belt rock pack with cold-pocket surroundings and warm fines;
+  THE PICKET is the fleet's buoy at 12u with the patient lamp.
+- Harness: dual offers, H-accept, focus/labels dark, trail→chase, anchor
+  machinery, tell observed, ring shown+scaling, assist engagement, salvo
+  under doctrine (bird at 497 and climbing at age 1.3 s), G-escort
+  regression. Two harness catches fixed pre-ship: the matched-speed
+  no-fire hole and a chained-break stall (speed floor).

@@ -17,11 +17,13 @@ export function TouchControls() {
   // (drills auto-start on entry; this is the only activity button needed)
   const [canRestart, setCanRestart] = useState(false)
   const [hasOffer, setHasOffer] = useState(false)
+  const [hasHunt, setHasHunt] = useState(false)
   useEffect(() => {
     if (!IS_TOUCH) return
     const id = setInterval(() => {
       setCanRestart(activityState.canRestart)
       setHasOffer(activityState.offer !== '')
+      setHasHunt(activityState.offerHunt !== '')
     }, 300)
     return () => clearInterval(id)
   }, [])
@@ -123,7 +125,17 @@ export function TouchControls() {
               activityState.acceptRequest = true
             }}
           >
-            ACCEPT
+            ESCORT
+          </button>
+        )}
+        {hasHunt && (
+          <button
+            className="hud-touch-btn hud-touch-fire"
+            onPointerDown={() => {
+              activityState.acceptHuntRequest = true
+            }}
+          >
+            MANHUNT
           </button>
         )}
         <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>
