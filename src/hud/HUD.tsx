@@ -1,6 +1,5 @@
 import { LabelLayer } from './LabelLayer'
 import { Cockpit } from './Cockpit'
-import { HeadingTape } from './HeadingTape'
 import { WarpPanel } from './WarpPanel'
 import { ActivityPanel } from './ActivityPanel'
 import { ThreatLayer } from './ThreatLayer'
@@ -34,7 +33,6 @@ export function HUD() {
       <RaceLayer />
       <BattleHud />
       <BattleFx />
-      <HeadingTape />
       <Cockpit />
       <WarpPanel />
       <ActivityPanel />

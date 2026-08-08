@@ -150,17 +150,6 @@ body[data-warpphase='burn'] .hud-warp-flash {
 .hud-label-arrow { display: none; font-size: 10px; }
 
 /* Heading tape */
-.hud-tape {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 4px 12px 2px 12px;
-  background: linear-gradient(to bottom, rgba(12, 22, 40, 0.55), rgba(7, 14, 26, 0.35));
-  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
-  pointer-events: none;
-}
-.hud-tape canvas { display: block; }
 
 /* Jump-drive panel */
 .hud-warp-panel {
@@ -690,7 +679,6 @@ body[data-hit='1'] .hud-damage { animation: hud-hit 0.9s ease-out; }
 }
 body[data-hit='1'] .hud-console,
 body[data-hit='1'] .hud-mfd,
-body[data-hit='1'] .hud-tape,
 body[data-hit='1'] .hud-battlehud,
 body[data-hit='1'] .hud-activity {
   animation: hud-kick 0.45s ease-out;
@@ -765,7 +753,7 @@ body[data-hit='1'] .hud-activity {
 
 .hud-activity {
   position: absolute;
-  top: 74px;
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   min-width: 300px;
@@ -1166,7 +1154,6 @@ body[data-hit='1'] .hud-activity {
 
 /* Mobile layout: compact cockpit */
 @media (max-width: 900px), (max-height: 560px) {
-  .hud-tape { display: none; }
   .hud-mfd-right { display: none; }
   .hud-console { display: none; }
   .hud-cockpit { perspective: none; }
