@@ -314,7 +314,15 @@ body[data-warpphase='turnback'] .hud-warp-panel { display: flex; }
 }
 
 /* Center drive console: tilted back toward the pilot */
+/* Battle stations clear the dashboard: combat belongs to the center
+   cluster and THE SCOPE bottom-right; the console is a cruising
+   instrument (Tirtha, 2026-08-08 — reconciling the Aug-5 removal). */
+body[data-battle='1'] .hud-console {
+  opacity: 0;
+  pointer-events: none;
+}
 .hud-console {
+  transition: opacity 0.4s;
   left: 50%;
   bottom: 14px;
   width: 340px;
