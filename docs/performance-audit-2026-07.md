@@ -778,3 +778,61 @@ on low-VRAM machines and stays parked behind the (unbuilt) D4.
 One cool-machine session: frame medians at the three viewpoints, the
 composer's isolated price via `__perf.postfx`, and the cold-start timeline
 with the new hints. Do it before any further optimisation is chosen.
+
+
+## PHASE E — THE COOL-MACHINE SESSION (2026-08-08): the audit closes
+
+The session the whole audit was owed: a rested machine, measured by the
+house rules (probe build, fresh page per arm, thermal rest between hot
+arms). Conditions: M3 / 16 GB, Brave closed first (swap fell 9.1 GB ->
+1.8 GB), battery 82% with Low Power Mode OFF (Apple Silicon runs full
+tilt on battery), thermal log clean, canvas pinned to the historical
+2400x1350 (1600x900 css at dpr 1.5). The three standard viewpoints are
+now pinned as coordinates so future sessions measure the same picture:
+Projects heavy (300, 40, -3900 · yaw 0.785), station approach
+(1160, 100, -280 · yaw 0.785), deep transit (3000, 200, 3000 · yaw 0).
+
+| arm | median | p95 | note |
+|---|---|---|---|
+| Projects heavy (July: 22.9 cool / 17.1 warm) | **16.7 ms** | 17.7 | **vsync-locked 60 fps** |
+| station approach | 16.7 ms | 18.6 | locked |
+| deep transit | 16.7 ms | 18.6 | locked |
+| **combat, cert W3** — tracer spray + torpedo brain + THE SCOPE, none of which existed in July | 16.7 ms | 18.6 | p99 18.7, worst frame 18.8 — zero stutter |
+
+**Headroom ladder** (same page, Projects heavy): 60 fps holds through
+dpr 2.0 (3200x1800) and 2.5 (4000x2250, 2.8x the shipped pixels);
+the wall is at dpr 3.0 (4800x2700 -> 32.4 ms). Missed-vsync doubles
+begin appearing in p95 from dpr 2.0, so the comfortable margin is ~2x
+pixels. The renderer ships with roughly a 2.5x pixel budget in reserve
+at the heaviest viewpoint.
+
+**The composer's price**: at ship resolution, postfx ON = OFF = 16.7 ms
+locked — Bloom's whole mip chain fits inside the vsync budget and costs
+nothing a visitor can see. (A high-dpr isolation attempt is RECORDED AS
+INVALID: flipping the gate at 13 megapixels re-allocates the composer's
+render targets and the sustained 4x load triggered the M3's thermal
+onset mid-pair — 50 and 66.7 ms readings that are method artifacts, not
+composer cost. If an absolute number is ever needed, it wants GPU timer
+queries and long cooldowns, not rAF.)
+
+**Cold start**: 7.6 s / 8.1 s to ignition-ready on a LOCAL server — the
+pure compute floor (planet bakes, shader warmup, GLB decode, loader
+grace). Payload: 23 MB total (18 MB models, 1.5 MB JS, ~2 MB images);
+the boot-critical set (JS + preloaded gateway/tachi/starmap + sky) is
+~12 MB ≈ 3.8 s at 25 Mbps, which overlaps the compute window — a
+25 Mbps visitor reaches ignition in roughly the same ~8 s. The July
+target ("<8 s on 25 Mbps") is met at the margin, and the limiter has
+FLIPPED: startup is now compute-bound, not network-bound. Phase D did
+its job; any further cold-start win lives in bake/warmup staging, which
+is Delight-guarded territory (the warmup exists to prevent pops) and is
+NOT recommended without a visitor-facing complaint.
+
+**Standing stock at the heavy viewpoint**: 204 geometries, 168 textures,
+79 programs, 118 MB JS heap.
+
+**Verdict — the audit closes.** Every standard viewpoint and the
+heaviest combat the game can produce run vsync-locked at the shipped
+resolution on a cool machine, with ~2.5x pixel headroom and a worst
+combat frame of 18.8 ms. July's 22.9 ms baseline is a locked 16.7. No
+optimization is owed. The next performance conversation should start
+from a new complaint, not from this document.
