@@ -180,3 +180,127 @@ flip-and-burn intercept does").
 6. Her name history: does the board show her full record (`INTERDICTED
    ×4 · ESCAPED ×2`) — the lane's memory made public — or just the
    posting? (Recommend: full record. It IS the fiction.)
+
+
+---
+
+# Second pass — the revenant, the dice, and the harpoon (2026-08-08)
+
+*After Tirtha's read of pass 1: he wants the recurrence fiction to carry
+more weight ("how is that ship out there hunting again?"), real
+per-run life ("some randomness… something the user can come back and
+still enjoy"), and the tow made concrete — a tug that fires a harpoon
+and drags her away, with an asset bench to judge (tugs.html).*
+
+## P2.1 The recurrence fiction — you can't impound a name
+
+Pass 1's disarmament sentence explains a release. It doesn't explain a
+LEGEND — and "Draugr" was always the right word waiting to be used:
+in the old stories a draugr is a REVENANT. The dead thing that walks
+again.
+
+**The fiction, full strength:** what the lane calls "the Draugr" is not
+a registered hull — it is a stealth profile with no transponder, no
+registry entry, no name the Belt's thin law can attach to anything.
+When one is caught, the militia tows in *a* black hull, strips *a*
+magazine, releases *a* crew nobody can charge with anything — and six
+days later the same dark silhouette is working the lane again. Same
+boat with new plates? A sister hull run by the same crew? The syndicate
+behind it fielding another? **Nobody knows, and that unknowing IS the
+fiction.** The board doesn't tally a ship; it tallies a phenomenon:
+
+    DRAUGR — INTERDICTED ×4 · ESCAPED ×2 · LAST: <callsign>
+
+The militia's dry joke, painted small under the tally, is the whole
+thesis: **"YOU CAN IMPOUND A SHIP. YOU CAN'T IMPOUND A NAME."**
+
+This does three jobs at once:
+1. **Repeatability is justified forever** — the hunt never claims to end
+   piracy, only this week's instance of it. The standing situation
+   deepens instead of resetting.
+2. **It LICENSES the randomness Tirtha asked for** — if each Draugr may
+   or may not be the last one, then each behaving a little differently
+   is not a gameplay convenience, it is *evidence for the mystery*.
+   The dice become lore.
+3. **The disarmament sentence (pass 1) survives underneath** — it is
+   why caught crews walk; the name-fiction is why the hunts continue.
+
+## P2.2 The dice — temperaments, seeds, and the lane learning you
+
+Same mission spine every time (chase → corner → gun to the head →
+squawk), living differences each run:
+
+- **Temperament roll** (the big one — which Draugr showed up this
+  time?):
+  - **CAGEY** — flees early and far: longer head start, wide doglegs,
+    spends dark-runners sparingly but from ambush angles. The long
+    patient chase.
+  - **BRAZEN** — lets you close, then breaks violently late; tight
+    jinks, aggressive salvo cadence; punishes sloppy closure hardest.
+    The knife fight.
+  - **SPENDTHRIFT** — burns her whole magazine early in dense volleys,
+    then runs clean and fast on an empty boat. Survive the storm, then
+    win a pure race.
+  Temperament is rolled per hunt, readable only through behavior —
+  never labeled on the HUD (the scope shows what she does, not what
+  she is).
+- **Seeded geometry**: her start position and escape bearing come from
+  the actual last raid (already designed), so every hunt begins from
+  real, different geometry.
+- **Variance dials**: head start, dogleg cadence, dark-runner budget,
+  escape-bearing drift — all rolled within temperament bands.
+- **The lane learns you (escalation, capped)**: after each successful
+  interdiction on your record, the next Draugr rolls with slightly
+  hotter bands (head start +, magazine +) — capped at +3 so it plateaus
+  as "veteran lane" difficulty, mirroring the cert's veteran drill.
+  Fictionally airtight: whoever they are, they know YOUR callsign now.
+- **Failure stays cheap**: she escapes, the board tallies it, the next
+  posting comes after the next raid. Retry is a lane rhythm, not a
+  menu.
+
+## P2.3 The tow, concrete — the harpoon procedure
+
+The militia tug is a working boat with one weapon: a magnetic grapple
+harpoon. The sequence, all diegetic, all physics:
+
+1. **THE CALL** — at the squawk, the tug undocks from the Drift and
+   burns out (visible plume on the lane; the world doing its job).
+   Your contract is complete at the squawk — HUD stands down; the
+   procedure that follows is silent-visible per the Sound Law. You can
+   stay and watch from any angle, or leave.
+2. **THE MATCH** — the tug flips, brakes, and station-keeps ~80 u off
+   her beam (the same tail-first honesty as every lane arrival).
+3. **THE SHOT** — the harpoon fires: a real projectile on a rendered
+   cable (slight catenary sag, drawn as a segmented line), crossing in
+   ~1.5 s. Impact: a hard spark, a small attitude kick through her hull
+   (physics, not theater), the cable snapping taut.
+4. **THE TURN** — over ~4 s the two hulls align as the cable tensions,
+   her attitude dragged to match the tug's.
+5. **THE LONG HAUL** — combined burn toward the Drift's cold berth,
+   her drive dark, the tug's plume doing all the work. They shrink
+   into the lane traffic and are gone. The board updates as they dock.
+6. **Wreck-law texture (cheap, optional)**: for a few minutes the
+   berth-side board line reads DRAUGR — IMPOUNDED · ORDNANCE STRIPPED,
+   then reverts to the standing tally.
+
+**The asset**: candidates gathered in **tugs.html** (bench committed,
+same judging drill as the shipyard) — brief: a workhorse silhouette, a
+credible harpoon mount point, kinship with the lane fleet. Tirtha
+picks; the harpoon launcher itself is a small authored attachment (a
+box + rail + cable drum) we fit to whichever hull wins, so the choice
+is about the BOAT, not the gun.
+
+## P2.4 Decisions carried + new
+
+From pass 1 (still open): lock feel (cumulative 8 s vs continuous 5 s);
+she-runs-dark in v1 or v2 (recommend v2); chase length target (2–4
+min); tally surface v1.
+New from this pass:
+1. **The revenant fiction** ("you can't impound a name") — approve as
+   the standing lore, board joke included?
+2. **The three temperaments** — approve the set (names internal only)?
+3. **Escalation capped at +3** on your interdiction record — yes/no?
+4. **The tug hull** — pick from tugs.html (or send me hunting again).
+5. **Watchability**: after the squawk the player is free but the tow
+   takes ~40 s to play out fully — is that the right length for the
+   ones who stay to watch?
