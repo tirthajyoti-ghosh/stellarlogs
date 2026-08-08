@@ -383,3 +383,162 @@ repost under new case; both shelve paths keep the case and skip the tally;
 offer alternation observed (-2 ↔ escort) and escort accept still lands
 `intercept`. Open on Tirtha's live read: alternation cadence feel, clue
 prop staging, trail length against Bruno's law.
+
+# Pass 4 — the chase earns its physics (2026-08-08, after the first live ride)
+
+Tirtha flew the trail build and handed back a design batch. His framing is
+the law for this pass: *"it's a lot of balancing act… put a lot of thought
+into it… challenged enough, but not so much that they don't feel the
+delight. We do the thinking now; implementation is easy."* Ground truth
+pulled from code before thinking: player cruise 210, boost 520; Draugr 420
+(the chase is a Shift-feathering game); HUNT_RUNNER vmax 200 — slower than
+everyone, which is exactly why her torpedoes felt like nothing; controls
+are binary keys (W/S thrust, A/D yaw 1.7 rad/s, R/F pitch 1.15, Q/E
+strafe, Shift boost, X flip), drag = camera look only.
+
+## 4.1 The accept key: G escorts, H hunts
+
+The 6-second scrolling offer dies. Two standing jobs get two keys — G
+keeps the convoy ("take her"), **H takes the hunt** — unclaimed, mnemonic,
+and physically next to G so "the board keys" cluster. The HUD shows both
+offers at once when both stand; the hint reads `G ESCORT · H MANHUNT`.
+Touch gets two stacked accept pills. Internally the -2 sentinel dies too:
+`escortOffer` and `huntOffer` become separate fields. No scroll, no
+wrong-moment accept.
+
+## 4.2 Clues built from real matter (clues.html bench first)
+
+His verdict on the dust: "a semi-transparent pipe — we can't afford that."
+Correct. The fix is the house rule applied to props: **evidence is made of
+things that exist in this world.**
+
+- **THE SCORCH replaces the dust cylinder.** She burned through a gravel
+  pocket: a ~400-unit string of REAL rocks — instanced from the same ten
+  photoreal variants the belts use (asteroids.glb), scaled to rubble
+  (0.3–2u) with a few fist-of-god pieces — plus a particle shimmer: fines
+  her exhaust cooked, still glinting (additive points, per-point twinkle
+  phase). Other rocks drift inside the smear, exactly as he described.
+  The string's axis is her line; density thins toward the fresh end.
+- **The tightbeam intercept gets the real buoy.** public/models/buoy.glb
+  already flies elsewhere in the system; the militia relay is that
+  hardware in militia trim (teal lamp, patient blink), not a primitive
+  octahedron. Candidate extra: a short ranged audio chirp loop — the
+  intercept replaying — legal under the Sound Law (comms addressed to
+  anyone on the case).
+- **The cargo string stays** but graduates from flat-color boxes to
+  container-grade material (borrow the freighter fleet's palette).
+- **Bench before game**: clues.html, permanent like the others — all three
+  clues on black, spin/judge, THEN they enter the world.
+
+## 4.3 The lock is a SPHERE — and the scope must say so
+
+The code already checks 3D distance (it was always a sphere); the
+instrument lies by drawing a flat ring, so players think in the plane.
+The fix is an honest projection, not new mechanics: during the chase THE
+SCOPE draws the lock sphere's **cross-section at HER height** — a circle
+of radius sqrt(300² − dy²) centered on the vessel, drawn at her stem's
+height in the cylinder. Read it and the whole state is legible:
+
+- She's high above you → the circle is small: "close height first."
+- |dy| ≥ 300 → no circle exists: lock is impossible at this offset.
+- Circle wide and she's inside it → hold, and the existing lock arc fills.
+
+One drawn element teaches the sphere without a word of tutorial. (An
+in-world sphere shell was considered and rejected: we look outward FROM
+its center; it could only ever read as fog.)
+
+## 4.4 Torpedo doctrine: insanely fast, honestly finite
+
+The show's truth he invoked: a torpedo carries no crew — it can burn at
+Gs that would kill, sustain them, and it only has to arrive once. A 200
+vmax chaser in a 420/520 stern chase is fiction-false and gameplay-dead.
+The redesign is speed + finitude + doctrine:
+
+- **HUNT RUNNER v2 (bench numbers, to be measured)**: v0 150, accel 260,
+  vmax ~720, **burn budget ~5 s then ballistic coast** — the real shape
+  of the weapon. Full steering authority only under burn; terminal
+  corkscrew spends burn. Dark-runner behavior stays (drive cut = ghost)
+  and now reads even better: a dark coast at 700 is genuinely scary.
+- **She fires on GEOMETRY, not on a timer.** Launch only when a solution
+  exists: player in her stern cone, closing, and estimateFlightTime
+  inside the burn+coast envelope (the brain already computes this).
+  Head-on closure at ~900 combined is the terror moment — short PDC
+  window, dodge-or-shoot. No more birds thrown into a wake they can
+  never catch. Magazines (temperaments) finally mean something: every
+  launch is a real spend.
+- **Counter-play fits the keyboard**: a lateral pulse (Q/E/R/F) plus the
+  PDCs. Near-miss jukes already exist; the dodge is a beat, not a
+  joystick flourish.
+- **Acceptance is measured, cert-ladder style**: parked / straight-boost /
+  weaving harness arms; leak rates and time-to-intercept recorded; the
+  envelope tuned until motion saves you and sitting does not. The wall
+  rule stands: if motion doesn't save you, there is no skill.
+
+## 4.5 The Azure Dragon rule: the chase runs THROUGH the world
+
+His reference: the Roci hunting the spotter ship — hard, violent vector
+changes, terrain in the frame. Today she flees into empty black; empty
+space reads static at any speed. The redesign:
+
+- **Anchor running.** She flies legs between NAV ANCHORS — real scenery:
+  the belt's inner rim, the wreck, the gateway, lane space, moons —
+  chosen so each leg (a) stays inside the ARENA (~12k around the Drift),
+  (b) turns hard (60–120°), (c) puts visual mass in the frame. At each
+  anchor: the Azure Dragon move — slam the nose over, burn on the new
+  vector. Doglegs become geography.
+- **Parallax is the delight engine**: threading scenery is what makes 420
+  FEEL like 420. And pursuit curves become skill: she flies the longer
+  arc around an anchor; the player who cuts the corner closes. Catch-up
+  drama from geometry, not rubber-banding.
+- **The fiction of the bound**: she never leaves the cluster — the lane
+  is her larder and militia pickets hem the dark ("SHE WON'T LEAVE HER
+  HUNTING GROUND — CUT THE CORNER"). Mechanically: any leg that would
+  exit the arena re-vectors inward.
+- **Danger law honored**: her corridors are picked with clearance; the
+  world never cheap-kills the player. The corner-cut is the player's
+  choice of risk.
+
+## 4.6 Controls — food for thought, benched separately
+
+The chase's REAL skill was always meant to be the throttle (feathering
+Shift around her 420), not pixel-aiming a 1.7 rad/s keyboard yaw at a
+weaving target. Two candidate reliefs, both needing a feel bench, neither
+required for chase v3:
+
+- **Mouse/trackpad steering** (Elite-style): cursor offset from center
+  drives yaw/pitch with a deadzone; keys keep thrust. Conflicts with
+  drag-to-look; would need a mode and consistency law.
+- **PURSUIT ASSIST** (recommended candidate): fiction-true flight-computer
+  behavior — when the nose is within ~10° of the hunted contact, the RCS
+  holds it there (a hold, never a snap; breaks on any yaw/pitch input).
+  The player flies throttle, translation, and the lock envelope — the
+  game the design always wanted. Not fake-game-y: real flight computers
+  do exactly this, and it only exists on contract, like everything else.
+
+Decision deferred until chase v3 is flyable; judge with hands on keys.
+
+## 4.7 Mobile: the bridge flies landscape
+
+His phone read: runs smooth, buttons make no sense in portrait. The shape
+(roadmap item, independent of the hunt): treat the site like a video —
+**landscape fullscreen is the played state.**
+
+- Portrait on touch → a full-screen interstitial: "THIS BRIDGE FLIES
+  LANDSCAPE" + rotate glyph; tap = requestFullscreen + orientation.lock
+  ('landscape') where supported (Android/Chrome). iOS can't lock from
+  web: the interstitial simply stands until rotated (the YouTube
+  pattern), fullscreen via the same tap where allowed.
+- Landscape touch layout gets its own pass (thumb zones: thrust cluster
+  right, translation left, accepts center-bottom) — rides with the
+  density/toys HUD polish, not before.
+- PWA manifest gains orientation: landscape for installed use.
+
+## 4.8 Locked sequence (pending Tirtha's sign-off on this pass)
+
+1. **clues.html bench** → judge → real assets into the trail (4.2).
+2. **H key + dual offers** — kills alternation (4.1). Small.
+3. **Scope sphere read** — the cross-section circle (4.3). Small.
+4. **CHASE v3** — anchor arena + torpedo doctrine v2 + measured
+   acceptance (4.4 + 4.5). The big build; harness first-class.
+5. **Controls feel bench** — after v3 flies (4.6). Then his ruling.
+6. **Mobile landscape pass** — scheduled on the roadmap, anytime (4.7).
