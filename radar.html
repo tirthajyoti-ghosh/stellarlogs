@@ -354,14 +354,14 @@ function simHeat(dt, armed) {
 function mapRange(r, R) {
   const ring = WORLD.RING, hor = WORLD.HORIZON
   if (CFG.map === 'outer') {
-    return r <= ring ? (r / ring) * 0.3 * R : (0.3 + Math.min(1, (r - ring) / (hor - ring)) * 0.7) * R
+    return r <= ring ? (r / ring) * 0.42 * R : (0.42 + Math.min(1, (r - ring) / (hor - ring)) * 0.58) * R
   }
   if (CFG.map === 'inner') {
     return r <= ring ? (r / ring) * 0.62 * R : (0.62 + Math.min(1, (r - ring) / (hor - ring)) * 0.38) * R
   }
   return Math.min(1, r / hor) * R
 }
-function ringPx(R) { return CFG.map === 'outer' ? 0.3 * R : CFG.map === 'inner' ? 0.62 * R : (WORLD.RING / WORLD.HORIZON) * R }
+function ringPx(R) { return CFG.map === 'outer' ? 0.42 * R : CFG.map === 'inner' ? 0.62 * R : (WORLD.RING / WORLD.HORIZON) * R }
 
 function project(p, R, tiltRad, sq) {
   // world-relative → instrument space. Nose-up: rotate by -yaw.

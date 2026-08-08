@@ -10,7 +10,7 @@ export function ActivityPanel() {
   const rootRef = useRef<HTMLDivElement>(null)
   const titleRef = useRef<HTMLDivElement>(null)
   const linesRef = useRef<HTMLDivElement>(null)
-  const hintRef = useRef<HTMLDivElement>(null)
+  const coachRef = useRef<HTMLDivElement>(null)
   const flashRef = useRef<HTMLDivElement>(null)
   const flavorRef = useRef<HTMLDivElement>(null)
 
@@ -21,9 +21,16 @@ export function ActivityPanel() {
       const root = rootRef.current
       if (!root) return
       root.dataset.active = activityState.active ? '1' : ''
+      // the coach lives OUTSIDE the transformed panel (fixed inside a
+      // transform positions against the ancestor, not the viewport)
+      const coach = coachRef.current
+      if (coach) {
+        const text = activityState.active ? activityState.hint : ''
+        if (coach.textContent !== text) coach.textContent = text
+        coach.dataset.on = text ? '1' : ''
+      }
       if (!activityState.active) return
       if (titleRef.current) titleRef.current.textContent = activityState.title
-      if (hintRef.current) hintRef.current.textContent = activityState.hint
       const flash = flashRef.current
       if (flash) {
         flash.textContent = activityState.flash
@@ -66,12 +73,14 @@ export function ActivityPanel() {
   }, [])
 
   return (
+    <>
     <div className="hud-activity" ref={rootRef} data-ui>
       <div className="hud-mfd-title" ref={titleRef} />
       <div className="hud-activity-lines" ref={linesRef} />
       <div className="hud-activity-flash" ref={flashRef} />
       <div className="hud-activity-flavor" ref={flavorRef} />
-      <div className="hud-activity-hint" ref={hintRef} />
     </div>
+    <div className="hud-coach" ref={coachRef} aria-hidden />
+    </>
   )
 }

@@ -11,6 +11,10 @@ import { assessThreat } from '../scene/shipTurrets'
 import { startWarp, warp } from '../physics/warp'
 
 const SIZE = 132
+/** The PDC ring's share of the scope radius. Raised 0.3 → 0.42 (Tirtha:
+ *  the reach should read big); the range mapping below derives from it,
+ *  so feet, stems, corridors and the crossing flash all follow. */
+const RING_FRAC = 0.42
 const _rel = new Vector3()
 
 interface RadarBlip {
@@ -253,7 +257,7 @@ export function Radar() {
         const capH = RR * 0.52 * k
         const capRy = RR * (0.1 + 0.35 * (1 - cosT)) * Math.min(1, k * 2)
         const sq = Math.max(0.02, capRy / RR)
-        const rp = 0.3 * RR
+        const rp = RING_FRAC * RR
         const EDGE = 'rgba(140,220,230,'
 
         // vessel rims + edge-lit walls
@@ -299,8 +303,8 @@ export function Radar() {
         // project a world point into the vessel (outer-weighted range)
         const mapR = (ground: number) =>
           ground <= RINGU
-            ? (ground / RINGU) * 0.3 * RR
-            : (0.3 + Math.min(1, (ground - RINGU) / (HORIZON - RINGU)) * 0.7) * RR
+            ? (ground / RINGU) * RING_FRAC * RR
+            : (RING_FRAC + Math.min(1, (ground - RINGU) / (HORIZON - RINGU)) * (1 - RING_FRAC)) * RR
         const proj = (wx: number, wy: number, wz: number) => {
           const dx = wx - shipRig.position.x
           const dy = wy - shipRig.position.y

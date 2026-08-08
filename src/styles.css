@@ -722,6 +722,12 @@ body[data-hit='1'] .hud-activity {
 .hud-banner[data-kind='fail'] {
   color: #ff6a55;
   text-shadow: 0 0 28px rgba(255, 70, 45, 0.65);
+}
+/* The blink runs ONLY while visible. Attached to kind alone, the infinite
+   animation kept driving the HIDDEN element's opacity (keyframes override
+   normal declarations) — every expired red banner ghost-blinked forever.
+   Found by Tirtha in the escort ("she is lost… keeps blinking"). */
+.hud-banner[data-kind='fail'][data-on='1'] {
   animation: hud-banner-blink 0.5s step-end infinite;
 }
 @keyframes hud-banner-blink {
@@ -810,14 +816,27 @@ body[data-hit='1'] .hud-activity {
   transition: opacity 0.4s;
 }
 .hud-activity-flavor[data-on='1'] { opacity: 1; }
-.hud-activity-hint {
-  margin-top: 6px;
-  font-size: 9px;
+/* The coach speaks from the clear space below the ship — midway between
+   hull and the bottom edge, never squeezed into the top panel (Tirtha,
+   2026-08-08). A SIBLING of the panel: fixed inside a transformed
+   ancestor would position against the panel, not the viewport. */
+.hud-coach {
+  position: fixed;
+  left: 50%;
+  top: 72%;
+  transform: translateX(-50%);
+  max-width: 70vw;
+  text-align: center;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.2em;
-  color: var(--hud-dim);
-  min-height: 11px;
+  letter-spacing: 0.24em;
+  color: var(--hud-teal, #6fe8c8);
+  text-shadow: 0 0 14px rgba(80, 200, 180, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
+.hud-coach[data-on='1'] { opacity: 1; }
 
 .hud-label-poi { font-size: 11.5px; }
 .hud-label-poi .hud-label-name {

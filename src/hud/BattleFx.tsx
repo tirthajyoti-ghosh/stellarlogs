@@ -26,10 +26,16 @@ export function BattleFx() {
           st.bannerTier = 2
         }
         const b = activityState.banner
-        banner.dataset.kind = b.kind
         const show = b.text !== '' && b.until > activityState.bannerClock
         banner.dataset.on = show ? '1' : ''
-        if (show && banner.textContent !== b.text) banner.textContent = b.text
+        if (show) {
+          banner.dataset.kind = b.kind
+          if (banner.textContent !== b.text) banner.textContent = b.text
+        } else if (banner.textContent !== '') {
+          // no ghosts: a hidden banner keeps neither its text nor its kind
+          banner.textContent = ''
+          delete banner.dataset.kind
+        }
       }
       const hitDir = hitDirRef.current
       if (hitDir) {
