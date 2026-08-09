@@ -1077,7 +1077,8 @@ export function IceRoute() {
         torp.ambient = false
         torp.target = -1
         torp.dark = false
-        say(1, 'SLEEPER LIT — LOOK TO YOUR SCOPE', 'battle', 2.6)
+        // No banner (Tirtha, show-don't-tell): a lit drive on the scope,
+        // the HUD threat markers, and the plume in the sky ARE the call.
         return
       }
     }
