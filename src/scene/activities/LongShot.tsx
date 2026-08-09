@@ -125,6 +125,7 @@ export function LongShot() {
     const dist = shipRig.position.distanceTo(LINE)
 
     const ownerFree = activityState.owner === '' || activityState.owner === 'longshot'
+    railgun.available = st.engaged
     if (!st.engaged && dist < ZONE_RADIUS && ownerFree && !shipRig.warping) {
       st.engaged = true
       if (!st.flavorSaid) {
@@ -133,6 +134,7 @@ export function LongShot() {
       }
     } else if (st.engaged && (dist > ZONE_EXIT || !ownerFree || shipRig.warping)) {
       st.engaged = false
+      railgun.available = false
       if (activityState.owner === 'longshot') {
         activityState.owner = ''
         activityState.active = false

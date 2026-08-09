@@ -31,6 +31,9 @@ export type RailPhase = 'ready' | 'charge' | 'hold' | 'cool'
 export const railgun = {
   phase: 'ready' as RailPhase,
   t: 0,
+  /** the spine exists only where its work exists: the proving line and
+   *  the debris storm set this; normal flight never sees the gun */
+  available: false,
   /** impound rules — set by the hunt, blocks the trigger */
   safed: false,
   /** trigger currently held (key or touch) */
@@ -44,6 +47,7 @@ export const railgun = {
 }
 
 export function railTriggerDown(): void {
+  if (!railgun.available) return
   if (railgun.held) return
   railgun.held = true
   if (railgun.safed) {
