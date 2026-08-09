@@ -432,6 +432,12 @@ the way (Tirtha). Deep exploration passes continue between builds
    (docs/the-neighborhood.md): sleeping spread SHIPPED, starmap lift +
    five UNSURVEYED inert stars SHIPPED; next slag skeet → Drift toys →
    bell → debris storm.
+3.1. **THE SPINE — the railgun** (docs/the-spine.md, exploration pass 1
+   done 2026-08-09): the game's one aimed shot — spine-mounted, aim by
+   flying, charge/recoil/cooldown, SAFED on manhunts (impound rules).
+   Stages: railgun.html feel bench → weapon → THE LONG SHOT range
+   discipline (the skeet's legible successor) → debris storm as the
+   two-weapon finale. Player torpedoes REJECTED (reasons in the doc).
 3.2. **THE SCORE — music** (Tirtha 2026-08-09: "music has been absent…
    the Expanse is really good because of the music"). Exploration pass +
    score.html listening bench: CC beds vs generative WebAudio, adaptive
