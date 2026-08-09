@@ -666,3 +666,35 @@ Everything blessed shipped in one build, harness-verified end to end:
   under doctrine (bird at 497 and climbing at age 1.3 s), G-escort
   regression. Two harness catches fixed pre-ship: the matched-speed
   no-fire hole and a chained-break stall (speed floor).
+
+# Pass 5 — the blast-radius law and the sleeper call (2026-08-09, after his first v3 ride)
+
+Tirtha's ride found the structural flaw: the win condition (hold <300 for
+8 s) and the threat doctrine (desperate point-blank dumps inside 800)
+contradict each other — "it's going to get me no matter what I do." His
+two fiction instincts ARE the fix, plus a pace correction:
+
+## 5.1 THE BLAST-RADIUS LAW
+A warhead at 400 m kills the launcher too. Minimum safe launch: **her
+tubes are cold inside 1200**. The fight gains honest bands — >2600 pure
+pursuit; **1200–2600 closing = THE GAUNTLET** (stern birds head-on, the
+PDC/dodge play); <1200 tubes silent. The surrender ring becomes
+torpedo-free by PHYSICS — "the gun to the head; the shot never comes."
+
+## 5.2 THE SLEEPER CALL (the dormant spread, reused)
+Cornered, she doesn't shoot — she CALLS. A sleeper already dark in the
+system lights up 1600–2400 out on a random bearing and runs in (v0 ~30,
+accel 260, vmax 720, burn 6 — arrival ≥7 s). VOICE T1: "SLEEPER LIT —
+LOOK TO YOUR SCOPE." Budget: 3 + escalation per hunt, separate from the
+stern magazine. Triggers: lock panic, or a pursuer camping <1200.
+Pressure inside the ring survives; the scope's sphere read finally works
+for a living mid-lock.
+
+## 5.3 SHE FLIES LIKE A RAIDER
+vmax 420→470 (a 50 edge under the player's 520: catching is earned at
+the corners), accel 55→95, break bleed 0.55→0.72, floor 140→280. Breaks
+still pay the convergence arc; recovery ~2 s, average pace chase-fast.
+
+## 5.4 Acceptance (measured before his next ride)
+No stern launch inside 1200 (asserted); sleeper wake→arrival ≥7 s; her
+60 s average speed >400; straight-boost time-to-ring 25–45 s from 1600.
