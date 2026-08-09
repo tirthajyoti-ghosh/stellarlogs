@@ -69,3 +69,23 @@ live values into frames the world already owns.
 4. Drift toys: cargo field, jukebox, sign frames.
 5. Nilak bell + vigil frame.
 6. Debris storm (finale; hands off to the liveness backend).
+
+
+## Build log
+
+- **2026-08-09 · THE SLEEPING SPREAD shipped** — 12 (now 17 with the inert
+  stars) dormant hulls, per-session scatter, wake theater harness-verified.
+- **2026-08-09 · THE STARMAP LIFT shipped** — starmap.html verdict applied:
+  all systems lifted off the tabletop (Y ±3400), the Track re-seated with
+  its POI and race locals riding the one SYSTEM constant, five inert stars
+  live (KHIONE, SALT, EMBER, HARROW, VESTIGE — labels read UNSURVEYED,
+  no boards, and their star lights are gated off: five more infinite-range
+  lights would tax every fragment to illuminate nothing). Harness: label
+  truth at new seats, hunt/board regression, console clean. One catch fixed
+  pre-ship: the sleeper pool was hardcoded at 16 and the five new systems'
+  sleepers overflowed it — pools now size from the scatter.
+- **NEXT: THE SCORE** (Tirtha, 2026-08-09: "music has been absent… we need
+  thinking on that front") — exploration pass + listening bench (score.html):
+  CC-sourced beds vs generative WebAudio layers, adaptive by game state
+  (nav / gauntlet / lock / outcome), Sound-Law-compliant. Then slag skeet
+  and the remaining toys.

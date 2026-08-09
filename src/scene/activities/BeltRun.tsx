@@ -33,7 +33,7 @@ import { FONT_BOLD } from '../boards/font'
  * giant. Every meter per second after the line is stolen from the planets.
  */
 
-const SYSTEM = new Vector3(10500, 300, -10500) // the Track system core
+const SYSTEM = new Vector3(11200, -1300, -11200) // the Track system core (lifted 2026-08-09)
 const APERTURE = 95
 const PAR = 90
 const PANEL_RANGE = 1300 // idle panel + START marker wake-up distance

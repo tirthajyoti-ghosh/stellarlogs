@@ -18,7 +18,7 @@ export const GUNNERY_POI = {
  */
 export const TRACK_POI = {
   /** The STAGING mouth of the launch corridor — arrive here, then burn */
-  position: [6100, 300, -11400] as [number, number, number],
+  position: [6800, -1300, -12100] as [number, number, number],
   standoff: 420,
 }
 

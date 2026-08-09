@@ -46,6 +46,9 @@ export interface SystemConfig {
   position: [number, number, number]
   overview: string
   planets: PlanetConfig[]
+  /** UNSURVEYED: mass and light only — no boards, no jobs. The Deep's
+   *  doorstep, pre-positioned (docs/the-neighborhood.md §3). */
+  inert?: boolean
 }
 
 /**
@@ -89,14 +92,16 @@ interface SystemPlacement {
  * ≥3.8k between neighbors — breathing room between the ports, activities in
  * the seams. Projects still burns dead ahead of spawn; warp for the hops.
  */
+/** THE NEIGHBORHOOD LIFT (2026-08-09, starmap.html verdict): same
+ *  neighbors, real depth — the tabletop plane is dead. Travel scale held. */
 const PLACEMENTS: SystemPlacement[] = [
-  { content: PROJECTS, position: [0, 0, -4200], seedBase: 1 },
-  { content: WORK, position: [-5200, 430, -3900], seedBase: 11 },
-  { content: BLOG, position: [7000, -360, -2600], seedBase: 21 },
-  { content: RECOMMENDATIONS, position: [-9100, 290, -450], seedBase: 31 },
-  { content: READING, position: [8100, 720, 4200], seedBase: 41 },
-  { content: SHOWS, position: [4350, -720, 6400], seedBase: 51 },
-  { content: TRAVEL, position: [-6400, -500, 5500], seedBase: 61 },
+  { content: PROJECTS, position: [0, 900, -4200], seedBase: 1 },
+  { content: WORK, position: [-5600, 2400, -4100], seedBase: 11 },
+  { content: BLOG, position: [7400, -1900, -2800], seedBase: 21 },
+  { content: RECOMMENDATIONS, position: [-9600, -1600, -700], seedBase: 31 },
+  { content: READING, position: [8400, 2800, 4600], seedBase: 41 },
+  { content: SHOWS, position: [4400, -2600, 6800], seedBase: 51 },
+  { content: TRAVEL, position: [-6800, 1700, 6100], seedBase: 61 },
 ]
 
 function buildSystem({ content, position, seedBase }: SystemPlacement): SystemConfig {
@@ -154,7 +159,7 @@ const TRACK_SYSTEM: SystemConfig = {
   name: 'The Track',
   starColor: '#ff6a50',
   starRadius: 120,
-  position: [10500, 300, -10500],
+  position: [11200, -1300, -11200],
   overview: "The Drift Racing Club's slingshot venue — an outer system flown drive-dark.",
   planets: [
     {
@@ -235,4 +240,77 @@ const TRACK_SYSTEM: SystemConfig = {
   ],
 }
 
-export const ALL_SYSTEMS: SystemConfig[] = [...PLACEMENTS.map(buildSystem), TRACK_SYSTEM]
+/**
+ * THE INERT STARS — five minor systems between and off-plane: mass and
+ * light where the map was empty. Labeled UNSURVEYED in the HUD: the word
+ * is the Deep's doorstep, planted early. No boards, no jobs.
+ */
+const inertPlanet = (name: string, seed: number): PlanetConfig => ({
+  type: 'barren',
+  radius: 19,
+  orbitRadius: 520,
+  orbitSpeed: keplerSpeed(520),
+  phase: seed * 2.3,
+  seed,
+  inclination: 0.06,
+  item: { title: name },
+  noBoards: true,
+})
+const INERT_SYSTEMS: SystemConfig[] = [
+  {
+    id: 'khione',
+    name: 'Khione',
+    starColor: '#cfe3ff',
+    starRadius: 70,
+    position: [2600, 3400, 1400],
+    overview: 'A white dwarf logged and left. Unsurveyed.',
+    planets: [],
+    inert: true,
+  },
+  {
+    id: 'salt',
+    name: 'Salt',
+    starColor: '#ff8a66',
+    starRadius: 90,
+    position: [-2200, 2600, -9800],
+    overview: 'A red dwarf north of the lanes. Unsurveyed.',
+    planets: [],
+    inert: true,
+  },
+  {
+    id: 'ember',
+    name: 'Ember',
+    starColor: '#ff7a52',
+    starRadius: 95,
+    position: [9200, 1900, -6800],
+    overview: 'A red dwarf with one cold stone. Unsurveyed.',
+    planets: [inertPlanet('Ember b', 71)],
+    inert: true,
+  },
+  {
+    id: 'harrow',
+    name: 'Harrow',
+    starColor: '#ffd9a0',
+    starRadius: 80,
+    position: [-11800, 1200, 3400],
+    overview: 'A dim pair past the western reach. Unsurveyed.',
+    planets: [inertPlanet('Harrow b', 81)],
+    inert: true,
+  },
+  {
+    id: 'vestige',
+    name: 'Vestige',
+    starColor: '#b0603a',
+    starRadius: 85,
+    position: [1300, -3200, 9000],
+    overview: 'A brown dwarf barely burning. Unsurveyed.',
+    planets: [],
+    inert: true,
+  },
+]
+
+export const ALL_SYSTEMS: SystemConfig[] = [
+  ...PLACEMENTS.map(buildSystem),
+  TRACK_SYSTEM,
+  ...INERT_SYSTEMS,
+]

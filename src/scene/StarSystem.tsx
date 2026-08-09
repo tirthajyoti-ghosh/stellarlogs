@@ -134,7 +134,7 @@ export function StarSystem({ config }: { config: SystemConfig }) {
 
   return (
     <group position={config.position}>
-      <Star color={config.starColor} radius={config.starRadius} seed={config.planets.length} />
+      <Star color={config.starColor} radius={config.starRadius} seed={config.planets.length} lit={!config.inert} />
       {config.planets.map((planet, i) => (
         <OrbitingPlanet
           key={i}

@@ -428,7 +428,16 @@ the way (Tirtha). Deep exploration passes continue between builds
    2026-08-09 (the-hunt.md pass 4 BUILT): real evidence assets, G/H keys,
    THE REVENANT, hunt focus, scope sphere read, Azure Dragon chase,
    fast-finite torpedoes, pursuit assist v2. Awaiting Tirtha's live ride.
-3. Debris storm + slag skeet + density/toys pass
+3. Debris storm + slag skeet + density/toys pass — IN PROGRESS 2026-08-09
+   (docs/the-neighborhood.md): sleeping spread SHIPPED, starmap lift +
+   five UNSURVEYED inert stars SHIPPED; next slag skeet → Drift toys →
+   bell → debris storm.
+3.2. **THE SCORE — music** (Tirtha 2026-08-09: "music has been absent…
+   the Expanse is really good because of the music"). Exploration pass +
+   score.html listening bench: CC beds vs generative WebAudio, adaptive
+   layers by game state, ducks under combat, Sound-Law-compliant. The
+   cantina jukebox rides this: CC Belter tracks, credit in the NOW
+   PLAYING toast.
 3.5. **MOBILE — the bridge flies landscape** (Tirtha, 2026-08-08 phone
    read: runs smooth, portrait buttons make no sense). Portrait touch →
    "THIS BRIDGE FLIES LANDSCAPE" interstitial; tap = fullscreen +

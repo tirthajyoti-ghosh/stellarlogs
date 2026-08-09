@@ -43,7 +43,7 @@ export const hudLabels: HudLabel[] = [
     position: new Vector3(...s.position),
     yOffset: s.starRadius * 2.2,
     el: null,
-    detail: `${s.planets.length} PLANETS`,
+    detail: s.inert ? 'UNSURVEYED' : `${s.planets.length} PLANETS`,
   })),
   {
     id: 'station',
@@ -90,3 +90,7 @@ export const hudReadouts = {
   warpPhaseEl: null as HTMLElement | null,
   currentSystemName: 'DEEP SPACE',
 }
+
+// probe-only introspection
+import { PROBES } from '../config/probes'
+if (PROBES) (window as unknown as Record<string, unknown>).__hudLabels = hudLabels

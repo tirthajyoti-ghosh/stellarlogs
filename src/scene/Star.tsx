@@ -29,10 +29,14 @@ interface StarProps {
   color: string
   radius: number
   seed?: number
+  /** Inert stars glow but do not LIGHT: every star light is an infinite-
+   *  range entry in every standard material's fragment loop, and the
+   *  UNSURVEYED five would pay real frame time to illuminate nothing. */
+  lit?: boolean
 }
 
 /** Animated star: fbm surface (HDR for bloom), corona shell, halo sprite, light. */
-export function Star({ color, radius, seed = 1 }: StarProps) {
+export function Star({ color, radius, seed = 1, lit = true }: StarProps) {
   const surfaceMaterial = useMemo(
     () =>
       new ShaderMaterial({
@@ -87,8 +91,8 @@ export function Star({ color, radius, seed = 1 }: StarProps) {
         <sphereGeometry args={[radius * 1.35, 48, 48]} />
       </mesh>
       <sprite material={spriteMaterial} scale={[radius * 7, radius * 7, 1]} />
-      {/* One light per star — with 7 systems, light count matters */}
-      <pointLight color="#fff0dd" intensity={6.5} distance={0} decay={0.35} />
+      {/* One light per star — light count matters, so inert stars skip it */}
+      {lit && <pointLight color="#fff0dd" intensity={6.5} distance={0} decay={0.35} />}
     </group>
   )
 }

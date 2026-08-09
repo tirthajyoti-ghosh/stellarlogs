@@ -252,9 +252,12 @@ export function SleepingSpread() {
 
   return (
     <group>
+      {/* pool sized from the scatter itself — a hardcoded 16 overflowed
+          the moment the inert stars joined ALL_SYSTEMS (17 sleepers) and
+          the driver complained once per frame */}
       <instancedMesh
         ref={meshRef}
-        args={[body.geometry, body.material, 16]}
+        args={[body.geometry, body.material, sleepers.length]}
         frustumCulled={false}
       />
       <mesh ref={plumeRef} visible={false} frustumCulled={false}>
