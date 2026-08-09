@@ -84,6 +84,16 @@ live values into frames the world already owns.
   truth at new seats, hunt/board regression, console clean. One catch fixed
   pre-ship: the sleeper pool was hardcoded at 16 and the five new systems'
   sleepers overflowed it — pools now size from the scatter.
+- **2026-08-09 · SLAG SKEET shipped** — the toy layer's test case: a
+  smelter mass driver west of the range lobs still-cooling slag (rock
+  variant + ember-glow material) across the line; your PDCs eat what you
+  fly well for. Auto-starts on entry, yields to any real job, never harms
+  the hull, coil-flash tell instead of banners, STREAK/BEST/HITS on the
+  panel and a painted BEST STREAK tote on the rig (localStorage). The
+  range-degraded gun solution IS the difficulty dial: distance makes the
+  clays safe, closing makes them killable — parked play measured 4 hits
+  in 40 s with streak resets; flying beats it. New POI label: SLAG SKEET
+  · "the range's off-duty game".
 - **NEXT: THE SCORE** (Tirtha, 2026-08-09: "music has been absent… we need
   thinking on that front") — exploration pass + listening bench (score.html):
   CC-sourced beds vs generative WebAudio layers, adaptive by game state
