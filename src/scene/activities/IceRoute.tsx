@@ -237,9 +237,9 @@ const TRAIL_SHELVE_SECONDS = 12
 /** what each kind of evidence says when you reach it (plain language, and
  *  every clue names the direction story — the marker does the pointing) */
 const CLUE_SAY = [
-  'VENTED CARGO — SHE DUMPED MASS FOR A HARD BURN. THE SPILL POINTS HER LINE.',
-  'SCORCHED DUST — HER EXHAUST COOKED THIS CLOUD ON THE WAY THROUGH.',
-  'RELAY BUOY — TIGHTBEAM FRAGMENT: "…RUNNING DARK TILL THE POINT…"',
+  'VENTED CARGO — THE SPILL POINTS HER LINE',
+  'SCORCHED DUST — SHE BURNED THROUGH HOT',
+  'PICKET BUOY — HER TIGHTBEAM CROSSED HERE',
 ]
 
 /** The dice for identity-bearing rolls (case numbers, temperament, trail

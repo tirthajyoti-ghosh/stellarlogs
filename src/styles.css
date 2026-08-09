@@ -711,6 +711,9 @@ body[data-hit='1'] .hud-activity {
   letter-spacing: 0.42em;
   padding: 7px 42px 7px calc(42px + 0.42em); /* optically recenter tracked text */
   white-space: nowrap;
+  /* long lines shrink to fit before they may ever leave the screen */
+  max-width: 96vw;
+  overflow: hidden;
   color: var(--hud-bright);
   background: linear-gradient(90deg, transparent, rgba(8, 12, 20, 0.6) 18%, rgba(8, 12, 20, 0.6) 82%, transparent);
   opacity: 0;
