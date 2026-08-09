@@ -64,3 +64,31 @@ laws say it shouldn't. Torpedoes remain the enemy's voice.
    the tower lobbing its own practice buoys for the PDCs — optional
    beside it).
 4. THE DEBRIS STORM as the two-weapon finale.
+
+## BUILT (2026-08-09, same day)
+
+- **Audio v2 first**: the bench's toy sounds (rejected: "spanking someone")
+  replaced in both the bench and the game engine — charge is a deep
+  capacitor swell (sine undertone + bandpassed brown noise, never a
+  whine), fire is a THOOM (brown-noise pressure wave lowpassed at 210 +
+  sub drop 74→23 Hz + two close rail tones beating as they cool), vent is
+  a falling sigh.
+- **The weapon**: systems/railgun.ts (the law) + scene/Railgun.tsx (the
+  body). HOLD T charges 1.5 s, release at full fires, early release
+  vents, full charge self-vents after 2.5 s into a partial cycle; 7 s
+  cooldown. The slug is a hitscan line (no ballistics — his call: "it's
+  space, it's a single line"); recoil is a real 26 u/s shove through
+  shipRig.pendingImpulse (measured 0→22 on the harness). Aiming is the
+  ship's own movement, nothing tuned (his law).
+- **Adjudication is registry-only**: slugs hit ONLY registered rail
+  targets (plates today, storm boulders next) — combat balance is
+  structurally out of reach.
+- **IMPOUND RULES wired**: the hunt safes the spine (IceRoute sets the
+  flag through every hunt phase); pressing T while safed answers once —
+  "IMPOUND RULES — SPINE SAFED" (harness-verified).
+- **THE LONG SHOT live**: the proving line 3.4k south of the range —
+  militia sign, four condemned hull plates at 800/1600/2800/4200 with
+  their ranges painted on, drift-leashed, 12 s respawn; CRACKED / BEST
+  RANGE (localStorage) / STANDING panel; touch gets a hold-to-charge
+  SPINE button at the line. HUD: a conic charge ring around the reticle
+  (amber charging, teal RELEASE, grey cycling).

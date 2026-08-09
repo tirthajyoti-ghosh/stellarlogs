@@ -366,6 +366,127 @@ export function triggerFanfare(): void {
   sparkle.stop(t + 1.2)
 }
 
+/**
+ * THE SPINE. A railgun is not a gun going off — it is a building's worth
+ * of current released at once. Charge: a deep capacitor swell, felt more
+ * than heard. Fire: sub-drop + brown-noise pressure wave + the rails
+ * singing as they cool. No slap, no toy whine (the bench's first sounds
+ * were rejected in one listen: "like spanking someone" — Tirtha).
+ */
+let spineCharge: { osc: OscillatorNode; oscGain: GainNode; noise: AudioBufferSourceNode; bp: BiquadFilterNode; nGain: GainNode } | null = null
+
+export function railChargeStart(): void {
+  if (!engine || spineCharge) return
+  const { ctx, master } = engine
+  const osc = ctx.createOscillator()
+  osc.type = 'sine'
+  osc.frequency.value = 42
+  const oscGain = ctx.createGain()
+  oscGain.gain.value = 0.0001
+  osc.connect(oscGain).connect(master)
+  osc.start()
+  const noise = ctx.createBufferSource()
+  noise.buffer = makeBrownNoise(ctx)
+  noise.loop = true
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = 110
+  bp.Q.value = 2.2
+  const nGain = ctx.createGain()
+  nGain.gain.value = 0.0001
+  noise.connect(bp).connect(nGain).connect(master)
+  noise.start()
+  spineCharge = { osc, oscGain, noise, bp, nGain }
+}
+
+/** k 0..1 charge fraction; the swell rises WITHOUT ever becoming a whine */
+export function railChargeUpdate(k: number): void {
+  if (!spineCharge || !engine) return
+  const t = engine.ctx.currentTime
+  spineCharge.osc.frequency.setTargetAtTime(42 + k * 38, t, 0.05)
+  spineCharge.oscGain.gain.setTargetAtTime(0.02 + k * 0.1, t, 0.08)
+  spineCharge.bp.frequency.setTargetAtTime(110 + k * 240, t, 0.08)
+  spineCharge.nGain.gain.setTargetAtTime(0.015 + k * 0.05, t, 0.08)
+}
+
+export function railChargeStop(): void {
+  if (!spineCharge || !engine) return
+  const t = engine.ctx.currentTime
+  spineCharge.oscGain.gain.setTargetAtTime(0.0001, t, 0.05)
+  spineCharge.nGain.gain.setTargetAtTime(0.0001, t, 0.05)
+  spineCharge.osc.stop(t + 0.4)
+  spineCharge.noise.stop(t + 0.4)
+  spineCharge = null
+}
+
+/** the capacitors dump to heat instead of the rails: a falling sigh */
+export function triggerRailVent(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  const noise = ctx.createBufferSource()
+  noise.buffer = makeBrownNoise(ctx)
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(900, t)
+  lp.frequency.exponentialRampToValueAtTime(120, t + 0.7)
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0.14, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.75)
+  noise.connect(lp).connect(g).connect(master)
+  noise.start(t)
+  noise.stop(t + 0.8)
+}
+
+export function triggerRailFire(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+
+  // the pressure wave: brown noise, deep-passed, real attack not a slap
+  const body = ctx.createBufferSource()
+  body.buffer = makeBrownNoise(ctx)
+  const blp = ctx.createBiquadFilter()
+  blp.type = 'lowpass'
+  blp.frequency.value = 210
+  const bg = ctx.createGain()
+  bg.gain.setValueAtTime(0.0001, t)
+  bg.gain.exponentialRampToValueAtTime(0.85, t + 0.012)
+  bg.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+  body.connect(blp).connect(bg).connect(master)
+  body.start(t)
+  body.stop(t + 0.75)
+
+  // the sub drop: the room-shaking part
+  const sub = ctx.createOscillator()
+  sub.type = 'sine'
+  sub.frequency.setValueAtTime(74, t)
+  sub.frequency.exponentialRampToValueAtTime(23, t + 0.5)
+  const sg = ctx.createGain()
+  sg.gain.setValueAtTime(0.6, t)
+  sg.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+  sub.connect(sg).connect(master)
+  sub.start(t)
+  sub.stop(t + 0.65)
+
+  // the rails singing as they cool: two close tones beating, long tail
+  for (const [freq, gain] of [
+    [164, 0.05],
+    [168.5, 0.04],
+  ] as const) {
+    const ring = ctx.createOscillator()
+    ring.type = 'triangle'
+    ring.frequency.value = freq
+    const rg = ctx.createGain()
+    rg.gain.setValueAtTime(0.0001, t)
+    rg.gain.exponentialRampToValueAtTime(gain, t + 0.06)
+    rg.gain.exponentialRampToValueAtTime(0.001, t + 1.6)
+    ring.connect(rg).connect(master)
+    ring.start(t + 0.03)
+    ring.stop(t + 1.7)
+  }
+}
+
 export function isMuted(): boolean {
   return muted
 }

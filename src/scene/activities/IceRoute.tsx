@@ -41,6 +41,7 @@ import {
 } from '../../systems/torpedoBrain'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { pursuit } from '../../physics/pursuit'
+import { railgun } from '../../systems/railgun'
 import { useRockVariants } from '../Asteroids'
 import { DRIFT_POI, WRECK_POI, GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
@@ -1114,6 +1115,7 @@ export function IceRoute() {
       activityState.hostile = null
       activityState.hostileLock = 0
       pursuit.target = null
+      railgun.safed = false
       for (const torp of torpedoes) if (torp.target === -1) torp.alive = false
       if (result !== 'caught') raiderLabel.current?.()
       if (result !== 'caught') {
@@ -1622,6 +1624,7 @@ export function IceRoute() {
     }
 
     // ---------- THE HUNT ----------
+    if (s.job === 'hunt') railgun.safed = true
     if (s.job === 'hunt' && s.huntPhase === 'trail') {
       // the detective act: fly the mark, read what she left, follow her line
       const mark = trailHops[s.trailIdx]
@@ -1775,6 +1778,7 @@ export function IceRoute() {
       }
       // live refs for the scope + the pursuit assist (chase only: the
       // computer offers the hold exactly while there is a chase to hold)
+      railgun.safed = true // impound rules: hulls and stories arrive intact
       activityState.hostile = raiderPos
       activityState.hostileVel.x = huntVel.x
       activityState.hostileVel.y = huntVel.y
@@ -1784,6 +1788,7 @@ export function IceRoute() {
       activityState.hostile = null
       activityState.hostileLock = 0
       pursuit.target = null
+      railgun.safed = false
     }
 
     // ---------- torpedoes ----------

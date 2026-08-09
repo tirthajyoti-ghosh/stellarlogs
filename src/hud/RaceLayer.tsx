@@ -36,6 +36,8 @@ export function RaceLayer() {
           captureEls.root = el
         }}
       />
+      {/* THE SPINE's charge ring — driven by scene/Railgun.tsx */}
+      <div id="hud-spine" className="hud-spine" style={{ opacity: 0 }} aria-hidden />
     </>
   )
 }

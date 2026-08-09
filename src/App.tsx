@@ -9,6 +9,8 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
 import { SleepingSpread } from './scene/SleepingSpread'
+import { Railgun } from './scene/Railgun'
+import { LongShot } from './scene/activities/LongShot'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -157,8 +159,10 @@ export default function App() {
         <ContactStation />
         <Asteroids />
         <SleepingSpread />
+        <Railgun />
         <Suspense fallback={null}>
           <GunneryRange />
+          <LongShot />
           <IceRoute />
           <BeltRun />
           <Wreck />

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
 import { requestFlip } from '../physics/flip'
 import { activityState } from '../state/activityState'
+import { railTriggerDown, railTriggerUp } from '../systems/railgun'
 import { IS_TOUCH } from '../config/quality'
 
 const STICK_RADIUS = 56
@@ -18,12 +19,14 @@ export function TouchControls() {
   const [canRestart, setCanRestart] = useState(false)
   const [hasOffer, setHasOffer] = useState(false)
   const [hasHunt, setHasHunt] = useState(false)
+  const [atLine, setAtLine] = useState(false)
   useEffect(() => {
     if (!IS_TOUCH) return
     const id = setInterval(() => {
       setCanRestart(activityState.canRestart)
       setHasOffer(activityState.offer !== '')
       setHasHunt(activityState.offerHunt !== '')
+      setAtLine(activityState.owner === 'longshot')
     }, 300)
     return () => clearInterval(id)
   }, [])
@@ -136,6 +139,16 @@ export function TouchControls() {
             }}
           >
             MANHUNT
+          </button>
+        )}
+        {atLine && (
+          <button
+            className="hud-touch-btn hud-touch-fire"
+            onPointerDown={() => railTriggerDown()}
+            onPointerUp={() => railTriggerUp()}
+            onPointerLeave={() => railTriggerUp()}
+          >
+            SPINE
           </button>
         )}
         <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>
