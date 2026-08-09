@@ -831,7 +831,10 @@ body[data-hit='1'] .hud-activity {
 .hud-coach {
   position: fixed;
   left: 50%;
-  top: 84%;
+  /* anchored ABOVE the drive console (bottom 14px + ~150px box + air):
+     a fixed offset clears it on every window height — the 84% anchor
+     collided with the console's top edge once the console returned */
+  bottom: 190px;
   transform: translateX(-50%);
   max-width: 70vw;
   text-align: center;
