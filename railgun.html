@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE SPINE — railgun feel bench</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #020610; color: #9fb2c8; overflow: hidden;
+         font-family: "Space Mono", ui-monospace, Menlo, monospace; }
+  canvas { display: block; }
+  .hud { position: fixed; pointer-events: none; letter-spacing: 0.14em; }
+  .title { top: 16px; left: 20px; }
+  .title h1 { font-size: 13px; letter-spacing: 0.3em; color: #6fd3e8; }
+  .title p { margin-top: 6px; font-size: 10.5px; line-height: 1.6; color: #6f8296; max-width: 560px; }
+  .keys { bottom: 16px; left: 20px; font-size: 10px; line-height: 1.8; color: #6f8296; }
+  .keys b { color: #cfe0ee; font-weight: 400; }
+  .state { top: 16px; right: 20px; text-align: right; font-size: 11px; line-height: 1.9; }
+  .state b { color: #ffc06e; font-weight: 400; }
+  #gunState { font-size: 12px; }
+  #gunState.charge { color: #ffb454; }
+  #gunState.ready { color: #57e6c4; }
+  #gunState.cool { color: #8698ac; }
+  .reset { position: fixed; bottom: 16px; right: 20px; pointer-events: auto;
+           background: rgba(18,28,40,.9); color: #9fc4de; cursor: pointer;
+           border: 1px solid rgba(120,170,210,.28); border-radius: 3px;
+           padding: 8px 14px; font: inherit; font-size: 11px; letter-spacing: .14em; }
+  .reset:hover { border-color: rgba(120,200,240,.7); color: #dff0ff; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud title">
+  <h1>THE SPINE — RAILGUN FEEL BENCH</h1>
+  <p>The whole ship is the gun mount: steer the nose onto a plate,
+     HOLD fire to charge the capacitors, release at full charge to
+     shoot. Early release vents the charge. The kick is real — the RCS
+     catches you after. Far plates score more; the reticle is your only
+     sight.</p>
+</div>
+<div class="hud keys">
+  <b>A/D</b> yaw · <b>R/F</b> pitch — the game's real rates<br/>
+  <b>HOLD SPACE or MOUSE</b> charge · <b>RELEASE</b> fire<br/>
+  <b>ENTER</b> reset targets
+</div>
+<div class="hud state">
+  <div id="gunState" class="ready">SPINE READY</div>
+  <div>PLATES <b id="score">0</b> · SHOTS <b id="shots">0</b></div>
+  <div>BEST RANGE <b id="best">—</b></div>
+</div>
+<button class="reset" id="reset">RESET</button>
+<script>
+'use strict'
+const cv = document.getElementById('c')
+const ctx = cv.getContext('2d')
+let W, H, pxPerDeg
+function resize() {
+  W = cv.width = innerWidth * devicePixelRatio
+  H = cv.height = innerHeight * devicePixelRatio
+  cv.style.width = innerWidth + 'px'
+  cv.style.height = innerHeight + 'px'
+  pxPerDeg = H / 50
+}
+addEventListener('resize', resize); resize()
+
+const D2R = Math.PI / 180, R2D = 180 / Math.PI
+const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a }
+
+// the game's real steering
+const YAW = 1.7, PITCH = 1.15
+// the spine's proposed numbers — the bench exists to judge them
+const CHARGE_S = 1.5
+const HOLD_MAX_S = 2.5      // full charge holds this long, then vents
+const COOLDOWN_S = 7
+const RECOIL_KICK = 26      // m/s backward shove
+const SLUG_SPEED = 4200     // u/s — visible travel only at long range
+
+const keys = new Set()
+let nose = { az: 0, el: 0 }
+let gun = { phase: 'ready', t: 0 } // ready | charge | hold | cool
+let score = 0, shots = 0, bestRange = 0
+let recoilT = 99, kickVel = 0
+let slug = null // {az, el, dist, t, target}
+let impacts = [] // {az, el, t, hit}
+let plates = []
+let now = 0, last = performance.now()
+
+// ---- audio: the capacitor whine and the crack (feel needs ears) ----
+let AC = null, whineOsc = null, whineGain = null
+function audio() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)()
+  return AC
+}
+function whineStart() {
+  const ac = audio()
+  whineOsc = ac.createOscillator(); whineGain = ac.createGain()
+  whineOsc.type = 'sawtooth'
+  whineOsc.frequency.value = 80
+  whineGain.gain.value = 0.0001
+  whineOsc.connect(whineGain).connect(ac.destination)
+  whineOsc.start()
+}
+function whineUpdate(k) {
+  if (!whineOsc) return
+  whineOsc.frequency.value = 80 + k * 760
+  whineGain.gain.value = 0.004 + k * 0.05
+}
+function whineStop() {
+  if (!whineOsc) return
+  whineGain.gain.exponentialRampToValueAtTime(0.0001, audio().currentTime + 0.08)
+  whineOsc.stop(audio().currentTime + 0.1)
+  whineOsc = null
+}
+function crack() {
+  const ac = audio()
+  const dur = 0.18
+  const buf = ac.createBuffer(1, ac.sampleRate * dur, ac.sampleRate)
+  const d = buf.getChannelData(0)
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.2)
+  const src = ac.createBufferSource()
+  const g = ac.createGain(); g.gain.value = 0.5
+  const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 2400
+  src.buffer = buf
+  src.connect(f).connect(g).connect(ac.destination)
+  src.start()
+}
+function vent() {
+  const ac = audio()
+  const o = ac.createOscillator(); const g = ac.createGain()
+  o.type = 'triangle'; o.frequency.setValueAtTime(700, ac.currentTime)
+  o.frequency.exponentialRampToValueAtTime(90, ac.currentTime + 0.5)
+  g.gain.setValueAtTime(0.05, ac.currentTime)
+  g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.5)
+  o.connect(g).connect(ac.destination)
+  o.start(); o.stop(ac.currentTime + 0.55)
+}
+
+function spawnPlates() {
+  plates = []
+  const bands = [700, 1400, 2600, 4200]
+  for (let i = 0; i < 7; i++) {
+    const band = bands[i % bands.length]
+    plates.push({
+      az: (Math.random() * 2 - 1) * 0.9,
+      el: (Math.random() * 2 - 1) * 0.45,
+      dist: band * (0.9 + Math.random() * 0.25),
+      size: 26 + Math.random() * 16, // world units square
+      driftAz: (Math.random() - 0.5) * 0.004,
+      driftEl: (Math.random() - 0.5) * 0.002,
+      rot: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.3,
+      alive: true,
+    })
+  }
+}
+spawnPlates()
+
+function fire() {
+  gun.phase = 'cool'; gun.t = 0
+  shots++
+  crack()
+  // recoil: the whole hull takes the shove; the bench shows the lurch
+  recoilT = 0
+  kickVel = RECOIL_KICK
+  // hit test at fire instant: boresight vs each plate's angular disc
+  let hit = null
+  for (const p of plates) {
+    if (!p.alive) continue
+    const dAz = wrap(p.az - nose.az), dEl = p.el - nose.el
+    const sep = Math.hypot(dAz, dEl)
+    const angSize = Math.atan((p.size / 2) / p.dist)
+    if (sep < angSize && (!hit || p.dist < hit.dist)) hit = p
+  }
+  slug = { az: nose.az, el: nose.el, t: 0, dist: hit ? hit.dist : 5200, target: hit }
+}
+
+addEventListener('keydown', e => {
+  if (e.code === 'Enter') { spawnPlates(); score = 0; shots = 0 }
+  if ((e.code === 'Space') && !keys.has('Space')) chargeDown()
+  keys.add(e.code)
+  if (['Space','KeyA','KeyD','KeyR','KeyF'].includes(e.code)) e.preventDefault()
+})
+addEventListener('keyup', e => {
+  keys.delete(e.code)
+  if (e.code === 'Space') chargeUp()
+})
+addEventListener('pointerdown', e => { if (e.target.tagName !== 'BUTTON') chargeDown() })
+addEventListener('pointerup', e => { if (e.target.tagName !== 'BUTTON') chargeUp() })
+document.getElementById('reset').addEventListener('click', () => { spawnPlates(); score = 0; shots = 0 })
+
+function chargeDown() {
+  if (gun.phase !== 'ready') return
+  gun.phase = 'charge'; gun.t = 0
+  whineStart()
+}
+function chargeUp() {
+  if (gun.phase === 'charge') {
+    // early release: vent, no shot — the capacitor discipline
+    whineStop(); vent()
+    gun.phase = 'ready'; gun.t = 0
+  } else if (gun.phase === 'hold') {
+    whineStop()
+    fire()
+  }
+}
+
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000); last = ts; now += dt
+
+  nose.az += ((keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0)) * YAW * dt
+  nose.el += ((keys.has('KeyR') ? 1 : 0) - (keys.has('KeyF') ? 1 : 0)) * PITCH * dt
+  nose.el = Math.max(-1.2, Math.min(1.2, nose.el))
+
+  gun.t += dt
+  if (gun.phase === 'charge') {
+    whineUpdate(Math.min(1, gun.t / CHARGE_S))
+    if (gun.t >= CHARGE_S) { gun.phase = 'hold'; gun.t = 0 }
+  } else if (gun.phase === 'hold') {
+    whineUpdate(1)
+    if (gun.t >= HOLD_MAX_S) { whineStop(); vent(); gun.phase = 'cool'; gun.t = COOLDOWN_S - 1.5 }
+  } else if (gun.phase === 'cool' && gun.t >= COOLDOWN_S) {
+    gun.phase = 'ready'
+  }
+
+  recoilT += dt
+  kickVel = Math.max(0, kickVel - dt * 34) // RCS catches the shove
+
+  for (const p of plates) {
+    p.az += p.driftAz * dt
+    p.el += p.driftEl * dt
+    p.rot += p.spin * dt
+  }
+  if (slug) {
+    slug.t += dt
+    const flightT = slug.dist / SLUG_SPEED
+    if (slug.t >= flightT) {
+      if (slug.target && slug.target.alive) {
+        slug.target.alive = false
+        score++
+        if (slug.target.dist > bestRange) bestRange = Math.round(slug.target.dist)
+        impacts.push({ az: slug.target.az, el: slug.target.el, t: 0, hit: true })
+        if (plates.every(p => !p.alive)) setTimeout(spawnPlates, 1800)
+      } else {
+        impacts.push({ az: slug.az, el: slug.el, t: 0, hit: false })
+      }
+      slug = null
+    }
+  }
+  for (const im of impacts) im.t += dt
+  impacts = impacts.filter(im => im.t < 0.6)
+
+  draw()
+  hud()
+  requestAnimationFrame(frame)
+}
+
+function project(az, el) {
+  const dx = wrap(az - nose.az), dy = el - nose.el
+  // recoil lurch: the world momentarily swells as you're shoved back
+  const lurch = 1 + (recoilT < 0.3 ? (0.3 - recoilT) * 0.25 : 0)
+  return { x: W / 2 + dx * R2D * pxPerDeg * lurch, y: H / 2 - dy * R2D * pxPerDeg * lurch,
+           vis: Math.abs(dx) < 1.3 && Math.abs(dy) < 1.0 }
+}
+
+const stars = []
+for (let i = 0; i < 420; i++)
+  stars.push({ az: (Math.random() * 2 - 1) * Math.PI, el: (Math.random() * 2 - 1) * 1.2, m: 0.4 + Math.random() * 0.8 })
+
+function draw() {
+  ctx.fillStyle = '#020610'; ctx.fillRect(0, 0, W, H)
+  const u = devicePixelRatio
+  ctx.fillStyle = '#8fa8c0'
+  for (const s of stars) {
+    const p = project(s.az, s.el)
+    if (!p.vis) continue
+    ctx.globalAlpha = 0.25 * s.m
+    ctx.fillRect(p.x, p.y, s.m * u, s.m * u)
+  }
+  ctx.globalAlpha = 1
+
+  // plates: tumbling steel at range
+  for (const p of plates) {
+    if (!p.alive) continue
+    const f = project(p.az, p.el)
+    if (!f.vis) continue
+    const ang = Math.atan((p.size / 2) / p.dist)
+    const r = Math.max(3 * u, ang * R2D * pxPerDeg)
+    ctx.save()
+    ctx.translate(f.x, f.y)
+    ctx.rotate(p.rot)
+    const shade = 0.35 + 0.25 * Math.sin(p.rot)
+    ctx.fillStyle = `rgba(120,132,150,${shade})`
+    ctx.fillRect(-r, -r * 0.7, r * 2, r * 1.4)
+    ctx.strokeStyle = 'rgba(160,180,200,0.5)'
+    ctx.lineWidth = 1 * u
+    ctx.strokeRect(-r, -r * 0.7, r * 2, r * 1.4)
+    ctx.restore()
+    // range tag under far (small) plates
+    ctx.font = `${8.5 * u}px "Space Mono", monospace`
+    ctx.fillStyle = 'rgba(140,170,200,0.55)'
+    ctx.textAlign = 'center'
+    ctx.fillText(`${Math.round(p.dist)}`, f.x, f.y + r + 11 * u)
+  }
+
+  // the slug: one blinding line down the boresight
+  if (slug && slug.t < 0.14) {
+    const f = project(slug.az, slug.el)
+    const g = ctx.createLinearGradient(W / 2, H / 2, f.x, f.y)
+    g.addColorStop(0, 'rgba(220,240,255,0.95)')
+    g.addColorStop(1, 'rgba(120,200,255,0.1)')
+    ctx.strokeStyle = g
+    ctx.lineWidth = 2.6 * u
+    ctx.beginPath(); ctx.moveTo(W / 2, H / 2 + 8 * u); ctx.lineTo(f.x, f.y); ctx.stroke()
+  }
+  // impacts
+  for (const im of impacts) {
+    const f = project(im.az, im.el)
+    const k = 1 - im.t / 0.6
+    ctx.globalAlpha = k
+    ctx.fillStyle = im.hit ? 'rgba(255,190,110,0.9)' : 'rgba(140,170,200,0.5)'
+    ctx.beginPath(); ctx.arc(f.x, f.y, (im.hit ? 14 : 5) * u * (1.6 - k * 0.6), 0, 7); ctx.fill()
+    ctx.globalAlpha = 1
+  }
+
+  // reticle + charge ring
+  const cx = W / 2, cy = H / 2
+  ctx.strokeStyle = 'rgba(160,200,230,.85)'
+  ctx.lineWidth = 1.4 * u
+  ctx.beginPath()
+  ctx.moveTo(cx - 16 * u, cy); ctx.lineTo(cx - 5 * u, cy)
+  ctx.moveTo(cx + 5 * u, cy); ctx.lineTo(cx + 16 * u, cy)
+  ctx.moveTo(cx, cy - 16 * u); ctx.lineTo(cx, cy - 5 * u)
+  ctx.moveTo(cx, cy + 5 * u); ctx.lineTo(cx, cy + 16 * u)
+  ctx.stroke()
+  if (gun.phase === 'charge' || gun.phase === 'hold') {
+    const k = gun.phase === 'hold' ? 1 : Math.min(1, gun.t / CHARGE_S)
+    ctx.strokeStyle = gun.phase === 'hold' ? '#57e6c4' : '#ffb454'
+    ctx.lineWidth = 2.4 * u
+    ctx.beginPath()
+    ctx.arc(cx, cy, 26 * u, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2)
+    ctx.stroke()
+    if (gun.phase === 'hold') {
+      // the vent clock: full charge doesn't keep forever
+      const v = 1 - gun.t / HOLD_MAX_S
+      ctx.strokeStyle = 'rgba(255,90,64,0.8)'
+      ctx.lineWidth = 1.4 * u
+      ctx.beginPath()
+      ctx.arc(cx, cy, 31 * u, -Math.PI / 2, -Math.PI / 2 + v * Math.PI * 2)
+      ctx.stroke()
+    }
+  } else if (gun.phase === 'cool') {
+    const k = Math.min(1, gun.t / COOLDOWN_S)
+    ctx.strokeStyle = 'rgba(134,152,172,0.6)'
+    ctx.lineWidth = 1.6 * u
+    ctx.beginPath()
+    ctx.arc(cx, cy, 26 * u, -Math.PI / 2, -Math.PI / 2 + k * Math.PI * 2)
+    ctx.stroke()
+  }
+}
+
+function hud() {
+  const el = document.getElementById('gunState')
+  if (gun.phase === 'ready') { el.textContent = 'SPINE READY'; el.className = 'ready' }
+  else if (gun.phase === 'charge') { el.textContent = `CHARGING ${Math.min(100, Math.round(gun.t / CHARGE_S * 100))}%`; el.className = 'charge' }
+  else if (gun.phase === 'hold') { el.textContent = 'CHARGED — RELEASE TO FIRE'; el.className = 'ready' }
+  else { el.textContent = `CYCLING ${Math.max(0, (COOLDOWN_S - gun.t)).toFixed(1)}S`; el.className = 'cool' }
+  document.getElementById('score').textContent = String(score)
+  document.getElementById('shots').textContent = String(shots)
+  document.getElementById('best').textContent = bestRange > 0 ? `${bestRange}` : '—'
+}
+
+requestAnimationFrame(frame)
+</script>
+</body>
+</html>
