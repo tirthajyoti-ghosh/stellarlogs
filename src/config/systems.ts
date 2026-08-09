@@ -95,13 +95,13 @@ interface SystemPlacement {
 /** THE NEIGHBORHOOD LIFT (2026-08-09, starmap.html verdict): same
  *  neighbors, real depth — the tabletop plane is dead. Travel scale held. */
 const PLACEMENTS: SystemPlacement[] = [
-  { content: PROJECTS, position: [0, 900, -4200], seedBase: 1 },
-  { content: WORK, position: [-5600, 2400, -4100], seedBase: 11 },
-  { content: BLOG, position: [7400, -1900, -2800], seedBase: 21 },
-  { content: RECOMMENDATIONS, position: [-9600, -1600, -700], seedBase: 31 },
-  { content: READING, position: [8400, 2800, 4600], seedBase: 41 },
-  { content: SHOWS, position: [4400, -2600, 6800], seedBase: 51 },
-  { content: TRAVEL, position: [-6800, 1700, 6100], seedBase: 61 },
+  { content: PROJECTS, position: [0, 810, -3800], seedBase: 1 },
+  { content: WORK, position: [-5050, 2150, -3700], seedBase: 11 },
+  { content: BLOG, position: [6650, -1700, -2500], seedBase: 21 },
+  { content: RECOMMENDATIONS, position: [-8650, -1450, -650], seedBase: 31 },
+  { content: READING, position: [7550, 2500, 4150], seedBase: 41 },
+  { content: SHOWS, position: [3950, -2350, 6100], seedBase: 51 },
+  { content: TRAVEL, position: [-6100, 1550, 5500], seedBase: 61 },
 ]
 
 function buildSystem({ content, position, seedBase }: SystemPlacement): SystemConfig {
@@ -159,7 +159,7 @@ const TRACK_SYSTEM: SystemConfig = {
   name: 'The Track',
   starColor: '#ff6a50',
   starRadius: 120,
-  position: [11200, -1300, -11200],
+  position: [10100, -1170, -10100],
   overview: "The Drift Racing Club's slingshot venue — an outer system flown drive-dark.",
   planets: [
     {
@@ -262,7 +262,7 @@ const INERT_SYSTEMS: SystemConfig[] = [
     name: 'Khione',
     starColor: '#cfe3ff',
     starRadius: 70,
-    position: [2600, 3400, 1400],
+    position: [3650, 4750, 1950],
     overview: 'A white dwarf logged and left. Unsurveyed.',
     planets: [],
     inert: true,
@@ -272,7 +272,7 @@ const INERT_SYSTEMS: SystemConfig[] = [
     name: 'Salt',
     starColor: '#ff8a66',
     starRadius: 90,
-    position: [-2200, 2600, -9800],
+    position: [-3100, 3650, -13700],
     overview: 'A red dwarf north of the lanes. Unsurveyed.',
     planets: [],
     inert: true,
@@ -282,7 +282,7 @@ const INERT_SYSTEMS: SystemConfig[] = [
     name: 'Ember',
     starColor: '#ff7a52',
     starRadius: 95,
-    position: [9200, 1900, -6800],
+    position: [12900, 2650, -9500],
     overview: 'A red dwarf with one cold stone. Unsurveyed.',
     planets: [inertPlanet('Ember b', 71)],
     inert: true,
@@ -292,7 +292,7 @@ const INERT_SYSTEMS: SystemConfig[] = [
     name: 'Harrow',
     starColor: '#ffd9a0',
     starRadius: 80,
-    position: [-11800, 1200, 3400],
+    position: [-16500, 1700, 4750],
     overview: 'A dim pair past the western reach. Unsurveyed.',
     planets: [inertPlanet('Harrow b', 81)],
     inert: true,
@@ -302,7 +302,7 @@ const INERT_SYSTEMS: SystemConfig[] = [
     name: 'Vestige',
     starColor: '#b0603a',
     starRadius: 85,
-    position: [1300, -3200, 9000],
+    position: [1800, -4500, 12600],
     overview: 'A brown dwarf barely burning. Unsurveyed.',
     planets: [],
     inert: true,

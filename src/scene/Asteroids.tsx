@@ -151,9 +151,9 @@ function Belts() {
   return (
     <>
       {/* Projects system outer belt */}
-      <Belt position={[0, 0, -4200]} radius={1800} width={300} thickness={110} seed={3} />
+      <Belt position={[0, 810, -3800]} radius={1800} width={300} thickness={110} seed={3} />
       {/* Work system outer belt */}
-      <Belt position={[-5200, 430, -3900]} radius={1750} width={280} thickness={100} seed={7} />
+      <Belt position={[-5050, 2150, -3700]} radius={1750} width={280} thickness={100} seed={7} />
       {/* Drifting rocks around the defense-drill site */}
       <Belt position={[-3400, -100, 200]} radius={550} width={450} thickness={240} seed={11} />
     </>
