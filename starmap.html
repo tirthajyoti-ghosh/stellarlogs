@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>STARMAP — the neighborhood lift</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #020610; color: #9fb2c8; overflow: hidden;
+         font-family: "Space Mono", ui-monospace, Menlo, monospace; }
+  canvas { display: block; cursor: grab; }
+  canvas:active { cursor: grabbing; }
+  .hud { position: fixed; pointer-events: none; letter-spacing: 0.14em; }
+  .title { top: 16px; left: 20px; }
+  .title h1 { font-size: 13px; letter-spacing: 0.3em; color: #6fd3e8; }
+  .title p { margin-top: 6px; font-size: 10.5px; line-height: 1.6; color: #6f8296; max-width: 560px; }
+  .bar { position: fixed; bottom: 0; left: 0; right: 0; padding: 16px 20px 20px;
+         display: flex; gap: 10px; justify-content: center;
+         background: linear-gradient(transparent, rgba(3,7,14,.92) 42%); }
+  button { background: rgba(18,28,40,.9); color: #9fc4de; cursor: pointer;
+           border: 1px solid rgba(120,170,210,.28); border-radius: 3px;
+           padding: 9px 14px; font: inherit; font-size: 11px; letter-spacing: .14em; }
+  button:hover { border-color: rgba(120,200,240,.7); color: #dff0ff; }
+  button.on { background: rgba(40,78,104,.95); color: #fff; border-color: #6fd3e8; }
+  .legend { top: 16px; right: 20px; text-align: right; font-size: 10.5px; line-height: 1.8; color: #8fb8d8; }
+  .legend b { color: #ffc06e; font-weight: 400; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud title">
+  <h1>STARMAP — THE NEIGHBORHOOD LIFT</h1>
+  <p>Drag to orbit · scroll to zoom. Stems drop to the old tabletop plane —
+     their length IS the lift. Dim stars are the five new INERT systems:
+     labeled UNSURVEYED in-game, they are the Deep's doorstep.</p>
+</div>
+<div class="hud legend">
+  <div><b>◉</b> content system (lifted &amp; spread)</div>
+  <div><b>·</b> inert star — UNSURVEYED</div>
+  <div><b>▣</b> the Drift / spawn (unmoved)</div>
+</div>
+<div class="bar">
+  <button id="bCur">CURRENT SKY<br/><small>the tabletop</small></button>
+  <button id="bNew" class="on">PROPOSED<br/><small>lift + inert stars</small></button>
+  <button id="bBoth">GHOST OVERLAY<br/><small>both at once</small></button>
+</div>
+<script>
+'use strict'
+const cv = document.getElementById('c')
+const ctx = cv.getContext('2d')
+let W, H
+function resize() {
+  W = cv.width = innerWidth * devicePixelRatio
+  H = cv.height = innerHeight * devicePixelRatio
+  cv.style.width = innerWidth + 'px'; cv.style.height = innerHeight + 'px'
+}
+addEventListener('resize', resize); resize()
+
+// ---- the current sky (from src/config/systems.ts) ----
+const CURRENT = [
+  { n: 'PROJECTS', c: '#ffd27a', p: [0, 0, -4200] },
+  { n: 'WORK', c: '#8fd0ff', p: [-5200, 430, -3900] },
+  { n: 'BLOG', c: '#ffc06e', p: [7000, -360, -2600] },
+  { n: 'RECOMMENDATIONS', c: '#c9a5ff', p: [-9100, 290, -450] },
+  { n: 'READING', c: '#9fe8c0', p: [8100, 720, 4200] },
+  { n: 'SHOWS', c: '#ff9fb8', p: [4350, -720, 6400] },
+  { n: 'TRAVEL', c: '#a5d8ff', p: [-6400, -500, 5500] },
+  { n: 'THE TRACK', c: '#ff6a50', p: [10500, 300, -10500] },
+]
+// ---- the proposal: same neighbors, real depth; travel scale held ----
+const PROPOSED = [
+  { n: 'PROJECTS', c: '#ffd27a', p: [0, 900, -4200] },
+  { n: 'WORK', c: '#8fd0ff', p: [-5600, 2400, -4100] },
+  { n: 'BLOG', c: '#ffc06e', p: [7400, -1900, -2800] },
+  { n: 'RECOMMENDATIONS', c: '#c9a5ff', p: [-9600, -1600, -700] },
+  { n: 'READING', c: '#9fe8c0', p: [8400, 2800, 4600] },
+  { n: 'SHOWS', c: '#ff9fb8', p: [4400, -2600, 6800] },
+  { n: 'TRAVEL', c: '#a5d8ff', p: [-6800, 1700, 6100] },
+  { n: 'THE TRACK', c: '#ff6a50', p: [11200, -1300, -11200] },
+]
+// ---- the five inert stars: between, off-plane, UNSURVEYED ----
+const INERT = [
+  { n: 'KHIONE', sub: 'white dwarf', c: '#cfe3ff', p: [2600, 3400, 1400] },
+  { n: 'SALT', sub: 'red dwarf', c: '#ff8a66', p: [-2200, 2600, -9800] },
+  { n: 'EMBER', sub: 'red dwarf', c: '#ff7a52', p: [9200, 1900, -6800] },
+  { n: 'HARROW', sub: 'dim binary', c: '#ffd9a0', p: [-11800, 1200, 3400] },
+  { n: 'VESTIGE', sub: 'brown dwarf', c: '#b0603a', p: [1300, -3200, 9000] },
+]
+const POIS = [
+  { n: 'THE DRIFT', p: [-1050, -30, -1650] },
+  { n: 'SPAWN', p: [0, 0, 0] },
+]
+
+let mode = 'new' // cur | new | both
+let yaw = 0.7, pitch = 0.35, dist = 26000, idle = true
+let dragging = false, lx = 0, ly = 0
+cv.addEventListener('pointerdown', e => { dragging = true; idle = false; lx = e.clientX; ly = e.clientY })
+addEventListener('pointermove', e => {
+  if (!dragging) return
+  yaw += (e.clientX - lx) * 0.005
+  pitch = Math.max(-1.4, Math.min(1.4, pitch + (e.clientY - ly) * 0.005))
+  lx = e.clientX; ly = e.clientY
+})
+addEventListener('pointerup', () => { dragging = false })
+addEventListener('wheel', e => { dist = Math.max(8000, Math.min(60000, dist + e.deltaY * 14)) }, { passive: true })
+
+function proj(p) {
+  const [x, y, z] = p
+  const cx = Math.cos(yaw), sx = Math.sin(yaw)
+  const cp = Math.cos(pitch), sp = Math.sin(pitch)
+  let px = x * cx - z * sx
+  let pz = x * sx + z * cx
+  let py = y * cp - pz * sp
+  pz = y * sp + pz * cp
+  const s = (H * 0.9) / (dist + pz + 30000)
+  return { x: W / 2 + px * s, y: H / 2 - py * s, s, behind: pz < -dist - 25000 }
+}
+
+function star(p, color, r, alpha, label, sub, stems) {
+  const f = proj(p)
+  if (f.behind) return
+  const u = devicePixelRatio
+  if (stems) {
+    const g = proj([p[0], 0, p[2]])
+    ctx.strokeStyle = 'rgba(120,170,210,0.22)'
+    ctx.lineWidth = 1 * u
+    ctx.setLineDash([3 * u, 5 * u])
+    ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(g.x, g.y); ctx.stroke()
+    ctx.setLineDash([])
+    ctx.fillStyle = 'rgba(120,170,210,0.35)'
+    ctx.fillRect(g.x - 1.5 * u, g.y - 1.5 * u, 3 * u, 3 * u)
+  }
+  const rad = r * u * Math.min(6, Math.max(1.4, f.s * 220))
+  const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, rad * 3)
+  grad.addColorStop(0, color)
+  grad.addColorStop(0.25, color + 'cc')
+  grad.addColorStop(1, 'transparent')
+  ctx.globalAlpha = alpha
+  ctx.fillStyle = grad
+  ctx.beginPath(); ctx.arc(f.x, f.y, rad * 3, 0, 7); ctx.fill()
+  ctx.globalAlpha = 1
+  if (label) {
+    ctx.font = `${10.5 * u}px "Space Mono", monospace`
+    ctx.textAlign = 'left'
+    ctx.fillStyle = alpha > 0.6 ? '#dce8f4' : '#8698ac'
+    ctx.fillText(label, f.x + rad * 3 + 4 * u, f.y - 2 * u)
+    if (sub) {
+      ctx.fillStyle = '#6f8296'
+      ctx.font = `${8.5 * u}px "Space Mono", monospace`
+      ctx.fillText(sub + ' · UNSURVEYED', f.x + rad * 3 + 4 * u, f.y + 10 * u)
+    }
+  }
+}
+
+function grid() {
+  const u = devicePixelRatio
+  ctx.strokeStyle = 'rgba(90,130,170,0.10)'
+  ctx.lineWidth = 1 * u
+  for (let i = -12000; i <= 12000; i += 4000) {
+    let a = proj([i, 0, -14000]), b = proj([i, 0, 14000])
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke()
+    a = proj([-14000, 0, i]); b = proj([14000, 0, i])
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke()
+  }
+}
+
+function frame(ts) {
+  if (idle) yaw += 0.0012
+  ctx.fillStyle = '#020610'; ctx.fillRect(0, 0, W, H)
+  grid()
+  const u = devicePixelRatio
+  for (const poi of POIS) {
+    const f = proj(poi.p)
+    ctx.strokeStyle = '#57e6c4'; ctx.lineWidth = 1.2 * u
+    ctx.strokeRect(f.x - 4 * u, f.y - 4 * u, 8 * u, 8 * u)
+    ctx.font = `${9 * u}px "Space Mono", monospace`
+    ctx.fillStyle = '#57e6c4'; ctx.textAlign = 'left'
+    ctx.fillText(poi.n, f.x + 8 * u, f.y + 3 * u)
+  }
+  if (mode === 'cur' || mode === 'both') {
+    for (const s of CURRENT) star(s.p, s.c, 2.6, mode === 'both' ? 0.28 : 1, mode === 'both' ? '' : s.n, null, true)
+  }
+  if (mode === 'new' || mode === 'both') {
+    for (const s of PROPOSED) star(s.p, s.c, 2.6, 1, s.n, null, true)
+    for (const s of INERT) star(s.p, s.c, 1.3, 0.75, s.n, s.sub, true)
+  }
+  requestAnimationFrame(frame)
+}
+requestAnimationFrame(frame)
+
+const bs = { cur: document.getElementById('bCur'), new: document.getElementById('bNew'), both: document.getElementById('bBoth') }
+for (const [k, el] of Object.entries(bs))
+  el.addEventListener('click', () => {
+    mode = k
+    for (const [k2, el2] of Object.entries(bs)) el2.classList.toggle('on', k2 === k)
+  })
+</script>
+</body>
+</html>
