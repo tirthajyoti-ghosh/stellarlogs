@@ -8,6 +8,7 @@ import { Starfield } from './scene/Starfield'
 import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
+import { SleepingSpread } from './scene/SleepingSpread'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -155,6 +156,7 @@ export default function App() {
         ))}
         <ContactStation />
         <Asteroids />
+        <SleepingSpread />
         <Suspense fallback={null}>
           <GunneryRange />
           <IceRoute />
