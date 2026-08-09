@@ -99,3 +99,35 @@ live values into frames the world already owns.
   CC-sourced beds vs generative WebAudio layers, adaptive by game state
   (nav / gauntlet / lock / outcome), Sound-Law-compliant. Then slag skeet
   and the remaining toys.
+
+
+## The skeet verdict — RETIRED, and the law it taught (2026-08-09)
+
+Tirtha's read: "I don't know what a slag or a skeet is… I don't know what
+that machine is supposed to be… why is it even there?" Total legibility
+failure, pulled from the sky same day. The diagnosis, kept as law:
+
+1. **Plain-language law covers NAMES.** If an activity's name needs a
+   footnote (slag, skeet), it failed the five-second read.
+2. **THE BORROWED-BODY LAW: a toy must borrow its body from something
+   already standing.** The jukebox works because the Drift exists; the
+   bell works because the wreck exists. The mass driver referenced a
+   smelter that exists nowhere — fiction floating in vacuum. Never invent
+   new industry to justify a diversion.
+3. Primitive-built machines read as programmer art — the asset bar
+   applies to toys too.
+4. An unexplained thrower reads as an attack, not a sport.
+
+Replacement options presented (his ruling pending):
+- **A (recommended): OPEN GUNS at the range tower** — linger on the range
+  outside a drill and the tower lobs its own practice buoys (the cert's
+  existing asset). "TOWER'S THROWING — GUNS FREE." Streak/best painted on
+  the tower. Zero new fiction, zero new assets.
+- **B**: skip standalone shooting toys; the debris storm (civil defense)
+  is the legible gun-toy.
+- C (killed): build a real smelter to justify the launcher — facility-
+  scale cost for a minigame.
+
+Same session: spread tuned (content −10%, inert stars OUT to the 12–16k
+rim per "the unsurveyed ones are the Deep's business"), and the Projects/
+Work belts — found floating at pre-lift seats — rejoined their stars.
