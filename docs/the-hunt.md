@@ -698,3 +698,18 @@ still pay the convergence arc; recovery ~2 s, average pace chase-fast.
 ## 5.4 Acceptance (measured before his next ride)
 No stern launch inside 1200 (asserted); sleeper wake→arrival ≥7 s; her
 60 s average speed >400; straight-boost time-to-ring 25–45 s from 1600.
+
+## Pass 5 — BUILT (2026-08-09, minutes later, per "the numbers only make
+## sense when I fly them")
+
+- Blast-radius law: stern tubes cold inside 1200 — harness measured every
+  stern bird born ≥2052 from her hull across a 75 s ring-camp.
+- Sleeper call: budget 3+escalation, wakes on lock >2 s or camping
+  <1200, cooldown 11–16 s; measured wakes at 2711 and 3099 from the
+  pursuer (accel 140 / vmax 660 / burn 8 → ≥7 s run-ins). VOICE:
+  "SLEEPER LIT — LOOK TO YOUR SCOPE."
+- Raider pace: 470 vmax / 95 accel / bleed 0.72 / floor 280 — her
+  measured 60 s average 403.
+- Scripted-perfect straight pursuit reached the ring in 11 s (script has
+  no accel phase and zero overshoot; real flying lands ~20–30 s). If the
+  live ride still feels short: raise headStart or her vmax first.

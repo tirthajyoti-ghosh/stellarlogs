@@ -198,8 +198,8 @@ const HIDDEN_LAUNCH = 1700
  * the PDC ring with matched velocity and the gun to the head does the
  * rest — the shot never comes.
  */
-const DRAUGR_VMAX = 420
-const DRAUGR_ACCEL = 55
+const DRAUGR_VMAX = 470
+const DRAUGR_ACCEL = 95
 const LOCK_RING = 300
 const LOCK_SECONDS = 8
 /** Pacing envelope, not perfection: thrust is a binary key and flight
@@ -208,7 +208,6 @@ const LOCK_SECONDS = 8
 const LOCK_RELSPEED = 110
 const ESCAPE_GAP = 4000
 const ESCAPE_SECONDS = 12
-const DESPERATE_RANGE = 800
 const CAUGHT_KEY = 'stellarlogs-draugr-caught'
 const ESCAPED_KEY = 'stellarlogs-draugr-escaped'
 
@@ -276,11 +275,37 @@ const HUNT_RUNNER: TorpClass = {
   relightAt: 500,
   burnFor: 6,
 }
-/** Launch DOCTRINE, not a timer: she spends a bird only when the geometry
- *  works — the pursuer closing in her stern cone, near enough that the
- *  head-on meeting happens inside the burn+coast envelope. */
+/** Launch DOCTRINE, not a timer (pass 5): she spends a stern bird only in
+ *  THE GAUNTLET — the pursuer closing, inside the burn+coast envelope but
+ *  OUTSIDE her own warhead's kill radius. THE BLAST-RADIUS LAW: launching
+ *  at someone 400 units behind you catches the launcher too, so her tubes
+ *  are cold inside MIN_LAUNCH. The surrender ring is torpedo-silent by
+ *  physics, not by mercy. */
 const SALVO_MAX_GAP = 2600
 const SALVO_MIN_CLOSING = 40
+const MIN_LAUNCH = 1200
+
+/** THE SLEEPER CALL (pass 5, the dormant spread reused): cornered — lock
+ *  climbing or a pursuer camping inside her blast radius — she doesn't
+ *  shoot, she CALLS. A torpedo already lying dark in the system lights
+ *  its drive on a random bearing and runs in. Waking from cold gives the
+ *  pursuer real flight time; the bearing must be READ on the scope. */
+const SLEEPER: TorpClass = {
+  lead: 1,
+  accel: 140,
+  v0: 30,
+  vmax: 660,
+  turn: 1.1,
+  corkRadius: 7,
+  corkSpin: 2.4,
+  jukes: true,
+  burnFor: 8,
+}
+const SLEEPER_RANGE_MIN = 2600
+const SLEEPER_RANGE_SPAN = 800
+const SLEEPER_BUDGET = 3
+const SLEEPER_COOLDOWN_MIN = 11
+const SLEEPER_COOLDOWN_SPAN = 5
 
 /** THE ARENA (the Azure Dragon rule): the chase runs THROUGH the world.
  *  She flies legs between NAV ANCHORS — real scenery — and never leaves
@@ -290,8 +315,10 @@ const ANCHOR_ARRIVE = 500
 /** the tell: her drive torches this long before every hard break */
 const BREAK_TELL = 0.3
 /** turns cost her: a hard break bleeds this fraction of her way off —
- *  she is CREWED, and the convergence arc of the whole chase lives here */
-const BREAK_BLEED = 0.55
+ *  she is CREWED, and the convergence arc of the whole chase lives here.
+ *  Softened in pass 5 (0.55 read as "not a chase"): the cost survives,
+ *  the crawl does not. */
+const BREAK_BLEED = 0.72
 /** post-break window of violent turn authority (the slam itself) */
 const BREAK_SLEW_S = 0.7
 /** reactive break triggers */
@@ -606,6 +633,8 @@ export function IceRoute() {
     huntBreakAt: 0,
     huntSlewUntil: 0,
     huntCooldownUntil: 0,
+    huntSleepers: 0,
+    huntNextSleeperAt: 0,
     huntTemper: 0,
     huntMagazine: 0,
     huntNextSalvoAt: 0,
@@ -1027,6 +1056,32 @@ export function IceRoute() {
       }
     }
 
+    function fireSleeper() {
+      // wake one of her dormant spread: random bearing around the PURSUER,
+      // far enough out that the run-in is a real engagement
+      for (const torp of torpedoes) {
+        if (torp.alive) continue
+        const a = Math.random() * Math.PI * 2
+        const elev = (Math.random() - 0.5) * 0.7
+        _v2.set(Math.cos(a) * Math.cos(elev), Math.sin(elev), Math.sin(a) * Math.cos(elev))
+        torp.position
+          .copy(shipRig.position)
+          .addScaledVector(_v2, SLEEPER_RANGE_MIN + Math.random() * SLEEPER_RANGE_SPAN)
+        torp.aimOffset.set(0, 0, 0)
+        armBrain(torp.brain, SLEEPER, { boost: 0.3 })
+        torp.velocity.copy(shipRig.position).sub(torp.position).normalize().multiplyScalar(SLEEPER.v0)
+        torp.alive = true
+        torp.launched = true
+        torp.launchAt = now
+        torp.tracked = false
+        torp.ambient = false
+        torp.target = -1
+        torp.dark = false
+        say(1, 'SLEEPER LIT — LOOK TO YOUR SCOPE', 'battle', 2.6)
+        return
+      }
+    }
+
     function endHunt(result: 'caught' | 'escaped' | 'crippled' | 'shelved') {
       if (result === 'caught') {
         s.draugrCaught++
@@ -1107,7 +1162,7 @@ export function IceRoute() {
       // convergence arc. Floored so chained breaks read as a ship
       // fighting for her life, never a stall.
       huntVel.multiplyScalar(BREAK_BLEED)
-      if (huntVel.length() < 140) huntVel.setLength(140)
+      if (huntVel.length() < 280) huntVel.setLength(280)
       s.huntSlewUntil = now + BREAK_SLEW_S
       s.huntCooldownUntil = now + T.dlMin + Math.random() * (T.dlMax - T.dlMin)
     }
@@ -1126,6 +1181,7 @@ export function IceRoute() {
       s.huntSlewUntil = 0
       s.huntCooldownUntil = now + 4
       s.huntNextSalvoAt = now + 6 + Math.random() * 6
+      s.huntNextSleeperAt = now + 6
       s.huntLastGap = raiderPos.distanceTo(shipRig.position)
       // the escape clock arms only after first contact — a far hot seed
       // must not run out before you have even reached her
@@ -1156,6 +1212,7 @@ export function IceRoute() {
       s.playerHull = 3
       damageFx.clear()
       s.huntMagazine = T.magazine + esc
+      s.huntSleepers = SLEEPER_BUDGET + esc
       s.huntLockT = 0
       s.huntEscapeT = 0
       s.huntHarpoonT = 0
@@ -1597,7 +1654,6 @@ export function IceRoute() {
         // close, lock climbing, or masking behind her own salvo. The tell
         // precedes every break; the break bleeds her speed. Decisions,
         // never noise.
-        const desperate = gap < DESPERATE_RANGE
         if (s.huntBreakAt > 0 && now >= s.huntBreakAt) executeBreak()
         const anchor = anchors[s.huntAnchor] ?? DRIFT
         if (s.huntBreakAt === 0) {
@@ -1617,26 +1673,34 @@ export function IceRoute() {
         _v.sub(huntVel).clampLength(0, DRAUGR_ACCEL * dt)
         huntVel.add(_v)
         // a crewed hull mid-slam sheds way, but she NEVER reads stalled
-        if (huntVel.length() < 140) huntVel.setLength(140)
+        if (huntVel.length() < 280) huntVel.setLength(280)
         raiderPos.addScaledVector(huntVel, dt)
-        // her wake ordnance flies on DOCTRINE, not a timer: only when the
-        // head-on meeting exists — the pursuer closing, near enough that
-        // the burn+coast envelope covers the intercept
+        // Stern ordnance flies only in THE GAUNTLET: pursuer closing,
+        // inside the envelope, outside her own blast radius. Inside
+        // MIN_LAUNCH her tubes are COLD — the blast-radius law.
         if (s.huntMagazine > 0 && now >= s.huntNextSalvoAt) {
-          // doctrine: a closing pursuer gets met head-on; a matched-speed
-          // shadow INSIDE her skirts gets the point-blank desperation —
-          // the lock is exactly when the gun to her head must answer
-          if ((gap < SALVO_MAX_GAP && s.huntClosing > SALVO_MIN_CLOSING) || desperate) {
-            const birds = Math.min(s.huntMagazine, desperate ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0))
+          if (gap > MIN_LAUNCH && gap < SALVO_MAX_GAP && s.huntClosing > SALVO_MIN_CLOSING) {
+            const birds = Math.min(s.huntMagazine, 1 + (Math.random() < 0.4 ? 1 : 0))
             fireHuntSalvo(birds)
             s.huntMagazine -= birds
-            const cad = T.salvoMin + Math.random() * (T.salvoMax - T.salvoMin)
-            s.huntNextSalvoAt = now + (desperate ? cad * 0.5 : cad)
+            s.huntNextSalvoAt = now + T.salvoMin + Math.random() * (T.salvoMax - T.salvoMin)
             // fire-and-turn: break behind her own birds
             if (Math.random() < 0.6) scheduleBreak()
           } else {
             s.huntNextSalvoAt = now + 2 // geometry's wrong — hold the bird
           }
+        }
+        // THE SLEEPER CALL: cornered, she doesn't shoot — she calls. Lock
+        // climbing or a pursuer camping inside her blast radius wakes one
+        // of the dormant spread, budgeted and paced.
+        if (
+          s.huntSleepers > 0 &&
+          now >= s.huntNextSleeperAt &&
+          (s.huntLockT > 2 || gap < MIN_LAUNCH)
+        ) {
+          fireSleeper()
+          s.huntSleepers--
+          s.huntNextSleeperAt = now + SLEEPER_COOLDOWN_MIN + Math.random() * SLEEPER_COOLDOWN_SPAN
         }
         // the surrender lock: inside the ring, velocity matched, held
         _v.copy(shipRig.velocityDir).multiplyScalar(shipRig.speed).sub(huntVel)
