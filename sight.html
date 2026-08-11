@@ -261,9 +261,11 @@
 </div>
 <button class="bench reset" id="reset">RESET</button>
 <div class="bench" style="bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:10px;">
-  <button class="reset" style="position:static" id="v1">1 · THE RAILS</button>
-  <button class="reset" style="position:static" id="v2">2 · THE FIELD</button>
-  <button class="reset" style="position:static" id="v3">3 · THE GATES</button>
+  <button class="reset" style="position:static" id="v1">1 · FULL RAILS</button>
+  <button class="reset" style="position:static" id="v2">2 · COMPACT RAILS</button>
+  <button class="reset" style="position:static" id="v3">3 · RAIL BED</button>
+  <button class="reset" style="position:static" id="v4">4 · LADDERED</button>
+  <button class="reset" style="position:static" id="v5">5 · MUZZLE</button>
 </div>
 <script>
 'use strict'
@@ -492,6 +494,8 @@ addEventListener('keydown', e => {
   if (e.code === 'Digit1') variant = 1
   if (e.code === 'Digit2') variant = 2
   if (e.code === 'Digit3') variant = 3
+  if (e.code === 'Digit4') variant = 4
+  if (e.code === 'Digit5') variant = 5
   if (e.code === 'Space' && !keys.has('Space') && gun.phase === 'ready') {
     gun.phase = 'charge'; gun.t = 0
     chargeStart()
@@ -507,7 +511,7 @@ addEventListener('keyup', e => {
   }
 })
 document.getElementById('reset').addEventListener('click', () => { spawnRocks(); score = 0; shots = 0 })
-for (const [id, v] of [['v1', 1], ['v2', 2], ['v3', 3]])
+for (const [id, v] of [['v1', 1], ['v2', 2], ['v3', 3], ['v4', 4], ['v5', 5]])
   document.getElementById(id).addEventListener('click', () => { variant = v })
 
 function frame(ts) {
@@ -748,83 +752,74 @@ function drawSpineLabel(cx, cy, s, y) {
   }
 }
 
-// The conviction behind all three: draw the WEAPON's physics, not the
-// UI's progress. The gun lies along the view axis, so it can be drawn in
-// perspective, converging on the aim point — a window into the machine.
+/** flowing-current stroke along a segment — the rails' living detail */
+function currentStroke(x0, y0, x1, y1, k, col) {
+  const u = devicePixelRatio
+  const flow = (now * (60 + k * 260)) % 24
+  ctx.strokeStyle = col
+  ctx.lineWidth = 2.4 * u
+  ctx.setLineDash([5 * u, (18 - k * 11) * u])
+  ctx.lineDashOffset = -flow * u
+  ctx.beginPath()
+  ctx.moveTo(x0, y0)
+  ctx.lineTo(x0 + (x1 - x0) * k, y0 + (y1 - y0) * k)
+  ctx.stroke()
+  ctx.setLineDash([])
+}
+
+// Five ways to draw THE RAILS — full-frame to fingertip (the Everspace
+// pole: compact, reticle-hugging). Same physics window in every one.
 function drawSpine() {
   const u = devicePixelRatio
   const cx = W / 2, cy = H / 2
   const s = spineState()
-  const heat = s.ph === 'cool' ? 1 - s.cool : 0 // rails/gates cooling glow
+  const heat = s.ph === 'cool' ? 1 - s.cool : 0
+  const railCol =
+    s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.65)')
+    : s.ph === 'cool' ? `rgba(${180 + heat * 75}, ${140 + heat * 60}, ${120 + heat * 20}, ${0.35 + heat * 0.5})`
+    : s.ph === 'charge' ? 'rgba(160,200,230,0.6)' : 'rgba(140,190,220,0.35)'
+  const flowCol = s.ph === 'hold' ? TEAL : AMBER
 
   if (variant === 1) {
-    // 1 · THE RAILS — the gun's own rails in perspective; the vanishing
-    // point IS the aim point. Current visibly climbs as the banks fill.
+    // 1 · FULL RAILS — the whole track, breech to vanishing point
     const baseY = cy + 168 * u, topY = cy + 10 * u
     const baseHalf = 92 * u, topHalf = 7 * u
-    const railCol =
-      s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.65)')
-      : s.ph === 'cool' ? `rgba(${180 + heat * 75}, ${140 + heat * 60}, ${120 + heat * 20}, ${0.35 + heat * 0.5})`
-      : s.ph === 'charge' ? 'rgba(160,200,230,0.6)' : 'rgba(140,190,220,0.35)'
     for (const side of [-1, 1]) {
       const x0 = cx + side * baseHalf, x1 = cx + side * topHalf
       ctx.strokeStyle = railCol
       ctx.lineWidth = (s.ph === 'ready' ? 1.2 : 2) * u
-      ctx.beginPath()
-      ctx.moveTo(x0, baseY)
-      ctx.lineTo(x1, topY)
-      ctx.stroke()
-      // insulator ticks along each rail (perspective-spaced)
-      ctx.lineWidth = 1 * u
+      ctx.beginPath(); ctx.moveTo(x0, baseY); ctx.lineTo(x1, topY); ctx.stroke()
       for (let i = 1; i <= 4; i++) {
         const f = 1 - Math.pow(1 - i / 5, 1.6)
         const x = x0 + (x1 - x0) * f, y = baseY + (topY - baseY) * f
         ctx.strokeStyle = 'rgba(140,190,220,0.3)'
-        ctx.beginPath()
-        ctx.moveTo(x - side * 5 * u, y)
-        ctx.lineTo(x + side * 2 * u, y)
-        ctx.stroke()
+        ctx.lineWidth = 1 * u
+        ctx.beginPath(); ctx.moveTo(x - side * 5 * u, y); ctx.lineTo(x + side * 2 * u, y); ctx.stroke()
       }
-      // THE CURRENT: dashes climbing the rail, speed and density with k
-      if (s.ph === 'charge' || s.ph === 'hold') {
-        const flow = (now * (60 + s.k * 240)) % 24
-        ctx.strokeStyle = s.ph === 'hold' ? TEAL : AMBER
-        ctx.lineWidth = 2.6 * u
-        ctx.setLineDash([5 * u, (19 - s.k * 12) * u])
-        ctx.lineDashOffset = -flow * u
-        ctx.beginPath()
-        const climb = s.ph === 'hold' ? 1 : s.k
-        ctx.moveTo(x0, baseY)
-        ctx.lineTo(x0 + (x1 - x0) * climb, baseY + (topY - baseY) * climb)
-        ctx.stroke()
-        ctx.setLineDash([])
-      }
+      if (s.ph === 'charge' || s.ph === 'hold')
+        currentStroke(x0, baseY, x1, topY, s.ph === 'hold' ? 1 : s.k, flowCol)
     }
-    // armature seated: arcs bridge the muzzle gap at full charge
     if (s.ph === 'hold') {
       for (let i = 0; i < 3; i++) {
         ctx.strokeStyle = `rgba(190,220,255,${0.35 + Math.random() * 0.5})`
         ctx.lineWidth = 1.2 * u
         ctx.beginPath()
-        let px = cx - topHalf, py = topY + 6 * u + i * 7 * u
+        let px = cx - 7 * u, py = topY + 6 * u + i * 7 * u
         ctx.moveTo(px, py)
         for (let s2 = 1; s2 <= 3; s2++) {
-          px = cx - topHalf + (topHalf * 2 * s2) / 3
+          px = cx - 7 * u + (14 * u * s2) / 3
           py = topY + 6 * u + i * 7 * u + (Math.random() - 0.5) * 5 * u
           ctx.lineTo(px, py)
         }
         ctx.stroke()
       }
     }
-    // breech block at the base: small chamfered plate + caps
     ctx.fillStyle = 'rgba(7,14,26,0.6)'
     ctx.strokeStyle = 'rgba(120,200,230,0.4)'
     ctx.lineWidth = 1 * u
     ctx.beginPath()
-    ctx.moveTo(cx - 40 * u, baseY + 6 * u)
-    ctx.lineTo(cx + 44 * u, baseY + 6 * u)
-    ctx.lineTo(cx + 40 * u, baseY + 22 * u)
-    ctx.lineTo(cx - 44 * u, baseY + 22 * u)
+    ctx.moveTo(cx - 40 * u, baseY + 6 * u); ctx.lineTo(cx + 44 * u, baseY + 6 * u)
+    ctx.lineTo(cx + 40 * u, baseY + 22 * u); ctx.lineTo(cx - 44 * u, baseY + 22 * u)
     ctx.closePath(); ctx.fill(); ctx.stroke()
     ctx.font = `700 ${9.5 * u}px Rajdhani, sans-serif`
     ctx.textAlign = 'center'
@@ -832,87 +827,160 @@ function drawSpine() {
     ctx.fillText('SPINE', cx, baseY + 17.5 * u)
     drawSpineLabel(cx, cy, s, baseY + 40 * u)
   } else if (variant === 2) {
-    // 2 · THE FIELD — dipole field lines flanking the aim point,
-    // breathing while they build, rigid at lock, gone with the shot
-    const nLines = s.ph === 'hold' ? 4 : s.ph === 'charge' ? Math.floor(s.k * 4) + 1 : s.ph === 'cool' ? 1 : 0
-    const breathe = s.ph === 'hold' ? 1 : 1 + Math.sin(now * 3.2) * 0.05
+    // 2 · COMPACT RAILS — Everspace scale: short rails flanking the
+    // reticle, an armature bar climbing between them
+    const railH = 64 * u, gap = 26 * u
+    const y0 = cy + railH / 2, y1 = cy - railH / 2
     for (const side of [-1, 1]) {
-      for (let i = 0; i < 4; i++) {
-        if (i >= nLines) continue
-        const rx = (34 + i * 26) * u * breathe
-        const ry = (58 + i * 20) * u * breathe
-        const alpha = s.ph === 'cool' ? 0.2 + 0.15 * Math.sin(now * 2)
-          : s.ph === 'hold' ? 0.75 : 0.3 + 0.14 * i
-        ctx.strokeStyle = s.ph === 'hold'
-          ? (s.pulse > 0.5 ? `rgba(87,230,196,${alpha})` : `rgba(87,230,196,${alpha * 0.7})`)
-          : s.ph === 'charge' ? `rgba(255,180,84,${alpha})` : `rgba(134,152,172,${alpha})`
-        ctx.lineWidth = 1.3 * u
+      const x = cx + side * gap
+      ctx.strokeStyle = railCol
+      ctx.lineWidth = 2 * u
+      ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke()
+      // muzzle chevron tips
+      ctx.beginPath()
+      ctx.moveTo(x, y1); ctx.lineTo(x - side * 6 * u, y1 - 7 * u)
+      ctx.stroke()
+      if (s.ph === 'charge' || s.ph === 'hold')
+        currentStroke(x, y0, x, y1, s.ph === 'hold' ? 1 : s.k, flowCol)
+    }
+    // the armature: a bar climbing the rails with the charge
+    if (s.ph === 'charge' || s.ph === 'hold') {
+      const climb = s.ph === 'hold' ? 1 : s.k
+      const ay = y0 + (y1 - y0) * climb
+      ctx.strokeStyle = s.ph === 'hold' ? TEAL : AMBER
+      ctx.lineWidth = 3 * u
+      ctx.beginPath()
+      ctx.moveTo(cx - gap + 3 * u, ay); ctx.lineTo(cx + gap - 3 * u, ay)
+      ctx.stroke()
+      if (s.ph === 'hold' && s.pulse > 0.5) {
+        ctx.strokeStyle = 'rgba(190,220,255,0.8)'
+        ctx.lineWidth = 1 * u
         ctx.beginPath()
-        ctx.ellipse(cx + side * rx, cy, rx, ry, 0, 0, Math.PI * 2)
+        ctx.moveTo(cx - gap + 3 * u, ay + (Math.random() - 0.5) * 4 * u)
+        ctx.lineTo(cx + gap - 3 * u, ay + (Math.random() - 0.5) * 4 * u)
         ctx.stroke()
       }
     }
-    // equator nodes at lock: the field is rigid
-    if (s.ph === 'hold') {
-      for (const side of [-1, 1]) {
-        for (let i = 0; i < 4; i++) {
-          const x = cx + side * (34 + i * 26) * 2 * u
-          ctx.fillStyle = TEAL
-          ctx.beginPath()
-          ctx.moveTo(x, cy - 2.6 * u); ctx.lineTo(x + 2.6 * u, cy)
-          ctx.lineTo(x, cy + 2.6 * u); ctx.lineTo(x - 2.6 * u, cy)
-          ctx.fill()
+    // ES2-style hairline charge arc wrapping the reticle top
+    const arcR = 44 * u
+    const frac = s.ph === 'hold' ? 1 : s.ph === 'charge' ? s.k : s.ph === 'cool' ? s.cool : 0
+    if (s.ph !== 'ready') {
+      ctx.strokeStyle = s.ph === 'cool' ? DIM : flowCol
+      ctx.lineWidth = 2 * u
+      ctx.beginPath()
+      ctx.arc(cx, cy, arcR, -Math.PI * 0.75, -Math.PI * 0.75 + frac * Math.PI * 0.5)
+      ctx.stroke()
+    }
+    drawSpineLabel(cx, cy, s, cy + 96 * u)
+  } else if (variant === 3) {
+    // 3 · RAIL BED — the launch track seen side-on beneath the reticle;
+    // the sabot travels breech → aim point as the banks fill
+    const bedY = cy + 58 * u
+    const x0 = cx - 150 * u, x1 = cx
+    for (const dy of [-4 * u, 4 * u]) {
+      ctx.strokeStyle = railCol
+      ctx.lineWidth = 1.6 * u
+      ctx.beginPath(); ctx.moveTo(x0, bedY + dy); ctx.lineTo(x1 + 26 * u, bedY + dy); ctx.stroke()
+    }
+    // breech block
+    ctx.fillStyle = 'rgba(7,14,26,0.7)'
+    ctx.strokeStyle = 'rgba(120,200,230,0.45)'
+    ctx.lineWidth = 1 * u
+    ctx.fillRect(x0 - 22 * u, bedY - 11 * u, 22 * u, 22 * u)
+    ctx.strokeRect(x0 - 22 * u, bedY - 11 * u, 22 * u, 22 * u)
+    if (s.ph === 'charge' || s.ph === 'hold')
+      for (const dy of [-4 * u, 4 * u])
+        currentStroke(x0, bedY + dy, x1 + 26 * u, bedY + dy, s.ph === 'hold' ? 1 : s.k, flowCol)
+    // the sabot: travels with charge, pulses seated at the aim column
+    if (s.ph !== 'ready') {
+      const frac = s.ph === 'hold' ? 1 : s.ph === 'charge' ? s.k : 0
+      if (s.ph !== 'cool') {
+        const sx = x0 + (x1 - x0) * frac
+        ctx.fillStyle = s.ph === 'hold' ? TEAL : AMBER
+        ctx.beginPath()
+        ctx.moveTo(sx + 9 * u, bedY)
+        ctx.lineTo(sx - 5 * u, bedY - 5 * u)
+        ctx.lineTo(sx - 5 * u, bedY + 5 * u)
+        ctx.closePath(); ctx.fill()
+        // seated: a riser column links sabot to the aim point
+        if (s.ph === 'hold') {
+          ctx.strokeStyle = `rgba(87,230,196,${0.3 + s.pulse * 0.4})`
+          ctx.lineWidth = 1 * u
+          ctx.setLineDash([3 * u, 4 * u])
+          ctx.beginPath(); ctx.moveTo(cx, bedY - 8 * u); ctx.lineTo(cx, cy + 10 * u); ctx.stroke()
+          ctx.setLineDash([])
+        }
+      } else {
+        // cooling: an empty track, a tick-rail refilling toward the breech
+        const ticks = 18, litN = Math.floor(s.cool * ticks)
+        for (let i = 0; i < ticks; i++) {
+          ctx.fillStyle = i < litN ? DIM : GHOST
+          ctx.fillRect(x0 + i * ((x1 - x0) / ticks), bedY + 12 * u, (x1 - x0) / ticks - 2 * u, 3 * u)
         }
       }
     }
-    drawSpineLabel(cx, cy, s, cy + 148 * u)
-  } else {
-    // 3 · THE GATES — the accelerator's coil stack in perspective:
-    // a tunnel of chamfered gates receding to the aim point
-    const N = 6
-    const litN = s.ph === 'hold' ? N : s.ph === 'charge' ? Math.floor(s.k * N) : s.ph === 'cool' ? Math.floor(s.cool * N) : 0
-    for (let i = 0; i < N; i++) {
-      // nearest gate is biggest; they recede toward the aim point
-      const f = 1 - Math.pow(i / N, 1.25)
-      const half = (26 + f * 118) * u
-      const ch = half * 0.22 // chamfer
-      const on = s.ph === 'cool' ? i >= N - litN : i < litN
-      const col =
-        s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.55)')
-        : s.ph === 'charge' ? (on ? AMBER : GHOST)
-        : s.ph === 'cool' ? (on ? DIM : `rgba(255,180,84,${0.15 + heat * 0.3})`)
-        : 'rgba(140,190,220,0.3)'
-      ctx.strokeStyle = col
-      ctx.lineWidth = (on && s.ph !== 'ready' ? 2 : 1.1) * u
+    drawSpineLabel(cx, cy, s, bedY + 40 * u)
+  } else if (variant === 4) {
+    // 4 · LADDERED RAILS — perspective rails with rungs; energy climbs
+    // rung by rung, honest as the hull bar
+    const baseY = cy + 130 * u, topY = cy + 8 * u
+    const baseHalf = 62 * u, topHalf = 6 * u
+    for (const side of [-1, 1]) {
+      ctx.strokeStyle = railCol
+      ctx.lineWidth = 1.8 * u
       ctx.beginPath()
-      ctx.moveTo(cx - half + ch, cy - half)
-      ctx.lineTo(cx + half - ch, cy - half)
-      ctx.lineTo(cx + half, cy - half + ch)
-      ctx.lineTo(cx + half, cy + half - ch)
-      ctx.lineTo(cx + half - ch, cy + half)
-      ctx.lineTo(cx - half + ch, cy + half)
-      ctx.lineTo(cx - half, cy + half - ch)
-      ctx.lineTo(cx - half, cy - half + ch)
-      ctx.closePath()
+      ctx.moveTo(cx + side * baseHalf, baseY)
+      ctx.lineTo(cx + side * topHalf, topY)
       ctx.stroke()
     }
-    // the muzzle gate pulses at lock; a pulse races through on fire
+    const N = 7
+    const litN = s.ph === 'hold' ? N : s.ph === 'charge' ? Math.floor(s.k * N) : s.ph === 'cool' ? Math.floor(s.cool * N) : 0
+    for (let i = 0; i < N; i++) {
+      const f = (i + 0.5) / N
+      const fp = 1 - Math.pow(1 - f, 1.4)
+      const half = baseHalf + (topHalf - baseHalf) * fp
+      const y = baseY + (topY - baseY) * fp
+      const on = i < litN
+      ctx.strokeStyle = on
+        ? (s.ph === 'hold' ? (s.pulse > 0.5 && i === N - 1 ? '#dffcf4' : TEAL) : s.ph === 'cool' ? DIM : AMBER)
+        : GHOST
+      ctx.lineWidth = (on ? 2.6 : 1) * u
+      ctx.beginPath()
+      ctx.moveTo(cx - half + 3 * u, y)
+      ctx.lineTo(cx + half - 3 * u, y)
+      ctx.stroke()
+    }
+    drawSpineLabel(cx, cy, s, baseY + 26 * u)
+  } else {
+    // 5 · MUZZLE RAILS — the quietest: just the last hand-span of the
+    // gun, two short converging strokes kissing the aim point + an
+    // Everspace arc pair completing around it
+    const y0 = cy + 64 * u, y1 = cy + 14 * u
+    for (const side of [-1, 1]) {
+      const x0 = cx + side * 22 * u, x1 = cx + side * 6 * u
+      ctx.strokeStyle = railCol
+      ctx.lineWidth = 2 * u
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
+      if (s.ph === 'charge' || s.ph === 'hold')
+        currentStroke(x0, y0, x1, y1, s.ph === 'hold' ? 1 : s.k, flowCol)
+    }
+    // twin arcs completing around the reticle with charge (ES2 grammar)
+    const frac = s.ph === 'hold' ? 1 : s.ph === 'charge' ? s.k : s.ph === 'cool' ? s.cool : 0
+    const arcR = 34 * u
+    for (const side of [-1, 1]) {
+      const start = side < 0 ? Math.PI * 0.75 : -Math.PI * 0.25
+      ctx.strokeStyle = s.ph === 'ready' ? GHOST : s.ph === 'cool' ? DIM : flowCol
+      ctx.lineWidth = 2 * u
+      ctx.beginPath()
+      ctx.arc(cx, cy, arcR, start, start + frac * Math.PI * 0.5 * (side < 0 ? 1 : 1))
+      ctx.stroke()
+    }
     if (s.ph === 'hold') {
-      const half = 26 * u * (1 + s.pulse * 0.12)
-      ctx.strokeStyle = TEAL
-      ctx.lineWidth = 2.4 * u
-      ctx.strokeRect(cx - half, cy - half, half * 2, half * 2)
+      // armature spark at the muzzle, right under the aim point
+      ctx.fillStyle = s.pulse > 0.5 ? '#dffcf4' : TEAL
+      ctx.beginPath(); ctx.arc(cx, y1 - 4 * u, 2.4 * u, 0, 7); ctx.fill()
     }
-    if (gateKick > 0.6) {
-      // firing flash racing through the tunnel (drawn on the frames
-      // right after release, while gateKick is fresh)
-      const f = (1 - gateKick) / 0.4
-      const half = (26 + (1 - f) * 118) * u
-      ctx.strokeStyle = `rgba(240,240,255,${gateKick})`
-      ctx.lineWidth = 3 * u
-      ctx.strokeRect(cx - half, cy - half, half * 2, half * 2)
-    }
-    drawSpineLabel(cx, cy, s, cy + 172 * u)
+    drawSpineLabel(cx, cy, s, cy + 92 * u)
   }
 }
 
