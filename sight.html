@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE SIGHT — gun camera bench</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #020610; color: #9fb2c8; overflow: hidden;
+         font-family: "Space Mono", ui-monospace, Menlo, monospace; }
+  canvas { display: block; }
+  .hud { position: fixed; pointer-events: none; letter-spacing: 0.14em; }
+  .title { top: 16px; left: 20px; }
+  .title h1 { font-size: 13px; letter-spacing: 0.3em; color: #6fd3e8; }
+  .title p { margin-top: 6px; font-size: 10.5px; line-height: 1.6; color: #6f8296; max-width: 560px; }
+  .keys { bottom: 16px; left: 20px; font-size: 10px; line-height: 1.8; color: #6f8296; }
+  .keys b { color: #cfe0ee; font-weight: 400; }
+  .state { top: 16px; right: 20px; text-align: right; font-size: 11px; line-height: 1.9; }
+  .state b { color: #ffc06e; font-weight: 400; }
+  .reset { position: fixed; bottom: 16px; right: 20px; pointer-events: auto;
+           background: rgba(18,28,40,.9); color: #9fc4de; cursor: pointer;
+           border: 1px solid rgba(120,170,210,.28); border-radius: 3px;
+           padding: 8px 14px; font: inherit; font-size: 11px; letter-spacing: .14em; }
+  .reset:hover { border-color: rgba(120,200,240,.7); color: #dff0ff; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud title" id="titleBlock">
+  <h1>THE SIGHT — GUN CAMERA BENCH</h1>
+  <p>HOLD SPACE: the camera dives into the keel gun sight and the
+     capacitors charge — six cells, then RELEASE. Let go at full charge to
+     fire: the discharge, the kick, the breech cycling. Let go early and it
+     vents. Steer with the flight keys — magnified. Hold SPACE while
+     cycling to watch the reload.</p>
+</div>
+<div class="hud keys">
+  <b>A/D</b> yaw · <b>R/F</b> pitch — real rates, 8.4× magnified in the sight<br/>
+  <b>HOLD SPACE</b> sight + charge · <b>RELEASE</b> fire · <b>ENTER</b> reset
+</div>
+<div class="hud state">
+  <div>PLATES <b id="score">0</b> · SHOTS <b id="shots">0</b></div>
+  <div>BEST RANGE <b id="best">—</b></div>
+</div>
+<button class="reset" id="reset">RESET</button>
+<script>
+'use strict'
+const cv = document.getElementById('c')
+const ctx = cv.getContext('2d')
+let W, H
+function resize() {
+  W = cv.width = innerWidth * devicePixelRatio
+  H = cv.height = innerHeight * devicePixelRatio
+  cv.style.width = innerWidth + 'px'
+  cv.style.height = innerHeight + 'px'
+}
+addEventListener('resize', resize); resize()
+
+const D2R = Math.PI / 180, R2D = 180 / Math.PI
+const wrap = a => { while (a > Math.PI) a -= 2 * Math.PI; while (a < -Math.PI) a += 2 * Math.PI; return a }
+const YAW = 1.7, PITCH = 1.15
+const CHARGE_S = 1.5, HOLD_MAX_S = 2.5, COOLDOWN_S = 7
+const MAG = 2.75 // 8.4x label; FOV 55 -> 20
+
+const keys = new Set()
+let nose = { az: 0, el: 0 }
+let gun = { phase: 'ready', t: 0 }
+let view = 0            // 0 flight … 1 sight (eased)
+let viewTarget = 0
+let sightHoldUntil = 0  // after firing, sight lingers to show the breech
+let shots = 0, score = 0, bestRange = 0
+let recoilT = 99
+let shake = 0
+let slug = null
+let arcs = []           // muzzle discharge lightning
+let vents = []          // side exhaust puffs
+let debris = []         // cracked plate pieces
+let flashT = 99
+let plates = []
+let now = 0, last = performance.now()
+
+// ---- audio (the approved serious set + the reload clunk) ----
+let AC = null, chg = null
+function audio() { if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)(); return AC }
+function brown(ac) {
+  const len = ac.sampleRate * 2
+  const buf = ac.createBuffer(1, len, ac.sampleRate)
+  const d = buf.getChannelData(0)
+  let l = 0
+  for (let i = 0; i < len; i++) { const w = Math.random() * 2 - 1; l = (l + 0.02 * w) / 1.02; d[i] = l * 3.5 }
+  return buf
+}
+function chargeStart() {
+  const ac = audio()
+  const osc = ac.createOscillator(); osc.type = 'sine'; osc.frequency.value = 42
+  const og = ac.createGain(); og.gain.value = 0.0001
+  osc.connect(og).connect(ac.destination); osc.start()
+  const noise = ac.createBufferSource(); noise.buffer = brown(ac); noise.loop = true
+  const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 110; bp.Q.value = 2.2
+  const ng = ac.createGain(); ng.gain.value = 0.0001
+  noise.connect(bp).connect(ng).connect(ac.destination); noise.start()
+  chg = { osc, og, noise, bp, ng }
+}
+function chargeUpdate(k) {
+  if (!chg) return
+  const t = audio().currentTime
+  chg.osc.frequency.setTargetAtTime(42 + k * 38, t, 0.05)
+  chg.og.gain.setTargetAtTime(0.02 + k * 0.1, t, 0.08)
+  chg.bp.frequency.setTargetAtTime(110 + k * 240, t, 0.08)
+  chg.ng.gain.setTargetAtTime(0.015 + k * 0.05, t, 0.08)
+}
+function chargeStop() {
+  if (!chg) return
+  const t = audio().currentTime
+  chg.og.gain.setTargetAtTime(0.0001, t, 0.05)
+  chg.ng.gain.setTargetAtTime(0.0001, t, 0.05)
+  chg.osc.stop(t + 0.4); chg.noise.stop(t + 0.4)
+  chg = null
+}
+function fireSound() {
+  const ac = audio(), t = ac.currentTime
+  const body = ac.createBufferSource(); body.buffer = brown(ac)
+  const blp = ac.createBiquadFilter(); blp.type = 'lowpass'; blp.frequency.value = 210
+  const bg = ac.createGain()
+  bg.gain.setValueAtTime(0.0001, t)
+  bg.gain.exponentialRampToValueAtTime(0.85, t + 0.012)
+  bg.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+  body.connect(blp).connect(bg).connect(ac.destination); body.start(t); body.stop(t + 0.75)
+  const sub = ac.createOscillator(); sub.type = 'sine'
+  sub.frequency.setValueAtTime(74, t)
+  sub.frequency.exponentialRampToValueAtTime(23, t + 0.5)
+  const sg = ac.createGain()
+  sg.gain.setValueAtTime(0.6, t)
+  sg.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+  sub.connect(sg).connect(ac.destination); sub.start(t); sub.stop(t + 0.65)
+  for (const fg of [[164, 0.05], [168.5, 0.04]]) {
+    const r = ac.createOscillator(); r.type = 'triangle'; r.frequency.value = fg[0]
+    const rg = ac.createGain()
+    rg.gain.setValueAtTime(0.0001, t)
+    rg.gain.exponentialRampToValueAtTime(fg[1], t + 0.06)
+    rg.gain.exponentialRampToValueAtTime(0.001, t + 1.6)
+    r.connect(rg).connect(ac.destination); r.start(t + 0.03); r.stop(t + 1.7)
+  }
+}
+function ventSound() {
+  const ac = audio(), t = ac.currentTime
+  const noise = ac.createBufferSource(); noise.buffer = brown(ac)
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(900, t)
+  lp.frequency.exponentialRampToValueAtTime(120, t + 0.7)
+  const g = ac.createGain()
+  g.gain.setValueAtTime(0.14, t)
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.75)
+  noise.connect(lp).connect(g).connect(ac.destination); noise.start(t); noise.stop(t + 0.8)
+}
+function clunk() {
+  // the breech latching a new slug home: low thunk + metal tick
+  const ac = audio(), t = ac.currentTime
+  const th = ac.createOscillator(); th.type = 'sine'
+  th.frequency.setValueAtTime(120, t)
+  th.frequency.exponentialRampToValueAtTime(58, t + 0.09)
+  const tg = ac.createGain()
+  tg.gain.setValueAtTime(0.3, t)
+  tg.gain.exponentialRampToValueAtTime(0.001, t + 0.14)
+  th.connect(tg).connect(ac.destination); th.start(t); th.stop(t + 0.16)
+  const tick = ac.createOscillator(); tick.type = 'square'; tick.frequency.value = 1900
+  const kg = ac.createGain()
+  kg.gain.setValueAtTime(0.035, t + 0.05)
+  kg.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
+  tick.connect(kg).connect(ac.destination); tick.start(t + 0.05); tick.stop(t + 0.12)
+}
+
+function spawnPlates() {
+  plates = []
+  const bands = [800, 1600, 2800, 4200]
+  for (let i = 0; i < 7; i++) {
+    const band = bands[i % bands.length]
+    plates.push({
+      az: i === 0 ? 0.03 : (Math.random() * 2 - 1) * 0.55,
+      el: i === 0 ? 0.01 : (Math.random() * 2 - 1) * 0.3,
+      dist: band * (0.9 + Math.random() * 0.25),
+      size: 30,
+      driftAz: (Math.random() - 0.5) * 0.003,
+      driftEl: (Math.random() - 0.5) * 0.0015,
+      rot: Math.random() * Math.PI,
+      spin: (Math.random() - 0.5) * 0.25,
+      alive: true,
+    })
+  }
+}
+spawnPlates()
+
+let breechClunked = true
+function fire() {
+  gun.phase = 'cool'; gun.t = 0
+  breechClunked = false
+  shots++
+  fireSound()
+  recoilT = 0
+  shake = 1
+  flashT = 0
+  sightHoldUntil = now + 2.1
+  // hit at fire instant
+  let hit = null
+  for (const p of plates) {
+    if (!p.alive) continue
+    const sep = Math.hypot(wrap(p.az - nose.az), p.el - nose.el)
+    const ang = Math.atan((p.size / 2) / p.dist)
+    if (sep < ang && (!hit || p.dist < hit.dist)) hit = p
+  }
+  slug = { az: nose.az, el: nose.el, t: 0, dist: hit ? hit.dist : 5200, target: hit }
+  // the discharge: jagged arcs off the muzzle, side vents
+  arcs = []
+  for (let i = 0; i < 8; i++) {
+    const baseA = (i / 8) * Math.PI * 2 + Math.random() * 0.5
+    const pts = []
+    let r = 12 + Math.random() * 8
+    for (let s = 0; s < 4; s++) {
+      pts.push({ a: baseA + (Math.random() - 0.5) * 0.5, r })
+      r += 16 + Math.random() * 22
+    }
+    arcs.push({ pts, t: 0 })
+  }
+  vents = [
+    { side: -1, t: 0 },
+    { side: 1, t: 0 },
+  ]
+}
+
+addEventListener('keydown', e => {
+  if (e.code === 'Enter') { spawnPlates(); score = 0; shots = 0 }
+  if (e.code === 'Space' && !keys.has('Space')) {
+    if (gun.phase === 'ready') {
+      gun.phase = 'charge'; gun.t = 0
+      viewTarget = 1
+      chargeStart()
+    } else if (gun.phase === 'cool') {
+      viewTarget = 1 // watch the breech work
+    }
+  }
+  keys.add(e.code)
+  if (['Space','KeyA','KeyD','KeyR','KeyF'].includes(e.code)) e.preventDefault()
+})
+addEventListener('keyup', e => {
+  keys.delete(e.code)
+  if (e.code === 'Space') {
+    if (gun.phase === 'charge') {
+      chargeStop(); ventSound()
+      gun.phase = 'ready'; gun.t = 0
+      viewTarget = 0
+    } else if (gun.phase === 'hold') {
+      chargeStop()
+      fire()
+    } else if (gun.phase === 'cool' && now > sightHoldUntil) {
+      viewTarget = 0
+    }
+  }
+})
+document.getElementById('reset').addEventListener('click', () => { spawnPlates(); score = 0; shots = 0 })
+
+function frame(ts) {
+  const dt = Math.min(0.05, (ts - last) / 1000); last = ts; now += dt
+
+  nose.az += ((keys.has('KeyA') ? 1 : 0) - (keys.has('KeyD') ? 1 : 0)) * YAW * dt
+  nose.el += ((keys.has('KeyR') ? 1 : 0) - (keys.has('KeyF') ? 1 : 0)) * PITCH * dt
+  nose.el = Math.max(-1.2, Math.min(1.2, nose.el))
+
+  gun.t += dt
+  if (gun.phase === 'charge') {
+    chargeUpdate(Math.min(1, gun.t / CHARGE_S))
+    if (gun.t >= CHARGE_S) { gun.phase = 'hold'; gun.t = 0 }
+  } else if (gun.phase === 'hold') {
+    chargeUpdate(1)
+    if (gun.t >= HOLD_MAX_S) {
+      chargeStop(); ventSound()
+      gun.phase = 'cool'; gun.t = COOLDOWN_S * 0.4
+      breechClunked = true
+      viewTarget = 0
+    }
+  } else if (gun.phase === 'cool') {
+    if (!breechClunked && gun.t >= COOLDOWN_S - 0.4) { breechClunked = true; clunk() }
+    if (gun.t >= COOLDOWN_S) { gun.phase = 'ready'; gun.t = 0 }
+    if (now > sightHoldUntil && !keys.has('Space')) viewTarget = 0
+  }
+
+  // view ease: the dive in is quicker than the settle out
+  const rate = viewTarget > view ? 3.4 : 2.6
+  view += (viewTarget - view) * Math.min(1, rate * dt)
+
+  recoilT += dt
+  shake = Math.max(0, shake - dt * 2.2)
+  flashT += dt
+
+  for (const p of plates) { p.az += p.driftAz * dt; p.el += p.driftEl * dt; p.rot += p.spin * dt }
+  if (slug) {
+    slug.t += dt
+    if (slug.t >= slug.dist / 4200) {
+      if (slug.target && slug.target.alive) {
+        slug.target.alive = false
+        score++
+        if (slug.target.dist > bestRange) bestRange = Math.round(slug.target.dist)
+        for (let i = 0; i < 6; i++)
+          debris.push({ az: slug.target.az, el: slug.target.el, dist: slug.target.dist,
+            va: (Math.random() - 0.5) * 0.05, ve: (Math.random() - 0.5) * 0.03,
+            rot: Math.random() * 6, spin: (Math.random() - 0.5) * 3, t: 0, s: 0.25 + Math.random() * 0.4 })
+        if (plates.every(p => !p.alive)) setTimeout(spawnPlates, 1800)
+      }
+      slug = null
+    }
+  }
+  for (const a of arcs) a.t += dt
+  arcs = arcs.filter(a => a.t < 0.13)
+  for (const v of vents) v.t += dt
+  vents = vents.filter(v => v.t < 0.5)
+  for (const d of debris) { d.az += d.va * dt; d.el += d.ve * dt; d.rot += d.spin * dt; d.t += dt }
+  debris = debris.filter(d => d.t < 2.2)
+
+  draw()
+  document.getElementById('score').textContent = String(score)
+  document.getElementById('shots').textContent = String(shots)
+  document.getElementById('best').textContent = bestRange > 0 ? String(bestRange) : '—'
+  document.getElementById('titleBlock').style.opacity = view > 0.5 ? '0' : '1'
+  requestAnimationFrame(frame)
+}
+
+function pxPerDeg() { return (H / 50) * (1 + (MAG - 1) * view) }
+function jitter(mag) { return (Math.random() - 0.5) * mag * shake * devicePixelRatio }
+
+function project(az, el) {
+  const k = pxPerDeg()
+  // recoil: the camera slams back — the world briefly shrinks, then resettles
+  const punch = recoilT < 0.28 ? 1 - (0.28 - recoilT) * 0.5 : 1
+  const dx = wrap(az - nose.az), dy = el - nose.el
+  return { x: W / 2 + dx * R2D * k * punch + jitter(26), y: H / 2 - dy * R2D * k * punch + jitter(26),
+           vis: Math.abs(dx) < 1.4 && Math.abs(dy) < 1.1 }
+}
+
+const stars = []
+for (let i = 0; i < 460; i++)
+  stars.push({ az: (Math.random() * 2 - 1) * Math.PI, el: (Math.random() * 2 - 1) * 1.2, m: 0.4 + Math.random() * 0.8 })
+
+function drawPlate(p) {
+  const f = project(p.az, p.el)
+  if (!f.vis) return null
+  const u = devicePixelRatio
+  const ang = Math.atan((p.size / 2) / p.dist)
+  const r = Math.max(2.5 * u, ang * R2D * pxPerDeg())
+  ctx.save()
+  ctx.translate(f.x, f.y)
+  ctx.rotate(p.rot)
+  const shade = 0.35 + 0.25 * Math.sin(p.rot)
+  ctx.fillStyle = `rgba(120,132,150,${shade})`
+  ctx.fillRect(-r, -r * 0.7, r * 2, r * 1.4)
+  ctx.strokeStyle = 'rgba(160,180,200,0.5)'
+  ctx.lineWidth = 1 * u
+  ctx.strokeRect(-r, -r * 0.7, r * 2, r * 1.4)
+  ctx.restore()
+  return { f, r }
+}
+
+function draw() {
+  ctx.fillStyle = '#020610'; ctx.fillRect(0, 0, W, H)
+  const u = devicePixelRatio
+  const cx = W / 2, cy = H / 2
+
+  ctx.fillStyle = '#8fa8c0'
+  for (const s of stars) {
+    const p = project(s.az, s.el)
+    if (!p.vis) continue
+    ctx.globalAlpha = (0.25 + view * 0.2) * s.m
+    ctx.fillRect(p.x, p.y, s.m * u * (1 + view * 0.6), s.m * u * (1 + view * 0.6))
+  }
+  ctx.globalAlpha = 1
+
+  // plates + the under-crosshair bracket read
+  let locked = null
+  for (const p of plates) {
+    if (!p.alive) continue
+    const drawn = drawPlate(p)
+    if (!drawn) continue
+    const sep = Math.hypot(wrap(p.az - nose.az), p.el - nose.el)
+    const ang = Math.atan((p.size / 2) / p.dist)
+    if (view > 0.6 && sep < ang * 1.4 && (!locked || p.dist < locked.p.dist)) locked = { p, ...drawn }
+  }
+  // debris from cracked plates
+  for (const d of debris) {
+    const f = project(d.az, d.el)
+    if (!f.vis) continue
+    const r = Math.max(1.5 * u, Math.atan((30 * d.s) / 2 / d.dist) * R2D * pxPerDeg())
+    ctx.save()
+    ctx.translate(f.x, f.y); ctx.rotate(d.rot)
+    ctx.globalAlpha = Math.max(0, 1 - d.t / 2.2) * 0.7
+    ctx.fillStyle = 'rgba(110,120,138,0.8)'
+    ctx.fillRect(-r, -r * 0.6, r * 2, r * 1.2)
+    ctx.restore()
+    ctx.globalAlpha = 1
+  }
+
+  // ---- the slug: pointed white core, violet sheath, fading trail ----
+  if (slug) {
+    const flight = slug.dist / 4200
+    const k = Math.min(1, slug.t / flight)
+    const f = project(slug.az, slug.el)
+    const sx = cx + jitter(10), sy = H * 0.92
+    const tipX = sx + (f.x - sx) * k
+    const tipY = sy + (f.y - sy) * k
+    // trail
+    const g = ctx.createLinearGradient(sx, sy, tipX, tipY)
+    g.addColorStop(0, 'rgba(150,110,255,0)')
+    g.addColorStop(0.7, 'rgba(170,140,255,0.5)')
+    g.addColorStop(1, 'rgba(245,240,255,0.95)')
+    ctx.strokeStyle = g
+    ctx.lineWidth = 3.4 * u
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(tipX, tipY); ctx.stroke()
+    // the point
+    const dirX = f.x - sx, dirY = f.y - sy
+    const dl = Math.hypot(dirX, dirY) || 1
+    ctx.fillStyle = 'rgba(250,248,255,0.98)'
+    ctx.beginPath()
+    ctx.moveTo(tipX + (dirX / dl) * 14 * u, tipY + (dirY / dl) * 14 * u)
+    ctx.lineTo(tipX - (dirY / dl) * 3.4 * u, tipY + (dirX / dl) * 3.4 * u)
+    ctx.lineTo(tipX + (dirY / dl) * 3.4 * u, tipY - (dirX / dl) * 3.4 * u)
+    ctx.fill()
+  }
+
+  // ---- muzzle discharge: jagged violet arcs off the bow ----
+  if (arcs.length) {
+    const mx = cx, my = H * 0.92
+    for (const a of arcs) {
+      const alpha = 1 - a.t / 0.13
+      ctx.strokeStyle = `rgba(190,150,255,${alpha * 0.9})`
+      ctx.lineWidth = 1.6 * u
+      ctx.beginPath()
+      let px = mx, py = my
+      ctx.moveTo(px, py)
+      for (const pt of a.pts) {
+        px = mx + Math.cos(pt.a) * pt.r * u
+        py = my + Math.sin(pt.a) * pt.r * u * 0.6
+        ctx.lineTo(px + (Math.random() - 0.5) * 6 * u, py + (Math.random() - 0.5) * 6 * u)
+      }
+      ctx.stroke()
+    }
+    const alpha = 1 - arcs[0].t / 0.13
+    const disc = ctx.createRadialGradient(mx, my, 0, mx, my, 90 * u)
+    disc.addColorStop(0, `rgba(240,230,255,${alpha * 0.9})`)
+    disc.addColorStop(1, 'transparent')
+    ctx.fillStyle = disc
+    ctx.beginPath(); ctx.arc(mx, my, 90 * u, 0, 7); ctx.fill()
+  }
+  // side vents: rail gas blowing outboard
+  for (const v of vents) {
+    const alpha = (1 - v.t / 0.5) * 0.5
+    const vx = cx + v.side * (60 + v.t * 260) * u
+    const vy = H * 0.93 + v.t * 40 * u
+    const vg = ctx.createRadialGradient(vx, vy, 0, vx, vy, 34 * u * (1 + v.t * 2))
+    vg.addColorStop(0, `rgba(200,190,230,${alpha})`)
+    vg.addColorStop(1, 'transparent')
+    ctx.fillStyle = vg
+    ctx.beginPath(); ctx.arc(vx, vy, 34 * u * (1 + v.t * 2), 0, 7); ctx.fill()
+  }
+
+  // ---- the sight frame + HUD (fades with view) ----
+  if (view > 0.02) {
+    const a = view
+    // telescope vignette
+    const R = Math.min(W, H) * 0.46
+    const vg = ctx.createRadialGradient(cx, cy, R * 0.82, cx, cy, R * 1.25)
+    vg.addColorStop(0, 'rgba(2,6,16,0)')
+    vg.addColorStop(1, `rgba(2,6,16,${0.96 * a})`)
+    ctx.fillStyle = vg
+    ctx.fillRect(0, 0, W, H)
+    ctx.strokeStyle = `rgba(111,211,232,${0.3 * a})`
+    ctx.lineWidth = 1.4 * u
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke()
+
+    // full-charge corona: the field made visible at the frame's edge
+    if (gun.phase === 'hold') {
+      const pulse = 0.5 + 0.5 * Math.sin(now * 9)
+      const cg = ctx.createRadialGradient(cx, cy, R * 0.86, cx, cy, R * 1.16)
+      cg.addColorStop(0, 'rgba(170,130,255,0)')
+      cg.addColorStop(0.5, `rgba(170,130,255,${(0.16 + pulse * 0.12) * a})`)
+      cg.addColorStop(1, 'rgba(170,130,255,0)')
+      ctx.fillStyle = cg
+      ctx.fillRect(0, 0, W, H)
+    }
+    // fire flash at the frame edges
+    if (flashT < 0.16) {
+      const fa = (1 - flashT / 0.16) * 0.55
+      const fg = ctx.createRadialGradient(cx, cy, R * 0.5, cx, cy, R * 1.25)
+      fg.addColorStop(0, 'rgba(245,240,255,0)')
+      fg.addColorStop(0.75, `rgba(230,215,255,${fa * a})`)
+      fg.addColorStop(1, 'rgba(230,215,255,0)')
+      ctx.fillStyle = fg
+      ctx.fillRect(0, 0, W, H)
+    }
+
+    ctx.font = `${10.5 * u}px "Space Mono", monospace`
+    ctx.textAlign = 'center'
+    ctx.globalAlpha = a
+    // top: instrument identity + attitude digits
+    ctx.fillStyle = '#6fd3e8'
+    ctx.fillText('GUN CAMERA · 8.4×', cx, cy - R + 26 * u)
+    ctx.fillStyle = '#8fb8d8'
+    ctx.fillText(
+      `BRG ${((-nose.az * R2D % 360) + 360).toFixed(1).padStart(5, '0')}  ·  PIT ${(nose.el * R2D).toFixed(1)}`,
+      cx, cy - R + 42 * u)
+
+    // crosshair
+    ctx.strokeStyle = 'rgba(220,240,250,0.9)'
+    ctx.lineWidth = 1.2 * u
+    ctx.beginPath()
+    ctx.moveTo(cx - 30 * u, cy); ctx.lineTo(cx - 8 * u, cy)
+    ctx.moveTo(cx + 8 * u, cy); ctx.lineTo(cx + 30 * u, cy)
+    ctx.moveTo(cx, cy - 30 * u); ctx.lineTo(cx, cy - 8 * u)
+    ctx.moveTo(cx, cy + 8 * u); ctx.lineTo(cx, cy + 30 * u)
+    ctx.stroke()
+    ctx.beginPath(); ctx.arc(cx, cy, 3 * u, 0, 7); ctx.stroke()
+
+    // bracket snap on the target under the crosshair — the solution read
+    if (locked) {
+      const b = locked.r + 8 * u
+      ctx.strokeStyle = '#57e6c4'
+      ctx.lineWidth = 1.6 * u
+      const { x, y } = locked.f
+      for (const [dx2, dy2] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+        ctx.beginPath()
+        ctx.moveTo(x + dx2 * b, y + dy2 * b - dy2 * 8 * u)
+        ctx.lineTo(x + dx2 * b, y + dy2 * b)
+        ctx.lineTo(x + dx2 * b - dx2 * 8 * u, y + dy2 * b)
+        ctx.stroke()
+      }
+      ctx.textAlign = 'left'
+      ctx.fillStyle = '#57e6c4'
+      ctx.fillText(`RANGE ${Math.round(locked.p.dist)}`, x + b + 10 * u, y - 2 * u)
+      ctx.fillStyle = '#8fb8d8'
+      ctx.fillText(`DRIFT ${(Math.hypot(locked.p.driftAz, locked.p.driftEl) * 1000).toFixed(1)}`, x + b + 10 * u, y + 12 * u)
+      ctx.textAlign = 'center'
+    }
+
+    // ---- bottom: the capacitor bank — six cells, no filling circle ----
+    const bankY = cy + R - 44 * u
+    const cellW = 26 * u, cellH = 9 * u, gap = 6 * u
+    const total = 6 * cellW + 5 * gap
+    const lit = gun.phase === 'hold' ? 6 : gun.phase === 'charge' ? Math.floor((gun.t / CHARGE_S) * 6) : 0
+    for (let i = 0; i < 6; i++) {
+      const x = cx - total / 2 + i * (cellW + gap)
+      const on = i < lit
+      const holdPulse = gun.phase === 'hold' && (0.5 + 0.5 * Math.sin(now * 9)) > 0.5
+      ctx.fillStyle = on
+        ? gun.phase === 'hold'
+          ? holdPulse ? '#57e6c4' : 'rgba(87,230,196,0.55)'
+          : '#ffb454'
+        : 'rgba(120,170,210,0.13)'
+      ctx.fillRect(x, bankY, cellW, cellH)
+      ctx.strokeStyle = 'rgba(120,170,210,0.35)'
+      ctx.lineWidth = 1 * u
+      ctx.strokeRect(x, bankY, cellW, cellH)
+    }
+    ctx.fillStyle = gun.phase === 'hold' ? '#57e6c4' : '#8fb8d8'
+    ctx.fillText(
+      gun.phase === 'hold' ? 'RELEASE' : gun.phase === 'charge' ? 'CHARGING' : gun.phase === 'cool' ? 'CYCLING' : 'READY',
+      cx, bankY + 26 * u)
+
+    // ---- right: the breech ledger — the reload as a visible machine ----
+    if (gun.phase === 'cool') {
+      const steps = [
+        ['FIRING', 0, 0.3],
+        ['BREECH OPEN', 0.3, 1.5],
+        ['NEW SLUG', 1.5, 3.3],
+        ['RAILS COOLING', 3.3, 7],
+      ]
+      const bx = cx + R * 0.52
+      let by = cy - 30 * u
+      ctx.textAlign = 'left'
+      for (const [label, t0, t1] of steps) {
+        const active = gun.t >= t0 && gun.t < t1
+        const done = gun.t >= t1
+        ctx.fillStyle = active ? '#ffb454' : done ? 'rgba(87,230,196,0.75)' : 'rgba(134,152,172,0.4)'
+        ctx.fillText(String(label), bx, by)
+        const bw = 84 * u
+        ctx.strokeStyle = 'rgba(120,170,210,0.3)'
+        ctx.strokeRect(bx, by + 5 * u, bw, 4 * u)
+        const k = done ? 1 : active ? (gun.t - t0) / (t1 - t0) : 0
+        ctx.fillStyle = done ? 'rgba(87,230,196,0.6)' : '#ffb454'
+        if (k > 0) ctx.fillRect(bx, by + 5 * u, bw * k, 4 * u)
+        by += 30 * u
+      }
+      ctx.textAlign = 'center'
+    } else if (gun.phase === 'ready' && view > 0.5) {
+      ctx.fillStyle = '#57e6c4'
+      ctx.textAlign = 'left'
+      ctx.fillText('LOADED', cx + R * 0.52, cy - 30 * u)
+      ctx.textAlign = 'center'
+    }
+    ctx.globalAlpha = 1
+  }
+}
+
+requestAnimationFrame(frame)
+</script>
+</body>
+</html>

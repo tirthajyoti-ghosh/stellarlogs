@@ -92,3 +92,42 @@ laws say it shouldn't. Torpedoes remain the enemy's voice.
   RANGE (localStorage) / STANDING panel; touch gets a hold-to-charge
   SPINE button at the line. HUD: a conic charge ring around the reticle
   (amber charging, teal RELEASE, grey cycling).
+
+# Pass 2 — THE SIGHT (2026-08-10, after his first firing session)
+
+His ride's verdict on v1: wrong trigger, wrong availability, invisible
+kick, a "light streak" for a shot, and a cooldown circle where an
+instrument should be. The redesign, blessed in conversation:
+
+- **Availability law**: the spine exists only where its work exists —
+  THE LONG SHOT and the debris storm. Both are weapons-engaged states →
+  BATTLE MODE runs there. Normal flight never sees the gun. (Interim
+  gate shipped same night: the anywhere-gun is dead.)
+- **Trigger = SPACE** (the thumb's key; safe because the gun only exists
+  in those two places). T retired.
+- **THE SIGHT**: hold Space → the camera DIVES into the keel gun camera
+  (telephoto, FOV 55→20, ~8.4×) — aiming is the ship's own movement,
+  magnified, nothing tuned (his law). Release at full: fire. Early:
+  vent. After the shot the sight lingers a beat for the kick + breech;
+  Space during cooldown holds it open to watch the reload.
+- **Sight HUD** (battle-cluster language): GUN CAMERA · 8.4× + BRG/PIT
+  digits; crosshair with bracket-snap + RANGE/DRIFT on the target under
+  it; the CAPACITOR BANK — six discrete cells, amber→teal RELEASE (no
+  filling circle); the BREECH LEDGER — LOADED → FIRING → BREECH OPEN →
+  NEW SLUG → RAILS COOLING, each with its own bar: the reload as
+  visible machinery.
+- **The discharge**: violet corona rims the frame at full charge (the
+  field made visible); on release — purple-white radial flash, jagged
+  electric arcs off the muzzle, a POINTED white core in a violet sheath
+  dragging a fading trail, two lateral rail-gas vents.
+- **The kick, visible**: camera slams back with shake, crosshair thrown
+  off-line and re-settled (re-lay the gun between shots); in third
+  person the ship visibly shoves backward (impulse stays real physics,
+  raised to read).
+- **Audio adds**: the breech CLUNK — low thunk + metal latch tick when
+  the new slug seats.
+
+**sight.html** is the judging bench: the complete sequence — dive,
+cells, corona, discharge, kick, ledger, clunk — playable end to end.
+Game build proceeds on its verdict: camera dive in ChaseCamera, battle
+mode at the proving line, Space trigger, the discharge in 3D.
