@@ -261,9 +261,9 @@
 </div>
 <button class="bench reset" id="reset">RESET</button>
 <div class="bench" style="bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:10px;">
-  <button class="reset" style="position:static" id="v1">1 · CHEVRON GATE</button>
-  <button class="reset" style="position:static" id="v2">2 · RAIL LADDER</button>
-  <button class="reset" style="position:static" id="v3">3 · ARC SECTOR</button>
+  <button class="reset" style="position:static" id="v1">1 · TARGET BOX LOCK</button>
+  <button class="reset" style="position:static" id="v2">2 · OCTAGON FRAME</button>
+  <button class="reset" style="position:static" id="v3">3 · TAB + CHEVRONS</button>
 </div>
 <script>
 'use strict'
@@ -729,23 +729,25 @@ function chamferSlash(x, y, w, h, skew) {
   ctx.closePath()
 }
 
-function drawSpineLabel(cx, cy, s) {
+function drawSpineLabel(cx, cy, s, v) {
   const u = devicePixelRatio
-  ctx.font = `700 ${11 * u}px Rajdhani, 'Segoe UI', sans-serif`
-  ctx.textAlign = 'center'
+  // the show's banner grammar: state text ABOVE the reticle, small caps
   const text =
-    s.ph === 'ready' ? 'SPINE · READY'
-    : s.ph === 'charge' ? `SPINE · CHARGING ${Math.round(s.k * 100)}`
+    s.ph === 'ready' ? (v === 3 ? '' : 'SPINE READY')
+    : s.ph === 'charge' ? 'CHARGING'
     : s.ph === 'hold' ? 'RELEASE'
-    : `CYCLING ${Math.max(0, COOLDOWN_S - gun.t).toFixed(1)}`
+    : 'CYCLING'
+  if (!text) return
+  ctx.font = `700 ${11.5 * u}px Rajdhani, 'Segoe UI', sans-serif`
+  ctx.textAlign = 'center'
   ctx.fillStyle = s.ph === 'hold' ? TEAL : s.ph === 'charge' ? AMBER : DIM
-  // letterspacing by hand
-  const track = 3 * u
+  const y = v === 1 ? cy - 152 * u : v === 2 ? cy - 128 * u : cy - 118 * u
+  const track = 4 * u
   let tw = 0
   for (const ch of text) tw += ctx.measureText(ch).width + track
   let x = cx - tw / 2
   for (const ch of text) {
-    ctx.fillText(ch, x + ctx.measureText(ch).width / 2, cy + (variant === 3 ? 112 : 86) * u)
+    ctx.fillText(ch, x + ctx.measureText(ch).width / 2, y)
     x += ctx.measureText(ch).width + track
   }
 }
@@ -756,94 +758,143 @@ function drawSpine() {
   const s = spineState()
 
   if (variant === 1) {
-    // THE CHEVRON GATE — mirrored weapon-aperture wings
-    const kick = gateKick * 16 * u
-    const snap = s.ph === 'hold' ? -7 * u : 0
-    for (const side of [-1, 1]) {
-      const bx = cx + side * (96 * u + snap + kick)
-      // wing outline: a tall open chevron
-      ctx.strokeStyle = s.ph === 'hold' ? TEAL : 'rgba(140,190,220,0.5)'
-      ctx.lineWidth = 1.4 * u
+    // 1 · TARGET BOX CONVERGENCE — the show's lock grammar: corner
+    // brackets converge with the charge and LOCK at full
+    const wide = 132, tight = 52
+    const kick = gateKick * 26
+    const half = (s.ph === 'hold' ? tight
+      : s.ph === 'charge' ? wide - (wide - tight) * s.k
+      : s.ph === 'cool' ? wide + kick : wide) * u
+    const arm = 16 * u
+    const col = s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
+      : s.ph === 'charge' ? AMBER : s.ph === 'cool' ? DIM : 'rgba(140,190,220,0.4)'
+    ctx.strokeStyle = col
+    ctx.lineWidth = (s.ph === 'hold' ? 2.2 : 1.6) * u
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
       ctx.beginPath()
-      ctx.moveTo(bx + side * 16 * u, cy - 64 * u)
-      ctx.lineTo(bx, cy - 44 * u)
-      ctx.lineTo(bx, cy + 44 * u)
-      ctx.lineTo(bx + side * 16 * u, cy + 64 * u)
+      ctx.moveTo(cx + sx * half, cy + sy * (half - arm))
+      ctx.lineTo(cx + sx * half, cy + sy * half)
+      ctx.lineTo(cx + sx * (half - arm), cy + sy * half)
       ctx.stroke()
-      // six chamfered charge slashes stacked inside, filling bottom-up
-      const lit = s.ph === 'hold' ? 6 : Math.floor(s.k * 6)
-      const coolLit = s.ph === 'cool' ? Math.floor(s.cool * 6) : 6
-      for (let i = 0; i < 6; i++) {
-        const y = cy + 34 * u - i * 14 * u
-        const on = s.ph === 'cool' ? i < coolLit : i < lit
-        const col =
-          s.ph === 'cool' ? (on ? DIM : GHOST)
-          : s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.5)')
-          : on ? AMBER : GHOST
-        ctx.fillStyle = col
-        chamferSlash(bx + side * 8 * u - (side > 0 ? 22 * u : 0), y, 22 * u, 8 * u, side * 4 * u)
-        if (on || s.ph !== 'charge') ctx.fill()
-        else { ctx.strokeStyle = GHOST; ctx.lineWidth = 1 * u; ctx.stroke() }
+      if (s.ph === 'hold') {
+        ctx.fillStyle = TEAL
+        const dx = cx + sx * (half + 7 * u), dy = cy + sy * (half + 7 * u)
+        ctx.beginPath()
+        ctx.moveTo(dx, dy - 3.4 * u); ctx.lineTo(dx + 3.4 * u, dy)
+        ctx.lineTo(dx, dy + 3.4 * u); ctx.lineTo(dx - 3.4 * u, dy)
+        ctx.fill()
       }
     }
-    drawSpineLabel(cx, cy, s)
+    // the firing solution: a hairline octagon appears at lock
+    if (s.ph === 'hold') {
+      const r = 30 * u
+      ctx.strokeStyle = 'rgba(87,230,196,0.7)'
+      ctx.lineWidth = 1.2 * u
+      ctx.beginPath()
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2 + Math.PI / 8
+        const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+      }
+      ctx.closePath(); ctx.stroke()
+    }
+    // cycling: a fine tick-rail drains beneath the box
+    if (s.ph === 'cool') {
+      const bw = 120 * u, ticks = 24
+      const litN = Math.floor(s.cool * ticks)
+      for (let i = 0; i < ticks; i++) {
+        ctx.fillStyle = i < litN ? DIM : GHOST
+        ctx.fillRect(cx - bw / 2 + i * (bw / ticks), cy + 150 * u, bw / ticks - 2 * u, 3 * u)
+      }
+    }
+    drawSpineLabel(cx, cy, s, 1)
   } else if (variant === 2) {
-    // THE RAIL LADDER — twin capacitor gauges, hull-bar vocabulary
-    for (const side of [-1, 1]) {
-      const bx = cx + side * 72 * u
-      const lit = s.ph === 'hold' ? 8 : Math.floor(s.k * 8)
-      const coolLit = s.ph === 'cool' ? Math.floor(s.cool * 8) : 8
-      // hairline rail
-      ctx.strokeStyle = 'rgba(140,190,220,0.35)'
+    // 2 · OCTAGON WEAPON FRAME — eight edges, eight charge segments,
+    // diamond corner nodes; the show's octagon motif
+    const R = 104 * u
+    const pts = []
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2 - Math.PI / 2 - Math.PI / 8
+      pts.push([cx + Math.cos(a) * R, cy + Math.sin(a) * R])
+    }
+    const litEdges = s.ph === 'hold' ? 8 : s.ph === 'charge' ? Math.floor(s.k * 8)
+      : s.ph === 'cool' ? Math.floor(s.cool * 8) : 8
+    for (let i = 0; i < 8; i++) {
+      const aPt = pts[i], bPt = pts[(i + 1) % 8]
+      const on = i < litEdges
+      ctx.strokeStyle = s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
+        : s.ph === 'charge' ? (on ? AMBER : GHOST)
+        : s.ph === 'cool' ? (on ? DIM : GHOST) : 'rgba(140,190,220,0.35)'
+      ctx.lineWidth = (on && s.ph !== 'ready' ? 2.4 : 1.2) * u
+      ctx.beginPath()
+      ctx.moveTo(aPt[0], aPt[1]); ctx.lineTo(bPt[0], bPt[1])
+      ctx.stroke()
+    }
+    for (const [x, y] of pts) {
+      ctx.fillStyle = s.ph === 'hold' ? TEAL : 'rgba(140,190,220,0.5)'
+      ctx.beginPath()
+      ctx.moveTo(x, y - 3 * u); ctx.lineTo(x + 3 * u, y)
+      ctx.lineTo(x, y + 3 * u); ctx.lineTo(x - 3 * u, y)
+      ctx.fill()
+    }
+    if (s.ph === 'hold') {
+      ctx.strokeStyle = 'rgba(87,230,196,0.5)'
       ctx.lineWidth = 1 * u
       ctx.beginPath()
-      ctx.moveTo(bx + side * 16 * u, cy - 58 * u)
-      ctx.lineTo(bx + side * 16 * u, cy + 58 * u)
-      ctx.stroke()
       for (let i = 0; i < 8; i++) {
-        const y = cy + 46 * u - i * 14 * u
-        const on = s.ph === 'cool' ? i < coolLit : i < lit
-        const col =
-          s.ph === 'cool' ? (on ? DIM : GHOST)
-          : s.ph === 'hold' ? (i >= 6 && s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
-          : on ? AMBER : GHOST
-        ctx.fillStyle = col
-        chamferSlash(bx - (side > 0 ? 0 : 20 * u), y, 20 * u, 7 * u, 4 * u)
-        if (on || s.ph === 'hold') ctx.fill()
-        else { ctx.strokeStyle = GHOST; ctx.lineWidth = 1 * u; ctx.stroke() }
+        const a = (i / 8) * Math.PI * 2 - Math.PI / 2 - Math.PI / 8
+        const x = cx + Math.cos(a) * R * 0.82, y = cy + Math.sin(a) * R * 0.82
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
       }
+      ctx.closePath(); ctx.stroke()
     }
-    drawSpineLabel(cx, cy, s)
+    drawSpineLabel(cx, cy, s, 2)
   } else {
-    // THE ARC SECTOR — the circle re-engineered: four detached chamfered arcs
-    const R = 86 * u
-    const spin = s.ph === 'hold' ? (1 - Math.pow(1 - lockSpin, 3)) * Math.PI / 4 : 0
-    for (let q = 0; q < 4; q++) {
-      const center = q * Math.PI / 2 + Math.PI / 4 + spin
-      const span = (55 * Math.PI) / 180
-      const a0 = center - span / 2
-      const traced = s.ph === 'ready' ? 1 : s.ph === 'cool' ? s.cool : s.k
-      const a1 = a0 + span * traced
-      ctx.strokeStyle =
-        s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
-        : s.ph === 'charge' ? AMBER
-        : s.ph === 'cool' ? DIM : GHOST
-      ctx.lineWidth = (s.ph === 'ready' ? 1.2 : 3) * u
+    // 3 · HARDPOINT TAB + CONVERGING CHEVRONS — sleek minimal: a docked
+    // trapezoid data tab + chevrons that kiss the reticle at full
+    const gap = (s.ph === 'hold' ? 46 : s.ph === 'charge' ? 128 - 82 * s.k : 128 + gateKick * 30) * u
+    const col = s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
+      : s.ph === 'charge' ? AMBER : s.ph === 'cool' ? DIM : 'rgba(140,190,220,0.4)'
+    ctx.strokeStyle = col
+    ctx.lineWidth = 2 * u
+    for (const side of [-1, 1]) {
       ctx.beginPath()
-      ctx.arc(cx, cy, R, a0, a1)
+      ctx.moveTo(cx + side * (gap + 14 * u), cy - 16 * u)
+      ctx.lineTo(cx + side * gap, cy)
+      ctx.lineTo(cx + side * (gap + 14 * u), cy + 16 * u)
       ctx.stroke()
-      // chamfered tick caps
-      for (const a of [a0, a0 + span]) {
-        const tx = cx + Math.cos(a) * R, ty = cy + Math.sin(a) * R
-        ctx.strokeStyle = s.ph === 'hold' ? TEAL : 'rgba(140,190,220,0.55)'
-        ctx.lineWidth = 1.2 * u
-        ctx.beginPath()
-        ctx.moveTo(tx + Math.cos(a) * -6 * u, ty + Math.sin(a) * -6 * u)
-        ctx.lineTo(tx + Math.cos(a) * 8 * u, ty + Math.sin(a) * 8 * u)
-        ctx.stroke()
-      }
     }
-    drawSpineLabel(cx, cy, s)
+    const tw = 190 * u, th = 30 * u, ty = cy + 96 * u
+    ctx.fillStyle = 'rgba(7,14,26,0.62)'
+    ctx.strokeStyle = 'rgba(120,200,230,0.4)'
+    ctx.lineWidth = 1 * u
+    ctx.beginPath()
+    ctx.moveTo(cx - tw / 2 + 10 * u, ty)
+    ctx.lineTo(cx + tw / 2, ty)
+    ctx.lineTo(cx + tw / 2 - 10 * u, ty + th)
+    ctx.lineTo(cx - tw / 2, ty + th)
+    ctx.closePath()
+    ctx.fill(); ctx.stroke()
+    ctx.font = `700 ${10 * u}px Rajdhani, sans-serif`
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#8fb8d8'
+    ctx.fillText('SPINE', cx - tw / 2 + 16 * u, ty + 19 * u)
+    const rw = 96 * u, ticks = 24
+    const rx = cx - rw / 2 + 8 * u
+    const frac = s.ph === 'hold' ? 1 : s.ph === 'charge' ? s.k : s.ph === 'cool' ? s.cool : 1
+    const litN = Math.floor(frac * ticks)
+    for (let i = 0; i < ticks; i++) {
+      ctx.fillStyle = i < litN
+        ? (s.ph === 'hold' ? TEAL : s.ph === 'charge' ? AMBER : DIM)
+        : GHOST
+      ctx.fillRect(rx + i * (rw / ticks), ty + 10 * u, rw / ticks - 1.5 * u, 9 * u)
+    }
+    ctx.textAlign = 'right'
+    ctx.fillStyle = s.ph === 'hold' ? TEAL : s.ph === 'charge' ? AMBER : '#8fb8d8'
+    const num = s.ph === 'cool' ? Math.max(0, COOLDOWN_S - gun.t).toFixed(1)
+      : `${Math.round(frac * 100)}`
+    ctx.fillText(num, cx + tw / 2 - 14 * u, ty + 20 * u)
+    drawSpineLabel(cx, cy, s, 3)
   }
 }
 
