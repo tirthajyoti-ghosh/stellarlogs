@@ -131,3 +131,26 @@ instrument should be. The redesign, blessed in conversation:
 cells, corona, discharge, kick, ledger, clunk — playable end to end.
 Game build proceeds on its verdict: camera dive in ChaseCamera, battle
 mode at the proving line, Space trigger, the discharge in 3D.
+
+## Pass 2 REVERSED → Pass 3 (2026-08-12): no zoom, ever
+
+His one-listen verdict on THE SIGHT: "No. We don't zoom at all. No first
+person." The sight view dies unbuilt. Pass 3, blessed shape:
+
+- The ship STAYS IN FRAME, third person, always.
+- The gun lives INSIDE the existing battle HUD: one RING added dead
+  center of the cluster — charge (amber sweep) → RELEASE (teal pulse) →
+  CYCLING (grey sweep + seconds). No capacitor cells, no first-person
+  frame, no breech ledger panel.
+- Fire: the magnetic flare AT THE BOW in third person (violet arcs +
+  white-violet discharge), then ONE THIN LINE for a split second — the
+  slug is insanely fast, and honesty means you barely see it.
+- Hit on rock: THE FRACTURE — the rock breaks into 7–10 tumbling shards
+  dispersing in every direction, persisting as smaller rocks; one brief
+  grey dust breath. NO firework explosion (explicit).
+- The kick: visible in third person — the hull lurches, the frame
+  shakes, the drive glow flares as the RCS catches it.
+- Already fixed and kept: availability (proving line + storm only, both
+  battle mode), Space trigger, the serious audio + breech clunk.
+- sight.html rebuilt as this mock, with the game's battle-HUD CSS
+  verbatim. His judgment gates the game build.
