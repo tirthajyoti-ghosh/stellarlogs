@@ -243,8 +243,7 @@
     </div>
   </div>
 </div>
-<div class="hud-spine-ring" id="ring"></div>
-<div class="hud-spine-label" id="ringLabel"></div>
+
 
 <div class="bench title">
   <h1>THE SPINE — IN THE BATTLE HUD · NO ZOOM</h1>
@@ -261,6 +260,11 @@
   <div>ROCKS CRACKED <b id="score">0</b> · SHOTS <b id="shots">0</b></div>
 </div>
 <button class="bench reset" id="reset">RESET</button>
+<div class="bench" style="bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:10px;">
+  <button class="reset" style="position:static" id="v1">1 · CHEVRON GATE</button>
+  <button class="reset" style="position:static" id="v2">2 · RAIL LADDER</button>
+  <button class="reset" style="position:static" id="v3">3 · ARC SECTOR</button>
+</div>
 <script>
 'use strict'
 const cv = document.getElementById('c')
@@ -290,6 +294,9 @@ let rocks = []
 let frags = []       // fracture shards
 let dust = []        // brief non-firework dust puffs
 let now = 0, last = performance.now()
+let variant = 1
+let gateKick = 0     // chevron wings recoil kick
+let lockSpin = 0     // arc sector settle rotation
 
 // ---- approved audio set ----
 let AC = null, chg = null
@@ -431,6 +438,7 @@ function fire() {
   fireSound()
   shake = 1
   lurch = 1
+  gateKick = 1
   // hit test on the boresight
   let hit = null
   for (const r of rocks) {
@@ -481,6 +489,9 @@ function fire() {
 
 addEventListener('keydown', e => {
   if (e.code === 'Enter') { spawnRocks(); score = 0; shots = 0 }
+  if (e.code === 'Digit1') variant = 1
+  if (e.code === 'Digit2') variant = 2
+  if (e.code === 'Digit3') variant = 3
   if (e.code === 'Space' && !keys.has('Space') && gun.phase === 'ready') {
     gun.phase = 'charge'; gun.t = 0
     chargeStart()
@@ -496,6 +507,8 @@ addEventListener('keyup', e => {
   }
 })
 document.getElementById('reset').addEventListener('click', () => { spawnRocks(); score = 0; shots = 0 })
+for (const [id, v] of [['v1', 1], ['v2', 2], ['v3', 3]])
+  document.getElementById(id).addEventListener('click', () => { variant = v })
 
 function frame(ts) {
   const dt = Math.min(0.05, (ts - last) / 1000); last = ts; now += dt
@@ -516,6 +529,9 @@ function frame(ts) {
   }
 
   shake = Math.max(0, shake - dt * 2.4)
+  gateKick = Math.max(0, gateKick - dt * 3.2)
+  lockSpin = Math.min(1, lockSpin + dt * 6)
+  if (gun.phase !== 'hold') lockSpin = 0
   lurch = Math.max(0, lurch - dt * 2.0)
   for (const r of rocks) { r.az += r.driftAz * dt; r.el += r.driftEl * dt; r.rot += r.spin * dt }
   if (line) { line.t += dt; if (line.t > 0.09) line = null }
@@ -526,6 +542,7 @@ function frame(ts) {
   dust = dust.filter(d => d.t < 0.5)
 
   draw()
+  drawSpine()
   hud()
   requestAnimationFrame(frame)
 }
@@ -683,32 +700,151 @@ function draw() {
   }
 }
 
-const ring = document.getElementById('ring')
-const ringLabel = document.getElementById('ringLabel')
 function hud() {
   document.getElementById('score').textContent = String(score)
   document.getElementById('shots').textContent = String(shots)
   document.getElementById('vel').textContent = '0'
+}
+
+// ---- THE SPINE's element: three candidates in the HUD's own language ----
+const AMBER = '#ffb454'
+const TEAL = '#57e6c4'
+const DIM = 'rgba(134,152,172,0.55)'
+const GHOST = 'rgba(120,170,210,0.22)'
+
+function spineState() {
   const ph = gun.phase
-  ring.style.opacity = ph === 'ready' ? '0.35' : '1'
-  ringLabel.style.opacity = ph === 'ready' ? '0' : '1'
-  let k = 0, color = '#ffb454', label = ''
-  if (ph === 'charge') { k = gun.t / CHARGE_S; label = 'CHARGING' }
-  else if (ph === 'hold') {
-    k = 1
-    const pulse = (0.5 + 0.5 * Math.sin(now * 9)) > 0.5
-    color = pulse ? '#57e6c4' : 'rgba(87,230,196,0.55)'
-    label = 'RELEASE'
-  } else if (ph === 'cool') { k = gun.t / COOLDOWN_S; color = 'rgba(134,152,172,0.8)'; label = 'CYCLING ' + Math.max(0, COOLDOWN_S - gun.t).toFixed(1) }
-  else { k = 0 }
-  if (ph === 'ready') {
-    ring.style.background = 'conic-gradient(from -90deg, rgba(120,170,210,0.25) 360deg, transparent 360deg)'
-  } else {
-    const deg = Math.min(360, k * 360)
-    ring.style.background = `conic-gradient(from -90deg, ${color} ${deg}deg, rgba(120,170,210,0.14) ${deg}deg)`
+  const k = ph === 'charge' ? Math.min(1, gun.t / CHARGE_S) : ph === 'hold' ? 1 : 0
+  const cool = ph === 'cool' ? Math.min(1, gun.t / COOLDOWN_S) : 1
+  const pulse = 0.5 + 0.5 * Math.sin(now * 9)
+  return { ph, k, cool, pulse }
+}
+
+function chamferSlash(x, y, w, h, skew) {
+  ctx.beginPath()
+  ctx.moveTo(x + skew, y)
+  ctx.lineTo(x + w + skew, y)
+  ctx.lineTo(x + w - skew, y + h)
+  ctx.lineTo(x - skew, y + h)
+  ctx.closePath()
+}
+
+function drawSpineLabel(cx, cy, s) {
+  const u = devicePixelRatio
+  ctx.font = `700 ${11 * u}px Rajdhani, 'Segoe UI', sans-serif`
+  ctx.textAlign = 'center'
+  const text =
+    s.ph === 'ready' ? 'SPINE · READY'
+    : s.ph === 'charge' ? `SPINE · CHARGING ${Math.round(s.k * 100)}`
+    : s.ph === 'hold' ? 'RELEASE'
+    : `CYCLING ${Math.max(0, COOLDOWN_S - gun.t).toFixed(1)}`
+  ctx.fillStyle = s.ph === 'hold' ? TEAL : s.ph === 'charge' ? AMBER : DIM
+  // letterspacing by hand
+  const track = 3 * u
+  let tw = 0
+  for (const ch of text) tw += ctx.measureText(ch).width + track
+  let x = cx - tw / 2
+  for (const ch of text) {
+    ctx.fillText(ch, x + ctx.measureText(ch).width / 2, cy + (variant === 3 ? 112 : 86) * u)
+    x += ctx.measureText(ch).width + track
   }
-  ringLabel.textContent = label
-  ringLabel.style.color = ph === 'hold' ? '#57e6c4' : '#8fb8d8'
+}
+
+function drawSpine() {
+  const u = devicePixelRatio
+  const cx = W / 2, cy = H / 2
+  const s = spineState()
+
+  if (variant === 1) {
+    // THE CHEVRON GATE — mirrored weapon-aperture wings
+    const kick = gateKick * 16 * u
+    const snap = s.ph === 'hold' ? -7 * u : 0
+    for (const side of [-1, 1]) {
+      const bx = cx + side * (96 * u + snap + kick)
+      // wing outline: a tall open chevron
+      ctx.strokeStyle = s.ph === 'hold' ? TEAL : 'rgba(140,190,220,0.5)'
+      ctx.lineWidth = 1.4 * u
+      ctx.beginPath()
+      ctx.moveTo(bx + side * 16 * u, cy - 64 * u)
+      ctx.lineTo(bx, cy - 44 * u)
+      ctx.lineTo(bx, cy + 44 * u)
+      ctx.lineTo(bx + side * 16 * u, cy + 64 * u)
+      ctx.stroke()
+      // six chamfered charge slashes stacked inside, filling bottom-up
+      const lit = s.ph === 'hold' ? 6 : Math.floor(s.k * 6)
+      const coolLit = s.ph === 'cool' ? Math.floor(s.cool * 6) : 6
+      for (let i = 0; i < 6; i++) {
+        const y = cy + 34 * u - i * 14 * u
+        const on = s.ph === 'cool' ? i < coolLit : i < lit
+        const col =
+          s.ph === 'cool' ? (on ? DIM : GHOST)
+          : s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.5)')
+          : on ? AMBER : GHOST
+        ctx.fillStyle = col
+        chamferSlash(bx + side * 8 * u - (side > 0 ? 22 * u : 0), y, 22 * u, 8 * u, side * 4 * u)
+        if (on || s.ph !== 'charge') ctx.fill()
+        else { ctx.strokeStyle = GHOST; ctx.lineWidth = 1 * u; ctx.stroke() }
+      }
+    }
+    drawSpineLabel(cx, cy, s)
+  } else if (variant === 2) {
+    // THE RAIL LADDER — twin capacitor gauges, hull-bar vocabulary
+    for (const side of [-1, 1]) {
+      const bx = cx + side * 72 * u
+      const lit = s.ph === 'hold' ? 8 : Math.floor(s.k * 8)
+      const coolLit = s.ph === 'cool' ? Math.floor(s.cool * 8) : 8
+      // hairline rail
+      ctx.strokeStyle = 'rgba(140,190,220,0.35)'
+      ctx.lineWidth = 1 * u
+      ctx.beginPath()
+      ctx.moveTo(bx + side * 16 * u, cy - 58 * u)
+      ctx.lineTo(bx + side * 16 * u, cy + 58 * u)
+      ctx.stroke()
+      for (let i = 0; i < 8; i++) {
+        const y = cy + 46 * u - i * 14 * u
+        const on = s.ph === 'cool' ? i < coolLit : i < lit
+        const col =
+          s.ph === 'cool' ? (on ? DIM : GHOST)
+          : s.ph === 'hold' ? (i >= 6 && s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
+          : on ? AMBER : GHOST
+        ctx.fillStyle = col
+        chamferSlash(bx - (side > 0 ? 0 : 20 * u), y, 20 * u, 7 * u, 4 * u)
+        if (on || s.ph === 'hold') ctx.fill()
+        else { ctx.strokeStyle = GHOST; ctx.lineWidth = 1 * u; ctx.stroke() }
+      }
+    }
+    drawSpineLabel(cx, cy, s)
+  } else {
+    // THE ARC SECTOR — the circle re-engineered: four detached chamfered arcs
+    const R = 86 * u
+    const spin = s.ph === 'hold' ? (1 - Math.pow(1 - lockSpin, 3)) * Math.PI / 4 : 0
+    for (let q = 0; q < 4; q++) {
+      const center = q * Math.PI / 2 + Math.PI / 4 + spin
+      const span = (55 * Math.PI) / 180
+      const a0 = center - span / 2
+      const traced = s.ph === 'ready' ? 1 : s.ph === 'cool' ? s.cool : s.k
+      const a1 = a0 + span * traced
+      ctx.strokeStyle =
+        s.ph === 'hold' ? (s.pulse > 0.5 ? TEAL : 'rgba(87,230,196,0.6)')
+        : s.ph === 'charge' ? AMBER
+        : s.ph === 'cool' ? DIM : GHOST
+      ctx.lineWidth = (s.ph === 'ready' ? 1.2 : 3) * u
+      ctx.beginPath()
+      ctx.arc(cx, cy, R, a0, a1)
+      ctx.stroke()
+      // chamfered tick caps
+      for (const a of [a0, a0 + span]) {
+        const tx = cx + Math.cos(a) * R, ty = cy + Math.sin(a) * R
+        ctx.strokeStyle = s.ph === 'hold' ? TEAL : 'rgba(140,190,220,0.55)'
+        ctx.lineWidth = 1.2 * u
+        ctx.beginPath()
+        ctx.moveTo(tx + Math.cos(a) * -6 * u, ty + Math.sin(a) * -6 * u)
+        ctx.lineTo(tx + Math.cos(a) * 8 * u, ty + Math.sin(a) * 8 * u)
+        ctx.stroke()
+      }
+    }
+    drawSpineLabel(cx, cy, s)
+  }
 }
 
 requestAnimationFrame(frame)
