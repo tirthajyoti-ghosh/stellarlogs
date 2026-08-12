@@ -16,7 +16,6 @@ import { DriftKillBoard } from './scene/DriftKillBoard'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
-import { Wreck } from './scene/Wreck'
 import { DraugrSighting } from './scene/DraugrSighting'
 import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
@@ -169,7 +168,6 @@ export default function App() {
           <GunneryRange />
           <IceRoute />
           <BeltRun />
-          <Wreck />
           <DraugrSighting />
           <InteramniaDrift />
           <Explosions />

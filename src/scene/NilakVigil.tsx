@@ -26,23 +26,22 @@ import { FONT_BOLD } from './boards/font'
  * the Gamarra pattern from The Expanse: the holographic ship memorial on
  * Lovell Station, Luna — "in memory of the souls lost").
  *
- * A moored platform off the Nilak's hull. Four projector pedestals throw
- * a hologram of HER — the ice hauler herself, whole again, standing
- * vertical on her drive. Her crew's names revolve slowly around her.
- * Below them, a ring of holographic candles — one per candle ever lit,
- * kept forever (localStorage now; the backend will one day make the
- * count everyone's). Press G: your candle lights bright at the deck,
- * climbs, and joins the ring. No banner, no score — you watch it join.
+ * A moored platform where the Nilak died on approach — her hull long
+ * since scrapped for parts (a colony wastes nothing); this is all that
+ * stands. Four projector pedestals throw a hologram of HER — the ice
+ * hauler herself, whole again, standing vertical on her drive. Her
+ * crew's names revolve slowly around her, each with the line their
+ * people left, the way lines are left on gravestones. Below them, a
+ * ring of holographic candles — one per candle ever lit, kept forever
+ * (localStorage now; the backend will one day make the count
+ * everyone's). Press G: your candle lights bright at the deck, climbs,
+ * and joins the ring. No banner, no score — you watch it join.
  * Once per approach; a vigil is not a toy.
  */
 
 const NILAK_URL = '/models/nilak.glb'
 
-const SITE_POS = new Vector3(
-  WRECK_POI.position[0] + 110,
-  WRECK_POI.position[1] - 6,
-  WRECK_POI.position[2] + 70,
-)
+const SITE_POS = new Vector3(...WRECK_POI.position)
 const ADD_RANGE = 90
 const SLEEP_RANGE = 1600
 const MAX_FLAMES = 48
@@ -52,34 +51,35 @@ const NAME_SPEED = 0.035 // rad/s — a slow, patient orbit
 const CANDLE_SPEED = 0.055
 const JOIN_TIME = 5.5 // s for your candle to climb to its slot
 
-/** Her crew. Twenty-six souls; the plate says so. */
-const MANIFEST = [
-  'VERA OKOYE · MASTER',
-  'DUSAN MAKALO · XO',
-  'ILUS KAMAL · REACTOR',
-  'SOREN BLACKETT',
-  'NADIA VOSS',
-  'TOMAS ESKRIDGE',
-  'KAIA NAMPEYO',
-  'RUFE OYADOMARI',
-  'MARTA CINZAS',
-  'ELIO FONSECA',
-  'YUSUF TANAKA',
-  'PELLA IRAWAN',
-  'GRETA HALVORSEN',
-  'OBI ANYANWU',
-  'LUCA MBEKI',
-  'SUNI KRISHNAMURTHY',
-  'ANJA PETROVA',
-  'DEWI SANTOSO',
-  'COLE MACREADY',
-  'FEMI ADEYEMI',
-  'INES CASTELLANOS',
-  'RAVI CHANDRAN',
-  'ZOFIA WALCZAK',
-  'HAKIM BOUAZZA',
-  'MEI-LIN ZHAO',
-  'PETYR ANSGAR',
+/** Her crew — twenty-six souls, each with a line their people left,
+ *  the way lines are left on gravestones. */
+const MANIFEST: { name: string; line: string }[] = [
+  { name: 'VERA OKOYE · MASTER', line: 'FORTY YEARS ON THE ICE RUN — NEVER ONCE LATE' },
+  { name: 'DUSAN MAKALO · XO', line: 'HE SANG OFF-KEY AND WE LET HIM' },
+  { name: 'ILUS KAMAL · REACTOR', line: 'THE DRIVE NEVER STUTTERED ON HER WATCH' },
+  { name: 'SOREN BLACKETT', line: 'DA — THE TOMATOES CAME UP' },
+  { name: 'NADIA VOSS', line: 'SHE STILL OWES ME A DANCE' },
+  { name: 'TOMAS ESKRIDGE', line: 'PAID EVERY DEBT BUT THIS ONE' },
+  { name: 'KAIA NAMPEYO', line: 'YOUNGEST ABOARD · LOUDEST LAUGH' },
+  { name: 'RUFE OYADOMARI', line: 'HE CALLED EVERY PORT HOME' },
+  { name: 'MARTA CINZAS', line: 'MAMA — WE KEPT THE GARDEN' },
+  { name: 'ELIO FONSECA', line: 'HE WAS SAVING FOR CERES' },
+  { name: 'YUSUF TANAKA', line: 'TEA AT THE SAME HOUR, EVERY WATCH' },
+  { name: 'PELLA IRAWAN', line: 'SHE NAMED THE SHIP’S CAT' },
+  { name: 'GRETA HALVORSEN', line: 'TWENTY CROSSINGS. ONE MORE, SHE SAID' },
+  { name: 'OBI ANYANWU', line: 'BIG HANDS · SOFT BREAD' },
+  { name: 'LUCA MBEKI', line: 'HE WROTE US EVERY BURN' },
+  { name: 'SUNI KRISHNAMURTHY', line: 'SHE FIXED WHAT COULD NOT BE FIXED' },
+  { name: 'ANJA PETROVA', line: 'WE STILL SET YOUR PLACE, ANJUSHKA' },
+  { name: 'DEWI SANTOSO', line: 'SHE SENT WATER HOME IN STORIES' },
+  { name: 'COLE MACREADY', line: 'OWED NOBODY · LOVED EVERYBODY' },
+  { name: 'FEMI ADEYEMI', line: 'THE STARS WERE ALWAYS HERS' },
+  { name: 'INES CASTELLANOS', line: 'COME HOME WAS ALL WE ASKED' },
+  { name: 'RAVI CHANDRAN', line: 'HE KNEW EVERY VALVE BY NAME' },
+  { name: 'ZOFIA WALCZAK', line: 'FIRST OUT THE LOCK, ALWAYS' },
+  { name: 'HAKIM BOUAZZA', line: 'HIS COFFEE COULD WAKE THE DEAD' },
+  { name: 'MEI-LIN ZHAO', line: 'SHE DREW BIRDS SHE NEVER SAW' },
+  { name: 'PETYR ANSGAR', line: 'TILL THE WATER COMES BACK ROUND, LOVE' },
 ]
 
 /** Deterministic ring slot for candle i — reload reproduces the layout. */
@@ -153,10 +153,9 @@ export function NilakVigil() {
   )
 
   const holoShip = useMemo(() => {
-    // NOTE: Wreck.tsx re-parents the cached scene's hull/pod nodes into
-    // itself (<primitive> doesn't clone), so nilak.scene is EMPTY by the
-    // time we get here. Clone the nodes straight off the GLTF node map —
-    // their local transforms reassemble her whole, as she was built.
+    // Clone off the GLTF node map rather than the scene — robust even if
+    // another mount ever re-parents the cached scene's nodes (the old
+    // Wreck did exactly that and left nilak.scene empty).
     const nodes = (nilak as unknown as { nodes: Record<string, Object3D> }).nodes
     const ship = new Group()
     for (const key of ['hull', 'pod']) {
@@ -172,25 +171,6 @@ export function NilakVigil() {
     })
     return ship
   }, [nilak, holoMat])
-
-  /** The four projector shafts, pedestal lens → her hull. */
-  const beams = useMemo(() => {
-    const out: { pos: Vector3; quat: Quaternion; len: number }[] = []
-    const up = new Vector3(0, 1, 0)
-    // each projector paints a different stretch of her hull — the shafts
-    // crisscross instead of meeting in one point
-    const reach = [10, 16, 22, 28]
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI * 2 + Math.PI / 4
-      const lens = new Vector3(Math.sin(a) * 8, 2.5, Math.cos(a) * 8)
-      const target = new Vector3(Math.sin(a + Math.PI) * 1.2, reach[i], Math.cos(a + Math.PI) * 1.2)
-      const dir = target.clone().sub(lens)
-      const len = dir.length()
-      const quat = new Quaternion().setFromUnitVectors(up, dir.normalize())
-      out.push({ pos: lens.clone().addScaledVector(dir, len / 2), quat, len })
-    }
-    return out
-  }, [])
 
   // lay the permanent candles into the instanced ring
   useEffect(() => {
@@ -319,8 +299,10 @@ export function NilakVigil() {
         <cylinderGeometry args={[13, 14, 1, 8]} />
         <meshStandardMaterial color="#262c34" metalness={0.55} roughness={0.65} flatShading />
       </mesh>
-      {/* four projector pedestals, lenses hot */}
-      {beams.map((b, i) => {
+      {/* four projector pedestals, lenses hot — fixtures only, no painted
+          shafts (billboard/headlight law: nothing scatters in vacuum;
+          the hologram itself is the only projected light you see) */}
+      {Array.from({ length: 4 }, (_, i) => {
         const a = (i / 4) * Math.PI * 2 + Math.PI / 4
         const px = Math.sin(a) * 8
         const pz = Math.cos(a) * 8
@@ -334,18 +316,6 @@ export function NilakVigil() {
               <cylinderGeometry args={[0.34, 0.42, 0.22, 8]} />
               <meshBasicMaterial color={[0.8, 2.0, 2.6]} toneMapped={false} />
             </mesh>
-            {/* the projection shaft — this IS the hologram's light */}
-            <mesh position={b.pos} quaternion={b.quat}>
-              <coneGeometry args={[1.5, b.len, 12, 1, true]} />
-              <meshBasicMaterial
-                color="#5fd0ff"
-                transparent
-                opacity={0.03}
-                blending={AdditiveBlending}
-                depthWrite={false}
-                side={DoubleSide}
-              />
-            </mesh>
           </group>
         )
       })}
@@ -353,27 +323,49 @@ export function NilakVigil() {
       <group position={[0, 22, 0]} rotation={[0, 0.4, Math.PI / 2]} scale={0.48}>
         <primitive object={holoShip} />
       </group>
-      {/* the crew, revolving slowly around her */}
+      {/* the crew, revolving slowly around her — each a gravestone:
+          the name, and under it the line their people left */}
       <group ref={nameRingRef}>
-        {MANIFEST.map((name, i) => {
+        {MANIFEST.map((soul, i) => {
           const a = (i / MANIFEST.length) * Math.PI * 2
+          const h = 5.5 + (i % 7) * 3.1
           return (
-            <Text
-              key={name}
-              font={FONT_BOLD}
-              fontSize={0.62}
-              letterSpacing={0.16}
-              color="#9fdcff"
-              fillOpacity={0.82}
-              anchorX="center"
-              anchorY="middle"
-              position={[Math.sin(a) * NAME_RING_R, 5.5 + (i % 7) * 2.9, Math.cos(a) * NAME_RING_R]}
+            <group
+              key={soul.name}
+              position={[Math.sin(a) * NAME_RING_R, h, Math.cos(a) * NAME_RING_R]}
               rotation={[0, a, 0]}
-              material-toneMapped={false}
-              material-depthWrite={false}
             >
-              {name}
-            </Text>
+              <Text
+                font={FONT_BOLD}
+                fontSize={0.58}
+                letterSpacing={0.2}
+                color="#d6ecff"
+                fillOpacity={0.9}
+                anchorX="center"
+                anchorY="bottom"
+                position={[0, 0.12, 0]}
+                material-toneMapped={false}
+                material-depthWrite={false}
+              >
+                {soul.name}
+              </Text>
+              <Text
+                font={FONT_BOLD}
+                fontSize={0.3}
+                letterSpacing={0.14}
+                color="#86b8d8"
+                fillOpacity={0.7}
+                anchorX="center"
+                anchorY="top"
+                maxWidth={8.5}
+                textAlign="center"
+                position={[0, -0.12, 0]}
+                material-toneMapped={false}
+                material-depthWrite={false}
+              >
+                {soul.line}
+              </Text>
+            </group>
           )
         })}
       </group>

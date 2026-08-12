@@ -23,14 +23,15 @@ export const TRACK_POI = {
 }
 
 /**
- * The wreck of the NILAK — the ice hauler the raiders took, drifting on the
- * spawn→Projects lane. The reason the militia exists. Nothing to play;
- * everything to understand.
+ * THE NILAK SITE — where the ice hauler died on approach. Her hull was
+ * long since scrapped for parts (a colony wastes nothing); what stands
+ * here now is THE VIGIL: the holographic memorial. The reason the
+ * militia exists. Nothing to play; everything to understand.
  */
 export const WRECK_POI = {
-  /** 350u off the spawn→Projects lane, clear of planet gravity wells so a
-   *  visitor can sit with her without drifting */
-  position: [-420, -40, -1500] as [number, number, number],
+  /** Off the spawn→Projects lane, lifted well above the traffic plane so
+   *  the memorial stands clear of the Drift's silhouette */
+  position: [-310, 100, -1430] as [number, number, number],
   standoff: 320,
 }
 

@@ -199,3 +199,23 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
   The lamp now sits in a cowl on a saddle buried in the bow plating at
   the nose tip (verified from three camera-orbit angles: hull-mounted,
   no gap). Spotlight params untouched — the approved throw is sacred.
+
+- **2026-08-12 · VIGIL v2.1 — his live read, four rulings, all shipped:**
+  1. **THE WRECK IS GONE.** His fiction ruling: "the ship would be
+     scrapped for parts anyways" — a colony wastes nothing. Wreck.tsx
+     deleted (hull, severed pod, militia buoy, colliders, REMEMBER THE
+     NILAK label). WRECK_POI stays as THE NILAK SITE — where she died;
+     the memorial is all that stands. Radar blip and hunt anchors
+     retarget with it, untouched.
+  2. **The memorial LIFTED off the traffic plane** (site now y +100,
+     ~130 above the Drift's plane) — it was tangling with the station
+     silhouette from the docks ("the hologram is appearing behind the
+     drift station"). Verified from his vantage: she stands alone
+     against dark sky.
+  3. **Projector shafts removed** — his call, the billboard/headlight
+     law extended to holograms: fixtures may glow, nothing scatters in
+     vacuum, the hologram itself is the only projected light you see.
+  4. **The names became gravestones**: each crew member now carries a
+     line their people left ("DA — THE TOMATOES CAME UP", "WE STILL SET
+     YOUR PLACE, ANJUSHKA", "TILL THE WATER COMES BACK ROUND, LOVE") —
+     bright name, dim epitaph, revolving together.
