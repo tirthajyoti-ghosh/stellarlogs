@@ -30,8 +30,10 @@ import { FONT_BOLD } from './boards/font'
  * since scrapped for parts (a colony wastes nothing); this is all that
  * stands. Four projector pedestals throw a hologram of HER — the ice
  * hauler herself, whole again, standing vertical on her drive. Her
- * crew's names revolve slowly around her, each with the line their
- * people left, the way lines are left on gravestones. Below them, a
+ * crew's names revolve around her from drive to bow, each with the line
+ * their people left, the way lines are left on gravestones — and when
+ * you fly close, the names passing through your line of sight swell
+ * like macOS dock icons under a cursor, then settle back. Below them, a
  * ring of holographic candles — one per candle ever lit, kept forever
  * (localStorage now; the backend will one day make the count
  * everyone's). Press G: your candle lights bright at the deck, climbs,
@@ -47,12 +49,13 @@ const SLEEP_RANGE = 1600
 const MAX_FLAMES = 48
 const NAME_RING_R = 10.5
 const CANDLE_RING_R = 6.4
-const NAME_SPEED = 0.035 // rad/s — a slow, patient orbit
+const NAME_SPEED = 0.05 // rad/s — slow and patient, but alive
 const CANDLE_SPEED = 0.055
 const JOIN_TIME = 5.5 // s for your candle to climb to its slot
 
-/** Her crew — twenty-six souls, each with a line their people left,
- *  the way lines are left on gravestones. */
+/** Her crew — forty-two souls, each with a line their people left, the
+ *  way lines are left on gravestones: some proud, some funny, some just
+ *  sad. The plate below counts them from this list. */
 const MANIFEST: { name: string; line: string }[] = [
   { name: 'VERA OKOYE · MASTER', line: 'FORTY YEARS ON THE ICE RUN — NEVER ONCE LATE' },
   { name: 'DUSAN MAKALO · XO', line: 'HE SANG OFF-KEY AND WE LET HIM' },
@@ -80,6 +83,22 @@ const MANIFEST: { name: string; line: string }[] = [
   { name: 'HAKIM BOUAZZA', line: 'HIS COFFEE COULD WAKE THE DEAD' },
   { name: 'MEI-LIN ZHAO', line: 'SHE DREW BIRDS SHE NEVER SAW' },
   { name: 'PETYR ANSGAR', line: 'TILL THE WATER COMES BACK ROUND, LOVE' },
+  { name: 'ODUYA REMBEK', line: 'HE HELD THE LOCK FOR OTHERS FIRST' },
+  { name: 'SASHA VOLKOV', line: 'BORN ON CERES · DIED CARRYING WATER' },
+  { name: 'MIRA OKONJO', line: 'MY SISTER. MY WHOLE SKY' },
+  { name: 'JAN BRAAM', line: 'HE NEVER LOST AT CARDS. WE CHECKED' },
+  { name: 'THUY NGUYEN', line: 'SHE LEFT THE RADIO ON FOR US' },
+  { name: 'KOFI MENSAH', line: 'STILL THE BEST COOK OFF PALLAS' },
+  { name: 'ROSA ETXEBERRIA', line: 'FOUR KIDS, AMA. ALL OF US FLYING NOW' },
+  { name: 'DMITRI PAVLENKO', line: 'HE MEASURED TWICE, ALWAYS' },
+  { name: 'AMARA DIALLO', line: 'THE DRIFT STILL SINGS HER SONGS' },
+  { name: 'HANS OKAFOR-LIND', line: 'PAPA — WE FINISHED YOUR BOAT' },
+  { name: 'NIKO TERAUCHI', line: 'SHORTEST TEMPER · LONGEST FRIEND' },
+  { name: 'CELESTE MORAES', line: 'SHE SAID THE BELT WAS BEAUTIFUL. IT IS' },
+  { name: 'IBRAHIM SAYEGH', line: 'HE PRAYED FOR RAIN HE NEVER SAW' },
+  { name: 'WEI ZHANG', line: 'GRANDFATHER — THE WELL RUNS CLEAR' },
+  { name: 'ESPEN LARSEN', line: 'HE OWED ME TEN SCRIP. KEEP IT, BOSMANG' },
+  { name: 'TALIA BEN-AMI', line: 'SHE WAS GOING TO SEE EARTH IN SPRING' },
 ]
 
 /** Deterministic ring slot for candle i — reload reproduces the layout. */
@@ -96,12 +115,25 @@ const _q = new Quaternion()
 const _s = new Vector3(1, 1, 1)
 const _p = new Vector3()
 const _yAxis = new Vector3(0, 1, 0)
+const _axis = new Vector3()
+
+function smooth01(x: number): number {
+  const t = Math.max(0, Math.min(1, x))
+  return t * t * (3 - 2 * t)
+}
+
+/** How far up the wave lifts a name at the cone's center. */
+const MAG_MAX = 1.9
+/** The wave only plays close-in — a memorial, not a billboard. */
+const MAG_NEAR = 280
 
 export function NilakVigil() {
   const nilak = useGLTF(NILAK_URL)
   const [candles, setCandles] = useState(getCandles())
   const rootRef = useRef<Group>(null)
   const nameRingRef = useRef<Group>(null)
+  const nameGroups = useRef<(Group | null)[]>([])
+  const nameScale = useRef<Float32Array>(new Float32Array(MANIFEST.length).fill(1))
   const candleRingRef = useRef<Group>(null)
   const stemsRef = useRef<InstancedMesh>(null)
   const flamesRef = useRef<InstancedMesh>(null)
@@ -141,7 +173,9 @@ export function NilakVigil() {
             float scan = 0.78 + 0.22 * sin(vW.y * 3.2 - uTime * 1.6);
             float flick = 0.94 + 0.06 * sin(uTime * 19.0) * sin(uTime * 6.1);
             float body = (0.55 + 0.95 * fres) * scan * flick;
-            float alpha = 0.30 + 0.55 * fres;
+            // dense enough to OCCLUDE what's behind her — a hologram the
+            // stars shine through reads as farther than it is (depth lie)
+            float alpha = (0.74 + 0.26 * fres) * (0.85 + 0.15 * scan);
             vec3 col = vec3(0.30, 0.75, 1.0) * body * 1.05;
             gl_FragColor = vec4(col, alpha);
           }`,
@@ -171,6 +205,22 @@ export function NilakVigil() {
     })
     return ship
   }, [nilak, holoMat])
+
+  /** One slot per soul, scattered from her drive to her bow. */
+  const slots = useMemo(
+    () =>
+      MANIFEST.map((_, i) => {
+        const a = (i / MANIFEST.length) * Math.PI * 2
+        const r = NAME_RING_R + (((i * 29) % 100) / 100) * 1.5
+        return {
+          a,
+          lx: Math.sin(a) * r,
+          lz: Math.cos(a) * r,
+          h: 4.2 + (((i * 17) % MANIFEST.length) / MANIFEST.length) * 31.8,
+        }
+      }),
+    [],
+  )
 
   // lay the permanent candles into the instanced ring
   useEffect(() => {
@@ -251,8 +301,47 @@ export function NilakVigil() {
     holoMat.uniforms.uTime.value = st.time
 
     // the slow orbits
-    if (nameRingRef.current) nameRingRef.current.rotation.y += NAME_SPEED * dt
+    const nameRing = nameRingRef.current
+    if (nameRing) nameRing.rotation.y += NAME_SPEED * dt
     if (candleRingRef.current) candleRingRef.current.rotation.y += CANDLE_SPEED * dt
+
+    // THE DOCK WAVE: a cone from your nose to the column's heart — names
+    // revolving through it swell smoothly and settle back as they leave,
+    // the way macOS dock icons rise under the cursor. Close-in only.
+    if (nameRing) {
+      const ry = nameRing.rotation.y
+      const cosR = Math.cos(ry)
+      const sinR = Math.sin(ry)
+      _axis.set(
+        SITE_POS.x - shipRig.position.x,
+        SITE_POS.y + 18 - shipRig.position.y,
+        SITE_POS.z - shipRig.position.z,
+      )
+      const dCenter = _axis.length()
+      _axis.multiplyScalar(1 / Math.max(dCenter, 0.001))
+      const approach = smooth01((MAG_NEAR - dCenter) / 160)
+      const halfCos = Math.cos(Math.atan2(15, Math.max(dCenter, 1)))
+      const blend = Math.min(1, dt * 7)
+      for (let i = 0; i < slots.length; i++) {
+        const grp = nameGroups.current[i]
+        if (!grp) continue
+        const slot = slots[i]
+        const vx = SITE_POS.x + slot.lx * cosR + slot.lz * sinR - shipRig.position.x
+        const vy = SITE_POS.y + slot.h - shipRig.position.y
+        const vz = SITE_POS.z - slot.lx * sinR + slot.lz * cosR - shipRig.position.z
+        const len = Math.sqrt(vx * vx + vy * vy + vz * vz) || 1
+        const ca = (vx * _axis.x + vy * _axis.y + vz * _axis.z) / len
+        let t = 0
+        // the cone ENDS at the hologram — the far side of the ring stays small
+        if (len < dCenter * 1.12 && ca > halfCos) {
+          t = smooth01((ca - halfCos) / (1 - halfCos))
+        }
+        const target = 1 + MAG_MAX * t * approach
+        const next = nameScale.current[i] + (target - nameScale.current[i]) * blend
+        nameScale.current[i] = next
+        grp.scale.setScalar(next)
+      }
+    }
 
     // your candle's climb to its slot
     const yours = yourCandleRef.current
@@ -323,27 +412,29 @@ export function NilakVigil() {
       <group position={[0, 22, 0]} rotation={[0, 0.4, Math.PI / 2]} scale={0.48}>
         <primitive object={holoShip} />
       </group>
-      {/* the crew, revolving slowly around her — each a gravestone:
-          the name, and under it the line their people left */}
+      {/* the crew, revolving around her from drive to bow — each a
+          gravestone: the name, and under it the line their people left */}
       <group ref={nameRingRef}>
         {MANIFEST.map((soul, i) => {
-          const a = (i / MANIFEST.length) * Math.PI * 2
-          const h = 5.5 + (i % 7) * 3.1
+          const slot = slots[i]
           return (
             <group
               key={soul.name}
-              position={[Math.sin(a) * NAME_RING_R, h, Math.cos(a) * NAME_RING_R]}
-              rotation={[0, a, 0]}
+              ref={(el) => {
+                nameGroups.current[i] = el
+              }}
+              position={[slot.lx, slot.h, slot.lz]}
+              rotation={[0, slot.a, 0]}
             >
               <Text
                 font={FONT_BOLD}
-                fontSize={0.58}
+                fontSize={0.46}
                 letterSpacing={0.2}
                 color="#d6ecff"
                 fillOpacity={0.9}
                 anchorX="center"
                 anchorY="bottom"
-                position={[0, 0.12, 0]}
+                position={[0, 0.1, 0]}
                 material-toneMapped={false}
                 material-depthWrite={false}
               >
@@ -351,15 +442,15 @@ export function NilakVigil() {
               </Text>
               <Text
                 font={FONT_BOLD}
-                fontSize={0.3}
+                fontSize={0.24}
                 letterSpacing={0.14}
                 color="#86b8d8"
                 fillOpacity={0.7}
                 anchorX="center"
                 anchorY="top"
-                maxWidth={8.5}
+                maxWidth={7}
                 textAlign="center"
-                position={[0, -0.12, 0]}
+                position={[0, -0.1, 0]}
                 material-toneMapped={false}
                 material-depthWrite={false}
               >
@@ -414,7 +505,7 @@ export function NilakVigil() {
         position={[0, 1.6, 12.6]}
         material-toneMapped={false}
       >
-        {'IN MEMORY OF THE 26 SOULS OF THE MV NILAK'}
+        {`IN MEMORY OF THE ${MANIFEST.length} SOULS OF THE MV NILAK`}
       </Text>
       <Text
         font={FONT_BOLD}

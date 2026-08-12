@@ -219,3 +219,28 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
      line their people left ("DA — THE TOMATOES CAME UP", "WE STILL SET
      YOUR PLACE, ANJUSHKA", "TILL THE WATER COMES BACK ROUND, LOVE") —
      bright name, dim epitaph, revolving together.
+
+- **2026-08-13 · VIGIL v2.2 — his second live read:**
+  1. **THE DEPTH LIE fixed.** His screenshots: the hologram rendered
+     "behind" the Drift rock and the Projects star — objects thousands
+     of units away reading as nearer than a memorial 40m off the bow.
+     Root cause was not sorting: the holo body was ~30% opaque, so any
+     bright background (the star's HDR halo sprite is radius×7) punched
+     straight through and won the perception fight. Fix: a DENSE
+     hologram — body alpha ~0.74–1.0 (fresnel to full at the rims,
+     scan-modulated) so she genuinely occludes what's behind her. Only
+     the star's HDR core still blooms over her tip, which is what a
+     bright light behind a mast really does.
+  2. **42 souls now, drive to bow.** Manifest grew from 26 with the
+     count on the plate computed from the list; new lines span serious /
+     sad / funny per his ask ("BORN ON CERES · DIED CARRYING WATER",
+     "HE NEVER LOST AT CARDS. WE CHECKED", "SHE WAS GOING TO SEE EARTH
+     IN SPRING"). Fonts a notch smaller; orbit a smidge faster
+     (0.035 → 0.05 rad/s).
+  3. **THE DOCK WAVE** (his macOS-dock sketch): a cone from the ship's
+     nose to the column's heart; names revolving through it swell to
+     ~2.9× with smoothstep-over-angle (the spatial wave) plus per-frame
+     lerp (the temporal ease), settle back as they leave. The cone ENDS
+     at the hologram — the mirrored far side stays small. Active only
+     inside ~280m, ramping in as you close. Verified live: two frames
+     7s apart show different name-sets swollen as the ring turns.
