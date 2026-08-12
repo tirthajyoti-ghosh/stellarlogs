@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE LIT RAILS — stage frames</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #05080f; color: #9fb2c8;
+         font-family: "Space Mono", ui-monospace, Menlo, monospace; padding: 18px 22px 30px; }
+  h1 { font-size: 13px; letter-spacing: 0.3em; color: #6fd3e8; margin-bottom: 4px; }
+  p.sub { font-size: 10.5px; letter-spacing: 0.12em; color: #6f8296; margin-bottom: 16px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .cell { border: 1px solid #12253d; background: #020610; }
+  .cell canvas { display: block; width: 100%; }
+  .cap { padding: 8px 10px 9px; font-size: 10px; letter-spacing: 0.14em; line-height: 1.5; }
+  .cap b { color: #ffc06e; font-weight: 400; display: block; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+<h1>THE LIT RAILS — THE FIRING SEQUENCE IN EIGHT FRAMES</h1>
+<p class="sub">rails geometry · channel light · armature bridge at full charge · discharge that leaves the glass · heat you watch drain</p>
+<div class="grid" id="grid"></div>
+<script>
+'use strict'
+const STAGES = [
+  { id: 1, t: 'IDLE', d: 'the ghost rails breathe off the bow — alive before touched' },
+  { id: 2, t: 'CHARGE 35%', d: 'hold SPACE: light pours up BOTH rails, meniscus heads climbing' },
+  { id: 3, t: 'CHARGE 85%', d: 'columns near the muzzle; the reticle blooms in anticipation' },
+  { id: 4, t: 'CIRCUIT CLOSED', d: 'the armature ARCS across the gap — the loaded gun · RELEASE' },
+  { id: 5, t: 'FIRE +50ms', d: 'the bridge launches; the discharge races up the rails' },
+  { id: 6, t: 'FIRE +100ms', d: 'one unbroken stroke: rails → reticle → the rock. white flash, kick' },
+  { id: 7, t: 'COOLING · EARLY', d: 'rails left ember-hot; the drain boundary starts down' },
+  { id: 8, t: 'COOLING · LATE', d: 'heat almost gone; the ghost breath returns — yours again' },
+]
+
+const W = 700, H = 430
+
+function glowLine(ctx, x0, y0, x1, y1, w, r, g, b, a) {
+  ctx.globalCompositeOperation = 'lighter'
+  for (const [lw, la] of [[w * 6, a * 0.10], [w * 3, a * 0.22], [w * 1.4, a * 0.55], [w * 0.6, a]]) {
+    ctx.strokeStyle = `rgba(${r},${g},${b},${la})`
+    ctx.lineWidth = lw
+    ctx.lineCap = 'round'
+    ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke()
+  }
+  ctx.globalCompositeOperation = 'source-over'
+}
+function glowDot(ctx, x, y, rad, r, g, b, a) {
+  ctx.globalCompositeOperation = 'lighter'
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, rad * 3)
+  grad.addColorStop(0, `rgba(${r},${g},${b},${a})`)
+  grad.addColorStop(0.35, `rgba(${r},${g},${b},${a * 0.35})`)
+  grad.addColorStop(1, 'transparent')
+  ctx.fillStyle = grad
+  ctx.beginPath(); ctx.arc(x, y, rad * 3, 0, 7); ctx.fill()
+  ctx.globalCompositeOperation = 'source-over'
+}
+
+function drawFrame(ctx, st) {
+  const cx = W / 2, cy = H * 0.34
+  ctx.fillStyle = '#020610'; ctx.fillRect(0, 0, W, H)
+
+  // sparse stars
+  let sd = 12345
+  const rng = () => { sd = (sd * 1103515245 + 12345) & 0x7fffffff; return sd / 0x7fffffff }
+  ctx.fillStyle = 'rgba(143,168,192,0.3)'
+  for (let i = 0; i < 90; i++) ctx.fillRect(rng() * W, rng() * H, rng() < 0.3 ? 1.5 : 1, 1)
+
+  // a rock near the aim point (stage 6 shows it hit)
+  const rockX = cx, rockY = cy - 36
+  if (st.id !== 6) {
+    ctx.fillStyle = 'rgba(96,104,118,0.55)'
+    ctx.beginPath()
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2
+      const rr = 22 * (0.75 + 0.35 * Math.abs(Math.sin(4.2 + i * 2.9)))
+      const x = rockX + Math.cos(a) * rr, y = rockY + Math.sin(a) * rr
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y)
+    }
+    ctx.closePath(); ctx.fill()
+    ctx.strokeStyle = 'rgba(150,165,185,0.4)'
+    ctx.stroke()
+  } else {
+    // fractured: irregular shards dispersing radially, still rock
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + 0.4
+      const d = 18 + (i % 3) * 12
+      const x = rockX + Math.cos(a) * d, y = rockY + Math.sin(a) * d * 0.85
+      ctx.fillStyle = 'rgba(96,104,118,0.75)'
+      ctx.save(); ctx.translate(x, y); ctx.rotate(i * 1.3)
+      ctx.beginPath()
+      const sr = 5 + (i % 3) * 3
+      for (let v = 0; v < 6; v++) {
+        const va = (v / 6) * Math.PI * 2
+        const vr = sr * (0.7 + 0.4 * Math.abs(Math.sin(i * 2 + v * 2.3)))
+        if (v === 0) ctx.moveTo(Math.cos(va) * vr, Math.sin(va) * vr)
+        else ctx.lineTo(Math.cos(va) * vr, Math.sin(va) * vr)
+      }
+      ctx.closePath(); ctx.fill()
+      ctx.strokeStyle = 'rgba(150,165,185,0.35)'
+      ctx.lineWidth = 0.8
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+
+  // battle-cluster whisper (composition context)
+  ctx.font = '700 9px Rajdhani, sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillStyle = 'rgba(255,180,84,0.7)'
+  ctx.fillText('VEL 0', cx - 165, cy + 4)
+  ctx.fillText('PDC · AUTO', cx + 168, cy + 4)
+  ctx.fillStyle = 'rgba(126,220,160,0.6)'
+  ctx.fillText('HULL ▰▰▰ 100', cx, H - 26)
+
+  // the ship, bow up, below center
+  const shipY = H * 0.84
+  ctx.fillStyle = '#2c333d'
+  ctx.strokeStyle = 'rgba(140,160,180,0.5)'
+  ctx.lineWidth = 1
+  ctx.beginPath()
+  ctx.moveTo(cx, shipY - 56)
+  ctx.lineTo(cx + 18, shipY - 14)
+  ctx.lineTo(cx + 22, shipY + 26)
+  ctx.lineTo(cx - 22, shipY + 26)
+  ctx.lineTo(cx - 18, shipY - 14)
+  ctx.closePath(); ctx.fill(); ctx.stroke()
+  const dg = ctx.createRadialGradient(cx, shipY + 31, 0, cx, shipY + 31, 13)
+  dg.addColorStop(0, 'rgba(140,190,255,0.7)'); dg.addColorStop(1, 'transparent')
+  ctx.fillStyle = dg
+  ctx.beginPath(); ctx.arc(cx, shipY + 31, 13, 0, 7); ctx.fill()
+
+  // ---- THE LIT RAILS ----
+  const bowY = shipY - 62
+  const topY = cy + 64
+  const spreadBase = 26, spreadTop = 11
+  const railX = (side, f) => cx + side * (spreadBase + (spreadTop - spreadBase) * f)
+
+  const k = st.id === 2 ? 0.35 : st.id === 3 ? 0.85 : 0 // charge fraction
+  const phase =
+    st.id === 1 ? 'idle' : st.id <= 3 ? 'charge' : st.id === 4 ? 'hold'
+    : st.id <= 6 ? 'fire' : 'cool'
+
+  // ghost rails (always the base layer)
+  const ghostA = phase === 'idle' ? 0.26 : phase === 'cool' && st.id === 8 ? 0.18 : 0.14
+  for (const side of [-1, 1])
+    glowLine(ctx, railX(side, 0), bowY, railX(side, 1), topY, 1.4, 140, 200, 235, ghostA)
+
+  // cross-tick scale between the rails
+  for (let i = 1; i <= 5; i++) {
+    const f = i / 6
+    const y = bowY + (topY - bowY) * f
+    const lit = (phase === 'charge' && f <= k) || phase === 'hold'
+    ctx.fillStyle = lit
+      ? (phase === 'hold' ? 'rgba(87,230,196,0.4)' : 'rgba(255,190,110,0.4)')
+      : 'rgba(140,190,220,0.10)'
+    const x0 = railX(-1, f), x1 = railX(1, f)
+    const inset = (x1 - x0) * 0.3
+    ctx.fillRect(x0 + inset, y, (x1 - x0) - inset * 2, 1)
+  }
+
+  if (phase === 'charge') {
+    for (const side of [-1, 1]) {
+      const xa = railX(side, 0), xb = railX(side, k)
+      const ya = bowY, yb = bowY + (topY - bowY) * k
+      glowLine(ctx, xa, ya, xb, yb, 2.6, 255, 190, 110, 0.9)
+      glowDot(ctx, xb, yb, 4, 255, 245, 220, 0.75)
+    }
+    // reticle blooming with anticipation
+    glowDot(ctx, rockX, rockY, 3, 255, 200, 130, 0.12 + k * 0.3)
+  }
+
+  if (phase === 'hold') {
+    // both rails full teal, breathing
+    for (const side of [-1, 1])
+      glowLine(ctx, railX(side, 0), bowY, railX(side, 1), topY, 2.6, 87, 230, 196, 0.85)
+    // THE ARMATURE BRIDGE: the live arc across the gap
+    const yTop = topY + 3
+    glowLine(ctx, railX(-1, 1), yTop, railX(1, 1), yTop, 3.6, 200, 255, 240, 1.0)
+    // arc jitter strokes
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.strokeStyle = 'rgba(230,255,248,0.9)'
+    ctx.lineWidth = 1.1
+    ctx.beginPath()
+    ctx.moveTo(railX(-1, 1), yTop)
+    ctx.lineTo(cx - 1, yTop - 2.5)
+    ctx.lineTo(cx + 2, yTop + 2)
+    ctx.lineTo(railX(1, 1), yTop)
+    ctx.stroke()
+    ctx.globalCompositeOperation = 'source-over'
+    // armed reticle
+    glowDot(ctx, rockX, rockY, 4, 130, 255, 220, 0.85)
+    // RELEASE
+    ctx.font = '700 12px Rajdhani, sans-serif'
+    ctx.textAlign = 'center'
+    ctx.fillStyle = 'rgba(87,230,196,0.95)'
+    ctx.fillText('R E L E A S E', cx, rockY - 44)
+  }
+
+  if (phase === 'fire') {
+    if (st.id === 5) {
+      // rails hold teal; the white bridge races up with a light trail
+      for (const side of [-1, 1])
+        glowLine(ctx, railX(side, 0), bowY, railX(side, 1), topY, 2.4, 87, 230, 196, 0.75)
+      const fb = 0.7
+      const yb = bowY + (topY - bowY) * fb
+      // trail behind the bridge
+      glowLine(ctx, cx, bowY + (topY - bowY) * 0.35, cx, yb, 2.2, 240, 248, 255, 0.5)
+      glowLine(ctx, railX(-1, fb), yb, railX(1, fb), yb, 3, 255, 252, 245, 0.95)
+      glowDot(ctx, cx, yb, 6, 255, 250, 240, 0.9)
+    } else {
+      // the unbroken stroke: rails → reticle → rock; rails white-hot
+      for (const side of [-1, 1])
+        glowLine(ctx, railX(side, 0), bowY, railX(side, 1), topY, 1.6, 255, 240, 230, 0.55)
+      glowLine(ctx, cx, bowY, cx, rockY + 8, 2.8, 250, 248, 255, 0.95)
+      glowDot(ctx, cx, rockY, 10, 255, 250, 245, 0.9)
+      // violet sheath along the axis
+      glowLine(ctx, cx, bowY, cx, rockY + 8, 6, 170, 130, 255, 0.3)
+      // muzzle discharge arcs at the bow
+      ctx.globalCompositeOperation = 'lighter'
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2 + 0.5
+        ctx.strokeStyle = `rgba(190,150,255,${0.5})`
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(cx, bowY)
+        ctx.lineTo(cx + Math.cos(a) * 26, bowY + Math.sin(a) * 17)
+        ctx.stroke()
+      }
+      ctx.globalCompositeOperation = 'source-over'
+    }
+  }
+
+  if (phase === 'cool') {
+    const heat = st.id === 7 ? 0.8 : 0.22
+    const hotTopF = st.id === 7 ? 0.85 : 0.3 // boundary descends
+    for (const side of [-1, 1]) {
+      const xb = railX(side, hotTopF)
+      const yb = bowY + (topY - bowY) * hotTopF
+      glowLine(ctx, railX(side, 0), bowY, xb, yb, 1.5, 255, 130 + heat * 50, 60, 0.08 + heat * 0.35)
+      glowDot(ctx, xb, yb, 2.5, 255, 150, 70, heat * 0.45)
+    }
+  }
+
+  // the aim reticle rides the target — aim laid on the rock
+  ctx.strokeStyle = 'rgba(220,240,250,0.8)'
+  ctx.lineWidth = 1.1
+  ctx.beginPath(); ctx.arc(rockX, rockY, 6, 0, 7); ctx.stroke()
+  ctx.fillStyle = 'rgba(220,240,250,0.9)'
+  ctx.beginPath(); ctx.arc(rockX, rockY, 1.2, 0, 7); ctx.fill()
+}
+
+const grid = document.getElementById('grid')
+for (const st of STAGES) {
+  const cell = document.createElement('div')
+  cell.className = 'cell'
+  const cv = document.createElement('canvas')
+  cv.width = W; cv.height = H
+  cell.appendChild(cv)
+  const cap = document.createElement('div')
+  cap.className = 'cap'
+  cap.innerHTML = `<b>STAGE ${st.id} · ${st.t}</b>${st.d}`
+  cell.appendChild(cap)
+  grid.appendChild(cell)
+  drawFrame(cv.getContext('2d'), st)
+}
+</script>
+</body>
+</html>
