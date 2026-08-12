@@ -182,3 +182,28 @@ real — adapted, not pasted:
 - Harness: engage → battle+available · Space charge→hold→fire → plate
   cracked, recoil 0→25 backward · vent path · cooling drain · zero
   console errors.
+
+# TABLED — recorded as a failure (2026-08-12, Tirtha's call)
+
+After two exploration passes, five element-design rounds, a storyboard
+with four self-review iterations, and a full in-game build, the design
+never earned his eyes. His verdict: "I don't think you are able to do it
+correctly. Let's table that. We will address this later, not now."
+
+**Removed from the game same day**: Railgun/LongShot unmounted, impound
+wiring stripped from the hunt, SPINE touch button gone, the painter
+canvas gone. KEPT: all source files (inert, compiling), the benches
+(sight.html, stages.html, railgun.html), the serious audio in the
+engine, and the battle-coach dedupe fix (a real pre-existing bug).
+
+**For the retry, whenever it comes**: the surviving judgments are (a)
+availability law (proving line + storm, battle mode), (b) Space trigger,
+(c) no zoom ever — ship in frame, (d) fracture-not-fireworks, (e) the
+kick must be visible, (f) the audio set. What never landed was the HUD
+element itself — six shapes tried (ring, gauges, lock grammar, physics
+windows, rails at five scales, lit-rails-in-light). The lesson recorded
+in memory: my visual-design instinct for novel HUD furniture is the weak
+link; next attempt should start from HIS sketch, or from real captured
+frames of the show's gunnery glass, not from my generative iterations.
+
+The debris storm reverts to its original PDC-only civil-defense design.

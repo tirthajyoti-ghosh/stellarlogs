@@ -432,10 +432,11 @@ the way (Tirtha). Deep exploration passes continue between builds
    (docs/the-neighborhood.md): sleeping spread SHIPPED, starmap lift +
    five UNSURVEYED inert stars SHIPPED; next slag skeet → Drift toys →
    bell → debris storm.
-3.1. **THE SPINE — the railgun** — SHIPPED 2026-08-09 (docs/the-spine.md
-   BUILT): weapon + serious audio + impound rules + THE LONG SHOT proving
-   line. Remaining: the debris storm consumes it as the two-weapon
-   finale. Player torpedoes REJECTED (reasons in the doc).
+3.1. **THE SPINE — the railgun** — TABLED 2026-08-12 as a recorded
+   failure (docs/the-spine.md): the HUD element never earned approval
+   after many rounds; removed from the game, revisit later. The debris
+   storm reverts to PDC-only civil defense. Player torpedoes stay
+   REJECTED.
 3.2. **THE SCORE — music** (Tirtha 2026-08-09: "music has been absent…
    the Expanse is really good because of the music"). Exploration pass +
    score.html listening bench: CC beds vs generative WebAudio, adaptive

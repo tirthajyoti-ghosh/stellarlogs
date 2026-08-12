@@ -36,8 +36,6 @@ export function RaceLayer() {
           captureEls.root = el
         }}
       />
-      {/* THE LIT RAILS — THE SPINE's HUD, painted by scene/Railgun.tsx */}
-      <canvas id="spine-canvas" className="hud-spine-canvas" aria-hidden />
     </>
   )
 }
