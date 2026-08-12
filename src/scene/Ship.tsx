@@ -382,7 +382,7 @@ export function Ship() {
           it as you close — the world emerges from the dark. */}
       <spotLight
         ref={headlightRef}
-        position={[0, 0.3, -3.1]}
+        position={[0, 0.05, -3.05]}
         angle={0.34}
         penumbra={0.55}
         decay={1.0}
@@ -391,11 +391,22 @@ export function Ship() {
         color="#e8f2ff"
       />
       <object3D ref={headTargetRef} position={[0, 0.1, -600]} />
-      {/* the fixture itself: a small hot lens under the bow */}
-      <mesh position={[0, 0.3, -3.15]}>
-        <sphereGeometry args={[0.055, 8, 8]} />
-        <meshBasicMaterial color={[2.6, 2.8, 3.2]} toneMapped={false} />
-      </mesh>
+      {/* the fixture: a lamp cowl seated on the bow, its saddle buried in
+          the nose plating so the lens reads as hull-mounted hardware */}
+      <group position={[0, 0.05, -2.86]}>
+        <mesh position={[0, -0.01, 0.28]}>
+          <boxGeometry args={[0.15, 0.13, 0.62]} />
+          <meshStandardMaterial color="#2e343c" metalness={0.7} roughness={0.5} flatShading />
+        </mesh>
+        <mesh rotation-x={Math.PI / 2} position={[0, 0, -0.06]}>
+          <cylinderGeometry args={[0.075, 0.095, 0.26, 10]} />
+          <meshStandardMaterial color="#3a4048" metalness={0.75} roughness={0.45} flatShading />
+        </mesh>
+        <mesh position={[0, 0, -0.19]}>
+          <sphereGeometry args={[0.05, 8, 8]} />
+          <meshBasicMaterial color={[2.6, 2.8, 3.2]} toneMapped={false} />
+        </mesh>
+      </group>
       <group rotation-x={-Math.PI / 2}>
         <Suspense fallback={null}>
           <TachiModel />

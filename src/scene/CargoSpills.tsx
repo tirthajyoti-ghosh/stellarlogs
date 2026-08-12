@@ -7,23 +7,78 @@ import { registerHudLabel } from '../hud/hudState'
 import { DRIFT_POI } from '../config/pois'
 
 /**
- * THE SPILL FIELD (docs/the-neighborhood.md — the Drift's toy).
- * A freighter lost a container stack on approach; salvage rights are
- * disputed, so it just… floats there, and everyone flies through it.
- * Plow your hull through the field and the crates shoulder aside —
- * real pushes, no damage (toy law), with a whisper-weak drift home so
- * the field slowly re-forms after you've made a mess of it.
- * Borrowed body: the containers are the manhunt's real crates.glb.
+ * CARGO SPILLS (docs/the-neighborhood.md — port texture, everywhere).
+ * Freighters lose stacks; salvage rights get disputed; the crates just…
+ * float there, and everyone flies through them. Plow your hull through
+ * a field and the crates shoulder aside — real pushes, no damage (toy
+ * law), with a whisper-weak drift home so each field slowly re-forms.
+ * Five spills scattered across the neighborhood, not just the Drift's —
+ * a working system drops cargo on every lane. Borrowed body: the
+ * manhunt's real crates.glb.
+ *
+ * (Roadmap: a retrieval mission — search the containers, find the one
+ * that matters — explores later, on the liveness backend.)
  */
 
 const CRATES_URL = '/models/crates.glb'
-const CENTER = new Vector3(
-  DRIFT_POI.position[0] + 750,
-  DRIFT_POI.position[1] + 60,
-  DRIFT_POI.position[2] + 980,
-)
-const COUNT = 26
-const FIELD_R = 220
+
+interface SpillSite {
+  id: string
+  center: [number, number, number]
+  count: number
+  fieldR: number
+  seed: number
+  detail: string
+}
+
+const SITES: SpillSite[] = [
+  {
+    // the Drift's own spill, on approach — the busy one
+    id: 'spill-drift',
+    center: [DRIFT_POI.position[0] + 750, DRIFT_POI.position[1] + 60, DRIFT_POI.position[2] + 980],
+    count: 40,
+    fieldR: 260,
+    seed: 7741,
+    detail: 'SALVAGE DISPUTED — MIND YOUR HULL',
+  },
+  {
+    // the Projects↔Work lane, open space between the two systems
+    id: 'spill-meridian',
+    center: [-2500, 1350, -3700],
+    count: 32,
+    fieldR: 320,
+    seed: 8652,
+    detail: 'HAULER LOST HER STACK — MANIFEST UNCLAIMED',
+  },
+  {
+    // short of the Blog system, off the inbound lane
+    id: 'spill-blog',
+    center: [5450, -1450, -1900],
+    count: 22,
+    fieldR: 240,
+    seed: 9563,
+    detail: 'YEARS ADRIFT — NOBODY CAME BACK FOR IT',
+  },
+  {
+    // the Travel approach — jettisoned under burn, still scattering
+    id: 'spill-travel',
+    center: [-4800, 1250, 4400],
+    count: 28,
+    fieldR: 280,
+    seed: 10474,
+    detail: 'JETTISONED UNDER BURN — STILL SCATTERING',
+  },
+  {
+    // off the Reading system's quiet side
+    id: 'spill-reading',
+    center: [6700, 2300, 3400],
+    count: 20,
+    fieldR: 220,
+    seed: 11385,
+    detail: 'ONE STACK, NO CLAIMANT — HELP YOURSELF TO NOTHING',
+  },
+]
+
 const PUSH_R = 26
 const PUSH_V = 14
 
@@ -38,12 +93,13 @@ interface Crate {
 
 const _v = new Vector3()
 
-export function DriftSpill() {
+function SpillField({ site }: { site: SpillSite }) {
   const gltf = useGLTF(CRATES_URL)
   const groupRef = useRef<Group>(null)
+  const center = useMemo(() => new Vector3(...site.center), [site])
 
   const { crates, models } = useMemo(() => {
-    let sd = 7741
+    let sd = site.seed
     const rng = () => {
       sd = (sd * 1103515245 + 12345) & 0x7fffffff
       return sd / 0x7fffffff
@@ -55,18 +111,18 @@ export function DriftSpill() {
     const mix = ['container', 'crate', 'box', 'ammo']
     const crates: Crate[] = []
     const models: Object3D[] = []
-    for (let i = 0; i < COUNT; i++) {
+    for (let i = 0; i < site.count; i++) {
       const src = byName[mix[i % mix.length]]
       if (!src) continue
       const c = src.clone(true)
       models.push(c)
       // a loose stack: denser core, stragglers outward
       const a = rng() * Math.PI * 2
-      const r = Math.pow(rng(), 0.6) * FIELD_R
+      const r = Math.pow(rng(), 0.6) * site.fieldR
       const home = new Vector3(
-        CENTER.x + Math.cos(a) * r,
-        CENTER.y + (rng() - 0.5) * 90,
-        CENTER.z + Math.sin(a) * r,
+        center.x + Math.cos(a) * r,
+        center.y + (rng() - 0.5) * 90,
+        center.z + Math.sin(a) * r,
       )
       crates.push({
         home,
@@ -78,28 +134,28 @@ export function DriftSpill() {
       })
     }
     return { crates, models }
-  }, [gltf])
+  }, [gltf, site, center])
 
   useEffect(() => {
     const off = registerHudLabel({
-      id: 'poi-spill',
+      id: `poi-${site.id}`,
       name: 'CARGO SPILL',
       color: '#8fb8d8',
       kind: 'poi',
-      position: CENTER,
+      position: center,
       yOffset: 80,
       el: null,
-      detail: 'SALVAGE DISPUTED — MIND YOUR HULL',
+      detail: site.detail,
       jumpStandoff: 500,
     })
     return off
-  }, [])
+  }, [site, center])
 
   useFrame((_, dt) => {
     const group = groupRef.current
     if (!group) return
     // sleep the whole field beyond earshot
-    const near = shipRig.position.distanceTo(CENTER) < FIELD_R + 900
+    const near = shipRig.position.distanceTo(center) < site.fieldR + 900
     group.visible = near
     if (!near) return
     for (let i = 0; i < crates.length; i++) {
@@ -132,6 +188,16 @@ export function DriftSpill() {
     <group ref={groupRef}>
       {models.map((m, i) => (
         <primitive key={i} object={m} />
+      ))}
+    </group>
+  )
+}
+
+export function CargoSpills() {
+  return (
+    <group>
+      {SITES.map((site) => (
+        <SpillField key={site.id} site={site} />
       ))}
     </group>
   )

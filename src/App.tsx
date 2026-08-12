@@ -9,7 +9,7 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
 import { SleepingSpread } from './scene/SleepingSpread'
-import { DriftSpill } from './scene/DriftSpill'
+import { CargoSpills } from './scene/CargoSpills'
 import { NilakVigil } from './scene/NilakVigil'
 import { SmallSecrets } from './scene/SmallSecrets'
 import { DriftKillBoard } from './scene/DriftKillBoard'
@@ -161,7 +161,7 @@ export default function App() {
         <ContactStation />
         <Asteroids />
         <SleepingSpread />
-        <DriftSpill />
+        <CargoSpills />
         <NilakVigil />
         <SmallSecrets />
         <DriftKillBoard />

@@ -164,3 +164,38 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
   Spill-field purpose + the serious vigil redesign (held G, ducked
   world, crew manifest, hull-rings-the-toll physics) recorded in
   conversation — vigil rework awaiting Tirtha's ruling on the proposal.
+
+- **2026-08-12 · THE VIGIL v2 shipped — the Gamarra pattern (HIS ruling).**
+  Tirtha overturned my hull-and-bell proposal with the show's own idiom:
+  the Augustín Gamarra memorial on Lovell Station, Luna ("in memory of
+  the 516 souls lost" — researched at his ask). Built exactly to his
+  sketch: a moored platform off the wreck; four projector pedestals with
+  hot lenses; a hologram of the NILAK HERSELF (nilak.glb, whole again)
+  standing vertical on her drive — fresnel-alpha shader, scanlines,
+  flicker, translucent cyan; her 26 crew's NAMES revolving slowly around
+  her; a lower ring of holographic candles, one per candle ever lit;
+  plates: IN MEMORY OF THE 26 SOULS OF THE MV NILAK / SHE CARRIED WATER.
+  G (once per approach) lights YOUR candle bright at the deck — it
+  climbs ~5.5s and joins the revolving ring. No banner; you watch it
+  join. One soft toll kept as the audio cue. The bronze bell prop and
+  candle sill retired with the redesign.
+  Build lesson (hard-won): Wreck.tsx re-parents the cached GLTF scene's
+  hull/pod nodes via <primitive> — nilak.scene is EMPTY afterward, so
+  the holo must clone off gltf.nodes, not the scene. Symptom was a
+  ship-less memorial (only beams rendered) that survived five shader
+  tunes before the debug-solid pass exposed it.
+
+- **2026-08-12 · CARGO SPILLS everywhere (his call: "a working system
+  drops cargo on every lane").** DriftSpill generalized to CargoSpills:
+  five seeded fields — the Drift's grown to 40 crates, plus the
+  Projects↔Work lane (32), the Blog approach (22), the Travel approach
+  (28), Reading's quiet side (20). Same toy law everywhere: plow, no
+  damage, whisper-drift re-forms. Each field sleeps beyond earshot.
+  ROADMAP seed (his idea): a retrieval mission — search the containers,
+  find the one that matters — explores later, on the liveness backend.
+
+- **2026-08-12 · Headlight fixture seated.** His read: cone on target
+  perfect, but the lens hovered like "a tiny sun in front of the ship".
+  The lamp now sits in a cowl on a saddle buried in the bow plating at
+  the nose tip (verified from three camera-orbit angles: hull-mounted,
+  no gap). Spotlight params untouched — the approved throw is sacred.

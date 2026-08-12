@@ -367,6 +367,17 @@ at the smelter intake (nudge rocks into the ring).
 **Rescue** — diegetic: jump/brachistochrone to nearest POI standoff, not
 teleportation.
 
+**SPILL RETRIEVAL mission (Tirtha 2026-08-12, exploration owed).** His
+seed: "you search different cargo containers and you retrieve something."
+Five spill fields now live across the neighborhood (CargoSpills.tsx) —
+the mission would make one container in a field MATTER (a manifest lead,
+a militia bounty item, a family's effects for the vigil?). Needs a real
+exploration pass before any build: what you're searching for, how a
+container reads as searched, what retrieval physically looks like
+(no magic pickup — the toy law and asset bar apply). Naturally pairs
+with the liveness backend (#4): contested salvage, claims, honest
+scarcity. DO NOT build from this stub — exploration first, his ruling.
+
 **Achievements — verdict pending (rethink is open).** Options on the table:
 (a) full Bruno: objectives + unlockable ship paints (localStorage);
 (b) ephemeral only: daily boards, no unlocks;
