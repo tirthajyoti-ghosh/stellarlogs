@@ -9,6 +9,10 @@ import { StarSystem } from './scene/StarSystem'
 import { ContactStation } from './scene/ContactStation'
 import { Asteroids } from './scene/Asteroids'
 import { SleepingSpread } from './scene/SleepingSpread'
+import { DriftSpill } from './scene/DriftSpill'
+import { NilakVigil } from './scene/NilakVigil'
+import { SmallSecrets } from './scene/SmallSecrets'
+import { DriftKillBoard } from './scene/DriftKillBoard'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -157,6 +161,10 @@ export default function App() {
         <ContactStation />
         <Asteroids />
         <SleepingSpread />
+        <DriftSpill />
+        <NilakVigil />
+        <SmallSecrets />
+        <DriftKillBoard />
         <Suspense fallback={null}>
           <GunneryRange />
           <IceRoute />

@@ -131,3 +131,26 @@ Replacement options presented (his ruling pending):
 Same session: spread tuned (content −10%, inert stars OUT to the 12–16k
 rim per "the unsurveyed ones are the Deep's business"), and the Projects/
 Work belts — found floating at pre-lift seats — rejoined their stars.
+
+
+- **2026-08-12 · THE DRIFT BATCH shipped** — the toys-and-secrets sweep:
+  - **THE SPILL FIELD**: 26 real containers (crates.glb) drifting off the
+    Drift approach; plow through and they shoulder aside (real pushes,
+    no damage, whisper-weak drift home so the field re-forms). POI:
+    CARGO SPILL · "salvage disputed — mind your hull".
+  - **THE VIGIL**: the Nilak's bell on a stanchion off her hull — G rings
+    one somber toll (new bronze-partial audio), lights one candle,
+    forever (localStorage; the backend will make it everyone's). Candle
+    sill renders every candle ever lit. Once per approach; a vigil is
+    not a toy. Bug caught by harness: G at the bell also accepted
+    escorts (the board's 620u range reaches the wreck) — the vigil now
+    claims G while you stand at it.
+  - **THE MILITIA KILL-BOARD**: painted at the docks under the jobs
+    board — TORPEDOES DOWNED, an HONEST number (wired into both real
+    PDC kill sites, localStorage), backend-ready frame.
+  - **SMALL SECRETS**: BLT-0925 — a burned-out Rocinante-class on the
+    Track's far bend ("she dared the wells too deep"); SURVEY PROBE 7
+    dead at the edge of Projects ("dead since the first charts" — the
+    Deep's quietest foreshadow).
+  Remaining in the pass: THE SCORE exploration, the debris storm
+  (PDC-only), mobile landscape.

@@ -27,6 +27,7 @@ import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
+import { bumpTorpsDowned } from '../../systems/tallies'
 import {
   armBrain,
   createBrain,
@@ -350,6 +351,7 @@ export function GunneryRange() {
       if (!torp.alive) return
       torp.alive = false
       game.current.kills++
+      bumpTorpsDowned()
       spawnExplosion(position, 0.9)
     }
     // the duel: rounds that pass close make a juking class flinch

@@ -487,6 +487,45 @@ export function triggerRailFire(): void {
   }
 }
 
+/** THE NILAK's BELL — one somber toll. Inharmonic partials like real
+ *  bronze, long decay, struck once. Kept quiet: the vigil is sacred. */
+export function triggerBell(): void {
+  if (!engine) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  // strike transient
+  const strike = ctx.createBufferSource()
+  strike.buffer = makeWhiteNoise(ctx)
+  const shp = ctx.createBiquadFilter()
+  shp.type = 'bandpass'
+  shp.frequency.value = 1400
+  shp.Q.value = 1.2
+  const sg = ctx.createGain()
+  sg.gain.setValueAtTime(0.12, t)
+  sg.gain.exponentialRampToValueAtTime(0.001, t + 0.06)
+  strike.connect(shp).connect(sg).connect(master)
+  strike.start(t)
+  strike.stop(t + 0.08)
+  // bronze partials: fundamental + minor-third hum + bright edge
+  for (const [freq, gain, decay] of [
+    [196, 0.22, 7.0],
+    [392.5, 0.1, 5.0],
+    [540, 0.055, 3.6],
+    [1080, 0.03, 1.8],
+  ] as const) {
+    const o = ctx.createOscillator()
+    o.type = 'sine'
+    o.frequency.value = freq
+    const og = ctx.createGain()
+    og.gain.setValueAtTime(0.0001, t)
+    og.gain.exponentialRampToValueAtTime(gain, t + 0.015)
+    og.gain.exponentialRampToValueAtTime(0.0001, t + decay)
+    o.connect(og).connect(master)
+    o.start(t)
+    o.stop(t + decay + 0.1)
+  }
+}
+
 export function isMuted(): boolean {
   return muted
 }

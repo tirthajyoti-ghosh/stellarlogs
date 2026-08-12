@@ -41,6 +41,7 @@ import {
 } from '../../systems/torpedoBrain'
 import { DraugrPlumes, createDrivePower } from '../fx/DraugrPlumes'
 import { pursuit } from '../../physics/pursuit'
+import { bumpTorpsDowned, gClaims } from '../../systems/tallies'
 import { useRockVariants } from '../Asteroids'
 import { DRIFT_POI, WRECK_POI, GUNNERY_POI } from '../../config/pois'
 import { IS_TOUCH } from '../../config/quality'
@@ -841,7 +842,7 @@ export function IceRoute() {
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.repeat) return
-      if (e.code === 'KeyG' && g.current.offer >= 0) g.current.accept = true
+      if (e.code === 'KeyG' && g.current.offer >= 0 && !gClaims.vigil) g.current.accept = true
       if (e.code === 'KeyH' && g.current.huntOffered) g.current.acceptHunt = true
     }
     window.addEventListener('keydown', down)
@@ -867,6 +868,7 @@ export function IceRoute() {
       if (!torp.alive) return
       torp.alive = false
       g.current.intercepts++
+      bumpTorpsDowned()
       spawnExplosion(position, 0.9)
     }
     // the duel: your rounds passing close make mil-spec ordnance flinch
