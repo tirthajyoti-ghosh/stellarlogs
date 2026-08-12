@@ -8,8 +8,10 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  Object3D,
   PointLight,
   Quaternion,
+  SpotLight,
   Vector3,
 } from 'three'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
@@ -136,6 +138,8 @@ function TachiModel() {
  */
 export function Ship() {
   const rigRef = useRef<Group>(null)
+  const headlightRef = useRef<SpotLight>(null)
+  const headTargetRef = useRef<Object3D>(null)
   const glowRef = useRef<PointLight>(null)
   const plumeCoreRef = useRef<Mesh>(null)
   const plumeOuterRef = useRef<Mesh>(null)
@@ -263,6 +267,9 @@ export function Ship() {
     }
     const rig = rigRef.current
     if (!rig) return
+    if (headlightRef.current && headTargetRef.current && headlightRef.current.target !== headTargetRef.current) {
+      headlightRef.current.target = headTargetRef.current
+    }
 
     rig.position.lerpVectors(state.prevPosition, state.position, alpha)
     const yaw = MathUtils.lerp(state.prevYaw, state.yaw, alpha)
@@ -369,6 +376,26 @@ export function Ship() {
 
   return (
     <group ref={rigRef}>
+      {/* THE HEADLIGHT — a real computed lamp, always burning (Everspace
+          rule, billboard law: light is computed, never painted; no beam,
+          nothing to scatter in vacuum). Wrecks, crates and rock answer
+          it as you close — the world emerges from the dark. */}
+      <spotLight
+        ref={headlightRef}
+        position={[0, 0.3, -3.1]}
+        angle={0.34}
+        penumbra={0.55}
+        decay={1.0}
+        distance={1300}
+        intensity={1500}
+        color="#e8f2ff"
+      />
+      <object3D ref={headTargetRef} position={[0, 0.1, -600]} />
+      {/* the fixture itself: a small hot lens under the bow */}
+      <mesh position={[0, 0.3, -3.15]}>
+        <sphereGeometry args={[0.055, 8, 8]} />
+        <meshBasicMaterial color={[2.6, 2.8, 3.2]} toneMapped={false} />
+      </mesh>
       <group rotation-x={-Math.PI / 2}>
         <Suspense fallback={null}>
           <TachiModel />

@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react'
 import { useGLTF } from '@react-three/drei'
-import { Box3, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three'
+import { Box3, Color, Mesh, MeshStandardMaterial, Object3D, Vector3 } from 'three'
 import { registerHudLabel } from '../hud/hudState'
 import { ALL_SYSTEMS } from '../config/systems'
 
@@ -19,7 +19,9 @@ import { ALL_SYSTEMS } from '../config/systems'
 const TACHI_URL = '/models/tachi.glb'
 const BUOY_URL = '/models/buoy.glb'
 
-function darken(root: Object3D, tint: number): void {
+const RACER_LIVERY = new Color('#7a8a80')
+
+function darken(root: Object3D, tint: number, livery?: Color): void {
   root.traverse((o) => {
     const m = o as Mesh
     if (!m.isMesh) return
@@ -27,7 +29,10 @@ function darken(root: Object3D, tint: number): void {
     m.material = mats.map((src) => {
       const std = src as MeshStandardMaterial
       const clone = std.clone()
-      if (clone.color) clone.color.multiplyScalar(tint)
+      if (clone.color) {
+        if (livery) clone.color.lerp(livery, 0.55) // another club's boat
+        clone.color.multiplyScalar(tint)
+      }
       if ('emissive' in clone && clone.emissive) clone.emissive.setScalar(0)
       if ('emissiveIntensity' in clone) clone.emissiveIntensity = 0
       clone.roughness = Math.min(1, (clone.roughness ?? 0.8) + 0.25)
@@ -65,7 +70,7 @@ export function SmallSecrets() {
     const size = bounds.getSize(new Vector3())
     const maxDim = Math.max(size.x, size.y, size.z)
     if (maxDim > 0) r.scale.setScalar(6.5 / maxDim)
-    darken(r, 0.32)
+    darken(r, 0.45, RACER_LIVERY)
     return r
   }, [tachi])
 

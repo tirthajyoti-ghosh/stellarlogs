@@ -154,3 +154,13 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
     Deep's quietest foreshadow).
   Remaining in the pass: THE SCORE exploration, the debris storm
   (PDC-only), mobile landscape.
+
+- **2026-08-12 · THE HEADLIGHT shipped** — one real computed spotlight on
+  the bow, always burning (billboard law: light computed, never painted;
+  no beam — nothing to scatter in vacuum), with a visible hot lens as
+  the source. Throw tuned to reveal a dead hull at ~100m and read on
+  crates at close plow range. BLT-0925 also gains her own faded
+  grey-green livery — another club's boat, not the player's mirror.
+  Spill-field purpose + the serious vigil redesign (held G, ducked
+  world, crew manifest, hull-rings-the-toll physics) recorded in
+  conversation — vigil rework awaiting Tirtha's ruling on the proposal.
