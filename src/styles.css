@@ -888,30 +888,18 @@ body[data-hit='1'] .hud-activity {
   color: #57e6c4;
 }
 
-/* THE SPINE's charge ring: an annulus around the reticle. Amber fills as
-   the capacitors charge, teal = release to fire, grey sweep = cycling. */
-.hud-spine {
+
+/* THE LIT RAILS — THE SPINE's weapon glass, a transparent painter layer */
+/* in battle the cluster's own coach line owns the hint — no doubles */
+body[data-battle='1'] .hud-coach { opacity: 0 !important; }
+
+.hud-spine-canvas {
   position: fixed;
-  left: 50%;
-  top: 50%;
-  width: 58px;
-  height: 58px;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
   pointer-events: none;
-  transition: opacity 0.2s;
-  -webkit-mask: radial-gradient(closest-side, transparent 70%, #000 73%);
-  mask: radial-gradient(closest-side, transparent 70%, #000 73%);
-}
-.hud-spine[data-phase='hold']::after {
-  content: 'RELEASE';
-  position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  transform: translateX(-50%);
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  color: #57e6c4;
+  z-index: 11;
 }
 
 /* THE HUNT FOCUS: on contract the world's tourist signage goes dark —

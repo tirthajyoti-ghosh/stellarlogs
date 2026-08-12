@@ -154,3 +154,31 @@ person." The sight view dies unbuilt. Pass 3, blessed shape:
   battle mode), Space trigger, the serious audio + breech clunk.
 - sight.html rebuilt as this mock, with the game's battle-HUD CSS
   verbatim. His judgment gates the game build.
+
+## THE LIT RAILS — BUILT INTO THE GAME (2026-08-12)
+
+The storyboard (stages.html, four self-review rounds) implemented for
+real — adapted, not pasted:
+
+- A transparent painter canvas (.hud-spine-canvas) drawn by Railgun.tsx
+  each frame, ONLY where the spine exists. The rails anchor to the
+  ship's REAL projected bow and run along the REAL boresight, ending at
+  a muzzle short of the aim point (separation is depth); they fade out
+  if the bow leaves frame.
+- States: ghost rails breathing when idle · amber light pouring up both
+  rails with meniscus heads and a whisper tick-scale · at full charge
+  the ARMATURE arcs across the muzzle, the aim point blooms, and
+  RELEASE — the only word the instrument says — floats above center ·
+  on fire the bridge races up the rails, continuous with the world's
+  slug line · then the ember heat visibly drains muzzle-to-bow. Every
+  stroke core+halo (four additive passes).
+- SPACE is the trigger (safe: the gun exists only at the proving line
+  and the storm). T retired.
+- THE LONG SHOT now runs BATTLE MODE (weapons engaged = battle, his
+  ruling): labels dark, cluster up, scope in combat trim.
+- One bug found on the live screenshots: the coach hint rendered twice
+  in battle (BattleHud's own coach + the nav coach) — the nav coach now
+  stands down in battle. Predates the spine; fixed here.
+- Harness: engage → battle+available · Space charge→hold→fire → plate
+  cracked, recoil 0→25 backward · vent path · cooling drain · zero
+  console errors.

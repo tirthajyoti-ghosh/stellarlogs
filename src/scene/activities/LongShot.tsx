@@ -173,13 +173,13 @@ export function LongShot() {
     if (st.engaged) {
       activityState.owner = 'longshot'
       activityState.active = true
-      activityState.battle = false
+      activityState.battle = true // weapons engaged: the line runs battle mode
       activityState.title = 'THE LONG SHOT'
       activityState.hint = railgun.safed
         ? 'SPINE SAFED — FINISH YOUR CONTRACT FIRST'
         : railgun.phase === 'cool'
           ? 'SPINE CYCLING — LINE UP THE NEXT ONE'
-          : 'HOLD T — CHARGE THE SPINE, RELEASE AT FULL'
+          : 'HOLD SPACE — CHARGE THE SPINE, RELEASE AT FULL'
       activityState.lines = [
         { label: 'CRACKED', value: String(st.cracked) },
         { label: 'BEST RANGE', value: st.best > 0 ? String(st.best) : '—' },
