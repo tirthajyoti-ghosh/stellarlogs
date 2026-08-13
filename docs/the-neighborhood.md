@@ -244,3 +244,29 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
      at the hologram — the mirrored far side stays small. Active only
      inside ~280m, ramping in as you close. Verified live: two frames
      7s apart show different name-sets swollen as the ring turns.
+
+- **2026-08-13 · VIGIL v2.3 — THE HOLOGRAM LEARNS DEPTH (his third
+  read: "the depth part is not fixed at all… we need a proper fix…
+  research more").** Researched how games do it; the answer is the
+  Z-prepass (Unity's transparent depth prepass / DepthOnly pass). But
+  implementing it exposed the REAL root cause, live all along:
+  **the app renders with `logarithmicDepthBuffer: true`, and the holo's
+  custom ShaderMaterial never included three's logdepth chunks — it was
+  writing plain-z depth into a log-encoded depth buffer.** Garbage
+  depth versus every built-in material: that was the clipping against
+  the station, and why density alone could never fix perception.
+  Shipped fix, now the reference for every future custom shader:
+  1. logdepth chunks in both shader stages + MeshBasic's exact
+     transform order (`modelViewMatrix × p`, then projection);
+  2. Z-PREPASS: a colorWrite-off clone of her hull in the opaque queue
+     at renderOrder 1 — interior faces culled (single clean shell),
+     the star's giant additive halo depth-culled behind her, far-side
+     name cards hidden by her own body;
+  3. shell alpha relaxed back to glassy (0.52–1.0, fresnel-weighted) —
+     translucent against opaque backgrounds, never outshone;
+  4. HIS CARDS: each gravestone on a translucent dark glass pane with
+     a faint holo edge — legible text, unmistakably projected.
+  Verified from all three torture angles: south (hull+cards), the
+  Projects star dead behind her (hull cuts a dark silhouette INTO the
+  glow), the Drift rock behind her (memorial reads cleanly in front).
+  The law is recorded in memory (stellarlogs-3d-architecture).

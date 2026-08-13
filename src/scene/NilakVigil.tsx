@@ -7,8 +7,10 @@ import {
   DynamicDrawUsage,
   Group,
   InstancedMesh,
+  Material,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   Object3D,
   Quaternion,
   ShaderMaterial,
@@ -155,27 +157,40 @@ export function NilakVigil() {
       new ShaderMaterial({
         uniforms: { uTime: { value: 0 } },
         vertexShader: /* glsl */ `
+          #include <common>
+          #include <logdepthbuf_pars_vertex>
           varying vec3 vN;
           varying vec3 vW;
           void main() {
             vN = normalize(mat3(modelMatrix) * normal);
             vec4 w = modelMatrix * vec4(position, 1.0);
             vW = w.xyz;
-            gl_Position = projectionMatrix * viewMatrix * w;
+            // EXACT same op ORDER as MeshBasicMaterial's project_vertex,
+            // then the SAME log-depth chunk the whole app renders with
+            // (gl.logarithmicDepthBuffer: a plain-z shader here writes
+            // garbage depth against every built-in material — this was
+            // the hologram's depth lie all along)
+            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * mvPosition;
+            #include <logdepthbuf_vertex>
           }`,
         fragmentShader: /* glsl */ `
+          #include <common>
+          #include <logdepthbuf_pars_fragment>
           uniform float uTime;
           varying vec3 vN;
           varying vec3 vW;
           void main() {
+            #include <logdepthbuf_fragment>
             vec3 v = normalize(cameraPosition - vW);
             float fres = pow(1.0 - abs(dot(normalize(vN), v)), 2.2);
             float scan = 0.78 + 0.22 * sin(vW.y * 3.2 - uTime * 1.6);
             float flick = 0.94 + 0.06 * sin(uTime * 19.0) * sin(uTime * 6.1);
             float body = (0.55 + 0.95 * fres) * scan * flick;
-            // dense enough to OCCLUDE what's behind her — a hologram the
-            // stars shine through reads as farther than it is (depth lie)
-            float alpha = (0.74 + 0.26 * fres) * (0.85 + 0.15 * scan);
+            // the Z-prepass culls her interior and everything bright
+            // behind her, so this single front shell can stay glassy:
+            // see-through vs the world's opaque bodies, never outshone
+            float alpha = (0.52 + 0.48 * fres) * (0.9 + 0.1 * scan);
             vec3 col = vec3(0.30, 0.75, 1.0) * body * 1.05;
             gl_FragColor = vec4(col, alpha);
           }`,
@@ -186,25 +201,70 @@ export function NilakVigil() {
     [],
   )
 
-  const holoShip = useMemo(() => {
+  /** THE Z-PREPASS (how games render holograms honestly): pass 1 writes
+   *  her depth only — no color — in the opaque queue, AFTER the world's
+   *  opaque bodies (renderOrder 1). Every transparent thing behind her
+   *  (the star's huge additive halo, far-side name cards, her own
+   *  interior faces) then FAILS the depth test and is culled. Pass 2
+   *  draws the visible shell, which now blends only over what is
+   *  genuinely in front of the depth she wrote. See-through vs opaque
+   *  backgrounds stays (their color is already in the buffer); bright
+   *  glows can no longer lie about being in front of her. */
+  const depthMat = useMemo(() => {
+    const m = new MeshBasicMaterial({ colorWrite: false })
+    m.side = DoubleSide
+    return m
+  }, [])
+
+  const { holoShip, holoDepthShip } = useMemo(() => {
     // Clone off the GLTF node map rather than the scene — robust even if
     // another mount ever re-parents the cached scene's nodes (the old
     // Wreck did exactly that and left nilak.scene empty).
     const nodes = (nilak as unknown as { nodes: Record<string, Object3D> }).nodes
-    const ship = new Group()
-    for (const key of ['hull', 'pod']) {
-      const src = nodes[key]
-      if (!src) continue
-      const c = src.clone(true)
-      c.rotation.set(0, 0, 0)
-      ship.add(c)
+    const build = (material: Material, renderOrder: number) => {
+      const ship = new Group()
+      for (const key of ['hull', 'pod']) {
+        const src = nodes[key]
+        if (!src) continue
+        const c = src.clone(true)
+        c.rotation.set(0, 0, 0)
+        ship.add(c)
+      }
+      ship.traverse((o) => {
+        const m = o as Mesh
+        if (m.isMesh) {
+          m.material = material
+          m.renderOrder = renderOrder
+        }
+      })
+      return ship
     }
-    ship.traverse((o) => {
-      const m = o as Mesh
-      if (m.isMesh) m.material = holoMat
-    })
-    return ship
-  }, [nilak, holoMat])
+    return { holoShip: build(holoMat, 0), holoDepthShip: build(depthMat, 1) }
+  }, [nilak, holoMat, depthMat])
+
+  /** The card each gravestone is printed on: a translucent dark pane —
+   *  legible text on glass, unmistakably projected, never solid. One
+   *  shared material; far-side cards are culled by her Z-prepass. */
+  const cardMat = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        color: '#0a2330',
+        transparent: true,
+        opacity: 0.44,
+        depthWrite: false,
+      }),
+    [],
+  )
+  const cardEdgeMat = useMemo(
+    () =>
+      new MeshBasicMaterial({
+        color: '#4fb2de',
+        transparent: true,
+        opacity: 0.12,
+        depthWrite: false,
+      }),
+    [],
+  )
 
   /** One slot per soul, scattered from her drive to her bow. */
   const slots = useMemo(
@@ -410,6 +470,7 @@ export function NilakVigil() {
       })}
       {/* HER — standing vertical on her drive, whole again */}
       <group position={[0, 22, 0]} rotation={[0, 0.4, Math.PI / 2]} scale={0.48}>
+        <primitive object={holoDepthShip} />
         <primitive object={holoShip} />
       </group>
       {/* the crew, revolving around her from drive to bow — each a
@@ -426,6 +487,13 @@ export function NilakVigil() {
               position={[slot.lx, slot.h, slot.lz]}
               rotation={[0, slot.a, 0]}
             >
+              {/* the holo card: faint edge pane behind, dark glass fill */}
+              <mesh position={[0, -0.05, -0.07]} material={cardEdgeMat}>
+                <planeGeometry args={[8.0, 1.78]} />
+              </mesh>
+              <mesh position={[0, -0.05, -0.05]} material={cardMat}>
+                <planeGeometry args={[7.8, 1.62]} />
+              </mesh>
               <Text
                 font={FONT_BOLD}
                 fontSize={0.46}
