@@ -1,5 +1,5 @@
 import { useEffect, useReducer } from 'react'
-import { hudLabels } from './hudState'
+import { hudLabels, markerCategory, markerColor } from './hudState'
 
 /** Re-render when orbiting planets register/unregister their labels. */
 let notify: (() => void) | null = null
@@ -28,7 +28,8 @@ export function LabelLayer() {
           key={label.id}
           className={`hud-label hud-label-${label.kind}`}
           data-mission={label.mission ? '1' : undefined}
-          style={{ color: label.color, opacity: 0 }}
+          data-category={markerCategory(label)}
+          style={{ color: markerColor(label), opacity: 0 }}
           ref={(el) => {
             label.el = el
           }}

@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
-import { hudLabels, hudReadouts } from './hudState'
+import { hudLabels, hudReadouts, markerColor } from './hudState'
 import { threatEls } from './ThreatLayer'
 import { raceEls, captureEls } from './RaceLayer'
 import { pursuit } from '../physics/pursuit'
@@ -343,7 +343,7 @@ export function HudBridge() {
 
       // Name + type/system chip
       hudReadouts.targetNameEl.textContent = target.name
-      hudReadouts.targetNameEl.style.color = target.color
+      hudReadouts.targetNameEl.style.color = markerColor(target)
       if (hudReadouts.targetChipEl) {
         const chip =
           target.kind === 'planet'
@@ -480,8 +480,9 @@ export function HudBridge() {
       if (label.kind === 'system') visible = dist > 1600
       else if (label.kind === 'planet') visible = dist < 2200 && dist > 140
       else if (label.kind === 'poi')
-        // POI labels stand down while race guidance is on screen
-        visible = dist < 4000 && dist > 700 && !activityState.raceTarget
+        // POI labels are LOCAL texture, not nav targets — tight range,
+        // and they stand down while race guidance is on screen
+        visible = dist < 2500 && dist > 700 && !activityState.raceTarget
       else visible = dist < 2600 && dist > 220
 
       // Mid-transit, focus the HUD: only the destination marker stays up

@@ -57,10 +57,10 @@ const QUIET_R = 420
 const MAX_FLAMES = 96
 /** The vigil never starts empty — the families lit theirs first */
 const SEED_CANDLES = 23
-const HOLO_SCALE = 0.66
-const HOLO_CENTER_Y = 28
-const NAME_RING_R = 12
-const NAME_SPAN = 40 // names climb her whole length
+const HOLO_SCALE = 1.0
+const HOLO_CENTER_Y = 41
+const NAME_RING_R = 14
+const NAME_SPAN = 62 // names climb her whole length
 const NAME_SPEED = 0.05 // rad/s — slow and patient, but alive
 const CANDLE_SPEED = 0.045
 const JOIN_TIME = 5.5 // s for your candle to climb to its slot
@@ -120,7 +120,7 @@ function candleSlot(i: number): { angle: number; radius: number; height: number 
   const u = ((i * 53) % 100) / 100
   return {
     angle: i * 2.399963, // golden angle: no two candles ever stack
-    radius: 8 + ((i * 37) % 100) / 100 * 3.5,
+    radius: 10 + ((i * 37) % 100) / 100 * 4,
     height: 1.6 + u * u * 6.5,
   }
 }
@@ -290,50 +290,39 @@ export function NilakVigil() {
    *  (what the Drift lived through while the water stopped), the racing
    *  club's water runs (why the club's opening lap has its name), and
    *  where her scrapped hull actually went — you are standing on her. */
+  /** Few words, hard ones — the way a Belter writes grief. */
   const boardSpec = useMemo<BoardSpec>(
     () => ({
-      width: 30,
-      height: 44,
+      width: 26,
+      height: 30,
       blocks: [
-        { text: 'SHE CARRIED WATER', size: 2.2, color: '#9fdcff', y: 18.5, maxWidth: 26, bold: true },
+        { text: 'SHE CARRIED WATER', size: 2.0, color: '#9fdcff', y: 12, maxWidth: 22, bold: true },
+        { text: 'MV NILAK · ICE HAULER · 42 SOULS', size: 0.9, color: '#7d8a99', y: 8.1, maxWidth: 22 },
         {
-          text: 'MV NILAK · ICE HAULER · INTERAMNIA REGISTRY — IN MEMORY OF HER 42 SOULS',
+          text: 'RAIDERS TOOK HER THREE DAYS FROM DOCK. THE MILITIA WAS SWORN THAT WEEK.',
           size: 0.95,
-          color: '#7d8a99',
-          y: 14.1,
-          maxWidth: 26,
+          color: '#c9d8e4',
+          y: 5.6,
+          maxWidth: 22,
         },
         {
           text:
-            'RAIDERS TOOK HER INBOUND ON THE ICE ROUTE, HOLDS FULL, THREE DAYS FROM DOCK. ' +
-            'THE AMNIA MILITIA WAS SWORN THAT SAME WEEK — THE MANHUNT BOARD HAS NOT EMPTIED SINCE.',
-          size: 1.0,
+            'ELEVEN DAYS THE DRIFT WENT DRY. THE RACERS RAN ICE TILL ALL COULD DRINK — ' +
+            'THE FIRST LAP IS STILL CALLED THE WATER RUN.',
+          size: 0.95,
           color: '#c9d8e4',
-          y: 10.1,
-          maxWidth: 26,
+          y: 1.8,
+          maxWidth: 22,
         },
         {
-          text:
-            'THE DRY WEEKS: ELEVEN DAYS THIS DRIFT LIVED ON DREGS AND RECLAIMER STEAM. ' +
-            'THE RACING CLUB STRIPPED THEIR HULLS FOR TANKAGE AND RAN RAW ICE FROM THE OUTER WELLS, ' +
-            'LAP AFTER LAP, UNTIL THE RESERVE CAME BACK. THE CLUB CALLS ITS OPENING LAP ' +
-            '"THE WATER RUN" TO THIS DAY.',
-          size: 1.0,
+          text: 'HER PLATES ARE THIS DECK. HER TANKS ARE OUR WATER. YOU STAND ON HER, BERATNA.',
+          size: 0.95,
           color: '#c9d8e4',
-          y: 3.3,
-          maxWidth: 26,
+          y: -3.3,
+          maxWidth: 22,
         },
-        {
-          text:
-            'HER HULL CAME HOME AS SCRAP — A COLONY WASTES NOTHING. HER PLATES DECK THIS ' +
-            'PLATFORM. HER TANKS HOLD THE DRIFT’S RESERVE. YOU ARE STANDING ON HER.',
-          size: 1.0,
-          color: '#c9d8e4',
-          y: -7.4,
-          maxWidth: 26,
-        },
-        { text: 'NO SHIP LEAVES THE DRIFT DRY', size: 1.15, color: '#9fdcff', y: -14.2, maxWidth: 26, bold: true },
-        { text: `CANDLES LIT ${SEED_CANDLES + candles}`, size: 0.8, color: '#5f7c92', y: -17.2, maxWidth: 26 },
+        { text: 'NO SHIP LEAVES THE DRIFT DRY', size: 1.1, color: '#9fdcff', y: -7.6, maxWidth: 22, bold: true },
+        { text: `CANDLES LIT ${SEED_CANDLES + candles}`, size: 0.75, color: '#5f7c92', y: -10.4, maxWidth: 22 },
       ],
       buttons: [],
     }),
@@ -470,13 +459,13 @@ export function NilakVigil() {
       const sinR = Math.sin(ry)
       _axis.set(
         SITE_POS.x - shipRig.position.x,
-        SITE_POS.y + 24 - shipRig.position.y,
+        SITE_POS.y + 34 - shipRig.position.y,
         SITE_POS.z - shipRig.position.z,
       )
       const dCenter = _axis.length()
       _axis.multiplyScalar(1 / Math.max(dCenter, 0.001))
       const approach = smooth01((MAG_NEAR - dCenter) / 160)
-      const halfCos = Math.cos(Math.atan2(17, Math.max(dCenter, 1)))
+      const halfCos = Math.cos(Math.atan2(20, Math.max(dCenter, 1)))
       const blend = Math.min(1, dt * 7)
       for (let i = 0; i < slots.length; i++) {
         const grp = nameGroups.current[i]
@@ -549,7 +538,7 @@ export function NilakVigil() {
     <group ref={rootRef} position={[SITE_POS.x, SITE_POS.y, SITE_POS.z]}>
       {/* the moored platform */}
       <mesh position={[0, -0.5, 0]}>
-        <cylinderGeometry args={[16, 17, 1, 8]} />
+        <cylinderGeometry args={[20, 21, 1.2, 8]} />
         <meshStandardMaterial color="#262c34" metalness={0.55} roughness={0.65} flatShading />
       </mesh>
       {/* four projector pedestals, lenses hot — fixtures only, no painted
@@ -557,8 +546,8 @@ export function NilakVigil() {
           the hologram itself is the only projected light you see) */}
       {Array.from({ length: 4 }, (_, i) => {
         const a = (i / 4) * Math.PI * 2 + Math.PI / 4
-        const px = Math.sin(a) * 10
-        const pz = Math.cos(a) * 10
+        const px = Math.sin(a) * 13
+        const pz = Math.cos(a) * 13
         return (
           <group key={i}>
             <mesh position={[px, 1.1, pz]}>
@@ -684,7 +673,7 @@ export function NilakVigil() {
       <Billboard
         spec={boardSpec}
         accentColor="#9fdcff"
-        position={[-34, 24, 0]}
+        position={[-36, 22, 0]}
         planetWorldPos={SITE_POS}
       />
     </group>

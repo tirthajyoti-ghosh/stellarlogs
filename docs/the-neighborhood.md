@@ -323,3 +323,27 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
      revolve slowly, flames stretched to teardrops and breathing in
      soft sync. Your candle now climbs with a flickering flame and a
      fading halo.
+
+- **2026-08-13 · VIGIL v3.1 + MARKER GRAMMAR v2 (his second verdict —
+  "I see no change… festival of lights… let's think about it first"):**
+  1. **SHE TOWERS NOW**: hologram to FULL scale (1.0 — 72u tall, ~2.5×
+     the board). Rings, platform (r20), pedestals (r13), name span
+     (62u) and wave cone all grew with her.
+  2. **The board became a Belter's few hard words** (his ask: somber,
+     concise, Beltalowda voice): W26×H30 now — "RAIDERS TOOK HER THREE
+     DAYS FROM DOCK. THE MILITIA WAS SWORN THAT WEEK." · "ELEVEN DAYS
+     THE DRIFT WENT DRY. THE RACERS RAN ICE TILL ALL COULD DRINK." ·
+     "HER PLATES ARE THIS DECK. HER TANKS ARE OUR WATER. YOU STAND ON
+     HER, BERATNA." The essay is gone; the grief is not.
+  3. **MARKER GRAMMAR v2 — color IS category** (his rule; my glyph-only
+     pass rejected as decoration; full thinking in
+     docs/the-hud-markers.md): labels no longer wear per-thing colors.
+     PORTFOLIO (all 7 content systems + planets) = amber filled
+     diamond; INFRASTRUCTURE = teal square; POI = grey-blue ringed dot;
+     CONTACTS = dim-white chevron; THE HUNTED = red pulsing triangle;
+     MEMORIAL = cyan burning candle; UNSURVEYED frontier = ash hollow
+     diamond. One source of truth (markerCategory/markerColor in
+     hudState); tactical chip follows. POI label range tightened
+     4000→2500. The rainbow is gone; one glance answers "what kind of
+     thing is that". The WORLD keeps its colors — calm is a HUD
+     property.

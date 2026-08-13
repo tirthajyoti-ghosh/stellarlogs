@@ -11,6 +11,47 @@ import { STATION_POSITION } from '../config/universe'
 
 export type LabelKind = 'system' | 'planet' | 'station' | 'poi' | 'memorial'
 
+/**
+ * THE MARKER GRAMMAR (docs/the-hud-markers.md, Tirtha's rule): on the
+ * HUD, color answers "what KIND of thing is that?" — never "which one".
+ * Portfolio content is amber, infrastructure teal, world texture
+ * grey-blue, live contacts dim white, the hunted red, the memorial
+ * cyan, the unsurveyed frontier ash. One glance, no reading.
+ */
+export type MarkerCategory =
+  | 'portfolio'
+  | 'infra'
+  | 'poi'
+  | 'contact'
+  | 'hostile'
+  | 'memorial'
+  | 'frontier'
+
+export const MARKER_COLORS: Record<MarkerCategory, string> = {
+  portfolio: '#ffb45e',
+  infra: '#5fd0c0',
+  poi: '#8fa8bd',
+  contact: '#aab6c2',
+  hostile: '#ff7a5c',
+  memorial: '#9fdcff',
+  frontier: '#6c7a86',
+}
+
+export function markerCategory(label: HudLabel): MarkerCategory {
+  if (label.category) return label.category
+  if (label.kind === 'memorial') return 'memorial'
+  if (label.kind === 'station') return 'infra'
+  // live ships ride the codebase's ship-* id convention
+  if (label.id === 'ship-draugr') return 'hostile'
+  if (label.id.startsWith('ship-')) return 'contact'
+  if (label.kind === 'system' || label.kind === 'planet') return 'portfolio'
+  return 'poi'
+}
+
+export function markerColor(label: HudLabel): string {
+  return MARKER_COLORS[markerCategory(label)]
+}
+
 export interface HudLabel {
   id: string
   name: string
@@ -32,6 +73,8 @@ export interface HudLabel {
   jumpStandoff?: number
   /** Survives THE HUNT FOCUS (mission truth; everything else goes dark) */
   mission?: boolean
+  /** Marker category override; usually derived — see markerCategory() */
+  category?: MarkerCategory
 }
 
 export const hudLabels: HudLabel[] = [
@@ -44,6 +87,7 @@ export const hudLabels: HudLabel[] = [
     yOffset: s.starRadius * 2.2,
     el: null,
     detail: s.inert ? 'UNSURVEYED' : `${s.planets.length} PLANETS`,
+    category: (s.inert ? 'frontier' : 'portfolio') as MarkerCategory,
   })),
   {
     id: 'station',

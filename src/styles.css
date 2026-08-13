@@ -147,10 +147,50 @@ body[data-warpphase='burn'] .hud-warp-flash {
   box-sizing: border-box;
 }
 .hud-label-system::before {
+  /* portfolio systems: FILLED diamond — content lives here */
   width: 7px;
   height: 7px;
-  border: 1.5px solid currentColor;
+  background: currentColor;
   transform: rotate(45deg);
+}
+.hud-label[data-category='frontier']::before {
+  /* the unsurveyed: hollow — nothing charted yet */
+  background: none;
+  border: 1.2px solid currentColor;
+}
+.hud-label[data-category='contact']::before {
+  /* live ships: a chevron under way */
+  width: 8px;
+  height: 9px;
+  border: none;
+  border-radius: 0;
+  transform: none;
+  clip-path: polygon(15% 0, 70% 50%, 15% 100%, 2% 86%, 40% 50%, 2% 14%);
+  background: currentColor;
+}
+.hud-label[data-category='contact'] {
+  font-size: 10.5px;
+  background: rgba(6, 12, 24, 0.32);
+}
+.hud-label[data-category='hostile']::before {
+  /* the hunted: a hard triangle, breathing fast */
+  width: 8px;
+  height: 9px;
+  border: none;
+  border-radius: 0;
+  transform: none;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: currentColor;
+  animation: hostile-pulse 1.1s ease-in-out infinite;
+}
+@keyframes hostile-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 .hud-label-planet::before {
   width: 5px;
