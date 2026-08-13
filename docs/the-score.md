@@ -1,5 +1,16 @@
 # THE SCORE — exploration pass 1 (2026-08-14)
 
+> **RULING (Tirtha, 2026-08-14): "We are not doing all these things."**
+> No adaptive score, no approaches A/B/C, no state→music machine.
+> What IS wanted, exactly two things:
+> 1. **THE JUKEBOX** — actual real music (never generative), CC-licensed,
+>    diegetic at the Drift cantina with a NOW PLAYING credit.
+> 2. **RADIO CHATTER** — his new idea: background comms texture.
+> Plus a separate SOUND QUALITY pass (docs/the-sounds.md): the PDC fire
+> and the drive burn move from synthesis to real CC recordings, judged
+> on a listening bench before integration. The rest of this document
+> stays as the record of the exploration that was overruled.
+
 Tirtha, 2026-08-09: "music has been absent… the Expanse is really good
 because of the music." Tirtha, 2026-08-14: "I don't really trust you
 with creating music… but I'm fine having an exploration pass." So: this

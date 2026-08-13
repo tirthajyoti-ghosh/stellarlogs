@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE SOUNDS — listening bench</title>
+<style>
+  :root {
+    --bg: #060b14;
+    --panel: #0b1220;
+    --line: #1c2a3d;
+    --text: #c9d8e4;
+    --dim: #6c7a86;
+    --accent: #6fd3e8;
+    --amber: #ffb45e;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Mono', ui-monospace, Menlo, monospace;
+    letter-spacing: 0.04em;
+    padding: 28px 20px 80px;
+  }
+  h1 { font-size: 18px; letter-spacing: 0.3em; color: var(--accent); margin: 0 0 4px; }
+  .sub { color: var(--dim); font-size: 11px; margin-bottom: 30px; max-width: 72ch; line-height: 1.6; }
+  h2 {
+    font-size: 12px; letter-spacing: 0.28em; color: var(--amber);
+    border-bottom: 1px solid var(--line); padding-bottom: 6px; margin: 38px 0 6px;
+  }
+  .note { color: var(--dim); font-size: 11px; line-height: 1.65; max-width: 78ch; margin: 6px 0 14px; }
+  .cand {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    background: var(--panel); border: 1px solid var(--line);
+    padding: 10px 14px; margin-bottom: 8px;
+  }
+  .cand b { font-size: 12px; letter-spacing: 0.12em; min-width: 260px; }
+  .cand .lic { color: var(--dim); font-size: 10px; min-width: 210px; }
+  .cand .lic a { color: var(--accent); text-decoration: none; }
+  audio { height: 30px; flex: 1; min-width: 240px; filter: invert(0.88) hue-rotate(180deg); }
+  .verdict { color: var(--amber); font-size: 10px; letter-spacing: 0.2em; }
+</style>
+</head>
+<body>
+<h1>THE SOUNDS — LISTENING BENCH</h1>
+<div class="sub">
+  Every candidate streams from its source (nothing ships until picked; the
+  chosen ones get trimmed, compressed and bundled). All sources are NASA
+  public domain, CC0, or CC-BY with the credit shown. Judge with headphones.
+  Current in-game sounds are pure synthesis — these are their replacements.
+</div>
+
+<h2>1 · THE DRIVE — real rocket burns (NASA, public domain)</h2>
+<div class="note">
+  What we're listening for: a loop-able sustained roar for full burn (the
+  crackle — "popcorn" — is what synthesis can't fake). ONBOARD CABIN is the
+  in-cockpit truth: muffled, structural, felt-not-heard. The chosen take
+  gets cut to a seamless 8–15 s loop, pitch/gain ride the throttle.
+</div>
+<div class="cand"><b>SATURN V (full)</b><span class="lic">NASA · public domain · <a href="https://archive.org/details/NasaAudioHighlightReels">archive.org</a></span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Saturn-V.mp3"></audio></div>
+<div class="cand"><b>SATURN LAUNCH (short)</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Saturn-Launch.mp3"></audio></div>
+<div class="cand"><b>SHUTTLE LAUNCH — CLOSE MIC</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Shuttle-Launch-Close.mp3"></audio></div>
+<div class="cand"><b>LAUNCH TEXTURE (pre-cleaned bed)</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Launch-texture.mp3"></audio></div>
+<div class="cand"><b>FAR RUMBLE (distance bed)</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Far-Rumble.mp3"></audio></div>
+<div class="cand"><b>STS-41 ONBOARD CABIN (in-cockpit)</b><span class="lic">NASA · public domain · long file, streams</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_STS-41-Launch-Onboard-Nat-Sound.mp3"></audio></div>
+<div class="cand"><b>LOW END FAR (sub bed)</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Launch-Sound_Low-End-Far.mp3"></audio></div>
+
+<h2>2 · THE PDC — real autocannon fire (freesound, CC0)</h2>
+<div class="note">
+  The show's PDC is a dry mechanical ripping burst — no Hollywood bass. The
+  M242 Bushmaster is the closest real-world relative. The chosen sample gets
+  sliced per-burst and pooled; rate-matched to our fire rate.
+</div>
+<div class="cand"><b>M242 BUSHMASTER · 3-SHOT BURST</b><span class="lic">CC0 · qubodup · <a href="https://freesound.org/people/qubodup/sounds/854186/">freesound 854186</a></span><audio controls preload="none" src="https://cdn.freesound.org/previews/854/854186_71257-hq.mp3"></audio></div>
+<div class="cand"><b>MINIGUN BURST</b><span class="lic">CC0 · rob762x51 · <a href="https://freesound.org/people/rob762x51/sounds/165042/">freesound 165042</a></span><audio controls preload="none" src="https://cdn.freesound.org/previews/165/165042_1190141-hq.mp3"></audio></div>
+<div class="cand"><b>MINIGUN V1 (longer)</b><span class="lic">CC0 · rob762x51 · <a href="https://freesound.org/people/rob762x51/sounds/85246/">freesound 85246</a></span><audio controls preload="none" src="https://cdn.freesound.org/previews/85/85246_1190141-hq.mp3"></audio></div>
+
+<h2>3 · RADIO CHATTER — real shuttle comm loops (NASA, public domain)</h2>
+<div class="note">
+  The concept: sparse, radio-filtered voice traffic near the Drift, the
+  docks and live escorts — a squelch click, four words, silence. These
+  UHF/air-ground bites are the raw cloth; in-game they'd be band-passed,
+  randomized, rare (Sound Law: never wallpaper). Dozens more exist in the
+  same archive.
+</div>
+<div class="cand"><b>"GO AHEAD"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-Go-Ahead.mp3"></audio></div>
+<div class="cand"><b>"HOUSTON, GO AHEAD"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-Houston-Go-Ahead.mp3"></audio></div>
+<div class="cand"><b>"NO ERRORS"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-No-errors.mp3"></audio></div>
+<div class="cand"><b>"THANK YOU"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-Thank-you.mp3"></audio></div>
+<div class="cand"><b>HYD PRESS CHECK</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-Hyd-Press.mp3"></audio></div>
+<div class="cand"><b>CAPCOM WEATHER UPDATE</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_UHF-Capcom-Wx-Update.mp3"></audio></div>
+<div class="cand"><b>"ROLL PROGRAM"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_AG-Roll-Program.mp3"></audio></div>
+<div class="cand"><b>MECO — "WELCOME TO SPACE"</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="https://archive.org/download/NasaAudioHighlightReels/Sound-Bite-Space-Shuttle-Launch-Comm_AG-MECO-Welcome-to-Space.mp3"></audio></div>
+
+<h2>4 · THE JUKEBOX — real composed tracks (CC-BY, credit shown in NOW PLAYING)</h2>
+<div class="note">
+  Diegetic at the Drift cantina: audible near the docks, rolls off with
+  distance, NOW PLAYING credit on the board. All Kevin MacLeod
+  (incompetech.com), CC-BY — attribution rides the toast. These four are a
+  first slate; say the word and I curate wider (other CC artists, other
+  moods).
+</div>
+<div class="cand"><b>BACKBAY LOUNGE (smoky jazz)</b><span class="lic">CC-BY · Kevin MacLeod · <a href="https://incompetech.com">incompetech</a></span><audio controls preload="none" src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Backbay%20Lounge.mp3"></audio></div>
+<div class="cand"><b>SLOW BURN (late-night blues)</b><span class="lic">CC-BY · Kevin MacLeod</span><audio controls preload="none" src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Slow%20Burn.mp3"></audio></div>
+<div class="cand"><b>SPACE JAZZ</b><span class="lic">CC-BY · Kevin MacLeod</span><audio controls preload="none" src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Space%20Jazz.mp3"></audio></div>
+<div class="cand"><b>LOBBY TIME (lounge)</b><span class="lic">CC-BY · Kevin MacLeod</span><audio controls preload="none" src="https://incompetech.com/music/royalty-free/mp3-royaltyfree/Lobby%20Time.mp3"></audio></div>
+
+<div class="note" style="margin-top:34px">
+  <span class="verdict">VERDICT PROTOCOL:</span> name the winners per section
+  ("drive: shuttle close + cabin for interior · pdc: bushmaster · chatter:
+  yes, build it · jukebox: backbay + space jazz"). Then integration: trim,
+  compress, bundle, wire — each behind a live A/B against the current synth.
+</div>
+</body>
+</html>

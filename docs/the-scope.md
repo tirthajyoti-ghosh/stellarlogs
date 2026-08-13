@@ -456,3 +456,46 @@ build on his word.
 3. Frame constancy restated: plane, cylinder, own-ship marker are the
    constant stage; only the world moves.
 4. Bigger combat scope confirmed (132 → 200 px on engage).
+
+---
+
+## EXPANSE COMBAT DISPLAY REFERENCES (2026-08-14 — revisit LATER, his call)
+
+Tirtha supplied three frames from the show's combat displays (saved to
+docs/ref/): `expanse-radar-hamma-lok.png`, `expanse-threat-response.png`,
+`expanse-target-torp-board.png`. "See how we can improve our own scope in
+battle mode… see how cool and yet informative it looks. Let's revisit
+this later." Anatomy worth stealing, noted for that pass:
+
+1. **THE DROP-LINE (the big one).** Every contact is a small framed chip
+   held above the tactical plane by a thin vertical STEM whose foot
+   stands on the plane — altitude reads as stem length, plan position as
+   the foot. This is the show's answer to 3D-on-a-2D-display, and our
+   cylinder scope already half-speaks it (stem heights). Their version
+   adds the framed chip + foot dot.
+2. **HAMMA LOK (hammer lock)** — a labeled arc BAND drawn on the plane
+   itself marking the weapons-lock zone; when a contact crosses into the
+   band, the label sits right in the world, not in a corner. A "you are
+   held" state made spatial. (Also DEFOTUNG LOK on the right panel —
+   defensive lock readout with stacked chevrons per subsystem
+   [SYS][ENG][WEP].)
+3. **Guard-zone rings + radial grid** on the plane — concentric range
+   rings with spokes; our scope has rings, theirs add the sector spokes
+   and an explicit GUARD ZONE control.
+4. **THREAT RESPONSE grouping** — contacts G01…G05 wear yellow RING
+   markers (halo above the stem) and are assigned to groups in a left
+   rail; a red thread connects a ring to its engaged interceptor.
+   Group-and-assign grammar for multi-target fights.
+5. **The proximity strip** — a single horizontal bar under the plane
+   (PROXIMITY / HAMMA LOK) with a red tick: nearest-threat distance as
+   a one-glance gauge.
+6. **The torpedo board** — tube inventory as a two-column card grid
+   (DEFOTUNG / LOK), spent tubes dark, with the ordnance drawn as a
+   wireframe schematic below. Ammunition as furniture, not a number.
+7. **Corner mass/LOS wireframe** — a tiny 3D wedge readout bottom-right
+   (Q22.5 / MASS LOs) — dense, decorative-but-plausible instrument
+   corner.
+
+When we do this pass: fold 1, 2, 3 and 5 into THE SCOPE's battle mode
+(drop-line chips, lock band, spokes, proximity strip); 4 waits for
+multi-contact battles; 6 pairs with the torpedo HUD; 7 is garnish.
