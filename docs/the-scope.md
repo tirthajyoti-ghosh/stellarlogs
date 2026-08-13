@@ -499,3 +499,15 @@ this later." Anatomy worth stealing, noted for that pass:
 When we do this pass: fold 1, 2, 3 and 5 into THE SCOPE's battle mode
 (drop-line chips, lock band, spokes, proximity strip); 4 waits for
 multi-contact battles; 6 pairs with the torpedo HUD; 7 is garnish.
+
+8. **PDC COVERAGE CONES** (`docs/ref/expanse-pdc-coverage-cones.png`,
+   added 2026-08-14) — the SYSTEM OPS console draws the ship inside a
+   wireframe threat SPHERE with the PDC firing arcs as translucent 3D
+   CONES growing from each turret, plus a bulged lobe where arcs
+   overlap. Right rail: per-turret cards (01 FORE … 06 AFT) in blue
+   (AUTO TRACK ready) vs red (OFFLINE/MASKED), ammo bars per gun,
+   40MM magazine readouts, launcher grids. Threats appear as red
+   tracks in a corner inset ("THREAT DETECTED") before they reach the
+   sphere. Direct kin to our scope's PDC-coverage reading — when the
+   scope pass happens, the cones-in-sphere is the strongest single
+   idea to steal: coverage as VOLUME, not as a ring segment.
