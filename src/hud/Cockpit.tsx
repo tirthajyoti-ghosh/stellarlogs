@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Vector3 } from 'three'
-import { hudReadouts } from './hudState'
+import { hudReadouts, MARKER_COLORS } from './hudState'
 import { Radar } from './Radar'
 import { ALL_SYSTEMS } from '../config/systems'
 import { STATION_POSITION } from '../config/universe'
@@ -16,20 +16,44 @@ interface Destination {
   standoff: number
 }
 
-const DESTINATIONS: Destination[] = [
-  ...ALL_SYSTEMS.map((s) => ({
-    id: s.id,
-    name: s.name,
-    color: s.starColor,
-    position: new Vector3(...s.position),
-    standoff: s.starRadius * 6 + 500,
-  })),
+/** The nav computer's chart, sectioned by the marker grammar: docks
+ *  first (home), then the portfolio systems, then the unsurveyed
+ *  frontier — each section in its category's color. */
+const NAV_SECTIONS: { title: string; color: string; dests: Destination[] }[] = [
   {
-    id: 'station',
-    name: CONTACT.name,
-    color: CONTACT.starColor,
-    position: new Vector3(...STATION_POSITION),
-    standoff: 420,
+    title: 'DOCKS',
+    color: MARKER_COLORS.infra,
+    dests: [
+      {
+        id: 'station',
+        name: CONTACT.name,
+        color: MARKER_COLORS.infra,
+        position: new Vector3(...STATION_POSITION),
+        standoff: 420,
+      },
+    ],
+  },
+  {
+    title: 'PORTFOLIO SYSTEMS',
+    color: MARKER_COLORS.portfolio,
+    dests: ALL_SYSTEMS.filter((s) => !s.inert).map((s) => ({
+      id: s.id,
+      name: s.name,
+      color: MARKER_COLORS.portfolio,
+      position: new Vector3(...s.position),
+      standoff: s.starRadius * 6 + 500,
+    })),
+  },
+  {
+    title: 'UNSURVEYED',
+    color: MARKER_COLORS.frontier,
+    dests: ALL_SYSTEMS.filter((s) => s.inert).map((s) => ({
+      id: s.id,
+      name: s.name,
+      color: MARKER_COLORS.frontier,
+      position: new Vector3(...s.position),
+      standoff: s.starRadius * 6 + 500,
+    })),
   },
 ]
 
@@ -217,29 +241,36 @@ export function Cockpit() {
           <div key="jump-page">
             <div className="hud-mfd-title">JUMP DRIVE — DESTINATION</div>
             <div className="hud-jump-list">
-              {DESTINATIONS.map((dest) => {
-                const dist = dest.position.distanceTo(shipRig.position)
-                const here = dist < dest.standoff * 1.3
-                return (
-                  <button
-                    key={dest.id}
-                    className="hud-nav-dest"
-                    disabled={here}
-                    onClick={() => {
-                      if (warp.phase === 'idle') {
-                        startWarp(dest.position, shipRig.position, dest.standoff)
-                        setJumpPage(false)
-                      }
-                    }}
-                  >
-                    <span className="hud-nav-dot" style={{ background: dest.color }} />
-                    <span className="hud-nav-name">{dest.name}</span>
-                    <span className="hud-nav-dist">
-                      {here ? 'HERE' : `${(dist / 1000).toFixed(1)}k`}
-                    </span>
-                  </button>
-                )
-              })}
+              {NAV_SECTIONS.map((section) => (
+                <div key={section.title} className="hud-nav-section">
+                  <div className="hud-nav-section-title" style={{ color: section.color }}>
+                    {section.title}
+                  </div>
+                  {section.dests.map((dest) => {
+                    const dist = dest.position.distanceTo(shipRig.position)
+                    const here = dist < dest.standoff * 1.3
+                    return (
+                      <button
+                        key={dest.id}
+                        className="hud-nav-dest"
+                        disabled={here}
+                        onClick={() => {
+                          if (warp.phase === 'idle') {
+                            startWarp(dest.position, shipRig.position, dest.standoff)
+                            setJumpPage(false)
+                          }
+                        }}
+                      >
+                        <span className="hud-nav-dot" style={{ background: dest.color }} />
+                        <span className="hud-nav-name">{dest.name}</span>
+                        <span className="hud-nav-dist">
+                          {here ? 'HERE' : `${(dist / 1000).toFixed(1)}k`}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              ))}
             </div>
             <button className="hud-jump-btn" onClick={() => setJumpPage(false)}>
               BACK <span className="hud-key-hint">ESC</span>

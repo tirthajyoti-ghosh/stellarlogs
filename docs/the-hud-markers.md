@@ -46,6 +46,28 @@ that breathes.
 - The in-WORLD color stays rich (boards, stars, liveries keep their
   accents) — calm is a HUD property, not a world property.
 
+## Pass 2 (2026-08-14) — his second verdict, shipped
+
+"The marker is tiny… invisible because there are other stars. We need
+proper actual designs — look at Everspace 2. Big enough to spot, really
+good balance." And: names at the sphere are for STARS; planets
+introduce themselves only on arrival. And: the jump chart follows the
+same grammar in sections.
+
+- **Designed SVG marks** (MarkerIcon.tsx) replaced the 8px CSS glyphs:
+  every mark sits on a soft dark backing disc (the disc is what makes a
+  mark readable over the Milky Way), 13–22px by importance, subtle
+  category-color glow on systems and the memorial. Portfolio = double
+  diamond; frontier = dashed hollow diamond; infra = docking brackets;
+  POI = scanner reticle; contact = hull chevron; hostile = double
+  chevron (pulsing); memorial = the candle; planets = small ringed dot.
+- **Names for stars, arrival for planets**: the 2600 sphere names
+  SYSTEMS; planet marks appear <1600 and their names only <1000 —
+  you meet the planets when you're among them.
+- **The jump chart sectioned by the grammar**: DOCKS (teal) ·
+  PORTFOLIO SYSTEMS (amber) · UNSURVEYED (ash), section headers in
+  category colors, destination dots follow.
+
 ## Open questions for future passes
 
 - Planet labels inside inert systems will read amber (portfolio) if

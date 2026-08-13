@@ -133,55 +133,48 @@ body[data-warpphase='burn'] .hud-warp-flash {
   transition: opacity 0.25s;
   will-change: transform;
 }
-/* MARKER GRAMMAR — every kind of thing carries its own glyph, the way
-   Everspace separates gates from enemies from POIs. Stars are hollow
-   diamonds, planets small dots, stations squares, POIs ringed dots,
-   and the memorial burns a candle. All drawn in the label's color. */
-.hud-label::before {
-  content: '';
-  display: inline-block;
+/* THE MARKER SET — designed SVG marks (MarkerIcon.tsx), Everspace-
+   calibrated: each sits on its own dark backing disc so it reads over
+   the starfield, sized to spot without shouting. Color = category. */
+.hud-marker {
   flex: none;
   align-self: center;
-  width: 8px;
-  height: 8px;
-  box-sizing: border-box;
+  width: 19px;
+  height: 19px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
 }
-.hud-label-system::before {
-  /* portfolio systems: FILLED diamond — content lives here */
-  width: 7px;
-  height: 7px;
-  background: currentColor;
-  transform: rotate(45deg);
+.hud-label-system .hud-marker {
+  width: 21px;
+  height: 21px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 5px currentColor);
+  opacity: 0.95;
 }
-.hud-label[data-category='frontier']::before {
-  /* the unsurveyed: hollow — nothing charted yet */
-  background: none;
-  border: 1.2px solid currentColor;
+.hud-label[data-category='frontier'] .hud-marker {
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9));
+  opacity: 0.8;
 }
-.hud-label[data-category='contact']::before {
-  /* live ships: a chevron under way */
-  width: 8px;
-  height: 9px;
-  border: none;
-  border-radius: 0;
-  transform: none;
-  clip-path: polygon(15% 0, 70% 50%, 15% 100%, 2% 86%, 40% 50%, 2% 14%);
-  background: currentColor;
+.hud-marker-planet {
+  width: 13px;
+  height: 13px;
 }
 .hud-label[data-category='contact'] {
   font-size: 10.5px;
   background: rgba(6, 12, 24, 0.32);
 }
-.hud-label[data-category='hostile']::before {
-  /* the hunted: a hard triangle, breathing fast */
-  width: 8px;
-  height: 9px;
-  border: none;
-  border-radius: 0;
-  transform: none;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-  background: currentColor;
+.hud-label[data-category='contact'] .hud-marker {
+  width: 15px;
+  height: 15px;
+}
+.hud-label[data-category='hostile'] .hud-marker {
   animation: hostile-pulse 1.1s ease-in-out infinite;
+}
+.hud-label[data-category='memorial'] .hud-marker {
+  width: 22px;
+  height: 22px;
+  filter: drop-shadow(0 0 4px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 6px currentColor);
+}
+.hud-marker-flame {
+  animation: vigil-flame 2.6s ease-in-out infinite;
 }
 @keyframes hostile-pulse {
   0%,
@@ -215,21 +208,20 @@ body[data-warpphase='burn'] .hud-warp-flash {
   opacity: 0;
   max-width: 0;
 }
-.hud-label-planet::before {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: currentColor;
+/* Jump-drive chart sections, colored by the marker grammar */
+.hud-nav-section {
+  margin-bottom: 6px;
+}
+.hud-nav-section-title {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
   opacity: 0.75;
+  padding: 5px 2px 3px;
+  border-bottom: 1px solid rgba(140, 170, 200, 0.14);
+  margin-bottom: 3px;
 }
-.hud-label-station::before {
-  border: 1.5px solid currentColor;
-}
-.hud-label-poi::before {
-  border: 1.2px solid currentColor;
-  border-radius: 50%;
-  background: radial-gradient(circle, currentColor 0 1.5px, transparent 2.2px);
-}
+
 .hud-label-memorial {
   font-size: 11.5px;
   background: rgba(10, 30, 44, 0.55);
@@ -237,14 +229,6 @@ body[data-warpphase='burn'] .hud-warp-flash {
 .hud-label-memorial .hud-label-name {
   font-weight: 600;
   letter-spacing: 0.26em;
-}
-.hud-label-memorial::before {
-  width: 9px;
-  height: 13px;
-  background:
-    radial-gradient(circle at 50% 13%, currentColor 0 1.8px, transparent 2.8px),
-    linear-gradient(currentColor, currentColor) 50% 100% / 2px 6px no-repeat;
-  animation: vigil-flame 2.6s ease-in-out infinite;
 }
 @keyframes vigil-flame {
   0%,

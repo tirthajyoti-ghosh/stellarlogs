@@ -478,7 +478,8 @@ export function HudBridge() {
       // Visibility rules per kind
       let visible: boolean
       if (label.kind === 'system') visible = dist > 1600
-      else if (label.kind === 'planet') visible = dist < 2200 && dist > 140
+      // planets belong to ARRIVAL: marks only once you're at the system
+      else if (label.kind === 'planet') visible = dist < 1600 && dist > 140
       else if (label.kind === 'poi')
         // POI labels are LOCAL texture, not nav targets — tight range,
         // and they stand down while race guidance is on screen
@@ -534,8 +535,12 @@ export function HudBridge() {
       }
       placed.push({ x, y })
 
-      // THE SPHERE OF NAMES: outside it, text falls away — mark only
-      const far = dist > NAME_SPHERE_R && !label.mission
+      // THE SPHERE OF NAMES: outside it, text falls away — mark only.
+      // Planets hold their names even tighter: the system's STAR earns
+      // its name at the sphere; the planets introduce themselves only
+      // once you're properly in among them.
+      const nameRange = label.kind === 'planet' ? 1000 : NAME_SPHERE_R
+      const far = dist > nameRange && !label.mission
       if ((el.dataset.far === '1') !== far) {
         if (far) el.dataset.far = '1'
         else delete el.dataset.far

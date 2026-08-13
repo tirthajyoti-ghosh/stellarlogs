@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { hudLabels, markerCategory, markerColor } from './hudState'
+import { MarkerIcon } from './MarkerIcon'
 
 /** Re-render when orbiting planets register/unregister their labels. */
 let notify: (() => void) | null = null
@@ -35,6 +36,7 @@ export function LabelLayer() {
           }}
         >
           <span className="hud-label-arrow">➤</span>
+          <MarkerIcon category={markerCategory(label)} kind={label.kind} />
           <span className="hud-label-name">{label.name}</span>
           <span className="hud-label-dist" />
         </div>
