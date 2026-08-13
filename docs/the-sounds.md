@@ -44,13 +44,23 @@ nothing is bundled until he picks. Judged by ear — his.
   artist credit (CC-BY attribution), shuffle, maybe a G interaction to
   skip. Tracks bundled at ~96 kbps (~2–3 MB each) or streamed; decide
   at integration by payload budget.
-- **EXHAUST VISUAL** (separate build, same pass): reference is the
-  Roci's five-nozzle burn — blinding white-cyan CORE at the nozzle
-  throat (turbine-like spiral detail reads at close range), tight
-  un-flared column, long translucent blue streaks that fade without
-  billowing (vacuum: no smoke, no cone spread). Our current plume is
-  two cones; the upgrade: HDR core disc + tapered column + streak
-  texture, judged against docs/ref/expanse-drive-exhaust.png.
+- **EXHAUST VISUAL** (separate build, same pass): Tirtha supplied the
+  clearest reference set yet — the plume has STAGES:
+  - `docs/ref/expanse-plume-normal-thrust.png` — NORMAL THRUST: the
+    nozzle shows a white-hot ring (torus) around a darker throat, a
+    tight blue column with visible swirl detail, translucent tapering
+    tail a few hull-lengths long. Restrained, mechanical, readable.
+  - `docs/ref/expanse-plume-max-burn.png` — MAX BURN: the core blooms
+    into a blinding white BALL that engulfs the stern, blue-white
+    corona, the tail flares longer and wider but still never billows
+    (vacuum — no smoke, no cone spread, just light with structure).
+  - `docs/ref/expanse-drive-exhaust.png` — the five-nozzle wide shot:
+    per-nozzle turbine-spiral detail at close range, parallel streaks.
+  Our current plume is two scaled cones; the upgrade maps our existing
+  throttle states onto the SHOW'S stages: idle → dark nozzle with the
+  hot ring only; cruise thrust → normal-thrust anatomy; boost (Shift)
+  → max-burn bloom. HDR core + torus ring + tapered swirl column +
+  streak fade, judged frame-by-frame against these three references.
 
 ## Status
 
