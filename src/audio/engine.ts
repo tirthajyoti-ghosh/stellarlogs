@@ -530,11 +530,24 @@ export function isMuted(): boolean {
   return muted
 }
 
+/** THE VIGIL'S QUIET: inside the memorial's sphere the world's audio
+ *  bows out — drive, RCS, chatter all duck so the toll and the silence
+ *  carry. 0 = normal, 1 = fully inside the sphere. */
+let vigilDuck = 0
+export function setVigilDuck(d: number): void {
+  const clamped = Math.max(0, Math.min(1, d))
+  if (Math.abs(clamped - vigilDuck) < 0.01) return
+  vigilDuck = clamped
+  if (engine && !muted) {
+    engine.master.gain.setTargetAtTime(1 - 0.72 * vigilDuck, engine.ctx.currentTime, 0.25)
+  }
+}
+
 export function toggleMute(): boolean {
   muted = !muted
   localStorage.setItem('stellarlogs-muted', muted ? '1' : '')
   if (engine) {
-    engine.master.gain.setTargetAtTime(muted ? 0 : 1, engine.ctx.currentTime, 0.05)
+    engine.master.gain.setTargetAtTime(muted ? 0 : 1 - 0.72 * vigilDuck, engine.ctx.currentTime, 0.05)
   }
   return muted
 }

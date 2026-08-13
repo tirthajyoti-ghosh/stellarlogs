@@ -29,10 +29,11 @@ export const TRACK_POI = {
  * militia exists. Nothing to play; everything to understand.
  */
 export const WRECK_POI = {
-  /** Off the spawn→Projects lane, lifted well above the traffic plane so
-   *  the memorial stands clear of the Drift's silhouette */
-  position: [-310, 100, -1430] as [number, number, number],
-  standoff: 320,
+  /** Off the ice route past the Drift, lifted high above the traffic
+   *  plane and set apart — nothing else lives within 800u, so the
+   *  vigil's quiet sphere has room to hold */
+  position: [-150, 260, -2350] as [number, number, number],
+  standoff: 360,
 }
 
 /**

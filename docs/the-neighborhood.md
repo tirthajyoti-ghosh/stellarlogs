@@ -290,3 +290,36 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
   - **NO SHIP LEAVES THE DRIFT DRY** — the custom the loss created.
   Board carries SHE CARRIED WATER as the masthead, the 42-souls
   dedication, and the live CANDLES LIT counter.
+
+- **2026-08-13 · VIGIL v3 — SANCTITY + THE MARKER GRAMMAR (his batch):**
+  1. **The hologram grew** (scale 0.48 → 0.66, ~47u tall) — she no
+     longer looks small beside her own story board. Platform widened,
+     pedestals out to r10, names span her full length, board stepped
+     out to clear the rings.
+  2. **The site moved and rose**: WRECK_POI → [-150, 260, -2350], off
+     the ice route past the Drift, ~1.2k from the station, nothing
+     within 800u — room for the sphere to hold. Radar blip recolored
+     to vigil cyan.
+  3. **ALWAYS VISIBLE**: she renders from ANY distance (a hologram is
+     light, and light carries); only the names/cards/candles cull
+     beyond 1500u. Plus a marker that carries the site across the map.
+  4. **THE MARKER GRAMMAR established** (his Everspace rule: different
+     things wear different marks). LabelLayer already emitted per-kind
+     classes; now CSS draws a glyph per kind in the label's color:
+     stars = hollow diamonds, planets = dots, stations = squares,
+     POIs = ringed dots, and the memorial = a BURNING CANDLE (pulsing
+     glow, 2.6s breath). New LabelKind 'memorial'; tactical chip reads
+     MEMORIAL. The grammar is extensible — enemies/gates/etc. can join
+     as the world grows.
+  5. **THE QUIET SPHERE** (his ruling, the sanctity mechanic): inside
+     ~420u, the world stands back — master audio ducks 72% (smooth
+     0.25s ramps, new setVigilDuck in the engine), every label except
+     hers fades to 12%, docks chatter and coach drop to 8%. Flight
+     instruments stay. Leaving restores everything.
+  6. **CANDLES v2**: the vigil never starts empty — 23 seed candles
+     (the families lit theirs first), player candles stack on top
+     (board + count read SEED+yours). They COLLECT at her feet
+     (quadratic height falloff, dense low drift thinning upward),
+     revolve slowly, flames stretched to teardrops and breathing in
+     soft sync. Your candle now climbs with a flickering flame and a
+     fading halo.

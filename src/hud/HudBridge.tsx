@@ -352,7 +352,9 @@ export function HudBridge() {
               ? 'STATION'
               : target.kind === 'poi'
                 ? 'POINT OF INTEREST'
-                : 'STAR SYSTEM'
+                : target.kind === 'memorial'
+                  ? 'MEMORIAL'
+                  : 'STAR SYSTEM'
         hudReadouts.targetChipEl.textContent = chip
         hudReadouts.targetChipEl.style.color = target.color
       }

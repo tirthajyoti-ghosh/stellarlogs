@@ -133,7 +133,81 @@ body[data-warpphase='burn'] .hud-warp-flash {
   transition: opacity 0.25s;
   will-change: transform;
 }
-.hud-label::before { content: none; }
+/* MARKER GRAMMAR — every kind of thing carries its own glyph, the way
+   Everspace separates gates from enemies from POIs. Stars are hollow
+   diamonds, planets small dots, stations squares, POIs ringed dots,
+   and the memorial burns a candle. All drawn in the label's color. */
+.hud-label::before {
+  content: '';
+  display: inline-block;
+  flex: none;
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+}
+.hud-label-system::before {
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid currentColor;
+  transform: rotate(45deg);
+}
+.hud-label-planet::before {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.75;
+}
+.hud-label-station::before {
+  border: 1.5px solid currentColor;
+}
+.hud-label-poi::before {
+  border: 1.2px solid currentColor;
+  border-radius: 50%;
+  background: radial-gradient(circle, currentColor 0 1.5px, transparent 2.2px);
+}
+.hud-label-memorial {
+  font-size: 11.5px;
+  background: rgba(10, 30, 44, 0.55);
+}
+.hud-label-memorial .hud-label-name {
+  font-weight: 600;
+  letter-spacing: 0.26em;
+}
+.hud-label-memorial::before {
+  width: 9px;
+  height: 13px;
+  background:
+    radial-gradient(circle at 50% 13%, currentColor 0 1.8px, transparent 2.8px),
+    linear-gradient(currentColor, currentColor) 50% 100% / 2px 6px no-repeat;
+  animation: vigil-flame 2.6s ease-in-out infinite;
+}
+@keyframes vigil-flame {
+  0%,
+  100% {
+    opacity: 0.7;
+    filter: drop-shadow(0 0 1px currentColor);
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px currentColor);
+  }
+}
+
+/* THE VIGIL'S QUIET — inside her sphere the rest of the world stands
+   back: labels fade, the docks chatter dims, the coach holds its
+   tongue. Flight instruments stay; grief doesn't ground you. */
+body[data-vigil='1'] .hud-label:not(.hud-label-memorial) {
+  /* !important: LabelLayer writes inline distance-fade opacity per frame */
+  opacity: 0.12 !important;
+}
+body[data-vigil='1'] .hud-activity,
+body[data-vigil='1'] .hud-coach,
+body[data-vigil='1'] .hud-banner {
+  opacity: 0.08 !important;
+}
+
 .hud-label-system { font-size: 13px; }
 .hud-label-planet {
   font-size: 11px;

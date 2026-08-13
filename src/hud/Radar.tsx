@@ -210,7 +210,7 @@ export function Radar() {
               standoff: TRACK_POI.standoff,
             })
           }
-          const wp = plot(WRECK_POI.position[0], WRECK_POI.position[2], '#8a97a5', 2)
+          const wp = plot(WRECK_POI.position[0], WRECK_POI.position[2], '#9fdcff', 2.6)
           if (wp) {
             blips.current.push({
               px: wp.px,

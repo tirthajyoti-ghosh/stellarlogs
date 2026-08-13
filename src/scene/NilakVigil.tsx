@@ -18,7 +18,7 @@ import {
 } from 'three'
 import { shipRig } from '../state/shipRig'
 import { registerHudLabel } from '../hud/hudState'
-import { triggerBell } from '../audio/engine'
+import { setVigilDuck, triggerBell } from '../audio/engine'
 import { lightCandle, getCandles, gClaims } from '../systems/tallies'
 import { WRECK_POI } from '../config/pois'
 import { FONT_BOLD } from './boards/font'
@@ -48,13 +48,21 @@ import type { BoardSpec } from './boards/boardSpecs'
 const NILAK_URL = '/models/nilak.glb'
 
 const SITE_POS = new Vector3(...WRECK_POI.position)
-const ADD_RANGE = 90
-const SLEEP_RANGE = 1600
-const MAX_FLAMES = 48
-const NAME_RING_R = 10.5
-const CANDLE_RING_R = 6.4
+const ADD_RANGE = 110
+/** Names/cards/candles cull here; SHE stays visible from anywhere —
+ *  a hologram is light, and light carries. */
+const DETAIL_RANGE = 1500
+/** THE QUIET SPHERE: inside, the world's audio and HUD chatter bow out */
+const QUIET_R = 420
+const MAX_FLAMES = 96
+/** The vigil never starts empty — the families lit theirs first */
+const SEED_CANDLES = 23
+const HOLO_SCALE = 0.66
+const HOLO_CENTER_Y = 28
+const NAME_RING_R = 12
+const NAME_SPAN = 40 // names climb her whole length
 const NAME_SPEED = 0.05 // rad/s — slow and patient, but alive
-const CANDLE_SPEED = 0.055
+const CANDLE_SPEED = 0.045
 const JOIN_TIME = 5.5 // s for your candle to climb to its slot
 
 /** Her crew — forty-two souls, each with a line their people left, the
@@ -105,12 +113,15 @@ const MANIFEST: { name: string; line: string }[] = [
   { name: 'TALIA BEN-AMI', line: 'SHE WAS GOING TO SEE EARTH IN SPRING' },
 ]
 
-/** Deterministic ring slot for candle i — reload reproduces the layout. */
+/** Deterministic ring slot for candle i — reload reproduces the layout.
+ *  Candles COLLECT toward the bottom (quadratic height falloff): a dense
+ *  drift of flames at her feet, thinning as they climb. */
 function candleSlot(i: number): { angle: number; radius: number; height: number } {
+  const u = ((i * 53) % 100) / 100
   return {
     angle: i * 2.399963, // golden angle: no two candles ever stack
-    radius: CANDLE_RING_R + ((i * 37) % 100) / 100 * 1.8,
-    height: 2.1 + ((i * 53) % 100) / 100 * 2.4,
+    radius: 8 + ((i * 37) % 100) / 100 * 3.5,
+    height: 1.6 + u * u * 6.5,
   }
 }
 
@@ -120,6 +131,8 @@ const _s = new Vector3(1, 1, 1)
 const _p = new Vector3()
 const _yAxis = new Vector3(0, 1, 0)
 const _axis = new Vector3()
+/** flames are stretched into teardrops */
+const _sFlame = new Vector3(1, 1.6, 1)
 
 function smooth01(x: number): number {
   const t = Math.max(0, Math.min(1, x))
@@ -135,14 +148,17 @@ export function NilakVigil() {
   const nilak = useGLTF(NILAK_URL)
   const [candles, setCandles] = useState(getCandles())
   const rootRef = useRef<Group>(null)
+  const detailRef = useRef<Group>(null)
   const nameRingRef = useRef<Group>(null)
   const nameGroups = useRef<(Group | null)[]>([])
   const nameScale = useRef<Float32Array>(new Float32Array(MANIFEST.length).fill(1))
   const candleRingRef = useRef<Group>(null)
   const stemsRef = useRef<InstancedMesh>(null)
   const flamesRef = useRef<InstancedMesh>(null)
+  const flamesMatRef = useRef<MeshBasicMaterial>(null)
   const yourCandleRef = useRef<Group>(null)
   const yourFlameRef = useRef<Mesh>(null)
+  const yourGlowRef = useRef<Mesh>(null)
   const g = useRef({
     near: false,
     addedThisApproach: false,
@@ -317,7 +333,7 @@ export function NilakVigil() {
           maxWidth: 26,
         },
         { text: 'NO SHIP LEAVES THE DRIFT DRY', size: 1.15, color: '#9fdcff', y: -14.2, maxWidth: 26, bold: true },
-        { text: `CANDLES LIT ${candles}`, size: 0.8, color: '#5f7c92', y: -17.2, maxWidth: 26 },
+        { text: `CANDLES LIT ${SEED_CANDLES + candles}`, size: 0.8, color: '#5f7c92', y: -17.2, maxWidth: 26 },
       ],
       buttons: [],
     }),
@@ -334,7 +350,7 @@ export function NilakVigil() {
           a,
           lx: Math.sin(a) * r,
           lz: Math.cos(a) * r,
-          h: 4.2 + (((i * 17) % MANIFEST.length) / MANIFEST.length) * 31.8,
+          h: 4.2 + (((i * 17) % MANIFEST.length) / MANIFEST.length) * NAME_SPAN,
         }
       }),
     [],
@@ -345,7 +361,7 @@ export function NilakVigil() {
     const stems = stemsRef.current
     const flames = flamesRef.current
     if (!stems || !flames) return
-    const shown = Math.min(candles, MAX_FLAMES)
+    const shown = Math.min(SEED_CANDLES + candles, MAX_FLAMES)
     // if a climb is in flight, its slot stays empty until it lands
     const settled = g.current.join >= 0 ? Math.min(shown, g.current.joinSlot) : shown
     for (let i = 0; i < settled; i++) {
@@ -353,8 +369,8 @@ export function NilakVigil() {
       _p.set(Math.sin(slot.angle) * slot.radius, slot.height, Math.cos(slot.angle) * slot.radius)
       _m4.compose(_p, _q.identity(), _s)
       stems.setMatrixAt(i, _m4)
-      _p.y += 0.42
-      _m4.compose(_p, _q.identity(), _s)
+      _p.y += 0.46
+      _m4.compose(_p, _q.identity(), _sFlame)
       flames.setMatrixAt(i, _m4)
     }
     stems.count = settled
@@ -368,12 +384,12 @@ export function NilakVigil() {
       id: 'poi-vigil',
       name: 'THE VIGIL',
       color: '#9fdcff',
-      kind: 'poi',
+      kind: 'memorial',
       position: SITE_POS,
-      yOffset: 40,
+      yOffset: 60,
       el: null,
       detail: 'MV NILAK — ALL HANDS · G ADDS YOUR CANDLE',
-      jumpStandoff: 320,
+      jumpStandoff: 360,
     })
     const down = (e: KeyboardEvent) => {
       if (e.code !== 'KeyG' || e.repeat) return
@@ -381,7 +397,7 @@ export function NilakVigil() {
       if (!st.near || st.addedThisApproach || st.join >= 0) return
       st.addedThisApproach = true
       const n = lightCandle()
-      st.joinSlot = Math.min(n - 1, MAX_FLAMES - 1)
+      st.joinSlot = Math.min(SEED_CANDLES + n - 1, MAX_FLAMES - 1)
       st.join = 0
       // your candle appears low on the deck, on your side of the ring
       const ring = candleRingRef.current
@@ -389,7 +405,7 @@ export function NilakVigil() {
         _p.copy(shipRig.position).sub(SITE_POS)
         _p.y = 0
         if (_p.lengthSq() < 1) _p.set(0, 0, 1)
-        _p.normalize().multiplyScalar(4.2)
+        _p.normalize().multiplyScalar(5.2)
         _p.y = 1.0
         // into ring-local space (the ring has rotated)
         st.joinFrom.copy(_p).applyAxisAngle(_yAxis, -ring.rotation.y)
@@ -401,6 +417,8 @@ export function NilakVigil() {
     return () => {
       off()
       window.removeEventListener('keydown', down)
+      setVigilDuck(0)
+      delete document.body.dataset.vigil
     }
   }, [])
 
@@ -411,12 +429,32 @@ export function NilakVigil() {
     gClaims.vigil = st.near
     if (d > ADD_RANGE * 2.2) st.addedThisApproach = false
 
-    const root = rootRef.current
-    if (root) root.visible = d < SLEEP_RANGE
-    if (!root || !root.visible) return
+    // THE QUIET SPHERE — inside it the world stands back: audio ducks,
+    // labels fade, chatter dims. She is the only thing that speaks.
+    const quiet = smooth01((QUIET_R - d) / 150)
+    setVigilDuck(quiet)
+    const wasQuiet = document.body.dataset.vigil === '1'
+    const isQuiet = quiet > 0.4
+    if (isQuiet !== wasQuiet) {
+      if (isQuiet) document.body.dataset.vigil = '1'
+      else delete document.body.dataset.vigil
+    }
+
+    // she is always visible — a hologram is light, and light carries.
+    // The names, cards and candles (the expensive detail) cull far out.
+    const detail = detailRef.current
+    if (detail) detail.visible = d < DETAIL_RANGE
 
     st.time += dt
     holoMat.uniforms.uTime.value = st.time
+    if (!detail || !detail.visible) return
+
+    // the candle flames breathe, all together, softly
+    const flamesMat = flamesMatRef.current
+    if (flamesMat) {
+      const breathe = 0.92 + 0.08 * Math.sin(st.time * 7.3) * Math.sin(st.time * 3.1)
+      flamesMat.color.setRGB(0.9 * breathe, 2.2 * breathe, 2.8 * breathe)
+    }
 
     // the slow orbits
     const nameRing = nameRingRef.current
@@ -432,13 +470,13 @@ export function NilakVigil() {
       const sinR = Math.sin(ry)
       _axis.set(
         SITE_POS.x - shipRig.position.x,
-        SITE_POS.y + 18 - shipRig.position.y,
+        SITE_POS.y + 24 - shipRig.position.y,
         SITE_POS.z - shipRig.position.z,
       )
       const dCenter = _axis.length()
       _axis.multiplyScalar(1 / Math.max(dCenter, 0.001))
       const approach = smooth01((MAG_NEAR - dCenter) / 160)
-      const halfCos = Math.cos(Math.atan2(15, Math.max(dCenter, 1)))
+      const halfCos = Math.cos(Math.atan2(17, Math.max(dCenter, 1)))
       const blend = Math.min(1, dt * 7)
       for (let i = 0; i < slots.length; i++) {
         const grp = nameGroups.current[i]
@@ -472,9 +510,17 @@ export function NilakVigil() {
         _p.set(Math.sin(slot.angle) * slot.radius, slot.height, Math.cos(slot.angle) * slot.radius)
         yours.position.lerpVectors(st.joinFrom, _p, ease)
         yours.visible = true
-        // burns bright on the way up, settles to one of the many
+        // burns bright on the way up, settles to one of the many —
+        // the flame flickers as it climbs, the halo breathes with it
         const flame = yourFlameRef.current
-        if (flame) flame.scale.setScalar(1.9 - 0.9 * ease)
+        const s = 1.9 - 0.9 * ease
+        const flick = 1 + 0.12 * Math.sin(st.time * 11.7) * Math.sin(st.time * 5.3)
+        if (flame) flame.scale.set(s * flick, s * 1.55 * flick, s * flick)
+        const glow = yourGlowRef.current
+        if (glow) {
+          glow.scale.setScalar((1.6 - 0.9 * ease) * flick)
+          ;(glow.material as MeshBasicMaterial).opacity = 0.3 * (1 - ease * 0.6)
+        }
         if (st.join >= 1) {
           st.join = -1
           yours.visible = false
@@ -484,10 +530,10 @@ export function NilakVigil() {
           if (stems && flames) {
             _m4.compose(_p, _q.identity(), _s)
             stems.setMatrixAt(st.joinSlot, _m4)
-            _p.y += 0.42
-            _m4.compose(_p, _q.identity(), _s)
+            _p.y += 0.46
+            _m4.compose(_p, _q.identity(), _sFlame)
             flames.setMatrixAt(st.joinSlot, _m4)
-            stems.count = Math.min(getCandles(), MAX_FLAMES)
+            stems.count = Math.min(SEED_CANDLES + getCandles(), MAX_FLAMES)
             flames.count = stems.count
             stems.instanceMatrix.needsUpdate = true
             flames.instanceMatrix.needsUpdate = true
@@ -503,7 +549,7 @@ export function NilakVigil() {
     <group ref={rootRef} position={[SITE_POS.x, SITE_POS.y, SITE_POS.z]}>
       {/* the moored platform */}
       <mesh position={[0, -0.5, 0]}>
-        <cylinderGeometry args={[13, 14, 1, 8]} />
+        <cylinderGeometry args={[16, 17, 1, 8]} />
         <meshStandardMaterial color="#262c34" metalness={0.55} roughness={0.65} flatShading />
       </mesh>
       {/* four projector pedestals, lenses hot — fixtures only, no painted
@@ -511,8 +557,8 @@ export function NilakVigil() {
           the hologram itself is the only projected light you see) */}
       {Array.from({ length: 4 }, (_, i) => {
         const a = (i / 4) * Math.PI * 2 + Math.PI / 4
-        const px = Math.sin(a) * 8
-        const pz = Math.cos(a) * 8
+        const px = Math.sin(a) * 10
+        const pz = Math.cos(a) * 10
         return (
           <group key={i}>
             <mesh position={[px, 1.1, pz]}>
@@ -527,10 +573,12 @@ export function NilakVigil() {
         )
       })}
       {/* HER — standing vertical on her drive, whole again */}
-      <group position={[0, 22, 0]} rotation={[0, 0.4, Math.PI / 2]} scale={0.48}>
+      <group position={[0, HOLO_CENTER_Y, 0]} rotation={[0, 0.4, Math.PI / 2]} scale={HOLO_SCALE}>
         <primitive object={holoDepthShip} />
         <primitive object={holoShip} />
       </group>
+      {/* names, cards and candles cull beyond DETAIL_RANGE; she doesn't */}
+      <group ref={detailRef}>
       {/* the crew, revolving around her from drive to bow — each a
           gravestone: the name, and under it the line their people left */}
       <group ref={nameRingRef}>
@@ -600,7 +648,7 @@ export function NilakVigil() {
         </instancedMesh>
         <instancedMesh ref={flamesRef} args={[undefined, undefined, MAX_FLAMES]} instanceMatrix-usage={DynamicDrawUsage}>
           <sphereGeometry args={[0.17, 6, 6]} />
-          <meshBasicMaterial color={[0.9, 2.2, 2.8]} toneMapped={false} />
+          <meshBasicMaterial ref={flamesMatRef} color={[0.9, 2.2, 2.8]} toneMapped={false} />
         </instancedMesh>
         {/* yours, while it climbs */}
         <group ref={yourCandleRef} visible={false}>
@@ -614,18 +662,29 @@ export function NilakVigil() {
               depthWrite={false}
             />
           </mesh>
-          <mesh ref={yourFlameRef} position={[0, 0.42, 0]}>
+          <mesh ref={yourFlameRef} position={[0, 0.46, 0]}>
             <sphereGeometry args={[0.17, 6, 6]} />
             <meshBasicMaterial color={[1.4, 3.0, 3.6]} toneMapped={false} />
           </mesh>
+          <mesh ref={yourGlowRef} position={[0, 0.46, 0]}>
+            <sphereGeometry args={[0.5, 10, 10]} />
+            <meshBasicMaterial
+              color="#7fd4ff"
+              transparent
+              opacity={0.3}
+              blending={AdditiveBlending}
+              depthWrite={false}
+            />
+          </mesh>
         </group>
+      </group>
       </group>
       {/* the memorial board — her story, off the platform's edge,
           station-kept like every board in the neighborhood */}
       <Billboard
         spec={boardSpec}
         accentColor="#9fdcff"
-        position={[-30, 20, 0]}
+        position={[-34, 24, 0]}
         planetWorldPos={SITE_POS}
       />
     </group>
