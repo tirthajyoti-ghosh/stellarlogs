@@ -22,6 +22,8 @@ import { triggerBell } from '../audio/engine'
 import { lightCandle, getCandles, gClaims } from '../systems/tallies'
 import { WRECK_POI } from '../config/pois'
 import { FONT_BOLD } from './boards/font'
+import { Billboard } from './boards/Billboard'
+import type { BoardSpec } from './boards/boardSpecs'
 
 /**
  * THE VIGIL (docs/the-neighborhood.md — the wreck's memorial, rebuilt on
@@ -264,6 +266,62 @@ export function NilakVigil() {
         depthWrite: false,
       }),
     [],
+  )
+
+  /** THE MEMORIAL BOARD — the story the plates couldn't carry, on a
+   *  real billboard (house grammar: lamp-lit panel, slews to face you).
+   *  New fiction seams, extrapolated from what stands: THE DRY WEEKS
+   *  (what the Drift lived through while the water stopped), the racing
+   *  club's water runs (why the club's opening lap has its name), and
+   *  where her scrapped hull actually went — you are standing on her. */
+  const boardSpec = useMemo<BoardSpec>(
+    () => ({
+      width: 30,
+      height: 44,
+      blocks: [
+        { text: 'SHE CARRIED WATER', size: 2.2, color: '#9fdcff', y: 18.5, maxWidth: 26, bold: true },
+        {
+          text: 'MV NILAK · ICE HAULER · INTERAMNIA REGISTRY — IN MEMORY OF HER 42 SOULS',
+          size: 0.95,
+          color: '#7d8a99',
+          y: 14.1,
+          maxWidth: 26,
+        },
+        {
+          text:
+            'RAIDERS TOOK HER INBOUND ON THE ICE ROUTE, HOLDS FULL, THREE DAYS FROM DOCK. ' +
+            'THE AMNIA MILITIA WAS SWORN THAT SAME WEEK — THE MANHUNT BOARD HAS NOT EMPTIED SINCE.',
+          size: 1.0,
+          color: '#c9d8e4',
+          y: 10.1,
+          maxWidth: 26,
+        },
+        {
+          text:
+            'THE DRY WEEKS: ELEVEN DAYS THIS DRIFT LIVED ON DREGS AND RECLAIMER STEAM. ' +
+            'THE RACING CLUB STRIPPED THEIR HULLS FOR TANKAGE AND RAN RAW ICE FROM THE OUTER WELLS, ' +
+            'LAP AFTER LAP, UNTIL THE RESERVE CAME BACK. THE CLUB CALLS ITS OPENING LAP ' +
+            '"THE WATER RUN" TO THIS DAY.',
+          size: 1.0,
+          color: '#c9d8e4',
+          y: 3.3,
+          maxWidth: 26,
+        },
+        {
+          text:
+            'HER HULL CAME HOME AS SCRAP — A COLONY WASTES NOTHING. HER PLATES DECK THIS ' +
+            'PLATFORM. HER TANKS HOLD THE DRIFT’S RESERVE. YOU ARE STANDING ON HER.',
+          size: 1.0,
+          color: '#c9d8e4',
+          y: -7.4,
+          maxWidth: 26,
+        },
+        { text: 'NO SHIP LEAVES THE DRIFT DRY', size: 1.15, color: '#9fdcff', y: -14.2, maxWidth: 26, bold: true },
+        { text: `CANDLES LIT ${candles}`, size: 0.8, color: '#5f7c92', y: -17.2, maxWidth: 26 },
+      ],
+      buttons: [],
+    }),
+    [candles],
   )
 
   /** One slot per soul, scattered from her drive to her bow. */
@@ -562,43 +620,14 @@ export function NilakVigil() {
           </mesh>
         </group>
       </group>
-      {/* the plates */}
-      <Text
-        font={FONT_BOLD}
-        fontSize={1.0}
-        letterSpacing={0.24}
-        color="#c9d8e4"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, 1.6, 12.6]}
-        material-toneMapped={false}
-      >
-        {`IN MEMORY OF THE ${MANIFEST.length} SOULS OF THE MV NILAK`}
-      </Text>
-      <Text
-        font={FONT_BOLD}
-        fontSize={1.35}
-        letterSpacing={0.3}
-        color="#9fdcff"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, 0.2, 12.6]}
-        material-toneMapped={false}
-      >
-        SHE CARRIED WATER
-      </Text>
-      <Text
-        font={FONT_BOLD}
-        fontSize={0.55}
-        letterSpacing={0.18}
-        color="#5f7c92"
-        anchorX="center"
-        anchorY="middle"
-        position={[0, -1.0, 12.6]}
-        material-toneMapped={false}
-      >
-        {`CANDLES LIT ${candles}`}
-      </Text>
+      {/* the memorial board — her story, off the platform's edge,
+          station-kept like every board in the neighborhood */}
+      <Billboard
+        spec={boardSpec}
+        accentColor="#9fdcff"
+        position={[-30, 20, 0]}
+        planetWorldPos={SITE_POS}
+      />
     </group>
   )
 }

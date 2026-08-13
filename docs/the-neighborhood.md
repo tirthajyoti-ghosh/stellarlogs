@@ -270,3 +270,23 @@ Work belts — found floating at pre-lift seats — rejoined their stars.
   Projects star dead behind her (hull cuts a dark silhouette INTO the
   glow), the Drift rock behind her (memorial reads cleanly in front).
   The law is recorded in memory (stellarlogs-3d-architecture).
+
+- **2026-08-13 · THE MEMORIAL BOARD — the story gets a billboard (his
+  ask: "more fiction… a sub-part we haven't explored").** The floating
+  plates retired; a real house billboard (lamp-lit panel, accent frame,
+  station-keeping jets, slews to face the pilot) stands off the
+  platform's edge at [-30, 20, 0]. NEW FICTION SEAMS opened, all
+  extrapolated from standing canon:
+  - **THE DRY WEEKS** — eleven days the Drift lived on dregs and
+    reclaimer steam after she fell: the tragedy's aftermath, never
+    told until now.
+  - **THE WATER RUN** — the racing club stripped their hulls for
+    tankage and ran raw ice from the outer wells until the reserve
+    came back; the club's opening lap carries the name to this day.
+    (Racing ↔ tragedy, joined; usable later at the Track.)
+  - **YOU ARE STANDING ON HER** — where the scrap went: her plates
+    deck the platform, her tanks hold the Drift's reserve. The
+    memorial is literally built of her.
+  - **NO SHIP LEAVES THE DRIFT DRY** — the custom the loss created.
+  Board carries SHE CARRIED WATER as the masthead, the 42-souls
+  dedication, and the live CANDLES LIT counter.
