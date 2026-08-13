@@ -192,6 +192,29 @@ body[data-warpphase='burn'] .hud-warp-flash {
     opacity: 1;
   }
 }
+
+/* THE SPHERE OF NAMES: inside the ship's sphere, marked things wear
+   their names. Outside it the text folds away and only the mark
+   remains — a sky of glyphs, not paragraphs. */
+.hud-label-name,
+.hud-label-dist {
+  max-width: 40ch;
+  overflow: hidden;
+  transition:
+    opacity 0.35s,
+    max-width 0.35s;
+}
+.hud-label[data-far='1'] {
+  padding: 3px 5px;
+  gap: 0;
+  background: rgba(6, 12, 24, 0.3);
+  box-shadow: none;
+}
+.hud-label[data-far='1'] .hud-label-name,
+.hud-label[data-far='1'] .hud-label-dist {
+  opacity: 0;
+  max-width: 0;
+}
 .hud-label-planet::before {
   width: 5px;
   height: 5px;

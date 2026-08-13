@@ -1,6 +1,6 @@
 import { useFrame } from '@react-three/fiber'
 import { Vector3 } from 'three'
-import { hudLabels, hudReadouts, markerColor } from './hudState'
+import { hudLabels, hudReadouts, markerColor, NAME_SPHERE_R } from './hudState'
 import { threatEls } from './ThreatLayer'
 import { raceEls, captureEls } from './RaceLayer'
 import { pursuit } from '../physics/pursuit'
@@ -533,6 +533,13 @@ export function HudBridge() {
         continue
       }
       placed.push({ x, y })
+
+      // THE SPHERE OF NAMES: outside it, text falls away — mark only
+      const far = dist > NAME_SPHERE_R && !label.mission
+      if ((el.dataset.far === '1') !== far) {
+        if (far) el.dataset.far = '1'
+        else delete el.dataset.far
+      }
 
       el.style.opacity = label.kind === 'system' ? '0.92' : label.kind === 'poi' ? '0.55' : '0.85'
       el.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`

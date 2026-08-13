@@ -52,6 +52,14 @@ export function markerColor(label: HudLabel): string {
   return MARKER_COLORS[markerCategory(label)]
 }
 
+/**
+ * THE SPHERE OF NAMES (Tirtha's from-scratch marker rule): imagine a
+ * sphere around the ship. Marked things INSIDE it wear their names;
+ * outside it, the text falls away and only the mark remains — the sky
+ * shows glyphs, not paragraphs. Mission truth is exempt.
+ */
+export const NAME_SPHERE_R = 2600
+
 export interface HudLabel {
   id: string
   name: string

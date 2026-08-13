@@ -442,7 +442,7 @@ export function NilakVigil() {
     const flamesMat = flamesMatRef.current
     if (flamesMat) {
       const breathe = 0.92 + 0.08 * Math.sin(st.time * 7.3) * Math.sin(st.time * 3.1)
-      flamesMat.color.setRGB(0.9 * breathe, 2.2 * breathe, 2.8 * breathe)
+      flamesMat.color.setRGB(3.0 * breathe, 1.5 * breathe, 0.45 * breathe)
     }
 
     // the slow orbits
@@ -628,37 +628,37 @@ export function NilakVigil() {
         <instancedMesh ref={stemsRef} args={[undefined, undefined, MAX_FLAMES]} instanceMatrix-usage={DynamicDrawUsage}>
           <cylinderGeometry args={[0.07, 0.09, 0.62, 6]} />
           <meshBasicMaterial
-            color="#6fc4e8"
+            color="#d8cfc0"
             transparent
-            opacity={0.5}
+            opacity={0.55}
             blending={AdditiveBlending}
             depthWrite={false}
           />
         </instancedMesh>
         <instancedMesh ref={flamesRef} args={[undefined, undefined, MAX_FLAMES]} instanceMatrix-usage={DynamicDrawUsage}>
           <sphereGeometry args={[0.17, 6, 6]} />
-          <meshBasicMaterial ref={flamesMatRef} color={[0.9, 2.2, 2.8]} toneMapped={false} />
+          <meshBasicMaterial ref={flamesMatRef} color={[3.0, 1.5, 0.45]} toneMapped={false} />
         </instancedMesh>
         {/* yours, while it climbs */}
         <group ref={yourCandleRef} visible={false}>
           <mesh>
             <cylinderGeometry args={[0.07, 0.09, 0.62, 6]} />
             <meshBasicMaterial
-              color="#6fc4e8"
+              color="#e6dcc6"
               transparent
-              opacity={0.6}
+              opacity={0.65}
               blending={AdditiveBlending}
               depthWrite={false}
             />
           </mesh>
           <mesh ref={yourFlameRef} position={[0, 0.46, 0]}>
             <sphereGeometry args={[0.17, 6, 6]} />
-            <meshBasicMaterial color={[1.4, 3.0, 3.6]} toneMapped={false} />
+            <meshBasicMaterial color={[3.6, 1.9, 0.6]} toneMapped={false} />
           </mesh>
           <mesh ref={yourGlowRef} position={[0, 0.46, 0]}>
             <sphereGeometry args={[0.5, 10, 10]} />
             <meshBasicMaterial
-              color="#7fd4ff"
+              color="#ffb46e"
               transparent
               opacity={0.3}
               blending={AdditiveBlending}
