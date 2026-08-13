@@ -511,3 +511,12 @@ multi-contact battles; 6 pairs with the torpedo HUD; 7 is garnish.
    sphere. Direct kin to our scope's PDC-coverage reading — when the
    scope pass happens, the cones-in-sphere is the strongest single
    idea to steal: coverage as VOLUME, not as a ring segment.
+
+   Close-up added (`expanse-pdc-coverage-cones-closeup.png`): the
+   anatomy is legible now — the wireframe sphere is a DOTTED point
+   lattice, the fore/aft cones are SOLID translucent volumes with a
+   bright rim at the mouth, and the third arc is a soft-edged LOBE
+   (a bubble, not a cone — a turret cluster's swept volume). The
+   ship model sits ghosted at center with turret positions picked
+   out as tiny red/blue dots matching the per-turret cards. Grid
+   backdrop, corner threat inset, red ring reticles floating free.
