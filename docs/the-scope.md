@@ -677,3 +677,45 @@ the kind of call he takes better than I do.
 4. Proximity strip: yes, or is the pulsing stem already the answer?
 5. Language: our Belters are ours. Do their stations carry Lang
    Belta-flavored labels, or stay plain English?
+
+---
+
+## PASS 4, PLAIN WORDS (2026-08-14) — the version that counts
+
+The first write-up of this pass was jargon and he called it: it went
+over his head and couldn't be decided on. This is the same thinking in
+plain language, and it CORRECTS one factual error (we already show
+per-gun status — six pips in battle mode, red on overheat).
+
+**What the show's combat screens are for.** Three jobs: (1) where is
+everything, (2) can my guns reach it, (3) am I about to kill someone.
+We do (1) well, (2) partly, and (3) not at all.
+
+**Their ideas, one by one, against ours:**
+
+| The show does | We do | Verdict |
+| --- | --- | --- |
+| Contacts as markers standing above a floor on a pole (height = how far above/below you) | The same — this is our scope already | Nothing to change |
+| The marker at the top is a tiny framed badge saying WHAT it is | We draw a plain dot | Cheap upgrade, real information |
+| The one that matters is a different colour, its name in white | Everything looks alike | Small, effective |
+| "HAMMA LOK" floating over the map = we have a firing solution | Nothing | THE gap — and our surrender fiction gives it meaning |
+| A bar under the map: how close is the nearest threat | "TORPEDO INBOUND" in words + the nearest pole pulses | Mostly covered; a bar is glanceable |
+| Six turret readouts: which gun is live/overheated | WE ALREADY HAVE THIS (six pips) | No gap |
+| Gun coverage as see-through cones in a dotted sphere | Each threat's pole is coloured: teal = a gun is on it, amber = waiting, red = nobody can reach it | Theirs is prettier; ours answers "is THIS one handled" better in a small box |
+| Assign specific torpedo tubes to specific targets | Our guns are automatic by design | Doesn't fit — would be the fake mechanic we banned |
+| Torpedo inventory board | The player has no torpedoes (decided) | Nothing to draw |
+| Same screen, Belter dress vs Earth/Mars dress | One faction so far | Park it for the Deep |
+
+**The three decisions, with recommendations:**
+
+1. **The lock + surrender moment — build it?** RECOMMEND YES. In the
+   hunt the raider can squawk surrender. If you are holding a firing
+   solution on a ship that is giving up, the game should say so, out
+   loud, in the middle of the picture — and then it is your choice.
+   That is Drummer's scene, and it is already our fiction.
+2. **Coverage cones.** RECOMMEND: leave ours as it is for now. Ours
+   answers the question that matters in a 200 px box; theirs is a
+   bridge-sized picture. Revisit only if he wants the spectacle.
+3. **Small polish batch** — badge markers instead of dots, the
+   important contact in white, a nearest-threat bar. RECOMMEND YES,
+   it is an afternoon and it makes the scope readable at a glance.
