@@ -439,21 +439,48 @@ the way (Tirtha). Deep exploration passes continue between builds
    2026-08-09 (the-hunt.md pass 4 BUILT): real evidence assets, G/H keys,
    THE REVENANT, hunt focus, scope sphere read, Azure Dragon chase,
    fast-finite torpedoes, pursuit assist v2. Awaiting Tirtha's live ride.
-3. Debris storm + slag skeet + density/toys pass — IN PROGRESS 2026-08-09
-   (docs/the-neighborhood.md): sleeping spread SHIPPED, starmap lift +
-   five UNSURVEYED inert stars SHIPPED; next slag skeet → Drift toys →
-   bell → debris storm.
+3. Density/toys pass — NEARLY DONE (docs/the-neighborhood.md). SHIPPED:
+   sleeping spread; starmap lift + five UNSURVEYED inert stars; cargo
+   spills (5 fields across the neighborhood); the militia kill-board;
+   small secrets; THE HEADLIGHT; THE VIGIL v1→v3 (the Gamarra-pattern
+   hologram, 42 gravestones, the quiet sphere, the memorial board).
+   RETIRED: slag skeet (borrowed-body law). STILL UNBUILT: **the debris
+   storm** (PDC-only civil defense) — the last piece of this pass.
 3.1. **THE SPINE — the railgun** — TABLED 2026-08-12 as a recorded
    failure (docs/the-spine.md): the HUD element never earned approval
    after many rounds; removed from the game, revisit later. The debris
    storm reverts to PDC-only civil defense. Player torpedoes stay
    REJECTED.
-3.2. **THE SCORE — music** (Tirtha 2026-08-09: "music has been absent…
-   the Expanse is really good because of the music"). Exploration pass +
-   score.html listening bench: CC beds vs generative WebAudio, adaptive
-   layers by game state, ducks under combat, Sound-Law-compliant. The
-   cantina jukebox rides this: CC Belter tracks, credit in the NOW
-   PLAYING toast.
+3.2. **THE SOUNDS** — the adaptive score was OVERRULED (2026-08-14: "we
+   are not doing all these things"). What shipped instead, from the
+   /sounds.html bench: the real drive (NASA shuttle close-mic loop, his
+   40–45 s pick, with max burn as a staged swell — the detonation was
+   tried and TABLED), the PDC unit shot (OGA chaingun round repeated at
+   ~20/s), and RADIO CHATTER (faint, mostly indistinct comm murmur near
+   the Drift and docks). THE JUKEBOX was built and TABLED on his read —
+   code and tracks stay on disk. Nothing owed here unless he reopens it.
+
+3.3. **THE DRIVE PLUME — SHIPPED 2026-08-14** (docs/the-plume.md): after
+   a rejected sprite build, rebuilt as a genuinely 3D raymarched
+   volumetric flame (bench: /plume2.html, orbitable). Fills the bell,
+   ~3× at max burn, 4× flow speed at burn.
+
+3.4. **THE HUD MARKER GRAMMAR — SHIPPED 2026-08-13/14**
+   (docs/the-hud-markers.md): colour = category (portfolio amber,
+   infrastructure teal, POI grey-blue, contacts, hostile, memorial
+   candle, unsurveyed ash), designed SVG marks on backing discs, the
+   SPHERE OF NAMES (text only inside ~2600 u; outside it, marks only),
+   planet names held until arrival, and the jump chart sectioned to
+   match.
+
+3.45. **THE SCOPE pass 4 — SHIPPED 2026-08-14** (docs/the-scope.md): THE
+   ARREST (she yields → custody-teal, held ring, YIELDED · IN CUSTODY),
+   THE ONE NAME in white, and the PROXIMITY STRIP on the scope's own
+   two-zone scale. Coverage-as-volume from the Expanse references was
+   considered and DECLINED by him (ours answers the question better in
+   a small box); threat-grouping and the torpedo board REJECTED as not
+   fitting our auto-PDC, no-player-torpedo design; faction skinning
+   PARKED for the Deep.
 3.5. **MOBILE — the bridge flies landscape** (Tirtha, 2026-08-08 phone
    read: runs smooth, portrait buttons make no sense). Portrait touch →
    "THIS BRIDGE FLIES LANDSCAPE" interstitial; tap = fullscreen +
