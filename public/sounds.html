@@ -41,6 +41,12 @@
   .cand .lic a { color: var(--accent); text-decoration: none; }
   audio { height: 30px; flex: 1; min-width: 240px; filter: invert(0.88) hue-rotate(180deg); }
   .verdict { color: var(--amber); font-size: 10px; letter-spacing: 0.2em; }
+  .pdcbtn {
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    font: inherit; font-size: 11px; letter-spacing: 0.18em; padding: 6px 18px;
+    cursor: pointer;
+  }
+  .pdcbtn:hover { background: rgba(111, 211, 232, 0.12); }
 </style>
 </head>
 <body>
@@ -84,6 +90,30 @@
 <div class="cand"><b>.50 CAL — AVENGER TRAINING (distinct shots)</b><span class="lic">CC0 · qubodup · <a href="https://freesound.org/people/qubodup/sounds/160355/">freesound 160355</a></span><audio controls preload="none" src="https://cdn.freesound.org/previews/160/160355_71257-hq.mp3"></audio></div>
 <div class="cand"><b>.50 CAL MG (distinct shots)</b><span class="lic">CC0 · qubodup · <a href="https://freesound.org/people/qubodup/sounds/239138/">freesound 239138</a></span><audio controls preload="none" src="https://cdn.freesound.org/previews/239/239138_71257-hq.mp3"></audio></div>
 
+<h2>2B · THE PDC, PASS 4 — THE SHRILL (his ear: "a slight shrill, then the firing")</h2>
+<div class="note">
+  Research: the show's grammar for tech is METAL — and his "shrill then
+  firing" is the signature of an ELECTRIC ROTARY cannon: the turret motor
+  whines up, the rip follows, the whine trails off. These are LIVE
+  composites — press to hear the exact algorithm the game would run
+  (motor shrill synthesized, reports are real samples at 38/s):
+</div>
+<div class="cand"><b>VARIANT A — SHRILL + BUSHMASTER UNIT</b><span class="lic">motor whine + current unit shot</span><button class="pdcbtn" onclick="playA()">▶ PLAY BURST</button></div>
+<div class="cand"><b>VARIANT B — SHRILL + CHAINGUN SHOT</b><span class="lic">motor whine + M. Baradari chaingun (CC-BY, OGA)</span><button class="pdcbtn" onclick="playB()">▶ PLAY BURST</button></div>
+<div class="cand"><b>VARIANT C — NO SHRILL (control)</b><span class="lic">the current in-game voice</span><button class="pdcbtn" onclick="playC()">▶ PLAY BURST</button></div>
+<div class="cand"><b>RAW: CHAINGUN SINGLE SHOT</b><span class="lic">CC-BY 3.0 · Michel Baradari · <a href="https://opengameart.org/content/chaingun-pistol-rifle-shotgun-shots">OGA</a></span><audio controls preload="none" src="/audio/cand/cg-shot.mp3"></audio></div>
+
+<h2>2C · THE MAX-BURN BLAST — dry explosion candidates</h2>
+<div class="note">
+  His rulings: the synthesized thump was too muted (REVERTED — the single
+  sonic boom is back in game for now, echo and all); the hunt is for a
+  REAL explosion recorded dry. Two game-grade candidates (cut dry for
+  layering, as game assets are):
+</div>
+<div class="cand"><b>EXPLOSION A (full)</b><span class="lic">CC-BY 3.0 · Michel Baradari · <a href="https://opengameart.org/content/2-high-quality-explosions">OGA</a></span><audio controls preload="none" src="/audio/cand/explosion-a.mp3"></audio></div>
+<div class="cand"><b>EXPLOSION B (mini)</b><span class="lic">CC-BY 3.0 · Michel Baradari</span><audio controls preload="none" src="/audio/cand/explosion-b.mp3"></audio></div>
+<div class="cand"><b>IN GAME NOW: the single sonic boom (restored)</b><span class="lic">NASA · public domain</span><audio controls preload="none" src="/audio/drive-blast.mp3"></audio></div>
+
 <h2>3 · RADIO CHATTER — real shuttle comm loops (NASA, public domain)</h2>
 <div class="note">
   The concept: sparse, radio-filtered voice traffic near the Drift, the
@@ -106,7 +136,13 @@
 <div class="cand" style="border-color:#6fd3e8"><b>&rarr; SHIPPED: THE MURMUR BED (Gemini XII comm, filtered faint)</b><span class="lic">now IN GAME — plays at ~4% volume in random windows</span><audio controls preload="none" src="/audio/chatter-murmur.mp3"></audio></div>
 <div class="cand" style="border-color:#6fd3e8"><b>&rarr; SHIPPED: THE CLEAR BITES (radio-filtered)</b><span class="lic">now IN GAME — the rare 20%</span><audio controls preload="none" src="/audio/chatter-bite-1.mp3"></audio><audio controls preload="none" src="/audio/chatter-bite-4.mp3"></audio></div>
 
-<h2>4 · THE JUKEBOX — real composed tracks (CC-BY, credit shown in NOW PLAYING)</h2>
+<h2>4 · THE JUKEBOX — TABLED (his call, 2026-08-14 evening)</h2>
+<div class="note">
+  Built, heard, not liked — unmounted from the game; code and rotation
+  stay on disk for the revisit. Candidates below remain for future
+  curation.
+</div>
+<h2>4B · THE JUKEBOX SLATE (dormant) — real composed tracks (CC-BY, credit shown in NOW PLAYING)</h2>
 <div class="note">
   Diegetic at the Drift cantina: audible near the docks, rolls off with
   distance, NOW PLAYING credit on the board. All Kevin MacLeod
@@ -135,5 +171,43 @@
   yes, build it · jukebox: backbay + space jazz"). Then integration: trim,
   compress, bundle, wire — each behind a live A/B against the current synth.
 </div>
+<script>
+let actx = null;
+function ctx() { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); return actx; }
+async function buf(url) { const c = ctx(); const r = await fetch(url); return c.decodeAudioData(await r.arrayBuffer()); }
+let unitB = null, cgB = null;
+async function ensure() {
+  unitB = unitB || await buf('/audio/pdc-shot.mp3');
+  cgB = cgB || await buf('/audio/cand/cg-shot.mp3');
+}
+function shrill(t0, dur) {
+  const c = ctx();
+  const o = c.createOscillator(); o.type = 'sawtooth';
+  o.frequency.setValueAtTime(700, t0);
+  o.frequency.exponentialRampToValueAtTime(2300, t0 + 0.14);
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900; bp.Q.value = 2.5;
+  const g = c.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(0.055, t0 + 0.05);
+  g.gain.exponentialRampToValueAtTime(0.028, t0 + 0.16);
+  g.gain.setValueAtTime(0.028, t0 + dur);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur + 0.22);
+  o.connect(bp).connect(g).connect(c.destination);
+  o.start(t0); o.stop(t0 + dur + 0.3);
+}
+function burst(buffer, t0, dur, rate, vol) {
+  const c = ctx(); let t = t0;
+  while (t < t0 + dur) {
+    const s = c.createBufferSource(); s.buffer = buffer;
+    s.playbackRate.value = 0.95 + Math.random() * 0.1;
+    const g = c.createGain(); g.gain.value = vol;
+    s.connect(g).connect(c.destination); s.start(t);
+    t += (1 / rate) * (0.95 + Math.random() * 0.1);
+  }
+}
+async function playA() { await ensure(); const t0 = ctx().currentTime + 0.06; shrill(t0, 0.8); burst(unitB, t0 + 0.13, 0.6, 38, 0.09); }
+async function playB() { await ensure(); const t0 = ctx().currentTime + 0.06; shrill(t0, 0.8); burst(cgB, t0 + 0.13, 0.6, 38, 0.12); }
+async function playC() { await ensure(); burst(unitB, ctx().currentTime + 0.06, 0.6, 38, 0.09); }
+</script>
 </body>
 </html>

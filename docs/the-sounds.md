@@ -105,3 +105,25 @@ nothing is bundled until he picks. Judged by ear — his.
    PLAYING rides THE CANTINA's label: title · OFF THE <ship>'S CORES ·
    K. MACLEOD CC-BY (attribution always visible). Wider curation still
    open — the other 12 bench candidates await his picks.
+
+
+## Round 4 verdicts (2026-08-14 evening) + state
+
+- **JUKEBOX: TABLED** ("I am not really liking the jukebox, man") —
+  unmounted from App; DriftJukebox.tsx + both tracks stay on disk for
+  the revisit. No further jukebox work until his initiative.
+- **BLAST: synth REJECTED** ("muted… I like the previous one better
+  even with the echo") — the single sonic boom RESTORED in game. The
+  hunt for a real DRY explosion is on the bench (§2C): two game-grade
+  CC-BY explosions (M. Baradari, OGA — game assets are cut dry by
+  design). His pick replaces the boom.
+- **PDC: current voice reads as an MP5** — wrong character. His
+  memory: "a slight SHRILL, then the firing." Research: the show's
+  sound grammar is metal-first (asoundeffect.com interview), and
+  shrill-then-rip is the signature of an ELECTRIC ROTARY cannon (the
+  turret motor). Bench §2B now carries LIVE COMPOSITES — playable
+  WebAudio demos of the exact in-game algorithm: synthesized motor
+  shrill + real reports at 38/s, in three variants (Bushmaster unit /
+  OGA chaingun shot / no-shrill control). He picks; then it ships.
+  Freesound CC0/CC-BY had no usable Vulcan/GAU-8 (best match was
+  CC BY-NC — excluded). OpenGameArt CC-BY filled the gap.

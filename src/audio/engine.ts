@@ -239,6 +239,11 @@ function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
       pdcShotBuf = b
     })
     .catch(() => {})
+  fetchBuf('/audio/drive-blast.mp3')
+    .then((b) => {
+      driveBlastBuf = b
+    })
+    .catch(() => {})
   fetchBuf('/audio/drive-loop.mp3')
     .then((loop) => {
       driveSampleGain = ctx.createGain()
@@ -256,38 +261,24 @@ function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
     })
 }
 
-/** One-shot: the max-burn detonation. SYNTHESIZED, not sampled — his
- *  ruling: a recording always carries the room's echo; the fuel slug
- *  hitting the reactor is one DRY thump. Sub-bass drop + a lowpassed
- *  pressure burst, sharp attack, exponential decay, zero tail. */
+/** One-shot: the max-burn detonation. Back to the RECORDED boom — the
+ *  synthesized dry thump was rejected ("muted… I like the previous one
+ *  better even with the echo"). A drier recorded explosion is being
+ *  hunted on the bench; until his pick, the single sonic boom stands. */
+let driveBlastBuf: AudioBuffer | null = null
 function triggerDriveBlast(): void {
-  if (!engine) return
+  if (!engine || !driveBlastBuf) return
   const { ctx, master } = engine
-  const t = ctx.currentTime
-  // the sub drop: the slug hitting the chamber
-  const sub = ctx.createOscillator()
-  sub.type = 'sine'
-  sub.frequency.setValueAtTime(105, t)
-  sub.frequency.exponentialRampToValueAtTime(26, t + 0.22)
-  const sg = ctx.createGain()
-  sg.gain.setValueAtTime(0.85, t)
-  sg.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
-  sub.connect(sg).connect(master)
-  sub.start(t)
-  sub.stop(t + 0.45)
-  // the pressure burst: air with nowhere to go
-  const burst = ctx.createBufferSource()
-  burst.buffer = makeBrownNoise(ctx)
-  const lp = ctx.createBiquadFilter()
-  lp.type = 'lowpass'
-  lp.frequency.setValueAtTime(950, t)
-  lp.frequency.exponentialRampToValueAtTime(130, t + 0.28)
-  const ng = ctx.createGain()
-  ng.gain.setValueAtTime(0.8, t)
-  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.32)
-  burst.connect(lp).connect(ng).connect(master)
-  burst.start(t)
-  burst.stop(t + 0.4)
+  const src = ctx.createBufferSource()
+  src.buffer = driveBlastBuf
+  const g = ctx.createGain()
+  g.gain.value = 0.6
+  src.connect(g).connect(master)
+  src.start()
+  src.onended = () => {
+    src.disconnect()
+    g.disconnect()
+  }
 }
 
 /** The live audio bus, for satellite systems (radio chatter, jukebox).

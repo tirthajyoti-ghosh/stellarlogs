@@ -13,7 +13,6 @@ import { CargoSpills } from './scene/CargoSpills'
 import { NilakVigil } from './scene/NilakVigil'
 import { SmallSecrets } from './scene/SmallSecrets'
 import { DriftKillBoard } from './scene/DriftKillBoard'
-import { DriftJukebox } from './scene/DriftJukebox'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -167,7 +166,6 @@ export default function App() {
         <NilakVigil />
         <SmallSecrets />
         <DriftKillBoard />
-        <DriftJukebox />
         <Suspense fallback={null}>
           <GunneryRange />
           <IceRoute />
