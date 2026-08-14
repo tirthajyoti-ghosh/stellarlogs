@@ -127,3 +127,21 @@ nothing is bundled until he picks. Judged by ear — his.
   OGA chaingun shot / no-shrill control). He picks; then it ships.
   Freesound CC0/CC-BY had no usable Vulcan/GAU-8 (best match was
   CC BY-NC — excluded). OpenGameArt CC-BY filled the gap.
+
+
+## Round 5 (2026-08-14 night) — shipped
+
+- **PDC UNIT = the RAW chaingun shot** (his pick off the bench): M.
+  Baradari CC-BY, trimmed to 260 ms with the character untouched,
+  leveled down (-7 dB in the cut; 0.05 base gain), rate up to 40–45/s.
+  Bushmaster unit retired. Shrill variants NOT picked — plain reports.
+- **THE BLAST: TABLED entirely** — his insight: the show doesn't score
+  every burn transition either, but our Shift fires every time, so no
+  detonation at all. Max burn is pure STAGING: cruise crackle down to
+  0.08, Shift swells fast (tc 0.08 on the rise) to 0.5 at 1.07× rate.
+  drive-blast.mp3 stays on disk for the bench only; game never fetches
+  it. Explosion candidates dormant on the bench.
+- **NEXT (his direction): the reference-screenshot work** — the drive
+  plume stages (docs/ref/expanse-plume-*.png) and the combat display
+  ideas (docs/the-scope.md §references: drop-line chips, hamma lok,
+  PDC coverage cones).
