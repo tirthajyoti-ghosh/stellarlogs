@@ -202,7 +202,6 @@ export function startAudio(): void {
  * Samples load lazily after boot; until (or if ever) they arrive, the
  * synth carries alone — no boot-time cost, no hard dependency.
  */
-let driveBlastBuf: AudioBuffer | null = null
 let driveSampleGain: GainNode | null = null
 let driveSampleSrc: AudioBufferSourceNode | null = null
 let driveBoostWas = false
@@ -221,7 +220,7 @@ function playPdcShot(ctx: AudioContext, master: GainNode, at: number, locks: num
   src.buffer = pdcShotBuf
   src.playbackRate.value = 0.95 + Math.random() * 0.1
   const g = ctx.createGain()
-  g.gain.value = Math.min(0.24, 0.12 + locks * 0.025)
+  g.gain.value = Math.min(0.11, 0.055 + locks * 0.012)
   src.connect(g).connect(master)
   src.start(at)
   src.onended = () => {
@@ -240,9 +239,8 @@ function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
       pdcShotBuf = b
     })
     .catch(() => {})
-  Promise.all([fetchBuf('/audio/drive-loop.mp3'), fetchBuf('/audio/drive-blast.mp3')])
-    .then(([loop, blast]) => {
-      driveBlastBuf = blast
+  fetchBuf('/audio/drive-loop.mp3')
+    .then((loop) => {
       driveSampleGain = ctx.createGain()
       driveSampleGain.gain.value = 0
       driveSampleGain.connect(master)
@@ -258,20 +256,38 @@ function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
     })
 }
 
-/** One-shot: the double sonic boom that announces max burn. */
+/** One-shot: the max-burn detonation. SYNTHESIZED, not sampled — his
+ *  ruling: a recording always carries the room's echo; the fuel slug
+ *  hitting the reactor is one DRY thump. Sub-bass drop + a lowpassed
+ *  pressure burst, sharp attack, exponential decay, zero tail. */
 function triggerDriveBlast(): void {
-  if (!engine || !driveBlastBuf) return
+  if (!engine) return
   const { ctx, master } = engine
-  const src = ctx.createBufferSource()
-  src.buffer = driveBlastBuf
-  const g = ctx.createGain()
-  g.gain.value = 0.55
-  src.connect(g).connect(master)
-  src.start()
-  src.onended = () => {
-    src.disconnect()
-    g.disconnect()
-  }
+  const t = ctx.currentTime
+  // the sub drop: the slug hitting the chamber
+  const sub = ctx.createOscillator()
+  sub.type = 'sine'
+  sub.frequency.setValueAtTime(105, t)
+  sub.frequency.exponentialRampToValueAtTime(26, t + 0.22)
+  const sg = ctx.createGain()
+  sg.gain.setValueAtTime(0.85, t)
+  sg.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
+  sub.connect(sg).connect(master)
+  sub.start(t)
+  sub.stop(t + 0.45)
+  // the pressure burst: air with nowhere to go
+  const burst = ctx.createBufferSource()
+  burst.buffer = makeBrownNoise(ctx)
+  const lp = ctx.createBiquadFilter()
+  lp.type = 'lowpass'
+  lp.frequency.setValueAtTime(950, t)
+  lp.frequency.exponentialRampToValueAtTime(130, t + 0.28)
+  const ng = ctx.createGain()
+  ng.gain.setValueAtTime(0.8, t)
+  ng.gain.exponentialRampToValueAtTime(0.001, t + 0.32)
+  burst.connect(lp).connect(ng).connect(master)
+  burst.start(t)
+  burst.stop(t + 0.4)
 }
 
 /** The live audio bus, for satellite systems (radio chatter, jukebox).
@@ -303,12 +319,23 @@ export function updateAudio(
   engine.thrusterGain.gain.setTargetAtTime(thrustTarget, t, 0.12)
   engine.thrusterFilter.frequency.setTargetAtTime(boosting ? 520 : 260, t, 0.2)
   if (driveSampleGain && driveSampleSrc) {
-    const sampleTarget = jumping ? 0 : thrusting ? (boosting ? 0.5 : 0.2) : 0
-    driveSampleGain.gain.setTargetAtTime(sampleTarget, t, thrusting ? 0.1 : 0.25)
-    // burn runs the recording a shade faster — denser crackle, more heat
-    driveSampleSrc.playbackRate.setTargetAtTime(boosting && thrusting ? 1.07 : 1.0, t, 0.3)
     const boostNow = boosting && thrusting && !jumping
-    if (boostNow && !driveBoostWas) triggerDriveBlast()
+    // normal thrust sits LOW (his staging: quiet cruise makes the fuel
+    // dump unmistakable); max burn is the loud state
+    const sampleTarget = jumping ? 0 : thrusting ? (boostNow ? 0.5 : 0.11) : 0
+    if (boostNow && !driveBoostWas) {
+      // the grammar of a fuel dump: intake DIP → dry detonation →
+      // fast SWELL into the hotter, denser crackle
+      triggerDriveBlast()
+      const g = driveSampleGain.gain
+      g.cancelScheduledValues(t)
+      g.setValueAtTime(Math.min(g.value, 0.05), t)
+      g.setTargetAtTime(0.5, t + 0.1, 0.12)
+    } else {
+      driveSampleGain.gain.setTargetAtTime(sampleTarget, t, thrusting ? 0.1 : 0.25)
+    }
+    // burn runs the recording a shade faster — denser crackle, more heat
+    driveSampleSrc.playbackRate.setTargetAtTime(boostNow ? 1.07 : 1.0, t, 0.3)
     driveBoostWas = boostNow
   }
 
@@ -330,7 +357,7 @@ export function updateAudio(
   if (pdcShotBuf) {
     engine.pdcGain.gain.setTargetAtTime(0, t, 0.05)
     if (shooting) {
-      const perSec = 15 + turretControl.spin * 5
+      const perSec = 35 + turretControl.spin * 5
       if (nextPdcShot < t) nextPdcShot = t + 0.01
       while (nextPdcShot < t + 0.12) {
         playPdcShot(engine.ctx, engine.master, nextPdcShot, turretControl.locks)

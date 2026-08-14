@@ -82,9 +82,10 @@ nothing is bundled until he picks. Judged by ear — his.
    can make out single firing sounds; fast, sharp, treble-forward,
    bass muted"). New bench candidates: two .50 cal recordings with
    distinct shots (CC0, freesound 160355/239138) + the Bushmaster.
-   SHIPPED: his pick, the Bushmaster — ONE round sliced as THE UNIT
-   (bass high-passed away, sharp kept), replayed with jitter. v2 after
-   his ear: rate up to 15–20/s, volume roughly halved (0.12 base).
+   SHIPPED: his pick, the Bushmaster — ONE round sliced as THE UNIT.
+   v3 after his ear ("bass still more, treble more, muted, faster —
+   35–40/s"): recut to 140 ms, highpass 650 Hz, +7 dB treble shelf at
+   3.5 kHz, level down again (0.055 base, 0.11 cap), rate 35–40/s.
 3. **RADIO CHATTER — APPROVED and SHIPPED** (his spec: random, faint,
    MOSTLY indistinct). `src/audio/chatter.ts`: interval-driven, only
    within 1600 u of the Drift or comms station, 40–110 s random gaps,
@@ -93,6 +94,13 @@ nothing is bundled until he picks. Judged by ear — his.
    from Gemini XII launch comm (band-passed 500–2600 Hz past
    intelligibility, 40 kbps mono) + five radio-filtered bites.
    All public/audio, 488 KB total.
-4. **JUKEBOX — "not enough"**: slate widened to 14 CC-BY candidates
-   on the bench (noir/lounge/jazz/blues/swing). Wider curation +
-   creative direction to be thought through together before build.
+4. **JUKEBOX — BUILT (2026-08-14 evening)**: DriftJukebox.tsx at the
+   Amnia docks (DRIFT+[90,30,40]). Starter rotation: BACKBAY LOUNGE +
+   SPACE JAZZ (his approved family), 96 kbps, lazy-loaded only within
+   2400 u of the Drift (7.6 MB stays off the boot path). Diegetic
+   rolloff full→silent over 160→1300 u; battle ducks it to zero; the
+   vigil duck is upstream in master. Between tracks: THE DATA-CORE
+   SEEK (static breath + relay click — the approved fiction). NOW
+   PLAYING rides THE CANTINA's label: title · OFF THE <ship>'S CORES ·
+   K. MACLEOD CC-BY (attribution always visible). Wider curation still
+   open — the other 12 bench candidates await his picks.
