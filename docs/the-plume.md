@@ -73,3 +73,31 @@ carry the LOG-DEPTH chunks (house law), additive, depthWrite off.
 
 Judged frame-by-frame against the three references via chase-cam and
 orbit screenshots before deploy; his live read rules as always.
+
+
+## Pass 2 (2026-08-14 night) — his rejection of build 1, and the hunt
+
+His read of build 1: "No no no. When I look at it, I actually see
+FLAMES — blue flame. It's not that wide, not that long — nothing
+stringing along behind the ship. Normal thrust is way smaller; max
+burn is ~3× the thrust and still looks like flames. And the light
+spread so much the ship is not visible. Find proper assets — expand
+your search terms. Think first."
+
+What was wrong with build 1, named: the BEAM (nothing streams behind
+the ship — deleted from the plan), the CORONA (washed the ship out
+from chase view — reduced to a whisper), the TONGUE (too dim/thin to
+read as burning), and the overall length.
+
+Search terms that worked: "fire spritesheet", "flame animation",
+FLIPBOOK — the game-industry standard for "actual flame". Found: para's
+CC0 Animated Particle Effects #2 (OpenGameArt) — 64-frame 30 fps
+1024² flipbooks including a LIGHTER FLAME (the exact torch-teardrop
+silhouette of the show's cruise plume), FIRE 01 (ragged burning body)
+and FIRE 02 (soft puffs).
+
+**THE FLAME BENCH: /plume.html** — all three flipbooks animate
+blue-tinted off a mock stern with a NORMAL THRUST / MAX BURN (3×)
+toggle. His verdict picks the flame; then in-game: the winner rides
+two crossed aft-aligned quads at the bell, cruise ≈ one bell-length,
+burn ≈ 3×, mouth lens kept, corona to a faint rim bleed, beam gone.

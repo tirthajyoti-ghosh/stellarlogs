@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE PLUME — flame bench</title>
+<style>
+  :root { --bg:#04070e; --text:#c9d8e4; --dim:#6c7a86; --accent:#6fd3e8; --amber:#ffb45e; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text);
+    font-family:'SF Mono',ui-monospace,Menlo,monospace; letter-spacing:.04em; padding:26px 20px 60px; }
+  h1 { font-size:17px; letter-spacing:.3em; color:var(--accent); margin:0 0 4px; }
+  .sub { color:var(--dim); font-size:11px; margin-bottom:18px; max-width:76ch; line-height:1.6; }
+  .controls { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; }
+  button { background:transparent; border:1px solid var(--accent); color:var(--accent);
+    font:inherit; font-size:11px; letter-spacing:.18em; padding:7px 18px; cursor:pointer; }
+  button.active { background:rgba(111,211,232,.18); }
+  .row { display:flex; gap:22px; flex-wrap:wrap; }
+  .opt { text-align:center; }
+  .opt b { display:block; font-size:11px; letter-spacing:.2em; margin-bottom:8px; color:var(--text); }
+  .opt .lic { color:var(--dim); font-size:9.5px; display:block; margin-top:6px; }
+  canvas.stage { background:#04070e; border:1px solid #16233a; }
+</style>
+</head>
+<body>
+<h1>THE PLUME — FLAME BENCH</h1>
+<div class="sub">
+  His spec (2026-08-14): an actual burning BLUE FLAME — compact at cruise,
+  ~3× at max burn, no long streamer, light that never hides the ship.
+  Each option below is a real CC0 flame flipbook (para, OpenGameArt),
+  tinted blue, played at 30 fps behind a mock stern. Toggle the stage.
+</div>
+<div class="controls">
+  <button id="btn-cruise" class="active" onclick="setStage(1)">NORMAL THRUST</button>
+  <button id="btn-burn" onclick="setStage(3)">MAX BURN (3×)</button>
+</div>
+<div class="row">
+  <div class="opt">
+    <b>A · LIGHTER FLAME (the torch teardrop)</b>
+    <canvas class="stage" id="cA" width="420" height="360"></canvas>
+    <span class="lic">CC0 · para · opengameart.org/content/animated-particle-effects-2</span>
+  </div>
+  <div class="opt">
+    <b>B · FIRE 01 (raggeder body)</b>
+    <canvas class="stage" id="cB" width="420" height="360"></canvas>
+    <span class="lic">CC0 · para</span>
+  </div>
+  <div class="opt">
+    <b>C · FIRE 02 (soft puffs)</b>
+    <canvas class="stage" id="cC" width="420" height="360"></canvas>
+    <span class="lic">CC0 · para</span>
+  </div>
+</div>
+<div class="sub" style="margin-top:18px">
+  In-game plan for the winner: the flipbook rides two crossed quads at the
+  bell (always aft-aligned), blue-white tinted, cruise ≈ one bell-length,
+  burn ≈ 3×, the bell's lens shader kept underneath, corona reduced to a
+  faint rim bleed, the long beam DELETED. Verdict: name the option.
+</div>
+<script>
+const SHEET = 1024, CELL = 128, COLS = 8, FRAMES = 64, FPS = 30;
+let stageScale = 1;
+function setStage(s) {
+  stageScale = s;
+  document.getElementById('btn-cruise').classList.toggle('active', s === 1);
+  document.getElementById('btn-burn').classList.toggle('active', s !== 1);
+}
+function run(canvasId, url, filter) {
+  const cv = document.getElementById(canvasId);
+  const g = cv.getContext('2d');
+  const img = new Image();
+  img.src = url;
+  // offscreen tint buffer
+  const off = document.createElement('canvas');
+  off.width = off.height = CELL;
+  const og = off.getContext('2d');
+  let start = performance.now();
+  function draw(now) {
+    const frame = Math.floor(((now - start) / 1000) * FPS) % FRAMES;
+    const sx = (frame % COLS) * CELL, sy = Math.floor(frame / COLS) * CELL;
+    g.clearRect(0, 0, cv.width, cv.height);
+    // mock stern: a dark hull block with a bell
+    g.fillStyle = '#1a2230';
+    g.fillRect(cv.width/2 - 34, 24, 68, 96);
+    g.fillStyle = '#242e40';
+    g.beginPath(); g.ellipse(cv.width/2, 124, 30, 12, 0, 0, Math.PI*2); g.fill();
+    if (img.complete) {
+      // hue-shift the fire onto blue: real flame motion, Epstein color
+      og.clearRect(0, 0, CELL, CELL);
+      og.filter = filter;
+      og.drawImage(img, sx, sy, CELL, CELL, 0, 0, CELL, CELL);
+      og.filter = 'none';
+      const h = 95 * stageScale;
+      const w = 62 * (1 + 0.35 * (stageScale - 1) / 2);
+      g.save();
+      g.translate(cv.width/2, 126 + h);
+      g.scale(1, -1); // sheet flames point up; ours hangs aft, base at the bell
+      g.globalCompositeOperation = 'lighter';
+      g.drawImage(off, -w/2, 0, w, h);
+      g.restore();
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+}
+run('cA', '/fx/flame-lighter.png', 'hue-rotate(160deg) saturate(1.15) brightness(1.05)');
+run('cB', '/fx/flame-fire01.png', 'hue-rotate(195deg) saturate(1.5) brightness(1.05)');
+run('cC', '/fx/flame-fire02.png', 'hue-rotate(195deg) saturate(1.5) brightness(1.05)');
+</script>
+</body>
+</html>
