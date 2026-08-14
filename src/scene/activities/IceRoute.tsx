@@ -888,6 +888,7 @@ export function IceRoute() {
       w.__huntHops = trailHops
       w.__huntDirs = trailDirs
       w.__torps = torpedoes
+      w.__activity = activityState // scope-state harness
       w.__pursuit = pursuit
       w.__anchors = anchors
     }
@@ -1115,6 +1116,8 @@ export function IceRoute() {
       }
       activityState.hostile = null
       activityState.hostileLock = 0
+      activityState.hostileYielded = false
+      activityState.hostileName = ''
       pursuit.target = null
       for (const torp of torpedoes) if (torp.target === -1) torp.alive = false
       if (result !== 'caught') raiderLabel.current?.()
@@ -1648,6 +1651,8 @@ export function IceRoute() {
         s.trailShelveT = 0
       }
       activityState.hostileLock = 0
+      activityState.hostileYielded = false
+      activityState.hostileName = ''
     } else if (s.job === 'hunt') {
       const gap = raiderPos.distanceTo(shipRig.position)
       const T = TEMPERAMENTS[s.huntTemper]
@@ -1711,8 +1716,10 @@ export function IceRoute() {
         if (gap < LOCK_RING && relSpeed < LOCK_RELSPEED) s.huntLockT += dt
         else s.huntLockT = Math.max(0, s.huntLockT - dt * 0.6)
         activityState.hostileLock = Math.min(1, s.huntLockT / LOCK_SECONDS)
+        activityState.hostileName = 'THE REVENANT' 
         if (s.huntLockT >= LOCK_SECONDS) {
           s.huntPhase = 'squawked'
+          activityState.hostileYielded = true
           s.huntHarpoonT = 0
           say(1, 'TARGET SQUAWKING SURRENDER — MILITIA TUG INBOUND', 'win', 4)
           tugPos.copy(DRIFT).add(_v.set(120, 60, 80))
@@ -1785,6 +1792,8 @@ export function IceRoute() {
     } else if (activityState.owner === 'iceroute' && activityState.hostile) {
       activityState.hostile = null
       activityState.hostileLock = 0
+      activityState.hostileYielded = false
+      activityState.hostileName = ''
       pursuit.target = null
     }
 

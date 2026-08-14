@@ -719,3 +719,36 @@ We do (1) well, (2) partly, and (3) not at all.
 3. **Small polish batch** — badge markers instead of dots, the
    important contact in white, a nearest-threat bar. RECOMMEND YES,
    it is an afternoon and it makes the scope readable at a glance.
+
+## PASS 4 BUILT (2026-08-14) — and one honest correction
+
+He approved all three. During the build the code corrected the plan:
+
+**Our PDCs can only ever target torpedoes — the player CANNOT shoot the
+raider.** So "will you fire on a ship that has surrendered?" is not a
+choice this game can honestly offer, and inventing a way to shoot her
+just to stage the drama would be the fake mechanic we ban. What IS
+true is better: our lock is not a gun, it is a PIN — you corner her by
+holding station inside her ring at matched velocity until she squawks.
+In this game you win by FLYING, not by shooting, and mercy is
+structural rather than optional. So the moment we built is not the
+trigger — it is **the arrest**.
+
+Shipped:
+
+1. **THE ARREST.** New state (`hostileYielded`, `hostileName`) set the
+   instant she squawks. Her whole glyph turns from threat-red to
+   custody-teal, the surrender arc closes into a held ring, the dashed
+   lock sphere (now meaningless) is dropped, and the instrument says
+   `YIELDED · IN CUSTODY`.
+2. **THE ONE NAME.** THE REVENANT prints beside her — the only name on
+   the scope — dim white while she runs, bright white once she yields.
+   The label flips to whichever side keeps it inside the glass.
+3. **THE PROXIMITY STRIP.** The nearest live threat as a single bar
+   under the volume, using the scope's OWN two-zone mapping so the PDC
+   envelope owns half the bar: the tick crossing the ring mark IS the
+   moment the fight changes owners, and it turns teal as it crosses.
+
+Verified live with a forced-state harness in both the chase picture
+(red, partial arc, dim name, dashed lock sphere) and the arrest
+picture (teal, closed ring, white name, custody line).

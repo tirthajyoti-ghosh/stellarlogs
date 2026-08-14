@@ -86,6 +86,12 @@ export const activityState = {
   hostileVel: { x: 0, y: 0, z: 0 },
   /** surrender-lock progress 0..1, drawn as an arc around the hostile glyph */
   hostileLock: 0,
+  /** Her name — the ONE name the scope prints (the show's move: a single
+   *  white name outranks a dozen labels) */
+  hostileName: '',
+  /** She has squawked and gone dark: the hunt becomes an ARREST, and the
+   *  instrument stops calling her a threat */
+  hostileYielded: false,
   /** Race guidance: world position of the next gate (null = no marker) */
   raceTarget: null as { x: number; y: number; z: number } | null,
   /** Label shown on the race marker ("START", "GATE 4", "FINISH") */

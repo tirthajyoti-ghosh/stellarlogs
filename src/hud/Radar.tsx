@@ -512,9 +512,11 @@ export function Radar() {
           // radius sqrt(R² − dy²). She climbs off-plane, the circle
           // tightens; past 300 of height offset it ceases to exist:
           // lock impossible there, and the scope shows it without a word.
+          const yielded = activityState.hostileYielded
+          const hostCol = yielded ? '#57e6c4' : '#ff5040'
           const dyh = H.y - shipRig.position.y
           const rc2 = RINGU * RINGU - dyh * dyh
-          if (rc2 > 0) {
+          if (rc2 > 0 && !yielded) {
             const rc = mapR(Math.sqrt(rc2))
             ctx.strokeStyle = 'rgba(87,230,196,0.45)'
             ctx.lineWidth = 1.2
@@ -530,15 +532,16 @@ export function Radar() {
           ctx.moveTo(f.fx, f.fy)
           ctx.lineTo(f.fx, f.fy - eh)
           ctx.stroke()
-          ctx.strokeStyle = '#ff5040'
+          ctx.strokeStyle = hostCol
           ctx.lineWidth = 1.3
           ctx.beginPath()
           ctx.moveTo(f.fx, f.fy)
           ctx.lineTo(f.fx, f.fy - eh)
           ctx.stroke()
-          ctx.fillStyle = '#ff5040'
+          ctx.fillStyle = hostCol
           ctx.fillRect(f.fx - 1.5, f.fy - 1.5, 3, 3)
           const s4 = size * 0.011
+          ctx.strokeStyle = hostCol
           ctx.strokeRect(f.fx - s4, f.fy - eh - s4, s4 * 2, s4 * 2)
           const hv = activityState.hostileVel
           const rvx = hv.x * Math.cos(yaw) - hv.z * Math.sin(yaw)
@@ -555,6 +558,28 @@ export function Radar() {
             ctx.arc(f.fx, f.fy - eh, s4 * 2.1, -Math.PI / 2, -Math.PI / 2 + activityState.hostileLock * Math.PI * 2)
             ctx.stroke()
           }
+          // THE ONE NAME. The show's strongest move: a single white name
+          // outranks a dozen labels. Dim while she runs, bright when she
+          // yields — and then the instrument says what she has become.
+          if (activityState.hostileName && size >= 150) {
+            // ONE name, stacked clear above her head, flipped to whichever
+            // side keeps it inside the glass
+            const fName = Math.max(9, Math.round(size * 0.042))
+            const fSub = Math.max(8, Math.round(size * 0.034))
+            const side = f.fx > 0 ? -1 : 1
+            ctx.textAlign = side > 0 ? 'left' : 'right'
+            const lx = f.fx + side * (s4 * 2.2)
+            const topY = f.fy - eh - s4 * 2.2
+            if (yielded) {
+              ctx.font = `600 ${fSub}px "Space Mono", ui-monospace, monospace`
+              ctx.fillStyle = '#57e6c4'
+              ctx.fillText('YIELDED · IN CUSTODY', lx, topY)
+            }
+            ctx.font = `600 ${fName}px "Space Mono", ui-monospace, monospace`
+            ctx.fillStyle = yielded ? '#ffffff' : 'rgba(255,255,255,0.62)'
+            ctx.fillText(activityState.hostileName, lx, topY - (yielded ? fSub + 3 : 0))
+            ctx.textAlign = 'center'
+          }
         }
 
         // ABOVE the surface
@@ -569,6 +594,66 @@ export function Radar() {
         }
         ctx.globalAlpha = 1
         ctx.restore()
+
+        // THE PROXIMITY STRIP (the show's bar under the plane): the
+        // nearest live threat's range on one line, with the PDC ring
+        // marked on the scale. The moment its tick crosses the ring is
+        // the moment the fight changes owners — and now you can see it
+        // coming without reading the volume.
+        if (combatAlpha > 0.05) {
+          let near = Infinity
+          for (let i = 0; i < threats.length; i++) {
+            const th = threats[i]
+            if (!th.alive || !th.launched || th.dark) continue
+            const d = Math.hypot(
+              th.position.x - shipRig.position.x,
+              th.position.y - shipRig.position.y,
+              th.position.z - shipRig.position.z,
+            )
+            if (d < near) near = d
+          }
+          if (near < Infinity) {
+            ctx.globalAlpha = combatAlpha
+            const bx0 = size * 0.12
+            const bx1 = size - size * 0.12
+            const by = size * 0.88
+            // the strip uses the scope's OWN two-zone mapping, so the gun
+            // envelope owns half the bar and the crossing is legible
+            const ringX = bx0 + (bx1 - bx0) * RING_FRAC
+            // the scale
+            ctx.strokeStyle = 'rgba(150,190,225,0.5)'
+            ctx.lineWidth = 1
+            ctx.beginPath()
+            ctx.moveTo(bx0, by)
+            ctx.lineTo(bx1, by)
+            ctx.stroke()
+            // the guns' half of the scale, brighter
+            ctx.strokeStyle = 'rgba(220,232,244,0.78)'
+            ctx.lineWidth = 2.4
+            ctx.beginPath()
+            ctx.moveTo(bx0, by)
+            ctx.lineTo(ringX, by)
+            ctx.stroke()
+            // the ring itself
+            ctx.strokeStyle = '#dce8f4'
+            ctx.lineWidth = 1.4
+            ctx.beginPath()
+            ctx.moveTo(ringX, by - 4)
+            ctx.lineTo(ringX, by + 4)
+            ctx.stroke()
+            // the nearest threat
+            const tx = bx0 + (bx1 - bx0) * Math.min(1, mapR(near) / RR)
+            const inside = near <= RINGU
+            ctx.fillStyle = inside ? '#57e6c4' : '#ff5040'
+            ctx.beginPath()
+            ctx.moveTo(tx, by - 9)
+            ctx.lineTo(tx - 4.5, by - 1)
+            ctx.lineTo(tx + 4.5, by - 1)
+            ctx.closePath()
+            ctx.fill()
+            ctx.globalAlpha = 1
+          }
+        }
       }
 
       // Ship marker — the constant center of both pictures
