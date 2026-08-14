@@ -19,6 +19,7 @@ import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
 import { turretControl } from '../state/turretControl'
 import { warp, warpTurn, stepWarp, warpBurning } from '../physics/warp'
 import { flip, flipStick, cancelFlip, wrapAngle } from '../physics/flip'
+import { DrivePlume } from './DrivePlume'
 import { driveLock } from '../physics/driveLock'
 import { pursuit } from '../physics/pursuit'
 import { shipInput } from '../physics/shipInput'
@@ -141,10 +142,7 @@ export function Ship() {
   const headlightRef = useRef<SpotLight>(null)
   const headTargetRef = useRef<Object3D>(null)
   const glowRef = useRef<PointLight>(null)
-  const plumeCoreRef = useRef<Mesh>(null)
-  const plumeOuterRef = useRef<Mesh>(null)
   const rcsRefs = useRef<(Mesh | null)[]>([])
-  const engineDiscRef = useRef<Mesh>(null)
   const strobeRef = useRef<Mesh>(null)
   const portLightRef = useRef<Mesh>(null)
   const starboardLightRef = useRef<Mesh>(null)
@@ -289,32 +287,6 @@ export function Ship() {
     const burning = warpBurning()
     const thrustingVis = state.thrusting || burning
     const boostingVis = state.boosting || burning
-    const coreTarget = thrustingVis ? (boostingVis ? 3.4 : 1) : 0
-    const outerTarget = thrustingVis ? (boostingVis ? 2.5 : 1) : 0
-    const coreWidth = boostingVis ? 1.15 : 1
-    const outerWidth = boostingVis ? 1.3 : 1
-    const core = plumeCoreRef.current
-    if (core) {
-      const s = MathUtils.lerp(core.scale.y, coreTarget, 0.12) * flicker
-      core.scale.set(coreWidth, Math.max(0.001, s), coreWidth)
-      const mat = core.material as MeshBasicMaterial
-      mat.opacity = 0.95 * Math.min(1, s)
-      mat.color.setRGB(boostingVis ? 3.2 : 1.6, boostingVis ? 4.4 : 2.6, boostingVis ? 5.2 : 3.6)
-    }
-    const outer = plumeOuterRef.current
-    if (outer) {
-      const s = MathUtils.lerp(outer.scale.y, outerTarget, 0.12) * flicker
-      outer.scale.set(outerWidth, Math.max(0.001, s), outerWidth)
-      const mat = outer.material as MeshBasicMaterial
-      mat.opacity = 0.45 * Math.min(1, s)
-      mat.color.setRGB(0.35, 0.66, 0.91)
-    }
-    const disc = engineDiscRef.current
-    if (disc) {
-      const heat = thrustingVis ? (boostingVis ? 1 : 0.6) : 0.08
-      const m = disc.material as MeshBasicMaterial
-      m.color.setRGB(0.5 * heat, 4.0 * heat, 6.0 * heat)
-    }
     if (glowRef.current) {
       const target = thrustingVis ? (boostingVis ? 60 : 16) : 0
       glowRef.current.intensity = MathUtils.lerp(glowRef.current.intensity, target * flicker, 0.2)
@@ -453,34 +425,11 @@ export function Ship() {
           </mesh>
         ))}
 
-        {/* Main drive plume anchored at the engine skirt */}
+        {/* Main drive plume anchored at the engine skirt — the reference
+            build (docs/the-plume.md): mouth lens, ragged tongue, beam,
+            corona, all staged by throttle */}
         <group position={[0, -3.08, 0]}>
-          <mesh ref={engineDiscRef} position={[0, 0.14, 0]} rotation-x={Math.PI / 2}>
-            <circleGeometry args={[0.15, 16]} />
-            <meshBasicMaterial color={[0.04, 0.32, 0.48]} toneMapped={false} />
-          </mesh>
-          <mesh ref={plumeCoreRef} position={[0, -1.75, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
-            <coneGeometry args={[0.16, 2.9, 12, 1, true]} />
-            <meshBasicMaterial
-              color="#bfe8ff"
-              transparent
-              opacity={0}
-              blending={AdditiveBlending}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
-          <mesh ref={plumeOuterRef} position={[0, -1.5, 0]} rotation-x={Math.PI} scale={[1, 0.001, 1]}>
-            <coneGeometry args={[0.38, 2.3, 12, 1, true]} />
-            <meshBasicMaterial
-              color="#5aa8e8"
-              transparent
-              opacity={0}
-              blending={AdditiveBlending}
-              depthWrite={false}
-              toneMapped={false}
-            />
-          </mesh>
+          <DrivePlume />
         </group>
 
         {/* Hull floodlights — the ship illuminates itself */}
