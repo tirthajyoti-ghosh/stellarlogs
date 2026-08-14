@@ -71,10 +71,12 @@ nothing is bundled until he picks. Judged by ear — his.
    Normal thrust plays it at 0.2 gain over the synth sub (synth drops
    to 60% when the sample is live).
    **MAX BURN** (his must-have: "a blast sound and then a louder
-   burning, crackling sound"): SHIPPED — the shuttle's double sonic
-   boom (`drive-blast.mp3`, cut from Launch-Sound_Sonic-Booms at the
-   10 s double-boom, 43 KB) fires on the Shift transition, then the
-   loop runs at 0.5 gain and 1.07× playback rate (denser crackle).
+   burning, crackling sound"): SHIPPED v2 — ONE boom, INSTANT. The
+   true transient sits at 11.23 s in Launch-Sound_Sonic-Booms (the
+   earlier "boom at 10 s" was a windowing artifact); the cut opens ON
+   the bang with zero pre-roll and the second boom excised (0.46 s,
+   6 KB). Fires the frame Shift engages; the loop then runs 0.5 gain
+   at 1.07× rate.
    Samples lazy-load after boot; synth-only fallback if fetch fails.
 2. **PDC — miniguns REJECTED** ("one continuous sound — in the show I
    can make out single firing sounds; fast, sharp, treble-forward,
