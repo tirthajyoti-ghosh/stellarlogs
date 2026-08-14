@@ -66,8 +66,8 @@ nothing is bundled until he picks. Judged by ear — his.
 
 1. **DRIVE — WINNER: Shuttle Launch Close-Mic, from ~47 s** ("the
    actual crackling of the engine exhaust — that's really good").
-   SHIPPED: `public/audio/drive-loop.mp3` — a seamless 16 s loop cut
-   from 47–63 s (wrap-point crossfade, +7 dB, mono 96 kbps, 189 KB).
+   SHIPPED v2 (his correction 2026-08-14): the loop is EXACTLY his
+   40–45 s segment — 5 s, wrap-point crossfade, +7 dB, mono, 60 KB.
    Normal thrust plays it at 0.2 gain over the synth sub (synth drops
    to 60% when the sample is live).
    **MAX BURN** (his must-have: "a blast sound and then a louder
@@ -80,9 +80,9 @@ nothing is bundled until he picks. Judged by ear — his.
    can make out single firing sounds; fast, sharp, treble-forward,
    bass muted"). New bench candidates: two .50 cal recordings with
    distinct shots (CC0, freesound 160355/239138) + the Bushmaster.
-   Integration plan once he picks: slice ONE clean single shot,
-   replay at our true fire rate with round-robin jitter — per-shot
-   distinction by construction, EQ'd sharp.
+   SHIPPED: his pick, the Bushmaster — ONE round sliced as THE UNIT
+   (bass high-passed away, sharp kept), replayed with jitter. v2 after
+   his ear: rate up to 15–20/s, volume roughly halved (0.12 base).
 3. **RADIO CHATTER — APPROVED and SHIPPED** (his spec: random, faint,
    MOSTLY indistinct). `src/audio/chatter.ts`: interval-driven, only
    within 1600 u of the Drift or comms station, 40–110 s random gaps,

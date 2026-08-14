@@ -65,13 +65,17 @@ data cores — every song came in on a ship.
 - Diegetic point source at the cantina: distance rolloff, ducks under
   the vigil sphere and battle like everything else.
 
-## Open for his ruling
+## RULINGS (Tirtha, 2026-08-14)
 
-1. Does THE FIRST CHARTS frame land? (It retro-explains the portfolio
-   conceit, makes the Deep the unfinished survey, and gives stations a
-   reason to multiply.)
-2. The Engineer named in-world as T. GHOSH — lean in, or keep him
-   unnamed ("the Surveyor") for mystique?
-3. Jukebox: OFF-THE-SHIP attribution idiom approved?
-4. New stations: how many, and do they carry other communities'
-   memory (other vigils, other boards)?
+1. **THE FIRST CHARTS frame: APPROVED.** His words: "somebody who left
+   with a ship and chartered all the systems and left some of the
+   Belters here in this pocket of the universe… that's my entire life
+   story — kind of a memory, kind of like a museum."
+2. **THE SURVEYOR** — he goes by title, not name: "the Surveyor",
+   "the Chief Surveyor", "the First Surveyor". Never T. GHOSH
+   in-world. He led the settling himself: came out with a ship,
+   charted the systems, and left Belters in this pocket.
+3. **Jukebox fiction: APPROVED** (carried music, off-the-ship
+   attribution, data-core-seek switch effect).
+4. Station count still open — "increasing the number of stuff in my
+   universe" stands as intent.

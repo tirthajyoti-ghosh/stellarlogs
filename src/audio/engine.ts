@@ -221,7 +221,7 @@ function playPdcShot(ctx: AudioContext, master: GainNode, at: number, locks: num
   src.buffer = pdcShotBuf
   src.playbackRate.value = 0.95 + Math.random() * 0.1
   const g = ctx.createGain()
-  g.gain.value = Math.min(0.5, 0.26 + locks * 0.05)
+  g.gain.value = Math.min(0.24, 0.12 + locks * 0.025)
   src.connect(g).connect(master)
   src.start(at)
   src.onended = () => {
@@ -330,7 +330,7 @@ export function updateAudio(
   if (pdcShotBuf) {
     engine.pdcGain.gain.setTargetAtTime(0, t, 0.05)
     if (shooting) {
-      const perSec = 9 + turretControl.spin * 4
+      const perSec = 15 + turretControl.spin * 5
       if (nextPdcShot < t) nextPdcShot = t + 0.01
       while (nextPdcShot < t + 0.12) {
         playPdcShot(engine.ctx, engine.master, nextPdcShot, turretControl.locks)
