@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>THE PLUME — volumetric bench</title>
+<style>
+  :root { --bg:#04070e; --text:#c9d8e4; --dim:#6c7a86; --accent:#6fd3e8; --amber:#ffb45e; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); overflow:hidden;
+    font-family:'SF Mono',ui-monospace,Menlo,monospace; letter-spacing:.04em; }
+  canvas { display:block; width:100vw; height:100vh; }
+  .panel { position:fixed; top:14px; left:14px; background:rgba(6,12,22,.82);
+    border:1px solid #16233a; padding:12px 14px; font-size:11px; line-height:1.7; max-width:330px; }
+  .panel h1 { font-size:13px; letter-spacing:.28em; color:var(--accent); margin:0 0 6px; }
+  .panel .hint { color:var(--dim); font-size:10px; line-height:1.6; }
+  .btns { display:flex; gap:8px; margin:10px 0 6px; flex-wrap:wrap; }
+  button { background:transparent; border:1px solid var(--accent); color:var(--accent);
+    font:inherit; font-size:10px; letter-spacing:.16em; padding:6px 12px; cursor:pointer; }
+  button.on { background:rgba(111,211,232,.2); }
+  .row { display:flex; align-items:center; gap:8px; margin-top:5px; }
+  .row label { width:96px; color:var(--dim); font-size:10px; letter-spacing:.1em; }
+  input[type=range] { flex:1; accent-color:#6fd3e8; }
+  .val { width:34px; text-align:right; color:var(--amber); font-size:10px; }
+  #fps { position:fixed; top:14px; right:14px; background:rgba(6,12,22,.82);
+    border:1px solid #16233a; padding:8px 12px; font-size:11px; color:var(--amber); }
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div class="panel">
+  <h1>THE PLUME · VOLUMETRIC</h1>
+  <div class="hint">
+    Raymarched 3D volume — no sprites, no flipbook. DRAG to orbit (this is
+    the proof: it holds up from every angle), WHEEL to zoom.
+  </div>
+  <div class="btns">
+    <button id="b1" class="on" onclick="setStage(1)">NORMAL THRUST</button>
+    <button id="b2" onclick="setStage(2)">MAX BURN</button>
+    <button id="bo" onclick="toggleOrbit()">AUTO-ORBIT</button>
+  </div>
+  <div class="row"><label>BRIGHTNESS</label><input id="sBright" type="range" min="0.2" max="2.5" step="0.05" value="0.85"><span class="val" id="vBright">0.85</span></div>
+  <div class="row"><label>TURBULENCE</label><input id="sTurb" type="range" min="0" max="1.6" step="0.05" value="1"><span class="val" id="vTurb">1</span></div>
+  <div class="row"><label>FLOW SPEED</label><input id="sFlow" type="range" min="0.2" max="4" step="0.1" value="1"><span class="val" id="vFlow">1</span></div>
+  <div class="row"><label>LENGTH</label><input id="sLen" type="range" min="0.4" max="2" step="0.05" value="1"><span class="val" id="vLen">1</span></div>
+  <div class="row"><label>SHOCK NODES</label><input id="sShock" type="range" min="0" max="1" step="0.05" value="1"><span class="val" id="vShock">1</span></div>
+</div>
+<div id="fps">—</div>
+<script>
+const cv = document.getElementById('gl');
+const gl = cv.getContext('webgl2', { antialias: false, alpha: false });
+if (!gl) alert('WebGL2 required');
+
+const VERT = `#version 300 es
+in vec2 aPos;
+void main(){ gl_Position = vec4(aPos, 0.0, 1.0); }`;
+
+const FRAG = `#version 300 es
+precision highp float;
+out vec4 outColor;
+
+uniform vec2  uRes;
+uniform float uTime;
+uniform vec3  uCamPos;
+uniform vec3  uRight, uUp, uFwd;
+uniform float uStage;     // 1 = cruise, 2 = burn
+uniform float uBright, uTurbK, uFlowK, uLenK, uShockK;
+
+// ---------- cheap value noise ----------
+float hash(vec3 p){
+  p = fract(p * 0.3183099 + vec3(0.71, 0.113, 0.419));
+  p *= 17.0;
+  return fract(p.x * p.y * p.z * (p.x + p.y + p.z));
+}
+float vnoise(vec3 x){
+  vec3 i = floor(x), f = fract(x);
+  f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mix(hash(i + vec3(0,0,0)), hash(i + vec3(1,0,0)), f.x),
+                 mix(hash(i + vec3(0,1,0)), hash(i + vec3(1,1,0)), f.x), f.y),
+             mix(mix(hash(i + vec3(0,0,1)), hash(i + vec3(1,0,1)), f.x),
+                 mix(hash(i + vec3(0,1,1)), hash(i + vec3(1,1,1)), f.x), f.y), f.z);
+}
+float fbm(vec3 p){
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++){ v += a * vnoise(p); p *= 2.03; a *= 0.5; }
+  return v / 0.875;
+}
+
+// ---------- plume geometry ----------
+// bell mouth at y = 0, flame flows to -y.
+float PLUME_LEN(){  return (uStage < 1.5 ? 1.15 : 3.1) * uLenK; }
+float PLUME_RAD(){  return (uStage < 1.5 ? 0.46 : 0.66); }
+
+// density at a point in plume space
+float density(vec3 p, out float s){
+  float L = PLUME_LEN(), W = PLUME_RAD();
+  s = clamp(-p.x / L, 0.0, 1.0);
+  float q = length(p.yz) / W;
+
+  // envelope: emerges at the bell, bulges, tapers to a point
+  float R = (0.60 + 0.30 * s) * pow(max(1.0 - s, 0.0), 0.55);
+  float radial = exp(-pow(q / max(R, 1e-3), 2.4) * 2.3);
+  if (radial < 0.002) return 0.0;
+
+  float burn = clamp(uStage - 1.0, 0.0, 1.0);
+
+  // swirl about the axis (the turbine spiral), growing downstream
+  float sw = (1.5 + 1.2 * burn) * s + uTime * 0.6;
+  float ca = cos(sw), sa = sin(sw);
+  vec2 pr = mat2(ca, -sa, sa, ca) * p.yz;
+
+  // ADVECTION, flow-stretched: fine detail ACROSS the jet, long streaks
+  // ALONG it — this is what separates a rocket jet from a campfire
+  float flow = (3.4 + 4.6 * burn) * uFlowK;
+  vec3 np = vec3(pr * 6.2, s * 2.6 - uTime * flow);
+
+  // domain warp — this is what makes tongues instead of smoke
+  float w = fbm(np * 0.7);
+  vec3 wp = np + (w - 0.5) * vec3(1.5, 1.5, 0.5);
+  float n = fbm(wp);
+
+  // laminar at the throat, turbulent downstream
+  float turb = smoothstep(0.02, 0.42, s) * uTurbK;
+  float tongues = smoothstep(0.40, 0.68, n);
+  float d = radial * mix(1.0, 0.40 + 0.60 * tongues, clamp(turb, 0.0, 1.0));
+
+  // the collimated white-hot root: a dense coherent slug at the throat
+  d += exp(-pow(q / 0.38, 2.0) * 3.0) * exp(-s * 5.0) * 1.05;
+
+  // shock diamonds near the throat
+  float nodes = 1.0 + uShockK * (0.42 * sin(s * (10.0 + 6.0 * burn)) ) * exp(-s * 4.5);
+  d *= max(nodes, 0.0);
+
+  // die at the tip, and never a hard edge
+  d *= smoothstep(1.0, 0.72, s);
+  return d;
+}
+
+// emission colour by temperature — a fusion torch: white → cyan → deep blue
+vec3 flameColor(float d, float s){
+  float t = clamp(d * (1.25 - 0.75 * s), 0.0, 1.0);
+  vec3 cold = vec3(0.05, 0.17, 0.62);
+  vec3 mid  = vec3(0.16, 0.58, 1.15);
+  vec3 hot  = vec3(0.85, 1.00, 1.22);
+  vec3 c = mix(cold, mid, smoothstep(0.10, 0.55, t));
+  c = mix(c, hot, smoothstep(0.55, 0.95, t));
+  return c;
+}
+
+// ---------- ray helpers ----------
+bool boxHit(vec3 ro, vec3 rd, vec3 bmin, vec3 bmax, out float t0, out float t1){
+  vec3 inv = 1.0 / rd;
+  vec3 a = (bmin - ro) * inv, b = (bmax - ro) * inv;
+  vec3 lo = min(a, b), hi = max(a, b);
+  t0 = max(max(lo.x, lo.y), lo.z);
+  t1 = min(min(hi.x, hi.y), hi.z);
+  return t1 > max(t0, 0.0);
+}
+// a mock bell so the flame has something to emerge from
+float bellHit(vec3 ro, vec3 rd){
+  float best = 1e9;
+  vec2 o = ro.yz, d = rd.yz;
+  float A = dot(d, d), B = 2.0 * dot(o, d), C = dot(o, o) - 0.40 * 0.40;
+  float disc = B * B - 4.0 * A * C;
+  if (disc > 0.0){
+    float sq = sqrt(disc);
+    for (int k = 0; k < 2; k++){
+      float t = (-B + (k == 0 ? -sq : sq)) / (2.0 * A);
+      if (t > 0.0){
+        float x = ro.x + rd.x * t;
+        if (x > 0.02 && x < 0.62) best = min(best, t);
+      }
+    }
+  }
+  return best;
+}
+
+void main(){
+  vec2 uv = (gl_FragCoord.xy - 0.5 * uRes) / uRes.y;
+  vec3 rd = normalize(uRight * uv.x + uUp * uv.y + uFwd * 1.5);
+  vec3 ro = uCamPos;
+
+  vec3 col = vec3(0.0);
+
+  // the bell (opaque) — flame must occlude / be occluded correctly
+  float tBell = bellHit(ro, rd);
+  if (tBell < 1e8){
+    vec3 hp = ro + rd * tBell;
+    vec3 nrm = normalize(vec3(0.0, hp.y, hp.z));
+    float rim = pow(1.0 - abs(dot(nrm, -rd)), 2.0);
+    col = vec3(0.055, 0.07, 0.10) + rim * vec3(0.12, 0.15, 0.20);
+  }
+
+  float L = PLUME_LEN(), W = PLUME_RAD();
+  float t0, t1;
+  vec3 bmin = vec3(-L, -W, -W), bmax = vec3(0.02, W, W);
+  if (boxHit(ro, rd, bmin, bmax, t0, t1)){
+    t0 = max(t0, 0.0);
+    if (tBell < 1e8) t1 = min(t1, tBell);   // the bell stops the march
+    const int STEPS = 34;
+    float stepLen = (t1 - t0) / float(STEPS);
+    // dither the entry so 34 steps never band
+    float dith = hash(vec3(gl_FragCoord.xy, uTime * 60.0));
+    vec3 p = ro + rd * (t0 + stepLen * dith);
+    vec3 acc = vec3(0.0);
+    float T = 1.0;
+    for (int i = 0; i < STEPS; i++){
+      float s;
+      float d = density(p, s);
+      if (d > 0.004){
+        vec3 e = flameColor(d, s) * d;
+        acc += T * e * stepLen * 5.6 * uBright;
+        T *= exp(-d * 3.4 * stepLen);
+        if (T < 0.012) break;
+      }
+      p += rd * stepLen;
+    }
+    col = col * T + acc;
+  }
+
+  // the bench has no ACES/bloom: fake a gentle rolloff so what you see
+  // here is what the game's tonemapper will do
+  col = col / (1.0 + col * 0.30);
+  outColor = vec4(pow(col, vec3(0.9)), 1.0);
+}`;
+
+function sh(type, src){
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src); gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) console.error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, 'aPos');
+gl.enableVertexAttribArray(loc);
+gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+const U = n => gl.getUniformLocation(prog, n);
+const u = {
+  res:U('uRes'), time:U('uTime'), cam:U('uCamPos'),
+  right:U('uRight'), up:U('uUp'), fwd:U('uFwd'), stage:U('uStage'),
+  bright:U('uBright'), turb:U('uTurbK'), flow:U('uFlowK'), len:U('uLenK'), shock:U('uShockK'),
+};
+
+let stage = 1, autoOrbit = false;
+let az = 0.0, el = 0.18, dist = 4.2;
+function setStage(s){
+  stage = s;
+  document.getElementById('b1').classList.toggle('on', s === 1);
+  document.getElementById('b2').classList.toggle('on', s === 2);
+}
+function toggleOrbit(){
+  autoOrbit = !autoOrbit;
+  document.getElementById('bo').classList.toggle('on', autoOrbit);
+}
+let drag = false, lx = 0, ly = 0;
+cv.addEventListener('pointerdown', e => { drag = true; lx = e.clientX; ly = e.clientY; });
+addEventListener('pointerup', () => drag = false);
+addEventListener('pointermove', e => {
+  if (!drag) return;
+  az -= (e.clientX - lx) * 0.008;
+  el = Math.max(-1.35, Math.min(1.35, el + (e.clientY - ly) * 0.006));
+  lx = e.clientX; ly = e.clientY;
+});
+cv.addEventListener('wheel', e => { dist = Math.max(1.6, Math.min(14, dist + e.deltaY * 0.004)); e.preventDefault(); }, { passive:false });
+
+const sliders = ['Bright','Turb','Flow','Len','Shock'];
+const sv = {};
+for (const n of sliders){
+  const el2 = document.getElementById('s' + n);
+  const out = document.getElementById('v' + n);
+  sv[n] = parseFloat(el2.value);
+  el2.addEventListener('input', () => { sv[n] = parseFloat(el2.value); out.textContent = el2.value; });
+}
+
+let last = performance.now(), frames = 0, fpsT = last;
+function frame(now){
+  const t = now * 0.001;
+  if (autoOrbit) az += (now - last) * 0.00035;
+  last = now;
+
+  const w = cv.clientWidth, h = cv.clientHeight;
+  if (cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+  gl.viewport(0, 0, cv.width, cv.height);
+
+  // orbit around the plume's mid-body
+  const target = [-0.9, 0, 0];
+  const cp = [
+    target[0] + dist * Math.cos(el) * Math.sin(az),
+    target[1] + dist * Math.sin(el),
+    target[2] + dist * Math.cos(el) * Math.cos(az),
+  ];
+  const f = [target[0]-cp[0], target[1]-cp[1], target[2]-cp[2]];
+  const fl = Math.hypot(...f); f[0]/=fl; f[1]/=fl; f[2]/=fl;
+  let r = [-f[2], 0, f[0]];
+  const rl = Math.hypot(...r) || 1; r[0]/=rl; r[1]/=rl; r[2]/=rl;
+  const up = [r[1]*f[2]-r[2]*f[1], r[2]*f[0]-r[0]*f[2], r[0]*f[1]-r[1]*f[0]];
+
+  gl.uniform2f(u.res, cv.width, cv.height);
+  gl.uniform1f(u.time, t);
+  gl.uniform3f(u.cam, cp[0], cp[1], cp[2]);
+  gl.uniform3f(u.right, r[0], r[1], r[2]);
+  gl.uniform3f(u.up, up[0], up[1], up[2]);
+  gl.uniform3f(u.fwd, f[0], f[1], f[2]);
+  gl.uniform1f(u.stage, stage);
+  gl.uniform1f(u.bright, sv.Bright);
+  gl.uniform1f(u.turb, sv.Turb);
+  gl.uniform1f(u.flow, sv.Flow);
+  gl.uniform1f(u.len, sv.Len);
+  gl.uniform1f(u.shock, sv.Shock);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+  frames++;
+  if (now - fpsT > 500){
+    document.getElementById('fps').textContent =
+      Math.round(frames * 1000 / (now - fpsT)) + ' FPS · ' + cv.width + '×' + cv.height;
+    frames = 0; fpsT = now;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
