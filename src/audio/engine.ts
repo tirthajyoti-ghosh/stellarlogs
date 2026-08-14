@@ -207,11 +207,39 @@ let driveSampleGain: GainNode | null = null
 let driveSampleSrc: AudioBufferSourceNode | null = null
 let driveBoostWas = false
 
+/** THE PDC UNIT SHOT (his call, 2026-08-14): one clean M242 Bushmaster
+ *  round (CC0, freesound 854186) is the unit; we repeat it at whatever
+ *  rate the guns need. Per-shot distinction by construction — his exact
+ *  complaint about miniguns ("one continuous sound") is unrepeatable.
+ *  Bass held back in the cut itself; sharp stays sharp. */
+let pdcShotBuf: AudioBuffer | null = null
+let nextPdcShot = 0
+
+function playPdcShot(ctx: AudioContext, master: GainNode, at: number, locks: number): void {
+  if (!pdcShotBuf) return
+  const src = ctx.createBufferSource()
+  src.buffer = pdcShotBuf
+  src.playbackRate.value = 0.95 + Math.random() * 0.1
+  const g = ctx.createGain()
+  g.gain.value = Math.min(0.5, 0.26 + locks * 0.05)
+  src.connect(g).connect(master)
+  src.start(at)
+  src.onended = () => {
+    src.disconnect()
+    g.disconnect()
+  }
+}
+
 function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
   const fetchBuf = (url: string) =>
     fetch(url)
       .then((r) => r.arrayBuffer())
       .then((b) => ctx.decodeAudioData(b))
+  fetchBuf('/audio/pdc-shot.mp3')
+    .then((b) => {
+      pdcShotBuf = b
+    })
+    .catch(() => {})
   Promise.all([fetchBuf('/audio/drive-loop.mp3'), fetchBuf('/audio/drive-blast.mp3')])
     .then(([loop, blast]) => {
       driveBlastBuf = blast
@@ -294,14 +322,30 @@ export function updateAudio(
   engine.warpOsc.frequency.setTargetAtTime(jumping ? 340 : 160, t, 0.8)
   engine.warpOsc2.frequency.setTargetAtTime(jumping ? 343 : 161.5, t, 0.8)
 
-  // PDC fire: BRRRT while spun-up and firing with locks; the pulse rate rides
-  // the spin-up (40 → 66Hz) so bursts audibly wind up like a rotary cannon
+  // PDC fire. With the Bushmaster unit shot loaded: real rounds at a
+  // rate where every shot stays DISTINCT (his verdict on miniguns —
+  // never a continuous roar), scheduled with a small lookahead and
+  // per-shot rate jitter. Synth BRRRT is the no-sample fallback only.
   const shooting = turretControl.firing && turretControl.spin > 0.85 && turretControl.locks > 0
-  const fireGain = shooting ? Math.min(0.38, 0.16 + turretControl.locks * 0.045) : 0
-  engine.pdcGain.gain.setTargetAtTime(fireGain, t, shooting ? 0.03 : 0.08)
-  const rate = 40 + 26 * turretControl.spin
-  engine.pdcRateOsc.frequency.setTargetAtTime(rate, t, 0.06)
-  engine.pdcBodyOsc.frequency.setTargetAtTime(rate, t, 0.06)
+  if (pdcShotBuf) {
+    engine.pdcGain.gain.setTargetAtTime(0, t, 0.05)
+    if (shooting) {
+      const perSec = 9 + turretControl.spin * 4
+      if (nextPdcShot < t) nextPdcShot = t + 0.01
+      while (nextPdcShot < t + 0.12) {
+        playPdcShot(engine.ctx, engine.master, nextPdcShot, turretControl.locks)
+        nextPdcShot += (1 / perSec) * (0.95 + Math.random() * 0.1)
+      }
+    } else {
+      nextPdcShot = 0
+    }
+  } else {
+    const fireGain = shooting ? Math.min(0.38, 0.16 + turretControl.locks * 0.045) : 0
+    engine.pdcGain.gain.setTargetAtTime(fireGain, t, shooting ? 0.03 : 0.08)
+    const rate = 40 + 26 * turretControl.spin
+    engine.pdcRateOsc.frequency.setTargetAtTime(rate, t, 0.06)
+    engine.pdcBodyOsc.frequency.setTargetAtTime(rate, t, 0.06)
+  }
 
   // Traverse servo: whine follows total slew rate, silent when parked
   const slew = Math.min(1, turretControl.traverseSpeed / 6)
