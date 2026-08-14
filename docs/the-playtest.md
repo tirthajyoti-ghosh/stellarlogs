@@ -78,9 +78,11 @@ looking at the next run** (first impressions decay fast).
 5. **Surprise:** did anything happen you didn't expect?
 6. **Return:** would you run this again tonight? Why or why not?
 
-## PART 5 — instrumentation (optional, only if he wants it)
+## PART 5 — instrumentation — APPROVED (Tirtha, 2026-08-15: "the session
+recorder is fine, and we will do that")
 
-I can add a session recorder behind a flag that logs per second:
+BUILD IT BEFORE THE RUNS. A session recorder behind a flag that logs
+per second:
 nearest threat range, whether the guns held locks, hull hits, heat
 lockouts, time inside vs outside the PDC ring, and how long the scope
 spent in battle mode. That turns "it felt unfair" into "at 0:42 three

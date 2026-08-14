@@ -79,3 +79,25 @@ data cores — every song came in on a ship.
    attribution, data-core-seek switch effect).
 4. Station count still open — "increasing the number of stuff in my
    universe" stands as intent.
+
+
+## THE KHIONE STREAM (added 2026-08-15, from the storm exploration)
+
+Something broke apart long ago out toward KHIONE — the white dwarf our
+own chart records as "logged and left. Unsurveyed." Its fragments —
+rock, water ice and **worked metal** — spread along the parent's orbit
+into a long ribbon that still loops the Sun. The Interamnia Drift's
+orbit crosses that ribbon at one node, so the colony flies through it
+on a fixed period, the way Earth meets the Perseids every August.
+
+THE SURVEYOR back-tracked the radiant, computed the period, and put the
+return dates in the First Charts. He never reached the source; his
+charts stop out that way, as they stop everywhere past the frontier.
+He named the star KHIONE — the Greek goddess of snow — for what comes
+out of it.
+
+Two things fall out of this and both are load-bearing:
+1. The colony's oldest protection is still the Surveyor's arithmetic.
+2. The wreckage in the stream means something with hulls died out
+   there, unexplained, in the direction nobody has surveyed. **The
+   Deep is where the Sleet comes from.**

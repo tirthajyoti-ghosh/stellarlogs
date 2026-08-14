@@ -125,3 +125,107 @@ reserve level and the rocks-stopped tally becoming everyone's numbers.
    catch. Tempting, but it is a second verb; my recommendation is to
    leave it OUT of v1 and keep one honest job.
 4. **The name: THE SLEET?**
+
+---
+
+# PASS 2 — the plot holes closed (2026-08-15, his questions)
+
+He accepted the water-tank stake and the "announced, not ambushed"
+framing, then went straight at the weak joints: *why* does it come at
+fixed times, what is the actual reason, where does it come from and go,
+why only this lane, did anyone ever find out — and what did I mean by
+the ice. Fair. Here is the version that holds.
+
+## 1. Why a stream returns on a schedule (this is real physics)
+
+Meteor showers on Earth are not random: a comet or a shattered body
+leaves its debris spread along its own orbit, forming a long thin
+ribbon that keeps looping the Sun. Earth's orbit CROSSES that ribbon at
+one point, so every year, on the same date, Earth flies through it.
+The Perseids arrive in August for exactly this reason.
+
+Ours is the same and needs no invention:
+
+- Something broke apart long ago. Its fragments inherited its orbit and
+  spread out along it into a **long ribbon of rock, ice and wreckage**
+  that still loops the Sun.
+- The **Interamnia Drift orbits too**, and its path CROSSES that ribbon
+  at one node.
+- Every time the colony comes back around to that crossing, it flies
+  through the stream. **Same period. Predictable date. Forever.**
+
+So: it comes from a closed orbit and it is going back around the same
+loop. It is not travelling *to* anywhere — it is circling, and we are
+the ones who keep arriving.
+
+## 2. Why only this lane
+
+Because the crossing happens at ONE place along the Drift's path, and
+the lane runs through it. The ribbon passes through plenty of other
+space — it just meets nothing there that anyone cares about. (His own
+point, and it is the right one: elsewhere, there is nothing to
+protect.)
+
+## 3. Did anyone find out? Yes — and it is the Surveyor's work
+
+He back-tracked it. The stream's radiant — the direction it appears to
+come from — lies out toward the white dwarf on our own starmap:
+
+> **KHIONE** — *"a white dwarf logged and left. Unsurveyed."*
+
+And Khione is the Greek goddess of **snow**. The Surveyor named that
+star for what comes out of it. The name on our chart has been a clue
+the whole time.
+
+He computed the period and put the return dates in the FIRST CHARTS,
+which is why the colony has known them for generations. He never
+reached the source — his charts stop out that way, like they stop
+everywhere past the frontier. **The Deep is where the Sleet comes
+from**, and nobody has been to look.
+
+## 4. What is actually in it (and how they know something died)
+
+Rock, old water ice — **and worked metal.** Plate, spars, cut beams.
+Whatever broke out there was not only a rock: a ship, or ships, or
+something with hulls, met something hard, and the pieces have been
+going round ever since.
+
+This does design work as well as story work: the metal fragments are
+the dense, dangerous ones. The rock is mostly gravel. The colony's
+danger is a handful of hull plates the size of a door coming through at
+speed.
+
+## 5. The ice, properly explained (he asked what I meant)
+
+I said "ice wrinkle" and it landed as nonsense — here is the plain
+version. **Part of what crosses is water ice.** This is a colony whose
+defining wound is having run dry. Shooting good ice into gravel would
+be, to a Belter, close to sacrilege: that is drinking water going past
+the door.
+
+Why it stays OUT of v1 anyway: our PDCs fire automatically by law, so
+"don't shoot the ice" would need a hold-fire control the player should
+not have. It resolves cleanly instead — the guns only engage what is
+actually on line with the tanks, so ice that is not a threat is
+naturally left alone.
+
+And the future it opens is lovely: **catching** the ice is a separate
+activity, and it already has a name in our fiction. During the Dry
+Weeks the racing club stripped their hulls for tankage and ran raw ice
+home, lap after lap — **THE WATER RUN.** An ice harvest during the
+Sleet would be that custom, mechanised. Parked deliberately, not
+forgotten.
+
+## 6. What this adds to the build list
+
+The stake needs to physically EXIST first (his call): **the reserve
+tanks must be built onto the Drift** — big salvaged cylinders on the
+colony's rim, the Nilak's registry still readable on them. That is set
+dressing that pays off the vigil, the memorial board and the motto in
+one object, and the Sleet cannot be built until they are there.
+
+## 7. Still open
+
+- The name: **THE SLEET** (his ruling pending). Now with a second
+  option earned by the fiction: **the KHIONE SLEET**, or plainly
+  "the sleet out of Khione."
