@@ -520,3 +520,160 @@ multi-contact battles; 6 pairs with the torpedo HUD; 7 is garnish.
    ship model sits ghosted at center with turret positions picked
    out as tiny red/blue dots matching the per-turret cards. Grid
    backdrop, corner threat inset, red ring reticles floating free.
+
+---
+
+# PASS 4 — THE EXPANSE COMBAT CONSOLES (exploration, 2026-08-14)
+
+His order: read the reference frames properly, research the show and
+the scenes they come from, gather context, THINK — no code yet.
+
+## A. What these screens actually are (scene + story context)
+
+Three of the four frames are the **PAS TYNAN's weapons console**, and
+the scene matters enormously:
+
+- The Tynan is a Belter ship — Ashford's, later **Drummer's**. The
+  contact held in the display is the **ROCINANTE**, and the state
+  hanging in the middle of the volume is **HAMMA LOK**.
+- That is **S5E10 "Nemesis Games."** Under Marco Inaros's orders,
+  Drummer's faction hunts the Rocinante. Her console gets the lock —
+  torpedoes loaded, solution good — and Drummer **refuses to fire**,
+  turning on Marco's loyalists instead.
+- So the most-photographed tactical display in the show exists, in its
+  most famous moment, to make **a decision not to shoot** legible. The
+  loudest things on that screen are not numbers: they are a NAME in
+  white (ROCINANTE) and a STATE floating in space (HAMMA LOK).
+
+The fourth frame is a **PDC / AUTO-TRACK** console: the ship inside a
+dotted engagement sphere with its gun coverage drawn as translucent
+volumes, and an inset showing five red streaks — "THREAT DETECTED."
+That display answers one question under fire: *am I covered?*
+
+## B. Who made them, and their stated philosophy
+
+Motion graphics by Rhys Yorke, Sumeet Vats, Victor Mare, Chris Ouimet,
+Robert Nowacki, Walter H. May, Colin Graham, Nick Melia; production
+designer Toni Ianni pushed for practical, functional interfaces
+(hudsandguis.com). Their rule, in Yorke's words: *"any screen should
+look like it could be functional."* They drew on NASA and military
+display guidelines, and gave each ship its own style guide — the
+Rocinante's blues with orange/green accents, a command-line
+"under-the-hood" feel made for crews, not consumers.
+
+That is the same law this project already runs on (elements earn their
+place by informing). Good: we are not importing a foreign aesthetic,
+we are importing a **grammar**.
+
+## C. The anatomy, element by element (what I can read off the frames)
+
+1. **THE DROP-LINE.** Every contact is a small framed chip held above
+   the tactical plane by a thin vertical stem whose foot stands on the
+   plane. Altitude = stem length; plan position = the foot. **We
+   already speak this** — our scope is stems with feet on a plane.
+   Their refinement: the head is a framed CHIP (identity at the head),
+   not a bare dot.
+2. **COLOR AS ROLE, not decoration.** Amber = structure and ordinary
+   contacts; CYAN = the tracked/primary one (its whole stem changes);
+   WHITE = the single most important label; RED = engaged/warning.
+   One contact in white is worth more than twelve labels.
+3. **HAMMA LOK — state announced IN the volume.** The lock is not a
+   corner readout; the words hang in 3D space over the plane, and the
+   same phrase labels the proximity strip. Lang Belta: *hamma lok* =
+   "hammer lock" — the wrestling hold you cannot escape. (Also on
+   these screens: OPERESHANS = operations, AJTO = auto, SITEM =
+   system, DEFOTUNG ≈ defense, and the Belter console is titled CHESH
+   XALTEWE. Renderings are my reading — Lang Belta dictionaries are
+   thin online.)
+4. **THE GUARD-ZONE BAND.** A thick banded ellipse at a set radius on
+   the plane: the envelope, drawn as a ribbon rather than a hairline.
+5. **THE PROXIMITY STRIP.** One horizontal bar beneath the plane with
+   a dotted scale and a red tick: nearest threat, one glance, no math.
+6. **SUBSYSTEM CHEVRONS.** Three stacked chevron gauges — [SYS]
+   [ENG] [WEP] — compact health per system.
+7. **THREAT GROUPING + ASSIGNMENT** (Rocinante's THREAT RESPONSE):
+   contacts G01…G05 wear ring "baskets" on their stems; a left rail
+   brackets numbered tubes into groups; a red thread connects an
+   engaging weapon to its target.
+8. **THE ORDNANCE BOARD.** Tube inventory as a card grid under
+   DEFOTUNG / LOK headers; loaded cards filled, spent cards dark; the
+   ordnance itself drawn as a wireframe below. Ammunition as
+   furniture, not a number.
+9. **COVERAGE AS VOLUME.** Gun arcs as translucent cones/lobes inside
+   a **dotted lattice sphere** — the dots never occlude, the rims
+   brighten at the cone mouths, and you read the far side through the
+   near volume. Per-turret cards (01 FORE … 06 AFT) in blue (auto-
+   track) vs red (offline/masked), with ammo bars.
+10. **FACTION SKINNING.** The Tynan and the Rocinante run the *same
+    underlying display* in different dress: amber + Lang Belta vs blue
+    + English. One system, two cultures.
+
+## D. Measured against OUR world (the honest filter)
+
+Our combat is: torpedoes inbound, PDCs answer automatically, one
+hostile hull, escort/hunt contracts. Against that:
+
+- **REJECT — the assignment rail (G01…G05 + tubes).** We have no
+  manual weapon assignment and shouldn't invent one; our PDCs are
+  auto by design and the player's job is *geometry*, not tasking.
+  Adding it would be exactly the "fake game-y mechanic" we banned.
+- **REJECT — the torpedo tube board.** Player torpedoes are rejected
+  on record. There is no inventory to draw.
+- **ADOPT (strong) — per-mount cards.** We HAVE six mounts with real
+  thermal lockout and real masking, and the HUD currently shows none
+  of it. The show's turret rail answers precisely this, honestly.
+- **ADOPT (strong) — the lock, announced spatially.** And here our
+  fiction gives it back with interest: in the hunt, the raider can
+  **squawk surrender**. A player holding a firing solution on a hull
+  that is surrendering is *Drummer's exact moment*. If any state in
+  this game deserves words hanging in the volume, it is that one.
+- **ADOPT (medium) — the proximity strip.** We show "TORPEDO INBOUND"
+  as text plus a pulsing stem; a linear nearest-threat gauge makes
+  "how long have I got" glanceable without a numeric ladder.
+- **ADOPT (cheap) — framed chips at stem heads.** Identity (torpedo /
+  hull / escortee) at the head, replacing bare dots. Small ink, real
+  information.
+- **CONSIDER — coverage as volume.** The single most striking idea in
+  the set, and it collides with a LOCKED design: our coverage is stem
+  TINT plus dim mount wedges, chosen deliberately because twelve
+  translucent cones in a 200 px corner instrument is ink, not
+  information. Two ways it could still be ours, both needing his
+  ruling (see E).
+- **NOTE for later — faction skinning.** The Drift is Belter; the
+  player's hull is Rocinante-class. If the Deep ever puts us on
+  another people's bridge, the same instrument in another culture's
+  dress is a ready-made idea.
+
+## E. The one real strategic question
+
+Everything in D except coverage fits inside the existing corner scope.
+Coverage-as-volume does not — it wants room. Three ways:
+
+1. **Leave coverage as it is** (stem tint + wedges) and take only the
+   cheap wins. Zero risk, no new surface.
+2. **Grow the scope in battle** — it already jumps 132 → 200 px on
+   engage; the dotted sphere and 2–3 aggregated coverage lobes (not
+   six cones) could live there, drawn as ellipse silhouettes in the
+   existing canvas.
+3. **A second display, battle-only** — a "SYSTEM OPS" panel that
+   appears opposite the scope during combat, carrying the coverage
+   sphere and the per-mount cards, and vanishes when the fight ends.
+   Closest to the show (their bridges have many screens), most new
+   surface, most risk of clutter.
+
+My lean: **2 for coverage + the per-mount cards as a small rail**, on
+the grounds that the scope is already the combat instrument and a
+second panel splits the eye at the worst moment. But this is exactly
+the kind of call he takes better than I do.
+
+## F. Questions for Tirtha
+
+1. Coverage: option 1, 2, or 3 above?
+2. HAMMA LOK — do we adopt a lock state at all, and is its dramatic
+   home the **surrender moment** (my strong lean) or ordinary
+   PDC-tracking?
+3. Do the per-mount heat/mask cards earn their space, or is the
+   existing stem-tint enough?
+4. Proximity strip: yes, or is the pulsing stem already the answer?
+5. Language: our Belters are ours. Do their stations carry Lang
+   Belta-flavored labels, or stay plain English?
