@@ -219,7 +219,7 @@ function playPdcShot(ctx: AudioContext, master: GainNode, at: number, locks: num
   src.buffer = pdcShotBuf
   src.playbackRate.value = 0.95 + Math.random() * 0.1
   const g = ctx.createGain()
-  g.gain.value = Math.min(0.15, 0.08 + locks * 0.014)
+  g.gain.value = Math.min(0.24, 0.13 + locks * 0.02)
   src.connect(g).connect(master)
   src.start(at)
   src.onended = () => {
