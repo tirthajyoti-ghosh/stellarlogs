@@ -488,6 +488,23 @@ the way (Tirtha). Deep exploration passes continue between builds
    interstitial until rotated (the YouTube pattern). Landscape thumb
    layout (thrust cluster right, translation left, accepts center) rides
    with the density/toys HUD polish. PWA manifest: orientation landscape.
+3.7. **THE PLAYTEST — a usability pass on the missions we HAVE**
+   (Tirtha, 2026-08-15, full protocol in docs/the-playtest.md). Not new
+   content: a hard QA/usability look at whether escort, the range and
+   the hunt actually deliver delight — where the player's eyes go while
+   missiles hunt him, what he feels, whether it is challenging without
+   being unfair, whether the scope is genuinely read and useful, and
+   whether there is enough new to bring him back. He is the test
+   subject; four scripted runs, six fixed questions each. The facts are
+   already logged: the RANGE has ZERO randomness (identical waves every
+   run — W3 is 12 torpedoes on fixed bearings plus one fast runner),
+   while ESCORT randomises only timing and bearing of 1–3 salvos with a
+   single torpedo class. Findings first, fixes after — likely
+   candidates: rotating/randomised range waves, escort attacks that
+   respond to the player instead of a timer, a second escort torpedo
+   class, and scope readability under pressure. Optional session
+   recorder available on request.
+
 4. Liveness backend (hails, counters, daily boards) — procgen-compatible
 5. Achievements verdict → implement chosen shape
 6. The Deep (HORIZON)
