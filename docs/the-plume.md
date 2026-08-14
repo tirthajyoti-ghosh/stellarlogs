@@ -272,3 +272,18 @@ The bench (`/plume2.html`, orbitable, kept permanently) settled it:
   bloom threshold by construction, log-depth chunks (house law), noise
   frequencies scaled with the box so features stay world-constant as
   it stretches. The flipbook sheets are deleted.
+
+## v3.1 (2026-08-14, his read of v3): FILL THE CONE, and SPEED
+
+- **Fills the bell now.** Two changes: a wider bounding box (cruise
+  1.8, burn 2.5 across — the box must stay wider than the flame or its
+  square cross-section clips visibly), and a fuller radial profile
+  (exponent 2.4→3.2 with a gentler coefficient) so the jet has a solid
+  core with a defined edge instead of a soft gaussian that read as
+  half-empty. The throat slug and the bell lens grew to match.
+- **Speed, properly derived.** Advection is expressed so world speed =
+  flow/2.3 regardless of plume length; raised cruise 3.4 → 16 (≈7
+  units/s) and burn to 68 (≈30 units/s) — a 4× jump between stages, so
+  max burn reads as violently faster, not just bigger. Swirl rate and
+  the bell lens rotation sped up to match.
+- The bench (/plume2.html) carries identical numbers.

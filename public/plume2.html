@@ -90,7 +90,7 @@ float fbm(vec3 p){
 // ---------- plume geometry ----------
 // bell mouth at y = 0, flame flows to -y.
 float PLUME_LEN(){  return (uStage < 1.5 ? 1.15 : 3.1) * uLenK; }
-float PLUME_RAD(){  return (uStage < 1.5 ? 0.46 : 0.66); }
+float PLUME_RAD(){  return (uStage < 1.5 ? 0.72 : 1.0); }
 
 // density at a point in plume space
 float density(vec3 p, out float s){
@@ -99,20 +99,20 @@ float density(vec3 p, out float s){
   float q = length(p.yz) / W;
 
   // envelope: emerges at the bell, bulges, tapers to a point
-  float R = (0.60 + 0.30 * s) * pow(max(1.0 - s, 0.0), 0.55);
-  float radial = exp(-pow(q / max(R, 1e-3), 2.4) * 2.3);
+  float R = (0.48 + 0.22 * s) * pow(max(1.0 - s, 0.0), 0.45);
+  float radial = exp(-pow(q / max(R, 1e-3), 3.2) * 1.1);
   if (radial < 0.002) return 0.0;
 
   float burn = clamp(uStage - 1.0, 0.0, 1.0);
 
   // swirl about the axis (the turbine spiral), growing downstream
-  float sw = (1.5 + 1.2 * burn) * s + uTime * 0.6;
+  float sw = (1.5 + 1.2 * burn) * s + uTime * (2.5 + 3.0 * burn);
   float ca = cos(sw), sa = sin(sw);
   vec2 pr = mat2(ca, -sa, sa, ca) * p.yz;
 
   // ADVECTION, flow-stretched: fine detail ACROSS the jet, long streaks
   // ALONG it — this is what separates a rocket jet from a campfire
-  float flow = (3.4 + 4.6 * burn) * uFlowK;
+  float flow = (16.0 + 52.0 * burn) * uFlowK;
   vec3 np = vec3(pr * 6.2, s * 2.6 - uTime * flow);
 
   // domain warp — this is what makes tongues instead of smoke
@@ -126,7 +126,7 @@ float density(vec3 p, out float s){
   float d = radial * mix(1.0, 0.40 + 0.60 * tongues, clamp(turb, 0.0, 1.0));
 
   // the collimated white-hot root: a dense coherent slug at the throat
-  d += exp(-pow(q / 0.38, 2.0) * 3.0) * exp(-s * 5.0) * 1.05;
+  d += exp(-pow(q / 0.44, 2.0) * 2.6) * exp(-s * 5.0) * 1.05;
 
   // shock diamonds near the throat
   float nodes = 1.0 + uShockK * (0.42 * sin(s * (10.0 + 6.0 * burn)) ) * exp(-s * 4.5);

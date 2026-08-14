@@ -53,8 +53,8 @@ const LOG_FRAG_PARS = /* glsl */ `
 /** cruise → burn, in ship units */
 const LEN_CRUISE = 1.15
 const LEN_BURN = 3.2
-const DIA_CRUISE = 1.0
-const DIA_BURN = 1.5
+const DIA_CRUISE = 1.8
+const DIA_BURN = 2.5
 
 function makeRadialTexture(): CanvasTexture {
   const c = document.createElement('canvas')
@@ -128,19 +128,19 @@ export function DrivePlume() {
             s = clamp(0.5 - p.y, 0.0, 1.0);
             float q = length(p.xz) * 2.0;
 
-            float R = (0.60 + 0.30 * s) * pow(max(1.0 - s, 0.0), 0.55);
-            float radial = exp(-pow(q / max(R, 1e-3), 2.4) * 2.3);
+            float R = (0.48 + 0.22 * s) * pow(max(1.0 - s, 0.0), 0.45);
+            float radial = exp(-pow(q / max(R, 1e-3), 3.2) * 1.1);
             if (radial < 0.002) return 0.0;
 
             float burn = clamp(uStage - 1.0, 0.0, 1.0);
 
             // turbine swirl, growing downstream
-            float sw = (1.5 + 1.2 * burn) * s + uTime * 0.6;
+            float sw = (1.5 + 1.2 * burn) * s + uTime * (2.5 + 3.0 * burn);
             float ca = cos(sw), sa = sin(sw);
             vec2 pr = mat2(ca, -sa, sa, ca) * p.xz;
 
             // advection — fine detail across the jet, long streaks along it
-            float flow = 3.4 + 4.6 * burn;
+            float flow = 16.0 + 52.0 * burn;
             vec3 np = vec3(pr * uRadial, s * uAxial - uTime * flow);
 
             float w = fbm(np * 0.7);
@@ -152,7 +152,7 @@ export function DrivePlume() {
             float d = radial * mix(1.0, 0.40 + 0.60 * tongues, turb);
 
             // the collimated incandescent root
-            d += exp(-pow(q / 0.38, 2.0) * 3.0) * exp(-s * 5.0) * 1.05;
+            d += exp(-pow(q / 0.44, 2.0) * 2.6) * exp(-s * 5.0) * 1.05;
 
             // shock diamonds near the throat
             d *= max(1.0 + 0.42 * sin(s * (10.0 + 6.0 * burn)) * exp(-s * 4.5), 0.0);
@@ -239,7 +239,7 @@ export function DrivePlume() {
             float cruise = clamp(uStage, 0.0, 1.0);
             float burn = clamp(uStage - 1.0, 0.0, 1.0);
             float annulus = smoothstep(0.98, 0.8, r) * smoothstep(0.3, 0.62, r);
-            float swirl = 0.8 + 0.2 * sin(theta * 9.0 + r * 13.0 - uTime * 5.5);
+            float swirl = 0.8 + 0.2 * sin(theta * 9.0 + r * 13.0 - uTime * 9.0);
             float lvl = (0.08 + 0.5 * cruise + 0.35 * burn) * uFlicker;
             vec3 col = annulus * swirl * vec3(0.30, 0.62, 1.0);
             gl_FragColor = vec4(col * lvl, 1.0);
@@ -316,7 +316,7 @@ export function DrivePlume() {
   return (
     <group>
       <mesh material={mouthMat} position={[0, 0.12, 0]} rotation-x={Math.PI / 2}>
-        <circleGeometry args={[0.36, 40]} />
+        <circleGeometry args={[0.50, 40]} />
       </mesh>
       <mesh ref={volRef} material={volMat} frustumCulled={false}>
         <boxGeometry args={[1, 1, 1]} />
