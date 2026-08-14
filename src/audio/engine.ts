@@ -287,7 +287,7 @@ export function updateAudio(
     const boostNow = boosting && thrusting && !jumping
     // the max-burn event IS the swell (blast TABLED, his ruling): quiet
     // cruise, then Shift lifts the crackle hard and fast
-    const sampleTarget = jumping ? 0 : thrusting ? (boostNow ? 0.5 : 0.08) : 0
+    const sampleTarget = jumping ? 0 : thrusting ? (boostNow ? 0.32 : 0.16) : 0
     driveSampleGain.gain.setTargetAtTime(sampleTarget, t, boostNow && !driveBoostWas ? 0.08 : thrusting ? 0.1 : 0.25)
     // burn runs the recording a shade faster — denser crackle, more heat
     driveSampleSrc.playbackRate.setTargetAtTime(boostNow ? 1.07 : 1.0, t, 0.3)
@@ -312,7 +312,7 @@ export function updateAudio(
   if (pdcShotBuf) {
     engine.pdcGain.gain.setTargetAtTime(0, t, 0.05)
     if (shooting) {
-      const perSec = 40 + turretControl.spin * 5
+      const perSec = 20 + turretControl.spin * 4
       if (nextPdcShot < t) nextPdcShot = t + 0.01
       while (nextPdcShot < t + 0.12) {
         playPdcShot(engine.ctx, engine.master, nextPdcShot, turretControl.locks)
