@@ -24,6 +24,7 @@ import { Effects } from './scene/Effects'
 import { AdaptiveResolution } from './scene/AdaptiveResolution'
 import { HardenMaterials } from './scene/HardenMaterials'
 import { useShipControls } from './systems/useShipControls'
+import { startChatter } from './audio/chatter'
 import { HudBridge } from './hud/HudBridge'
 import { HUD } from './hud/HUD'
 import { SeoContent } from './SeoContent'
@@ -95,6 +96,7 @@ class GlFaultBoundary extends Component<{ children: ReactNode }, { fault: boolea
 
 export default function App() {
   useShipControls()
+  startChatter()
 
   return (
     <div id="app">

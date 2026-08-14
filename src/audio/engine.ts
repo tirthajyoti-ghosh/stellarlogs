@@ -171,6 +171,9 @@ export function startAudio(): void {
   servoOsc.connect(servoBand).connect(servoGain).connect(master)
   servoOsc.start()
 
+  // the real shuttle recordings arrive whenever they arrive
+  loadDriveSamples(ctx, master)
+
   engine = {
     ctx,
     master,
@@ -189,6 +192,66 @@ export function startAudio(): void {
   }
 }
 
+/**
+ * THE REAL DRIVE (Tirtha's bench verdict, 2026-08-14): the synthesized
+ * rumble stays as the sub layer, but the mid/high CRACKLE — the part
+ * synthesis can't fake — is the actual STS shuttle launch close-mic
+ * recording (NASA, public domain), cut to a seamless 16 s loop from the
+ * stretch his ear picked (~47 s in). Max burn gets the shuttle's double
+ * sonic boom as the transition BLAST, then the loop runs hotter.
+ * Samples load lazily after boot; until (or if ever) they arrive, the
+ * synth carries alone — no boot-time cost, no hard dependency.
+ */
+let driveBlastBuf: AudioBuffer | null = null
+let driveSampleGain: GainNode | null = null
+let driveSampleSrc: AudioBufferSourceNode | null = null
+let driveBoostWas = false
+
+function loadDriveSamples(ctx: AudioContext, master: GainNode): void {
+  const fetchBuf = (url: string) =>
+    fetch(url)
+      .then((r) => r.arrayBuffer())
+      .then((b) => ctx.decodeAudioData(b))
+  Promise.all([fetchBuf('/audio/drive-loop.mp3'), fetchBuf('/audio/drive-blast.mp3')])
+    .then(([loop, blast]) => {
+      driveBlastBuf = blast
+      driveSampleGain = ctx.createGain()
+      driveSampleGain.gain.value = 0
+      driveSampleGain.connect(master)
+      const src = ctx.createBufferSource()
+      src.buffer = loop
+      src.loop = true
+      src.connect(driveSampleGain)
+      src.start()
+      driveSampleSrc = src
+    })
+    .catch(() => {
+      // no samples, no drama — the synth rumble carries alone
+    })
+}
+
+/** One-shot: the double sonic boom that announces max burn. */
+function triggerDriveBlast(): void {
+  if (!engine || !driveBlastBuf) return
+  const { ctx, master } = engine
+  const src = ctx.createBufferSource()
+  src.buffer = driveBlastBuf
+  const g = ctx.createGain()
+  g.gain.value = 0.55
+  src.connect(g).connect(master)
+  src.start()
+  src.onended = () => {
+    src.disconnect()
+    g.disconnect()
+  }
+}
+
+/** The live audio bus, for satellite systems (radio chatter, jukebox).
+ *  Null until the pilot's first gesture starts the context. */
+export function getAudioBus(): { ctx: AudioContext; master: GainNode } | null {
+  return engine ? { ctx: engine.ctx, master: engine.master } : null
+}
+
 export type WarpAudioPhase = 'idle' | 'align' | 'jump'
 
 /** Per-frame drive state → smooth audio params. Cheap: time-constant ramps. */
@@ -203,10 +266,23 @@ export function updateAudio(
   const jumping = warpPhase === 'jump'
   const aligning = warpPhase === 'align'
 
-  // Main drive rumble (muted while the jump drive has the ship)
-  const thrustTarget = jumping ? 0 : thrusting ? (boosting ? 0.34 : 0.18) : 0
+  // Main drive rumble (muted while the jump drive has the ship). With
+  // the real recording loaded, the synth drops to a sub-bass bed and
+  // the shuttle crackle carries the character.
+  const haveSample = !!driveSampleGain
+  const thrustTarget =
+    (jumping ? 0 : thrusting ? (boosting ? 0.34 : 0.18) : 0) * (haveSample ? 0.6 : 1)
   engine.thrusterGain.gain.setTargetAtTime(thrustTarget, t, 0.12)
   engine.thrusterFilter.frequency.setTargetAtTime(boosting ? 520 : 260, t, 0.2)
+  if (driveSampleGain && driveSampleSrc) {
+    const sampleTarget = jumping ? 0 : thrusting ? (boosting ? 0.5 : 0.2) : 0
+    driveSampleGain.gain.setTargetAtTime(sampleTarget, t, thrusting ? 0.1 : 0.25)
+    // burn runs the recording a shade faster — denser crackle, more heat
+    driveSampleSrc.playbackRate.setTargetAtTime(boosting && thrusting ? 1.07 : 1.0, t, 0.3)
+    const boostNow = boosting && thrusting && !jumping
+    if (boostNow && !driveBoostWas) triggerDriveBlast()
+    driveBoostWas = boostNow
+  }
 
   // RCS hiss: manual attitude puffs, louder sustained hiss during auto-align
   const rcsTarget = aligning ? 0.09 : rcsFiring ? 0.05 : 0

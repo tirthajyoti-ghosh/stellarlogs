@@ -62,9 +62,35 @@ nothing is bundled until he picks. Judged by ear — his.
   → max-burn bloom. HDR core + torus ring + tapered swirl column +
   streak fade, judged frame-by-frame against these three references.
 
-## Status
+## HIS BENCH VERDICTS (2026-08-14) + what shipped same day
 
-- Bench LIVE at /sounds.html — awaiting his verdicts per section.
-- Nothing integrated; no repo audio bundled yet.
-- THE SCOPE combat-display references (hamma lok, drop-line chips,
-  threat response) recorded in docs/the-scope.md for a LATER pass.
+1. **DRIVE — WINNER: Shuttle Launch Close-Mic, from ~47 s** ("the
+   actual crackling of the engine exhaust — that's really good").
+   SHIPPED: `public/audio/drive-loop.mp3` — a seamless 16 s loop cut
+   from 47–63 s (wrap-point crossfade, +7 dB, mono 96 kbps, 189 KB).
+   Normal thrust plays it at 0.2 gain over the synth sub (synth drops
+   to 60% when the sample is live).
+   **MAX BURN** (his must-have: "a blast sound and then a louder
+   burning, crackling sound"): SHIPPED — the shuttle's double sonic
+   boom (`drive-blast.mp3`, cut from Launch-Sound_Sonic-Booms at the
+   10 s double-boom, 43 KB) fires on the Shift transition, then the
+   loop runs at 0.5 gain and 1.07× playback rate (denser crackle).
+   Samples lazy-load after boot; synth-only fallback if fetch fails.
+2. **PDC — miniguns REJECTED** ("one continuous sound — in the show I
+   can make out single firing sounds; fast, sharp, treble-forward,
+   bass muted"). New bench candidates: two .50 cal recordings with
+   distinct shots (CC0, freesound 160355/239138) + the Bushmaster.
+   Integration plan once he picks: slice ONE clean single shot,
+   replay at our true fire rate with round-robin jitter — per-shot
+   distinction by construction, EQ'd sharp.
+3. **RADIO CHATTER — APPROVED and SHIPPED** (his spec: random, faint,
+   MOSTLY indistinct). `src/audio/chatter.ts`: interval-driven, only
+   within 1600 u of the Drift or comms station, 40–110 s random gaps,
+   80% murmur / 20% clear bite, squelch clicks either side, stands
+   down in battle and the vigil sphere. Assets: 36 s murmur bed cut
+   from Gemini XII launch comm (band-passed 500–2600 Hz past
+   intelligibility, 40 kbps mono) + five radio-filtered bites.
+   All public/audio, 488 KB total.
+4. **JUKEBOX — "not enough"**: slate widened to 14 CC-BY candidates
+   on the bench (noir/lounge/jazz/blues/swing). Wider curation +
+   creative direction to be thought through together before build.
