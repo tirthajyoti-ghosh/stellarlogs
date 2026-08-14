@@ -101,3 +101,14 @@ blue-tinted off a mock stern with a NORMAL THRUST / MAX BURN (3×)
 toggle. His verdict picks the flame; then in-game: the winner rides
 two crossed aft-aligned quads at the bell, cruise ≈ one bell-length,
 burn ≈ 3×, mouth lens kept, corona to a faint rim bleed, beam gone.
+
+
+## VERDICT + BUILD v2 (2026-08-14): "B"
+
+FIRE 01 picked off the flame bench. Shipped: the flipbook (hue-shifted
+blue offline via ffmpeg, 8×8/64f/30fps) rides two crossed aft-aligned
+quads at the bell — cruise ≈ one bell-length, burn ≈ 3× with a wider
+body; the bell LENS shader stays underneath; the corona is a whisper
+(≤0.14 opacity — the hull is never veiled); the beam is deleted.
+Verified side-profile at cruise (compact burning teardrop, ship fully
+visible) and burn (tripled flame, ship still readable).
