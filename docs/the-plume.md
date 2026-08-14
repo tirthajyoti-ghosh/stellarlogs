@@ -112,3 +112,17 @@ body; the bell LENS shader stays underneath; the corona is a whisper
 (≤0.14 opacity — the hull is never veiled); the beam is deleted.
 Verified side-profile at cruise (compact burning teardrop, ship fully
 visible) and burn (tripled flame, ship still readable).
+
+
+## v2.1 (2026-08-14, his live read of v2)
+
+Fixes, all his: (1) the "+ sign" quad edges — root cause was my ffmpeg
+brightness floor lifting the sheet's blacks (additive = faint glowing
+rectangles) + cell-bleed from texture filtering; sheet reprocessed
+clean (hue+sat only) and UVs inset 2% per cell, alphaTest 0.03.
+(2) "Mini star" — brightness cut below the bloom threshold everywhere
+(flame color 0.85/1.0/1.25, mouth level and core boosts halved): the
+FLAME structure reads now, not a glare ball. (3) Flipbook speed rides
+the stage — 45 fps at cruise, 85 at max burn, phase-accumulated so the
+speed change never jumps frames. (4) Corona tightened again (opacity
+≤0.09, smaller radius).

@@ -32,7 +32,9 @@ import { warpBurning } from '../physics/warp'
 const FLIP_URL = '/fx/flame-fire01-blue.png'
 const FLIP_COLS = 8
 const FLIP_FRAMES = 64
-const FLIP_FPS = 30
+// flipbook speed rides the stage: fast at cruise, frantic at burn
+const FLIP_FPS_CRUISE = 45
+const FLIP_FPS_BURN = 85
 
 const LOG_VERT_PARS = /* glsl */ `
   #include <common>
@@ -59,6 +61,7 @@ function makeRadialTexture(): CanvasTexture {
 
 export function DrivePlume() {
   const stageRef = useRef(0)
+  const phaseRef = useRef(0)
   const flameARef = useRef<Mesh>(null)
   const flameBRef = useRef<Mesh>(null)
   const coronaRef = useRef<Sprite>(null)
@@ -96,13 +99,13 @@ export function DrivePlume() {
             float coreR = 0.12 + 0.08 * cruise + 0.6 * burn;
             float core = exp(-pow(r / max(coreR, 0.02), 2.0));
             float ember = 0.1;
-            float lvl = (ember + 0.85 * cruise + 1.2 * burn) * uFlicker;
+            float lvl = (ember + 0.7 * cruise + 0.8 * burn) * uFlicker;
             vec3 blue = vec3(0.42, 0.68, 1.0);
             vec3 white = vec3(1.15, 1.32, 1.5);
             vec3 col =
               annulus * swirl * darkring * blue * (0.55 + 0.55 * cruise + 0.6 * burn) +
-              core * white * (0.9 + 2.0 * burn);
-            gl_FragColor = vec4(col * lvl * 2.0, 1.0);
+              core * white * (0.8 + 1.1 * burn);
+            gl_FragColor = vec4(col * lvl * 1.4, 1.0);
           }`,
         transparent: true,
         blending: AdditiveBlending,
@@ -112,11 +115,14 @@ export function DrivePlume() {
     [],
   )
 
+  /** UV inset: sample 96% of each cell so texture filtering never
+   *  bleeds the neighboring frames (the visible quad-edge seams). */
+  const CELL_INSET = 0.02
   const flameTex = useMemo(() => {
     const tex = new TextureLoader().load(FLIP_URL)
     tex.wrapS = RepeatWrapping
     tex.wrapT = RepeatWrapping
-    tex.repeat.set(1 / FLIP_COLS, 1 / FLIP_COLS)
+    tex.repeat.set((1 - 2 * CELL_INSET) / FLIP_COLS, (1 - 2 * CELL_INSET) / FLIP_COLS)
     return tex
   }, [])
 
@@ -128,8 +134,10 @@ export function DrivePlume() {
       depthWrite: false,
       side: DoubleSide,
       toneMapped: false,
+      alphaTest: 0.03,
     })
-    m.color.setRGB(1.5, 1.8, 2.4)
+    // below the bloom threshold: the flame must read as FLAME, not a star
+    m.color.setRGB(0.85, 1.0, 1.25)
     return m
   }, [flameTex])
 
@@ -164,11 +172,13 @@ export function DrivePlume() {
     const cruise = Math.min(stage, 1)
     const burnK = Math.max(0, stage - 1)
 
-    // flipbook frame advance
-    const frame = Math.floor(now * FLIP_FPS) % FLIP_FRAMES
+    // flipbook frame advance — burning faster the harder she pushes
+    const fps = FLIP_FPS_CRUISE + (FLIP_FPS_BURN - FLIP_FPS_CRUISE) * burnK
+    phaseRef.current += dt * fps
+    const frame = Math.floor(phaseRef.current) % FLIP_FRAMES
     flameTex.offset.set(
-      (frame % FLIP_COLS) / FLIP_COLS,
-      1 - (Math.floor(frame / FLIP_COLS) + 1) / FLIP_COLS,
+      (frame % FLIP_COLS) / FLIP_COLS + CELL_INSET / FLIP_COLS,
+      1 - (Math.floor(frame / FLIP_COLS) + 1) / FLIP_COLS + CELL_INSET / FLIP_COLS,
     )
 
     // COMPACT flame: cruise ≈ one bell-length, burn ≈ 3× (his spec)
@@ -184,10 +194,10 @@ export function DrivePlume() {
     }
 
     // the corona is a WHISPER — never veils the hull
-    coronaMat.opacity = (cruise * 0.1 + burnK * 0.14) * flicker
+    coronaMat.opacity = (cruise * 0.07 + burnK * 0.09) * flicker
     const corona = coronaRef.current
     if (corona) {
-      const s = 0.7 + cruise * 0.4 + burnK * 0.8
+      const s = 0.6 + cruise * 0.3 + burnK * 0.5
       corona.scale.set(s, s, 1)
     }
   })
