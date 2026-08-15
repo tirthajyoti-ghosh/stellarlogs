@@ -326,3 +326,51 @@ The tanks as built (four liquid cylinders) are WRONG and are not
 committed. Pending: rebuild as THE CRIB — her holds in a cradle, under
 a sunshade, packed with ice, with the gauge board and the painted line
 kept.
+
+---
+
+# BUILT — first pass (2026-08-15)
+
+**THE CRIB** (`DriftCrib.tsx`, `systems/reserve.ts`) stands on the
+Drift's Khione-facing rim: four of the Nilak's salvaged holds in a
+welded cradle, her registry stencilled on them, pale ice showing in the
+open ends, a foil SUNSHADE over the whole rack, a WORKING STOCK gauge
+and the painted line NO SHIP LEAVES THE DRIFT DRY. A holed hold shows
+its wound and vents a faint glittering plume; the reserve BLEEDS while
+any hold is open and refills when the crib is whole — all on wall-clock
+time, so it keeps living whether or not anyone is watching.
+
+**THE PATCH SKIFFS** — real asset: SPACESHIP EAV 2 "CRAB" (Sketchfab,
+CC BY 4.0), described by its author as built for *"maintenance,
+construction and handling of hazardous materials in outer space"*, with
+armoured manipulator arms. Tirtha's reference was the construction
+skiffs of The Expanse S6 (Tadeo's boat, and the one Filip leaves in).
+Processed through the house pipeline (`scripts/build-skiff.mjs`:
+merged, welded, simplified to 35%, webp, meshopt) → 1.1 MB. Two of them
+muster from the docks ~14 s after a pass and close one wound every 45 s,
+welding arc flickering, then the crib is whole again.
+
+**THE PASS** (`activities/KhioneSleet.tsx`) runs on the wall clock
+(every 240 s, 100 s long, announced 25 s ahead), spawns real asteroid
+geometry from the true Khione bearing, flies it ballistically across
+the colony, hands the on-line rocks to the PDCs and the scope, fractures
+what the guns hit into smaller rocks that keep coming, and holes the
+crib with whatever gets through.
+
+## What the first live test caught (this is why we test)
+
+1. **The docks owned the picture.** IceRoute claims the activity lock
+   whenever you are near the board — which is exactly where the crib
+   is — so the pass could never start. Fixed with an explicit handoff:
+   standing at the board is not work, so the docks yield to a live
+   pass, while a real escort/hunt contract still outranks it.
+2. **The HUD called rocks "TORPEDO INBOUND ×41".** Two bugs in one:
+   the warning strip had a hard-coded noun (now `threatNoun`), and ALL
+   rocks were being published as threats. Gravel is scenery — only the
+   handful actually on line with the crib are threats now, which is
+   what the design said all along.
+3. **Balance is not settled.** Sitting still through a pass cost 40% of
+   the working stock and two holds. On-line share cut 30% → 16% as a
+   first correction, but the honest verdict needs a human at the
+   controls — this goes into the playtest (roadmap 3.7) rather than
+   being tuned blind.

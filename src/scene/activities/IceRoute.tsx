@@ -1874,9 +1874,14 @@ export function IceRoute() {
     // the trail is detective work, not a gunfight: nav scope, console up
     const huntLive = hunting && s.huntPhase !== 'trail'
     const battle = (escorting && torpedoes.some((t) => t.alive && !t.ambient)) || huntLive
-    const engaged = onContract || s.job === 'over' || distToBoard < BOARD_RANGE
+    activityState.contractLive = onContract
+    // standing at the board is not work: during a Khione pass the docks
+    // give the picture up to whoever is flying the picket
+    const engaged =
+      onContract || s.job === 'over' || (distToBoard < BOARD_RANGE && !activityState.sleetLive)
     if (engaged) {
       activityState.owner = 'iceroute'
+      activityState.threatNoun = 'TORPEDO'
       activityState.active = true
       activityState.battle = battle
       activityState.threats = battle ? torpedoes : []

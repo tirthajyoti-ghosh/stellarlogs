@@ -92,6 +92,13 @@ export const activityState = {
   /** She has squawked and gone dark: the hunt becomes an ARREST, and the
    *  instrument stops calling her a threat */
   hostileYielded: false,
+  /** What the inbound things ARE — the warning strip says it plainly */
+  threatNoun: 'TORPEDO',
+  /** A KHIONE PASS is live: the docks yield the picture to the picket */
+  sleetLive: false,
+  /** An escort/hunt contract is actually running (not merely standing at
+   *  the board) — the Sleet must not take the picture from real work */
+  contractLive: false,
   /** Race guidance: world position of the next gate (null = no marker) */
   raceTarget: null as { x: number; y: number; z: number } | null,
   /** Label shown on the race marker ("START", "GATE 4", "FINISH") */

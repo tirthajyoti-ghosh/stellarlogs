@@ -13,6 +13,8 @@ import { CargoSpills } from './scene/CargoSpills'
 import { NilakVigil } from './scene/NilakVigil'
 import { SmallSecrets } from './scene/SmallSecrets'
 import { DriftKillBoard } from './scene/DriftKillBoard'
+import { DriftCrib } from './scene/DriftCrib'
+import { KhioneSleet } from './scene/activities/KhioneSleet'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
 import { BeltRun } from './scene/activities/BeltRun'
@@ -166,9 +168,11 @@ export default function App() {
         <NilakVigil />
         <SmallSecrets />
         <DriftKillBoard />
+        <DriftCrib />
         <Suspense fallback={null}>
           <GunneryRange />
           <IceRoute />
+          <KhioneSleet />
           <BeltRun />
           <DraugrSighting />
           <InteramniaDrift />

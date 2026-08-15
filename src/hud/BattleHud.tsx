@@ -62,7 +62,7 @@ export function BattleHud() {
         strip.dataset.on = count > 0 ? '1' : ''
         strip.dataset.crit = soonest < 6 ? '1' : ''
         if (count > 0) {
-          const text = `TORPEDO INBOUND ×${count}`
+          const text = `${activityState.threatNoun} INBOUND ×${count}`
           if (warn.textContent !== text) warn.textContent = text
           const sub = warnSubRef.current
           if (sub) {
