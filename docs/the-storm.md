@@ -598,3 +598,44 @@ tuning.
 - Overlapping T-digits on the HUD when many threats cluster
   (pre-existing scope behavior) — playtest item.
 - crib-bench.html kept (the pod/slab decision bench).
+
+---
+
+# PASS 6 — THE SKIFF, FOR HIS EYES (2026-08-15)
+
+His verdicts: he wants to SEE the skiff and alternatives on a bench,
+and the movement was wrong — "it just teleports… it has to move like a
+boat in space."
+
+He was right about the movement, and the cause was structural: the old
+code eased a lerp factor between endpoints and re-picked its target
+hold by INDEX every frame — so when a wound closed, the target swapped
+instantly (the "teleport"), and lookAt() snapped the heading the same
+frame (the "weird rotation").
+
+## The new motion — a boat, not a marker
+The skiff now carries real state: position, velocity, a nose.
+- **Accelerates toward its waypoint** (9 u/s², capped 34 u/s), and
+  when the remaining distance falls inside its stopping distance it
+  **flips and burns against its own velocity** — the Expanse brake.
+- **Arrives near-zero and station-keeps** with a whisper of RCS
+  wander; the welding arc only lights ON STATION.
+- **Commits to a hold** until the work is done — retasking happens by
+  FLYING to the next wound from wherever she is, never by swapping.
+- **The nose leads the velocity** (slerped, hull-axis corrected);
+  on station she faces the work.
+- Comes out from behind the colony's rock, goes home the same way,
+  and is only "put away" once she is home AND stopped.
+
+## THE SKIFF BENCH — /skiffs.html
+Three candidates, orbitable, keys 1/2/3, with license captions:
+1. **EAV-2 "CRAB"** (current) — Mikhail Nov, CC BY. Armoured
+   manipulator arms, maintenance/construction fiction.
+2. **Sci-Fi Welding Vehicle** — Berk Gedik, CC BY. A welding workboat
+   with a boom arm.
+3. **Mech Drone** — Willy Decarpentrie, CC BY (spec-gloss converted
+   to metal-rough; its rig animates on the bench). Utility drone with
+   grip arms.
+Plus **F · FLIGHT DEMO** — the exact motion model that now flies in
+the game, demonstrated between two mock holds: out, flip, brake,
+hold-and-weld, next, home. His pick rules; the CRAB stays until then.

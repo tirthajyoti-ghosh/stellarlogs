@@ -9,12 +9,14 @@ import {
   Float32BufferAttribute,
   Group,
   IcosahedronGeometry,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
   Plane,
   Points,
   PointsMaterial,
+  Quaternion,
   Vector3,
 } from 'three'
 import { shipRig } from '../state/shipRig'
@@ -170,39 +172,111 @@ function Skiff({ index }: { index: number }) {
   const ref = useRef<Group>(null)
   const model = useMemo(() => gltf.scene.clone(true), [gltf])
   const torchRef = useRef<Mesh>(null)
-  const g = useRef({ t: index * 2.3, out: 0 })
+  /** a BOAT, not a marker: it has velocity and a nose. It accelerates
+   *  toward its waypoint, flips to brake into the arrival, holds
+   *  station with a whisper of RCS, and its nose leads the velocity —
+   *  slerped, never snapped, never teleported. */
+  const b = useRef({
+    t: index * 2.3,
+    started: false,
+    pos: new Vector3(),
+    vel: new Vector3(),
+    quat: new Quaternion(),
+    /** the hold it is CURRENTLY committed to (it finishes its approach
+     *  even if the wound list shifts — a pilot doesn't teleport) */
+    hold: -1,
+    homing: false,
+  })
 
   useFrame((_, dt) => {
     const grp = ref.current
     if (!grp) return
+    const st = b.current
     const working = skiffsWorking()
     const muster = musterIn()
-    // ease OUT toward the wound when there is work, ease HOME when not —
-    // the boats emerge from behind the colony's rock: no pop, ever
-    const want = working || muster > 0 ? 1 : 0
-    g.current.out += (want - g.current.out) * Math.min(1, dt * (want ? 0.5 : 0.7))
-    const out = g.current.out
-    grp.visible = out > 0.01
-    if (!grp.visible) return
-    g.current.t += dt
-    const t = g.current.t
+    const wantOut = working || muster > 0
+
+    if (!st.started) {
+      if (!wantOut) {
+        grp.visible = false
+        return
+      }
+      // first flight: she comes out from behind the colony's rock
+      st.started = true
+      st.pos.copy(SKIFF_HOME)
+      st.vel.set(0, 0, 0)
+      st.hold = -1
+      st.homing = false
+    }
+    grp.visible = true
+    st.t += dt
+    const t = st.t
+
+    // pick work: my share of the open holds, committed until done
     const holds = woundHolds()
-    const myHold = holds[index % Math.max(1, holds.length)] ?? 0
-    const target = _skiffTarget.set(
-      CRIB_POS.x + HOLD_X[myHold],
-      CRIB_POS.y + 10,
-      CRIB_POS.z + 16,
-    )
-    const k = out * out * (3 - 2 * out)
-    grp.position.lerpVectors(SKIFF_HOME, target, k)
-    grp.position.x += Math.sin(t * 0.6 + index) * 1.6 * k
-    grp.position.y += Math.sin(t * 0.47 + index * 2) * 1.2 * k
-    grp.position.z += Math.cos(t * 0.53 + index) * 1.6 * k
-    grp.lookAt(target.x, target.y - 6, target.z)
+    if (wantOut) {
+      st.homing = false
+      const mine = holds.filter((_, i) => i % 2 === index)
+      const want = mine.length > 0 ? mine[0] : holds[0] ?? -1
+      if (st.hold === -1 || !holds.includes(st.hold)) st.hold = want
+    } else if (!st.homing) {
+      st.homing = true
+      st.hold = -1
+    }
+
+    const target = st.homing
+      ? _skiffTarget.copy(SKIFF_HOME)
+      : st.hold >= 0
+        ? _skiffTarget.set(CRIB_POS.x + HOLD_X[st.hold], CRIB_POS.y + 10, CRIB_POS.z + 18)
+        : _skiffTarget.copy(SKIFF_HOME)
+
+    // ---- the flight: accelerate, flip, brake, arrive ----
+    const ACCEL = 9
+    const VMAX = 34
+    _sv.copy(target).sub(st.pos)
+    const d = _sv.length()
+    const speed = st.vel.length()
+    const stopDist = (speed * speed) / (2 * ACCEL) + 4
+    let onStation = false
+    if (d < 3 && speed < 2.5) {
+      onStation = true
+      // station-keeping: kill residual drift, breathe on the RCS
+      st.vel.multiplyScalar(Math.max(0, 1 - dt * 2))
+      st.pos.x += Math.sin(t * 0.9 + index) * 0.02
+      st.pos.y += Math.sin(t * 0.7 + index * 2) * 0.015
+      if (st.homing && d < 2) {
+        // home and stopped: the boat is put away
+        st.started = false
+        grp.visible = false
+        return
+      }
+    } else {
+      _sv.divideScalar(d || 1)
+      const braking = d < stopDist
+      const burn = braking ? _sw.copy(st.vel).normalize().negate() : _sw.copy(_sv)
+      st.vel.addScaledVector(burn, ACCEL * dt)
+      if (st.vel.length() > VMAX) st.vel.setLength(VMAX)
+    }
+    st.pos.addScaledVector(st.vel, dt)
+
+    // ---- the nose: lead the velocity in flight, face the work on station ----
+    if (speed > 3) _sw.copy(st.vel).normalize()
+    else _sw.copy(target).sub(st.pos).normalize()
+    if (_sw.lengthSq() > 0.01) {
+      _sm.lookAt(_ZERO, _sw.negate(), _UP)
+      _sq.setFromRotationMatrix(_sm).multiply(_NOSE) // hull lies along +X
+      st.quat.slerp(_sq, Math.min(1, dt * 2.4))
+    }
+    grp.position.copy(st.pos)
+    grp.quaternion.copy(st.quat)
+
+    // the welding arc: only on station at a wound, irregular, never a lamp
     const torch = torchRef.current
     if (torch) {
       const flick =
-        working && out > 0.96 ? Math.max(0, Math.sin(t * 31 + index) * Math.sin(t * 7.3)) : 0
+        working && onStation && !st.homing
+          ? Math.max(0, Math.sin(t * 31 + index) * Math.sin(t * 7.3))
+          : 0
       const m = torch.material as MeshBasicMaterial
       m.opacity = flick * 0.85
       torch.scale.setScalar(0.4 + flick * 1.0)
@@ -210,7 +284,7 @@ function Skiff({ index }: { index: number }) {
   })
 
   return (
-    <group ref={ref}>
+    <group ref={ref} visible={false}>
       {/* build length 8u × 0.9 ≈ 7 u — a workman's boat, SMALLER than the tug */}
       <group scale={0.9}>
         <primitive object={model} />
@@ -230,6 +304,14 @@ function Skiff({ index }: { index: number }) {
   )
 }
 
+const _sv = new Vector3()
+const _sw = new Vector3()
+const _sq = new Quaternion()
+const _sm = new Matrix4()
+const _ZERO = new Vector3()
+const _UP = new Vector3(0, 1, 0)
+/** the build points her hull down +X; the flight basis faces +Z */
+const _NOSE = new Quaternion().setFromAxisAngle(_UP, -Math.PI / 2)
 const _skiffTarget = new Vector3()
 
 export function DriftCrib() {

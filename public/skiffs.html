@@ -1,0 +1,180 @@
+<!doctype html><html><head><meta charset="utf-8"><title>THE SKIFF BENCH</title><style>
+body{margin:0;background:#050a12;overflow:hidden;font-family:ui-monospace,monospace}
+#ui{position:fixed;top:12px;left:12px;color:#8fa8bd;font-size:12px;line-height:1.7;user-select:none}
+#ui b{color:#dce8f4;letter-spacing:.12em}
+.btn{display:inline-block;margin:2px 6px 2px 0;padding:4px 10px;border:1px solid #2c3947;color:#9fb6c9;cursor:pointer;letter-spacing:.08em}
+.btn.on{border-color:#57e6c4;color:#57e6c4}
+#cap{position:fixed;bottom:14px;left:12px;color:#5f7c92;font-size:11px;line-height:1.6}
+</style></head><body>
+<div id="ui">
+  <b>THE SKIFF BENCH</b> — drag orbit · wheel zoom<br>
+  <span class="btn on" data-m="crab">1 · EAV-2 CRAB (current)</span>
+  <span class="btn" data-m="welder">2 · WELDING VEHICLE</span>
+  <span class="btn" data-m="mechdrone">3 · MECH DRONE</span><br>
+  <span class="btn" id="fly">F · FLIGHT DEMO — the new boat motion</span>
+</div>
+<div id="cap"></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.164.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const CAPS = {
+  crab: 'SPACESHIP EAV 2 "CRAB" — Mikhail Nov (Sketchfab, CC BY 4.0). "Maintenance, construction, and handling of hazardous materials… armored manipulator arms." IN THE GAME TODAY.',
+  welder: 'Sci-Fi Welding Vehicle — Berk Gedik (Sketchfab, CC BY 4.0). A welding workboat: boom arm, cab, tool rack.',
+  mechdrone: 'Mech Drone — Willy Decarpentrie (Sketchfab, CC BY 4.0). Rigged utility drone with grip arms.',
+};
+
+const R = new THREE.WebGLRenderer({antialias:true});
+R.setSize(innerWidth,innerHeight); R.setPixelRatio(devicePixelRatio);
+R.toneMapping = THREE.ACESFilmicToneMapping;
+document.body.appendChild(R.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color('#050a12');
+const cam = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 5000);
+scene.add(new THREE.AmbientLight(0x35455a, 0.9));
+const sun = new THREE.DirectionalLight(0xfff3e0, 2.4); sun.position.set(1,0.5,0.35); scene.add(sun);
+const fill = new THREE.DirectionalLight(0x7090c0, 0.5); fill.position.set(-1,-0.3,-0.5); scene.add(fill);
+// a faint star field for depth
+{
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array(600*3);
+  for (let i=0;i<600;i++){ const v=new THREE.Vector3().randomDirection().multiplyScalar(800); pos.set([v.x,v.y,v.z],i*3); }
+  g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+  scene.add(new THREE.Points(g, new THREE.PointsMaterial({color:'#5a6f85',size:1.2,sizeAttenuation:false})));
+}
+let az=0.7, el=0.25, dist=26, drag=null;
+addEventListener('pointerdown',e=>{ if(e.target.closest('#ui')) return; drag=[e.clientX,e.clientY]; });
+addEventListener('pointerup',()=>drag=null);
+addEventListener('pointermove',e=>{if(!drag)return;az-=(e.clientX-drag[0])*0.005;el=Math.max(-1.3,Math.min(1.3,el+(e.clientY-drag[1])*0.005));drag=[e.clientX,e.clientY]});
+addEventListener('wheel',e=>dist=Math.max(8,Math.min(300,dist*(1+e.deltaY*0.001))));
+
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+const boats = {}; let current='crab'; let flying=false;
+const boatRoot = new THREE.Group(); scene.add(boatRoot);
+
+// two "holds" for the flight demo
+const holdMat = new THREE.MeshStandardMaterial({color:'#39424e',metalness:.6,roughness:.6});
+const holds = [-30, 30].map(x => {
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(6,6,14,14), holdMat);
+  m.rotation.z = Math.PI/2; m.position.set(x, -4, 0); m.visible = false; scene.add(m); return m;
+});
+
+function norm(g, name){
+  const grp = new THREE.Group();
+  const s = g.scene;
+  grp.add(s);
+  const box = new THREE.Box3().setFromObject(s);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const scale = 8/Math.max(size.x,size.y,size.z);
+  const c = box.getCenter(new THREE.Vector3());
+  s.position.sub(c);
+  grp.scale.setScalar(scale);
+  boats[name]=grp; boatRoot.add(grp); grp.visible = name===current;
+  if (g.animations && g.animations.length){
+    const mixer = new THREE.AnimationMixer(s);
+    mixer.clipAction(g.animations[0]).play();
+    grp.userData.mixer = mixer;
+  }
+}
+for (const name of ['crab','welder','mechdrone'])
+  loader.load(`/models/bench-${name}.glb`, g=>norm(g,name));
+
+document.getElementById('cap').textContent = CAPS[current];
+for (const b of document.querySelectorAll('.btn[data-m]')) b.onclick = () => {
+  current=b.dataset.m;
+  for (const x of document.querySelectorAll('.btn[data-m]')) x.classList.toggle('on', x===b);
+  for (const k in boats) boats[k].visible = k===current;
+  document.getElementById('cap').textContent = CAPS[current];
+};
+addEventListener('keydown',e=>{
+  if(e.key==='1')document.querySelector('[data-m=crab]').click();
+  if(e.key==='2')document.querySelector('[data-m=welder]').click();
+  if(e.key==='3')document.querySelector('[data-m=mechdrone]').click();
+  if(e.key==='f'||e.key==='F')document.getElementById('fly').click();
+});
+
+// ---------- THE BOAT MOTION (the model going into the game) ----------
+// A skiff is a boat: it has velocity and a nose. It accelerates toward
+// where it is going, flips to brake into the last third, arrives with
+// near-zero speed, holds station with tiny RCS wander, and its NOSE
+// leads the velocity — never a snap, never a teleport.
+const boat = {
+  pos: new THREE.Vector3(0,0,0),
+  vel: new THREE.Vector3(),
+  quat: new THREE.Quaternion(),
+  targets: [], ti: 0, holdT: 0,
+};
+const ACCEL = 6, VMAX = 14, ARRIVE = 0.8, HOLD_S = 4;
+const _want = new THREE.Vector3(), _face = new THREE.Vector3(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion();
+
+document.getElementById('fly').onclick = () => {
+  flying = !flying;
+  document.getElementById('fly').classList.toggle('on', flying);
+  for (const h of holds) h.visible = flying;
+  if (flying){
+    boat.pos.set(0, 26, -60); boat.vel.set(0,0,0);
+    boat.targets = [ new THREE.Vector3(-30, 4, 0), new THREE.Vector3(30, 4, 0), new THREE.Vector3(0, 26, -60) ];
+    boat.ti = 0; boat.holdT = 0;
+    dist = 70;
+  } else { boatRoot.position.set(0,0,0); boatRoot.quaternion.identity(); }
+  document.getElementById('cap').textContent = flying
+    ? 'FLIGHT: out from the dock → brake → hold at hold A (welding wander) → hold B → home. Watch the nose lead the velocity and the brake flip.'
+    : CAPS[current];
+};
+
+function flyStep(dt, t){
+  const target = boat.targets[boat.ti];
+  if (!target){ // done: idle at home
+    boat.vel.multiplyScalar(Math.max(0, 1-dt));
+  } else {
+    _want.copy(target).sub(boat.pos);
+    const d = _want.length();
+    const speed = boat.vel.length();
+    // how much room do we need to stop? brake when closer than that
+    const stopDist = (speed*speed)/(2*ACCEL) + 2;
+    if (d < ARRIVE && speed < 1.2){
+      boat.holdT += dt;
+      // station-keeping: tiny RCS wander, no drive
+      boat.vel.multiplyScalar(Math.max(0, 1-dt*2));
+      boat.pos.x += Math.sin(t*0.9 + boat.ti)*0.008;
+      boat.pos.y += Math.sin(t*0.7)*0.006;
+      if (boat.holdT > HOLD_S){ boat.holdT = 0; boat.ti++; }
+    } else {
+      const dir = _want.normalize();
+      // accelerate toward it — or flip and burn against velocity to brake
+      const braking = d < stopDist;
+      const burn = braking ? _face.copy(boat.vel).normalize().negate() : dir;
+      boat.vel.addScaledVector(burn, ACCEL*dt);
+      if (boat.vel.length() > VMAX) boat.vel.setLength(VMAX);
+      boat.pos.addScaledVector(boat.vel, dt);
+    }
+  }
+  // THE NOSE: face along velocity when moving; face the work when holding.
+  // Slerp — the boat TURNS, it never snaps.
+  const speed = boat.vel.length();
+  if (speed > 0.6) _face.copy(boat.vel).normalize();
+  else if (boat.targets[boat.ti]) _face.copy(boat.targets[boat.ti]).sub(boat.pos).setY(0).normalize();
+  if (_face.lengthSq() > 0.1){
+    _m.lookAt(_face, new THREE.Vector3(0,0,0), new THREE.Vector3(0,1,0));
+    _q.setFromRotationMatrix(_m);
+    boat.quat.slerp(_q, Math.min(1, dt*2.2));
+  }
+  boatRoot.position.copy(boat.pos);
+  boatRoot.quaternion.copy(boat.quat);
+}
+
+const clock = new THREE.Clock();
+function tick(){
+  requestAnimationFrame(tick);
+  const dt = Math.min(0.05, clock.getDelta());
+  const t = clock.elapsedTime;
+  if (flying) flyStep(dt, t);
+  for (const k in boats) boats[k].userData.mixer?.update(dt);
+  cam.position.set(Math.sin(az)*Math.cos(el)*dist, Math.sin(el)*dist, Math.cos(az)*Math.cos(el)*dist);
+  cam.lookAt(boatRoot.position.x*0.6, boatRoot.position.y*0.6, boatRoot.position.z*0.6);
+  R.render(scene,cam);
+}
+tick();
+</script></body></html>
