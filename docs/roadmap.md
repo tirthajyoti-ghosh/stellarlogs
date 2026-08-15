@@ -496,9 +496,10 @@ the way (Tirtha). Deep exploration passes continue between builds
    cover. The black box logs gate shows/taps and orientation changes.
    Dev override for desktop testing: localStorage
    'stellarlogs-force-touch' = '1'.
-   KNOWN GAP for the playtest: the compact-cockpit media query hides
-   the right MFD — phones currently fight WITHOUT the tactical scope.
-   A mobile battle picture needs its own think (playtest item).
+   DECK V2 SHIPPED same day (docs/the-mobile-deck.md BUILT): the CHART
+   drawer (phones can finally jump), the icon arc, the floating stick,
+   right-half camera drag, the battle mini-scope (gap closed), the
+   voice rules, and full deck telemetry.
 3.7. **THE PLAYTEST — a usability pass on the missions we HAVE**
    (MOVED 2026-08-15 at Tirtha's call: runs JUST BEFORE THE DEEP, as the
    final quality gate on everything built. The flight recorder is

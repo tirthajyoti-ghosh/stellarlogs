@@ -8,7 +8,7 @@ import { CONTACT } from '../content/contact'
 import { startWarp, warp } from '../physics/warp'
 import { shipRig } from '../state/shipRig'
 
-interface Destination {
+export interface Destination {
   id: string
   name: string
   color: string
@@ -19,7 +19,7 @@ interface Destination {
 /** The nav computer's chart, sectioned by the marker grammar: docks
  *  first (home), then the portfolio systems, then the unsurveyed
  *  frontier — each section in its category's color. */
-const NAV_SECTIONS: { title: string; color: string; dests: Destination[] }[] = [
+export const NAV_SECTIONS: { title: string; color: string; dests: Destination[] }[] = [
   {
     title: 'DOCKS',
     color: MARKER_COLORS.infra,

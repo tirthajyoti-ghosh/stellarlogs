@@ -9,6 +9,7 @@ import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { assessThreat } from '../scene/shipTurrets'
 import { startWarp, warp } from '../physics/warp'
+import { IS_TOUCH } from '../config/quality'
 
 const SIZE = 132
 /** The PDC ring's share of the scope radius. Raised 0.3 → 0.42 → 0.48 (Tirtha:
@@ -42,6 +43,7 @@ export function Radar() {
     let lastNow = 0
 
     const onClick = (e: MouseEvent) => {
+      if (IS_TOUCH) return // display-only on phones; THE CHART owns jumping
       if (warp.phase !== 'idle') return
       const rect = canvas.getBoundingClientRect()
       const mx = ((e.clientX - rect.left) / rect.width) * canvas.width

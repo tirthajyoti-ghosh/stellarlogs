@@ -1720,18 +1720,224 @@ body[data-focus='1'] .hud-target {
 }
 
 
-/* Landscape thumbs: the real flight deck (roadmap 3.5) */
-@media (pointer: coarse) and (orientation: landscape) {
-  .hud-stick {
-    left: max(24px, env(safe-area-inset-left));
-    bottom: max(26px, env(safe-area-inset-bottom));
-    width: 148px;
-    height: 148px;
-  }
-  .hud-stick-knob { width: 60px; height: 60px; }
-  .hud-touch-cluster {
-    right: max(18px, env(safe-area-inset-right));
-    bottom: max(24px, env(safe-area-inset-bottom));
-  }
-  .hud-touch-btn { width: 78px; }
+/* Landscape thumbs: stick sizing (the floating stick reuses .hud-stick) */
+@media (orientation: landscape) {
+  body[data-touch='1'] .hud-stick { width: 132px; height: 132px; }
+  body[data-touch='1'] .hud-stick-knob { width: 56px; height: 56px; }
 }
+
+
+/* ============================================================
+   THE MOBILE DECK (docs/the-mobile-deck.md) — the genre's grammar
+   in our language: floating stick, icon arc, the chart drawer,
+   battle tightening, the voice rules.
+   ============================================================ */
+
+/* the left zone: the stick materialises under the thumb */
+.hud-stick-zone {
+  position: fixed;
+  left: 0;
+  top: 90px;
+  bottom: 0;
+  width: 44%;
+  pointer-events: auto;
+  touch-action: none;
+}
+.hud-stick-floating {
+  position: fixed;
+  left: -999px;
+  top: -999px;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  pointer-events: none;
+}
+.hud-stick-floating[data-on='1'] { opacity: 1; }
+
+/* THE ARC — BURN at the resting thumb, satellites curved around */
+.hud-arc {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+}
+.hud-arc-btn {
+  position: absolute;
+  border-radius: 50%;
+  border: 1.5px solid rgba(111, 211, 232, 0.5);
+  background: rgba(8, 16, 28, 0.35);
+  color: #9fd8ef;
+  pointer-events: auto;
+  touch-action: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.hud-arc-btn svg { width: 58%; height: 58%; }
+.hud-arc-btn:active { background: rgba(111, 211, 232, 0.28); }
+.hud-arc-burn {
+  width: 92px;
+  height: 92px;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  border-color: rgba(255, 180, 94, 0.65);
+  color: #ffb45e;
+}
+.hud-arc-boost {
+  width: 62px;
+  height: 62px;
+  right: max(30px, env(safe-area-inset-right));
+  bottom: 128px;
+  border-color: rgba(255, 180, 94, 0.5);
+  color: #f2c98a;
+}
+.hud-arc-rev {
+  width: 62px;
+  height: 62px;
+  right: 126px;
+  bottom: max(24px, env(safe-area-inset-bottom));
+  color: #8fd8c8;
+  border-color: rgba(95, 208, 192, 0.5);
+}
+.hud-arc-flip {
+  width: 54px;
+  height: 54px;
+  right: 118px;
+  bottom: 112px;
+  color: #8fd8c8;
+  border-color: rgba(95, 208, 192, 0.5);
+}
+.hud-arc-jump {
+  width: 64px;
+  height: 64px;
+  right: 186px;
+  bottom: 62px;
+  color: #ffb45e;
+  border-color: rgba(255, 180, 94, 0.8);
+  animation: arc-armed 1.6s ease-in-out infinite;
+}
+@keyframes arc-armed {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 180, 94, 0); }
+  50% { box-shadow: 0 0 14px 2px rgba(255, 180, 94, 0.35); }
+}
+
+/* THE CHART — the phone's jump drive */
+.hud-chart-chip {
+  position: fixed;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(111, 211, 232, 0.4);
+  background: rgba(8, 16, 28, 0.55);
+  color: #d5e8f2;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  z-index: 40;
+}
+.hud-chart-chip-glyph { color: #ffb45e; font-size: 13px; }
+.hud-chart {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: min(310px, 82vw);
+  background: rgba(5, 10, 18, 0.94);
+  border-right: 1px solid rgba(111, 211, 232, 0.25);
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  padding: max(10px, env(safe-area-inset-top)) 0 max(10px, env(safe-area-inset-bottom))
+    max(0px, env(safe-area-inset-left));
+}
+.hud-chart-title {
+  padding: 42px 18px 10px 18px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  color: #5f7c92;
+}
+.hud-chart-list { overflow-y: auto; flex: 1; }
+.hud-chart-section {
+  padding: 14px 18px 6px 18px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+}
+.hud-chart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  height: 52px;
+  padding: 0 18px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(111, 211, 232, 0.08);
+  color: #d5e8f2;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.hud-chart-row:active { background: rgba(111, 211, 232, 0.12); }
+.hud-chart-row:disabled { opacity: 0.4; }
+.hud-chart-row[data-frontier='1'] { color: #6c7a86; }
+.hud-chart-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.hud-chart-name { flex: 1; text-align: left; }
+.hud-chart-dist { font-size: 11px; color: #8fa8bd; font-variant-numeric: tabular-nums; }
+.hud-chart-lock {
+  padding: 12px 18px;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: #ff7a5c;
+}
+
+/* the phone's HUD diet — driven by body[data-touch], set from the same
+   IS_TOUCH the components use (media queries can't be dev-forced and
+   hybrid devices lie to them) */
+body[data-touch='1'] .hud-key-hint { display: none; }
+body[data-touch='1'] .hud-mfd-left { display: none !important; }
+body[data-touch='1'] .hud-mute {
+  top: max(10px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  bottom: auto;
+}
+/* the coach speaks from the top; the bottom belongs to thumbs */
+body[data-touch='1'] .hud-coach {
+  top: 46px;
+  bottom: auto;
+  font-size: 12.5px;
+  max-width: 78vw;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* battle: the scope returns as a display-only disc, top-right */
+body[data-touch='1'][data-battle='1'] .hud-mfd-right {
+  display: block !important;
+  position: fixed;
+  top: 44px;
+  right: max(10px, env(safe-area-inset-right));
+  left: auto;
+  bottom: auto;
+  width: 118px;
+  transform: none;
+  padding: 6px;
+}
+body[data-touch='1'][data-battle='1'] .hud-mfd-right canvas {
+  width: 100% !important;
+  height: auto !important;
+}
+/* battle cluster, tightened */
+body[data-touch='1'] .hud-bh-vel-num { font-size: 20px; }
+body[data-touch='1'] .hud-bh-warning-text { font-size: 10.5px; letter-spacing: 0.2em; }
+body[data-touch='1'] .hud-bh-center { transform: scale(0.82); }

@@ -9,6 +9,7 @@ import { BattleHud } from './BattleHud'
 import { Preflight } from './Preflight'
 import { TouchControls } from './TouchControls'
 import { LandscapeGate } from './LandscapeGate'
+import { ChartDrawer } from './ChartDrawer'
 import { MuteButton } from './MuteButton'
 
 /**
@@ -39,6 +40,7 @@ export function HUD() {
       <ActivityPanel />
       <TouchControls />
       <LandscapeGate />
+      <ChartDrawer />
       <MuteButton />
       <Preflight />
     </div>

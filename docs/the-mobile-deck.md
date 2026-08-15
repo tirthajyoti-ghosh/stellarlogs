@@ -216,3 +216,39 @@ Phone rules:
 5. The voice pass (one-voice rule, coach relocation, touch-copy sweep)
 6. Telemetry: the black box tags every deck interaction with zone +
    orientation, so the playtest can see thumbs, not guesses.
+
+---
+
+# BUILT (2026-08-15) — the deck as ruled
+
+All six build-order items shipped and verified in forced-touch
+emulation (real-phone verdict is his):
+
+1. **THE CHART** (ChartDrawer.tsx + deckState.ts): nav chip top-left →
+   full-height drawer, sectioned rows with marker-colour dots and live
+   distances, UNSURVEYED ashed as NO CHART, combat lock line. Tap row
+   → jump ARMS → the ◇ satellite appears in the arc, pulsing → tap ◇ →
+   warp. Verified live: two taps took the phone from Deep Space to the
+   Projects star — the first jump a phone has ever made in this game.
+2. **THE ARC** (TouchControls.tsx rewrite): icon glyphs in the house
+   line style — BURN 92 px amber plume at the thumb's rest, BOOST
+   double-chevron above, REV/FLIP teal inner satellites, ◇ appearing
+   only when armed. No text on any flight control.
+3. **THE FLOATING STICK**: materialises under the thumb anywhere in
+   the left 44%, steers the nose, ghosts on release. Right-half drags
+   fall through to the camera orbit (the CoD reflex, free — the
+   window-level handler already ignored [data-ui]).
+4. **BATTLE**: accepts hide; cluster scales 0.82; warning strip
+   tightened; THE SCOPE returns as a 118 px display-only disc,
+   top-right, with tap-jump gated off on touch (the chart owns
+   jumping).
+5. **THE VOICE**: coach line moves top-center (nowrap, ellipsis), key
+   hints (N etc.) hidden on touch, nav MFD replaced by the chip.
+6. **TELEMETRY**: the black box logs chart toggles/arms/jumps and the
+   first use of every deck control per session.
+
+Engineering note: the deck CSS is driven by body[data-touch] (set from
+the same IS_TOUCH the components use) instead of pointer-coarse media
+queries — dev-forceable via localStorage 'stellarlogs-force-touch',
+and immune to hybrid devices lying to media queries. setPointerCapture
+is guarded (synthetic/exotic pointers may refuse capture).
