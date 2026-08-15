@@ -481,13 +481,24 @@ the way (Tirtha). Deep exploration passes continue between builds
    a small box); threat-grouping and the torpedo board REJECTED as not
    fitting our auto-PDC, no-player-torpedo design; faction skinning
    PARKED for the Deep.
-3.5. **MOBILE — the bridge flies landscape** (Tirtha, 2026-08-08 phone
-   read: runs smooth, portrait buttons make no sense). Portrait touch →
-   "THIS BRIDGE FLIES LANDSCAPE" interstitial; tap = fullscreen +
-   orientation.lock('landscape') where supported (Android); iOS keeps the
-   interstitial until rotated (the YouTube pattern). Landscape thumb
-   layout (thrust cluster right, translation left, accepts center) rides
-   with the density/toys HUD polish. PWA manifest: orientation landscape.
+3.5. **MOBILE — the bridge flies landscape — SHIPPED 2026-08-15.**
+   THE LANDSCAPE GATE (LandscapeGate.tsx): portrait touch gets one
+   full-screen card above everything including the preflight — animated
+   rotating-phone glyph, "THIS BRIDGE FLIES LANDSCAPE", tap =
+   fullscreen + orientation.lock where the platform allows (Android);
+   iOS holds the card until the phone rotates (the YouTube pattern).
+   THE THUMB DECK: stick under the left thumb (148 px in landscape),
+   drive cluster under the right — BURN large at the resting spot,
+   BOOST above, REV/FLIP on the inner column — and job accepts
+   (ESCORT/MANHUNT/RE-RUN) bottom-center where either thumb reaches.
+   Safe-area insets respected. PWA: manifest.webmanifest (fullscreen,
+   orientation landscape, amber-diamond icons 192/512), viewport-fit
+   cover. The black box logs gate shows/taps and orientation changes.
+   Dev override for desktop testing: localStorage
+   'stellarlogs-force-touch' = '1'.
+   KNOWN GAP for the playtest: the compact-cockpit media query hides
+   the right MFD — phones currently fight WITHOUT the tactical scope.
+   A mobile battle picture needs its own think (playtest item).
 3.7. **THE PLAYTEST — a usability pass on the missions we HAVE**
    (MOVED 2026-08-15 at Tirtha's call: runs JUST BEFORE THE DEEP, as the
    final quality gate on everything built. The flight recorder is

@@ -12,8 +12,9 @@ export type QualityTier = 'high' | 'medium' | 'low'
  */
 export const IS_TOUCH =
   typeof window !== 'undefined' &&
-  navigator.maxTouchPoints > 0 &&
-  window.matchMedia('(pointer: coarse)').matches
+  ((navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches) ||
+    // dev override for desktop testing of the touch deck
+    localStorage.getItem('stellarlogs-force-touch') === '1')
 
 function detectTier(): QualityTier {
   if (typeof navigator === 'undefined') return 'high'

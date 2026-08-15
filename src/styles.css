@@ -1344,15 +1344,31 @@ body[data-focus='1'] .hud-target {
   background: radial-gradient(circle at 35% 35%, rgba(140, 220, 240, 0.5), rgba(60, 120, 150, 0.55));
   border: 1px solid rgba(140, 220, 240, 0.6);
 }
-.hud-touch-buttons {
+.hud-touch-accepts {
   position: absolute;
-  right: 22px;
-  bottom: 30px;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   pointer-events: auto;
 }
+.hud-touch-cluster {
+  position: absolute;
+  right: 18px;
+  bottom: 26px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: auto;
+}
+.hud-touch-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hud-touch-col-inner { padding-bottom: 4px; }
+.hud-touch-btn.hud-touch-big { height: 84px; font-size: 15px; }
 .hud-touch-btn {
   width: 72px;
   height: 60px;
@@ -1389,6 +1405,60 @@ body[data-focus='1'] .hud-target {
   .hud-label-planet { font-size: 10px; }
   .hud-welcome-card { padding: 22px 24px; max-height: 86vh; overflow-y: auto; }
   .hud-welcome-card p { font-size: 13px; margin-top: 8px; }
+}
+
+/* THE LANDSCAPE GATE — this bridge flies landscape */
+.hud-lgate {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: radial-gradient(circle at 50% 40%, #0a1524 0%, #050a12 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  pointer-events: auto;
+  touch-action: none;
+}
+.hud-lgate-phone {
+  width: 46px;
+  height: 82px;
+  border: 2px solid rgba(140, 220, 240, 0.75);
+  border-radius: 9px;
+  position: relative;
+  animation: lgate-turn 2.4s ease-in-out infinite;
+}
+.hud-lgate-phone::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(140, 220, 240, 0.55);
+}
+@keyframes lgate-turn {
+  0%, 28% { transform: rotate(0deg); }
+  55%, 78% { transform: rotate(90deg); }
+  100% { transform: rotate(90deg); }
+}
+.hud-lgate-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #dce8f4;
+  text-align: center;
+  padding: 0 24px;
+}
+.hud-lgate-sub {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  color: #5f7c92;
+  text-align: center;
+  padding: 0 24px;
 }
 
 /* Mute toggle */
@@ -1647,4 +1717,21 @@ body[data-focus='1'] .hud-target {
 
 @media (prefers-reduced-motion: reduce) {
   .pf-stars, .pf-check.is-busy .pf-check-state, .pf.is-ready .pf-ignition-key { animation: none; }
+}
+
+
+/* Landscape thumbs: the real flight deck (roadmap 3.5) */
+@media (pointer: coarse) and (orientation: landscape) {
+  .hud-stick {
+    left: max(24px, env(safe-area-inset-left));
+    bottom: max(26px, env(safe-area-inset-bottom));
+    width: 148px;
+    height: 148px;
+  }
+  .hud-stick-knob { width: 60px; height: 60px; }
+  .hud-touch-cluster {
+    right: max(18px, env(safe-area-inset-right));
+    bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .hud-touch-btn { width: 78px; }
 }

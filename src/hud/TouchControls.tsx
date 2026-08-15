@@ -107,7 +107,8 @@ export function TouchControls() {
       <div className="hud-stick" ref={areaRef}>
         <div className="hud-stick-knob" ref={knobRef} />
       </div>
-      <div className="hud-touch-buttons">
+      {/* job accepts live BETWEEN the thumbs — either hand reaches them */}
+      <div className="hud-touch-accepts">
         {canRestart && (
           <button
             className="hud-touch-btn hud-touch-fire"
@@ -138,18 +139,26 @@ export function TouchControls() {
             MANHUNT
           </button>
         )}
-        <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>
-          FLIP
-        </button>
-        <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
-          BOOST
-        </button>
-        <button className="hud-touch-btn hud-touch-burn" {...hold('thrust')}>
-          BURN
-        </button>
-        <button className="hud-touch-btn hud-touch-rev" {...hold('reverse')}>
-          REV
-        </button>
+      </div>
+      {/* the drive cluster under the right thumb: BURN at the resting
+          spot, BOOST above it, REV and FLIP on the inner column */}
+      <div className="hud-touch-cluster">
+        <div className="hud-touch-col hud-touch-col-inner">
+          <button className="hud-touch-btn hud-touch-flip" onPointerDown={() => requestFlip()}>
+            FLIP
+          </button>
+          <button className="hud-touch-btn hud-touch-rev" {...hold('reverse')}>
+            REV
+          </button>
+        </div>
+        <div className="hud-touch-col">
+          <button className="hud-touch-btn hud-touch-boost" {...hold('boost')}>
+            BOOST
+          </button>
+          <button className="hud-touch-btn hud-touch-burn hud-touch-big" {...hold('thrust')}>
+            BURN
+          </button>
+        </div>
       </div>
     </div>
   )
