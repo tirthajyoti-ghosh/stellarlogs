@@ -639,3 +639,40 @@ Three candidates, orbitable, keys 1/2/3, with license captions:
 Plus **F · FLIGHT DEMO** — the exact motion model that now flies in
 the game, demonstrated between two mock holds: out, flip, brake,
 hold-and-weld, next, home. His pick rules; the CRAB stays until then.
+
+---
+
+# PASS 7 — THE DRONE IN BELTER PAINT (2026-08-15, his pick)
+
+His ruling off the bench: **the Mech Drone is the skiff**, repainted —
+"expanse tv series colors and textures."
+
+What "textureless" was: the drone's paint lives in an old Sketchfab
+spec-gloss extension that three.js dropped — the raw file rendered
+clay. Converted to metal-rough (gltf-transform metalRough), the
+author's real hand-painted sheet came back: dark steel, yellow hazard
+panels, chevron striping, a blue lens.
+
+THE REPAINT (PIL pass over the 1024² baseColor sheet):
+- hazard YELLOW → **burnt rust-orange** (the Roci/Belter accent),
+  chevrons kept, now orange-on-black;
+- the blue lens → **Belter teal**;
+- the steel graded cooler/darker with more depth, plus a low-opacity
+  rust-grime noise over the midtones.
+
+`scripts/build-mechskiff.mjs` (new): texture swap + webp + meshopt
+reorder ONLY — no bake, no weld, no simplify, no quantize, because the
+drone is RIGGED and the hull pipeline collapsed it to 18 verts. The
+skin and "Take 001" survive: **her arms actually work the plate while
+the arc is lit** (AnimationMixer at full rate while welding, ~idle
+otherwise). 717 KB.
+
+Game wiring: SkeletonUtils.clone (plain clone breaks skins), runtime
+normalization to ~5.2 u (a drone, smaller than everything), the same
+boat-physics flight. Verified live: both drones on station over the
+wounded holds, arms out, orange flanks in the starlight, vent glitter
+around them — the colony's hull crew, exactly the Pella scene at our
+scale.
+
+Bench updated: MECH DRONE (current), EAV-2 CRAB (retired), Welding
+Vehicle held as an alternate.

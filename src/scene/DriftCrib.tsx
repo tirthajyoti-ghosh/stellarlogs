@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Text, useGLTF } from '@react-three/drei'
+import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js'
 import {
   AdditiveBlending,
   Box3,
@@ -17,6 +18,7 @@ import {
   Points,
   PointsMaterial,
   Quaternion,
+  AnimationMixer,
   Vector3,
 } from 'three'
 import { shipRig } from '../state/shipRig'
@@ -170,7 +172,23 @@ function makeVentGeometry(): BufferGeometry {
 function Skiff({ index }: { index: number }) {
   const gltf = useGLTF(SKIFF_URL)
   const ref = useRef<Group>(null)
-  const model = useMemo(() => gltf.scene.clone(true), [gltf])
+  // the drone is RIGGED — SkeletonUtils.clone or the skin breaks
+  const model = useMemo(() => {
+    const m = cloneSkinned(gltf.scene)
+    const box = new Box3().setFromObject(m)
+    const size = new Vector3()
+    box.getSize(size)
+    const scale = 5.2 / Math.max(size.x, size.y, size.z)
+    m.scale.setScalar(scale)
+    const c = box.getCenter(new Vector3()).multiplyScalar(scale)
+    m.position.sub(c)
+    return m
+  }, [gltf])
+  const mixer = useMemo(() => {
+    const mx = new AnimationMixer(model)
+    if (gltf.animations.length) mx.clipAction(gltf.animations[0]).play()
+    return mx
+  }, [gltf, model])
   const torchRef = useRef<Mesh>(null)
   /** a BOAT, not a marker: it has velocity and a nose. It accelerates
    *  toward its waypoint, flips to brake into the arrival, holds
@@ -272,24 +290,21 @@ function Skiff({ index }: { index: number }) {
 
     // the welding arc: only on station at a wound, irregular, never a lamp
     const torch = torchRef.current
+    const welding = working && onStation && !st.homing
     if (torch) {
-      const flick =
-        working && onStation && !st.homing
-          ? Math.max(0, Math.sin(t * 31 + index) * Math.sin(t * 7.3))
-          : 0
+      const flick = welding ? Math.max(0, Math.sin(t * 31 + index) * Math.sin(t * 7.3)) : 0
       const m = torch.material as MeshBasicMaterial
       m.opacity = flick * 0.85
       torch.scale.setScalar(0.4 + flick * 1.0)
     }
+    // her arms actually work the plate while the arc is lit
+    mixer.update(welding ? dt : dt * 0.15)
   })
 
   return (
     <group ref={ref} visible={false}>
-      {/* build length 8u × 0.9 ≈ 7 u — a workman's boat, SMALLER than the tug */}
-      <group scale={0.9}>
-        <primitive object={model} />
-      </group>
-      <mesh ref={torchRef} position={[0, -1.5, 3.2]}>
+      <primitive object={model} />
+      <mesh ref={torchRef} position={[0, -1.8, 2.2]}>
         <sphereGeometry args={[0.7, 8, 8]} />
         <meshBasicMaterial
           color={[2.2, 2.5, 3.0]}

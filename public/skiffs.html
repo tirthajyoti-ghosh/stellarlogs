@@ -8,9 +8,9 @@ body{margin:0;background:#050a12;overflow:hidden;font-family:ui-monospace,monosp
 </style></head><body>
 <div id="ui">
   <b>THE SKIFF BENCH</b> — drag orbit · wheel zoom<br>
-  <span class="btn on" data-m="crab">1 · EAV-2 CRAB (current)</span>
+  <span class="btn" data-m="crab">1 · EAV-2 CRAB (retired)</span>
   <span class="btn" data-m="welder">2 · WELDING VEHICLE</span>
-  <span class="btn" data-m="mechdrone">3 · MECH DRONE</span><br>
+  <span class="btn on" data-m="mechdrone">3 · MECH DRONE (current)</span><br>
   <span class="btn" id="fly">F · FLIGHT DEMO — the new boat motion</span>
 </div>
 <div id="cap"></div>
@@ -21,9 +21,9 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 
 const CAPS = {
-  crab: 'SPACESHIP EAV 2 "CRAB" — Mikhail Nov (Sketchfab, CC BY 4.0). "Maintenance, construction, and handling of hazardous materials… armored manipulator arms." IN THE GAME TODAY.',
+  crab: 'SPACESHIP EAV 2 "CRAB" — Mikhail Nov (Sketchfab, CC BY 4.0). The previous boat, retired by his ruling.',
   welder: 'Sci-Fi Welding Vehicle — Berk Gedik (Sketchfab, CC BY 4.0). A welding workboat: boom arm, cab, tool rack.',
-  mechdrone: 'Mech Drone — Willy Decarpentrie (Sketchfab, CC BY 4.0). Rigged utility drone with grip arms.',
+  mechdrone: 'Mech Drone — Willy Decarpentrie (Sketchfab, CC BY 4.0), IN THE GAME NOW — repainted in Expanse colours: burnt-orange panels, Belter-teal lens, grimed steel. Arms animate while she welds.',
 };
 
 const R = new THREE.WebGLRenderer({antialias:true});
@@ -51,7 +51,7 @@ addEventListener('pointermove',e=>{if(!drag)return;az-=(e.clientX-drag[0])*0.005
 addEventListener('wheel',e=>dist=Math.max(8,Math.min(300,dist*(1+e.deltaY*0.001))));
 
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
-const boats = {}; let current='crab'; let flying=false;
+const boats = {}; let current='mechdrone'; let flying=false;
 const boatRoot = new THREE.Group(); scene.add(boatRoot);
 
 // two "holds" for the flight demo
