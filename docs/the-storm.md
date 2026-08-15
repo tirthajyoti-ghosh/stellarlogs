@@ -229,3 +229,100 @@ one object, and the Sleet cannot be built until they are there.
 - The name: **THE SLEET** (his ruling pending). Now with a second
   option earned by the fiction: **the KHIONE SLEET**, or plainly
   "the sleet out of Khione."
+
+---
+
+# PASS 3 — THE PHYSICS CORRECTION (2026-08-15, he stopped the build)
+
+He caught it mid-build: **liquid water in a tank bolted to the outside
+of a station in deep space is nonsense.** He is right, and worse, I
+should have caught it — I let a phrase I wrote on the memorial board
+("HER TANKS ARE OUR WATER") drive the engineering instead of asking
+what was physically inside them. Recording the correction properly.
+
+## 1. Why the tanks were wrong
+
+- **It would freeze.** Out here a sunlit grey body sits around 170–180 K
+  (about −100 °C). Water freezes at 273 K. A tank of liquid outside is
+  a block of ice within hours unless you heat it forever.
+- **Heating it is idiotic.** Nobody spends reactor output keeping bulk
+  water liquid in vacuum. You would melt what you need, when you need
+  it, inside.
+- **A holed tank would not "leak".** At vacuum pressure the water
+  flashes to vapour and freezes at the same time — it would not pour,
+  it would *puff away* and be gone. Which is dramatic, but it is the
+  drama of a design error.
+
+## 2. What a Belter colony would actually keep out there: ICE
+
+Water in the Belt is mined, hauled and stored **as ice**. It is stable
+in vacuum, needs no pressure vessel, no heating, no boil-off
+management. Our own fiction already says it: the Nilak was an **ice
+hauler**; the racers ran **raw ice** home during the Dry Weeks.
+
+So the reserve was never tanks of water. It is a **cold store of ice**.
+
+## 3. What stands on the rim instead: THE CRIB
+
+Not fabricated tanks — **the Nilak's own salvaged cargo holds**, cut
+out and bolted into a cradle on the rim, still packed with ice. That
+keeps every word of the fiction true and makes it better:
+
+- A hauler's holds are already built to carry ice: insulated, shaded,
+  structurally sound. They did not build a store, they **reused her**.
+- "HER TANKS ARE OUR WATER" survives untouched — Belters would call a
+  hold a tank, and the sentence is now literally accurate.
+- Her last cargo went into that store when she was recovered. The
+  colony has been drinking out of her holds ever since.
+- Over it: a **sunshade** angled at the local star, because exposed ice
+  sublimates in sunlight. Belters would shade it; so we draw it.
+
+## 4. Why it is outside at all (the honest reason)
+
+Because ice is BULK, and interior volume is the most expensive thing a
+colony owns — pressurised, heated, lived in. Nobody wastes it on
+frozen water. You keep bulk ice outside where it costs nothing, near
+the docks where haulers can load without coming inside.
+
+And an important honesty correction to the stakes: **the crib is not
+the whole reserve.** The deep reserve is buried in the rock, safe. The
+crib is the **working stock** — the margin. Losing it does not kill the
+colony; it puts them back on rationing. After the Dry Weeks, margin is
+exactly what these people cannot afford to lose, and that is a truer,
+smaller, more Belter stake than "everyone dies."
+
+## 5. What a hit actually looks like (his question: walk the scenarios)
+
+1. **Gravel strikes the shell.** A spall, a puff of glittering crystal,
+   nothing lost. This is most hits, and it should look pretty and mean
+   nothing.
+2. **A rock the size of a door hits a hold.** The shell splits and
+   throws a **spray of ice crystals** — a bright, dry, sparkling burst,
+   not a gush. The hold is now open, and the exposed ice **keeps
+   sublimating**: a slow glittering plume streams off the rim for the
+   rest of the pass. You lose mass at the moment of impact AND you keep
+   losing while the wound is open.
+3. **Worked metal hits** (dense, fast — the wreckage in the stream).
+   It punches through and out the far side: two wounds, two plumes.
+4. **A hit takes the sunshade instead of a hold.** No ice lost, but
+   that hold now bakes in the local star and bleeds slowly — a delayed
+   consequence rather than a burst. (Lovely; probably v2.)
+
+The important design consequence: **failure is visible from the picket
+for the rest of the pass.** A glittering plume off the rim is the game
+telling you what you let through, without a word of text.
+
+## 6. What this fixes elsewhere
+
+The "ice wrinkle" question resolves itself completely. The stream
+carries water ice; the colony stores water ice. They are the same
+substance. **Catching stream ice and adding it to the crib is the
+modern Water Run** — which makes that future activity obvious instead
+of clever.
+
+## 7. Awaiting his ruling before rebuilding
+
+The tanks as built (four liquid cylinders) are WRONG and are not
+committed. Pending: rebuild as THE CRIB — her holds in a cradle, under
+a sunshade, packed with ice, with the gauge board and the painted line
+kept.
