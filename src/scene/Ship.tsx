@@ -25,6 +25,7 @@ import { pursuit } from '../physics/pursuit'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
+import { updateFlightRecorder } from '../systems/flightRecorder'
 import { PROBES } from '../config/probes'
 import { SPAWN_POSITION, SPAWN_YAW } from '../config/universe'
 
@@ -181,6 +182,7 @@ export function Ship() {
   }
 
   useFrame((_, dt) => {
+    updateFlightRecorder()
     // Impact physics from activities: velocity kick + decaying attitude tumble
     if (shipRig.pendingImpulse.lengthSq() > 0) {
       state.velocity.add(shipRig.pendingImpulse)

@@ -489,6 +489,10 @@ the way (Tirtha). Deep exploration passes continue between builds
    layout (thrust cluster right, translation left, accepts center) rides
    with the density/toys HUD polish. PWA manifest: orientation landscape.
 3.7. **THE PLAYTEST — a usability pass on the missions we HAVE**
+   (MOVED 2026-08-15 at Tirtha's call: runs JUST BEFORE THE DEEP, as the
+   final quality gate on everything built. The flight recorder is
+   ALREADY BUILT and armed — every battle logs a 1 Hz black box and
+   prints a console debrief; window.__debriefs keeps the last ten.)
    (Tirtha, 2026-08-15, full protocol in docs/the-playtest.md). Not new
    content: a hard QA/usability look at whether escort, the range and
    the hunt actually deliver delight — where the player's eyes go while
@@ -507,4 +511,5 @@ the way (Tirtha). Deep exploration passes continue between builds
 
 4. Liveness backend (hails, counters, daily boards) — procgen-compatible
 5. Achievements verdict → implement chosen shape
+5.9. **THE PLAYTEST runs here** (see 3.7) — the last gate before the Deep.
 6. The Deep (HORIZON)
