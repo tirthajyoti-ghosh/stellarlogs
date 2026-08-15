@@ -3,7 +3,7 @@ import { useFrame } from '@react-three/fiber'
 import { Text } from '@react-three/drei'
 import { Group } from 'three'
 import { shipRig } from '../state/shipRig'
-import { getTorpsDowned } from '../systems/tallies'
+import { getTorpsDowned, getRocksStopped } from '../systems/tallies'
 import { DRIFT_POI } from '../config/pois'
 import { FONT_BOLD } from './boards/font'
 
@@ -19,6 +19,7 @@ const POS = [DRIFT_POI.position[0] + 250, DRIFT_POI.position[1] + 66, DRIFT_POI.
 export function DriftKillBoard() {
   const boardRef = useRef<Group>(null)
   const numRef = useRef<{ text: string; sync?: () => void } | null>(null)
+  const rocksRef = useRef<{ text: string; sync?: () => void } | null>(null)
 
   useFrame(() => {
     const board = boardRef.current
@@ -34,6 +35,14 @@ export function DriftKillBoard() {
       if (num.text !== text) {
         num.text = text
         num.sync?.()
+      }
+    }
+    const rocks = rocksRef.current
+    if (rocks) {
+      const text = `KHIONE ROCKS STOPPED — ${getRocksStopped()}`
+      if (rocks.text !== text) {
+        rocks.text = text
+        rocks.sync?.()
       }
     }
   })
@@ -67,6 +76,21 @@ export function DriftKillBoard() {
         anchorX="center"
         anchorY="middle"
         position={[0, -3.5, 1.3]}
+        material-toneMapped={false}
+      >
+        {''}
+      </Text>
+      <Text
+        ref={((el: { text: string; sync?: () => void } | null) => {
+          rocksRef.current = el
+        }) as never}
+        font={FONT_BOLD}
+        fontSize={2.6}
+        letterSpacing={0.18}
+        color="#9fdcff"
+        anchorX="center"
+        anchorY="middle"
+        position={[0, -8.2, 1.3]}
         material-toneMapped={false}
       >
         {''}

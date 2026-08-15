@@ -518,3 +518,83 @@ place if the skiffs and vents actually read, which today they do not.
   structure.
 - **P3 — stakes:** player hull exposure during the pass; pool
   headroom scaling.
+
+---
+
+# PASS 5 — THE AUDIT FIXED (2026-08-15, his order: "make it perfect")
+
+Every P0-P2 finding rebuilt, all verified live. What changed:
+
+## The physics is now a stream, not a barrage
+`KhioneSleet.tsx` rewritten. One shared stream velocity (the true
+Khione bearing, ± a breath of orbital dispersion — never a turn),
+spawns spread across a wide upstream disc, about a third seeded to
+pass through the crib's sphere. **"On line" is MEASURED** — each
+rock's straight path intersected with the crib sphere — for every
+spawn AND every fracture child. Break a boulder early and the pieces
+measure clean; break it late and the spray still carries in. The guns
+target only what measures true; gravel and ice pass unshot.
+
+Also: rocks now DIE against the colony body (nothing flies through the
+asteroid), a rock can find YOUR hull (hull bar live during the pass,
+impact + coach line — standing the picket is exposure, not
+spectating), and the pool spawns keep fracture headroom so kills
+always fragment.
+
+## The clock is global truth
+`sleetClock.ts` (new): pass times are pure functions of the wall
+clock — every 20 minutes, 110 s long, warned 30 s out. The docks board
+carries a STANDING FOURTH ROW: `KHIONE PASS · T-12:40 · FIRST CHARTS
+SCHEDULE` → `OVERHEAD` — the fiction finally reaches the player, and
+the liveness "storm hour" is ready-made (same schedule for every
+visitor by construction). Rocks still fly only for a present picket —
+the world stays kind to the absent — but the schedule itself never
+lies. Dev override: localStorage `stellarlogs-sleet-period`, clamped
+so the phase math cannot break.
+
+## Fracture is cold now
+`RockDust.tsx` (new): dark tumbling shards + brief ice glitter,
+opacity-faded, nothing over 1.0 — no fireball anywhere in the event.
+"Fracture, never fireworks" honored.
+
+## The crib is HER
+`DriftCrib.tsx` rebuilt: the four holds are **clipping-plane windows
+cut from nilak.glb itself** — each hold a different stretch of her
+hull, real plating, her amber strapping, torch-cut open ends, pale ice
+masses packed inside. The vigil and the crib are literally the same
+body seen twice. (Two hard bugs on the way: world-space clipping
+planes computed before the parent chain had world matrices — fixed
+with updateWorldMatrix(true), building on first frame.)
+
+Wounds now VENT VISIBLY: per-hold Points streams of ice glitter
+rising off the rim, readable from the whole picket. The reserve
+BLEEDS 2.2%/min per open hold — real stakes — and repairs hold until
+the pass is over (holdRepairsUntil): no boats into falling rock.
+
+## The skiffs are honest
+Scale corrected 2.4 → 0.9 (≈7 u — smaller than the 10 u tug, a
+workman's boat). They EMERGE from behind the colony's rock and ease
+to the actual wound points (no pop, ever), weld with a flickering
+arc, close wounds one at a time (45 s each), and ease home when the
+work is done. Muster ~10 s after PASS CLEAR.
+
+## The aftermath exists
+`KHIONE ROCKS STOPPED — N` on the militia kill-board (persistent
+tally, backend-ready), PASS CLEAR/PASS OVER verdict lines with the
+skiff muster called out.
+
+## Verified live (fast test clock, then restored)
+Storm: ROCK INBOUND ×13, guns ENGAGING ×2, board OVERHEAD, wounds
+opening, reserve dropping. Aftermath: skiff ON STATION welding, one
+wound already closed, vent glitter over the open hold, board T-0:19
+to the next pass. An undefended triple pass cost ~70% of stock —
+balance goes to THE PLAYTEST (3.7) for human judgment, not blind
+tuning.
+
+## Still open, honestly
+- Skiff texture readability at range: better (2.6 MB rebuild, correct
+  scale) but the manipulator arms still read only up close.
+- The sunshade catches a hot specular streak edge-on to the star.
+- Overlapping T-digits on the HUD when many threats cluster
+  (pre-existing scope behavior) — playtest item.
+- crib-bench.html kept (the pod/slab decision bench).

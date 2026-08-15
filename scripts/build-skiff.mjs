@@ -90,8 +90,8 @@ for (const prim of hullMesh.listPrimitives()) transformPrimitive(prim, bake.toAr
 await doc.transform(
   prune(),
   dedup(),
-  simplify({ simplifier: MeshoptSimplifier, ratio: 0.35, error: 0.004 }),
-  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [512, 512] }),
+  simplify({ simplifier: MeshoptSimplifier, ratio: 0.6, error: 0.002 }),
+  textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024] }),
   reorder({ encoder: MeshoptEncoder }),
   quantize(),
 )

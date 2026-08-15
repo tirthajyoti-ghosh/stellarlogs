@@ -6,9 +6,11 @@
  */
 
 const TORPS_KEY = 'stellarlogs-torps-downed'
+const ROCKS_KEY = 'stellarlogs-rocks-stopped'
 const CANDLES_KEY = 'stellarlogs-candles-lit'
 
 let torps = Number(localStorage.getItem(TORPS_KEY) ?? 0)
+let rocks = Number(localStorage.getItem(ROCKS_KEY) ?? 0)
 let candles = Number(localStorage.getItem(CANDLES_KEY) ?? 0)
 
 export function bumpTorpsDowned(): void {
@@ -30,3 +32,12 @@ export function getCandles(): number {
 /** When the pilot is at the bell, G belongs to the vigil — the jobs
  *  board (400u away at the Drift) must not eat the same keypress. */
 export const gClaims = { vigil: false }
+
+export function bumpRocksStopped(n = 1): void {
+  rocks += n
+  localStorage.setItem(ROCKS_KEY, String(rocks))
+}
+
+export function getRocksStopped(): number {
+  return rocks
+}

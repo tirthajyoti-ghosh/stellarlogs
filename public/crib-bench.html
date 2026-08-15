@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#050a12}#tag{position:fixed;top:10px;left:10px;color:#8fa8bd;font:12px monospace}</style></head>
+<body><div id="tag">CRIB BENCH — 1: pod ×4 · 2: hull slab cuts · drag orbit, wheel zoom</div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.164.0/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+const R = new THREE.WebGLRenderer({antialias:true});
+R.setSize(innerWidth,innerHeight); R.setPixelRatio(devicePixelRatio);
+R.localClippingEnabled = true;
+document.body.appendChild(R.domElement);
+const scene = new THREE.Scene();
+const cam = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 5000);
+scene.add(new THREE.AmbientLight(0x334455, 0.8));
+const sun = new THREE.DirectionalLight(0xfff3e0, 2.2); sun.position.set(1,0.6,0.4); scene.add(sun);
+let az=0.6, el=0.3, dist=120, drag=null;
+addEventListener('pointerdown',e=>drag=[e.clientX,e.clientY]);
+addEventListener('pointerup',()=>drag=null);
+addEventListener('pointermove',e=>{if(!drag)return;az-=(e.clientX-drag[0])*0.005;el=Math.max(-1.4,Math.min(1.4,el+(e.clientY-drag[1])*0.005));drag=[e.clientX,e.clientY]});
+addEventListener('wheel',e=>dist=Math.max(20,Math.min(600,dist*(1+e.deltaY*0.001))));
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+const groupPods = new THREE.Group(), groupSlabs = new THREE.Group();
+scene.add(groupPods, groupSlabs); groupSlabs.visible = false;
+loader.load('/models/nilak.glb', g => {
+  let pod=null, hull=null;
+  g.scene.traverse(o=>{ if(o.isMesh){ if(o.name==='pod'||o.parent?.name==='pod') pod=o; if(o.name==='hull'||o.parent?.name==='hull') hull=o; }});
+  g.scene.updateMatrixWorld(true);
+  // ---- view 1: the pod, four in a rack ----
+  if (pod) {
+    const b = new THREE.Box3().setFromObject(pod); const s = new THREE.Vector3(); b.getSize(s);
+    const norm = 26/Math.max(s.x,s.y,s.z);
+    for (let i=0;i<4;i++){
+      const m = pod.clone(); m.material = pod.material;
+      const holder = new THREE.Group(); holder.add(m);
+      const c = b.getCenter(new THREE.Vector3()); m.position.sub(c);
+      holder.scale.setScalar(norm); holder.position.set((i-1.5)*32,0,0);
+      groupPods.add(holder);
+    }
+  }
+  // ---- view 2: clipped slab cuts of the hull ----
+  {
+    for (let i=0;i<3;i++){
+      const clone = g.scene.clone(true);
+      const holder = new THREE.Group(); holder.add(clone); groupSlabs.add(holder);
+      // normalize whole ship to length 120, then slice a window of it
+      const box = new THREE.Box3().setFromObject(clone);
+      const size = new THREE.Vector3(); box.getSize(size);
+      const long = Math.max(size.x,size.y,size.z);
+      const axis = size.x===long?'x':size.y===long?'y':'z';
+      const norm = 120/long;
+      const c = box.getCenter(new THREE.Vector3());
+      clone.position.sub(c.multiplyScalar(1));
+      holder.scale.setScalar(norm);
+      holder.position.set(0,0,(i-1)*44);
+      holder.updateMatrixWorld(true);
+      const wb = new THREE.Box3().setFromObject(clone);
+      const t0 = 0.16+i*0.24, t1 = t0+0.18;
+      const lo = wb.min[axis]+(wb.max[axis]-wb.min[axis])*t0;
+      const hi = wb.min[axis]+(wb.max[axis]-wb.min[axis])*t1;
+      const a = new THREE.Vector3(); a[axis]=1;
+      const planes = [ new THREE.Plane(a.clone(), -lo), new THREE.Plane(a.clone().negate(), hi) ];
+      clone.traverse(o=>{ if(o.isMesh){ const m=o.material.clone(); m.clippingPlanes=planes; m.side=THREE.DoubleSide; o.material=m; } });
+    }
+  }
+});
+addEventListener('keydown',e=>{ if(e.key==='1'){groupPods.visible=true;groupSlabs.visible=false;} if(e.key==='2'){groupPods.visible=false;groupSlabs.visible=true;} });
+function tick(){ requestAnimationFrame(tick);
+  cam.position.set(Math.sin(az)*Math.cos(el)*dist, Math.sin(el)*dist, Math.cos(az)*Math.cos(el)*dist);
+  cam.lookAt(0,0,0); R.render(scene,cam); }
+tick();
+</script></body></html>

@@ -7,50 +7,56 @@ import { turretControl } from '../../state/turretControl'
 import { registerHudLabel } from '../../hud/hudState'
 import { useRockVariants } from '../Asteroids'
 import { PdcRounds, createPdcFire } from '../fx/PdcRounds'
-import { spawnExplosion } from '../fx/Explosions'
+import { RockDust, spawnRockBurst } from '../fx/RockDust'
 import { triggerImpact, triggerKlaxon } from '../../audio/engine'
-import { holeHold, SLEET_RADIANT, CRIB_POS, CRIB_RADIUS } from '../../systems/reserve'
+import {
+  holeHold,
+  holdRepairsUntil,
+  SLEET_RADIANT,
+  CRIB_POS,
+  CRIB_RADIUS,
+} from '../../systems/reserve'
+import { sleetPhase } from '../../systems/sleetClock'
+import { bumpRocksStopped } from '../../systems/tallies'
 import { DRIFT_POI } from '../../config/pois'
 
 /**
- * THE KHIONE SLEET (docs/the-storm.md) — the Drift's civil defence.
+ * THE KHIONE SLEET (docs/the-storm.md, audit-corrected).
  *
- * A charted rubble stream out of KHIONE crosses this lane on a fixed
- * period; the colony has known the dates since the First Charts. It is
- * announced, not ambushed, and it is a DUTY, not a mission: there are
- * never enough hulls to cover the rim, so anyone who is here stands the
- * picket. Behind you are the Nilak's tanks — the colony's water.
+ * A PARALLEL STREAM, not a barrage: every fragment rides the same
+ * orbit, so every rock in a pass shares one velocity direction — the
+ * true bearing out of Khione — and the colony simply stands in the
+ * lane. "On line with the crib" is MEASURED (does this rock's straight
+ * path intersect the crib sphere?), never rolled. Fracture a boulder
+ * early and the scattered pieces measure clean; fracture it late and
+ * the spray still carries in. Range is the lesson and the physics
+ * teaches it honestly.
  *
- * The only verb is the one this whole game teaches: BE IN THE RIGHT
- * PLACE. Guns stay automatic. Rocks do not steer — they are ballistic
- * and honest — and they FRACTURE rather than die, so a boulder shot
- * late is a spray still carrying through, while one shot early scatters
- * wide and misses. Range is the lesson; the scope already draws it.
+ * The pass itself runs on the global sleet clock — the docks board
+ * posts the next one whether you are here or not; the rocks only fly
+ * for whoever is standing the picket.
  */
 
-/** the pass runs on a real clock — everyone's Sleet, backend-ready */
-const PERIOD_S = 240
-const STORM_S = 100
-const WARN_S = 25
-/** the zone you must be inside to be counted as standing the picket */
-const PICKET_R = 900
-const POOL = 90
+const PICKET_R = 1100
+const POOL = 140
 const SPAWN_DIST = 2600
+/** the stream flows FROM Khione: down this vector */
+const STREAM_DIR = SLEET_RADIANT.clone().negate()
+const DRIFT = new Vector3(...DRIFT_POI.position)
+/** rocks die against the colony body — they do not fly through rock */
+const COLONY_R = 240
 
 interface Rock {
   position: Vector3
   velocity: Vector3
   spin: Vector3
   angle: Vector3
-  /** metres — big ones are the hull plate, small ones are gravel */
   size: number
-  /** worked metal from whatever died out there: dense, dangerous */
   metal: boolean
   alive: boolean
   launched: boolean
   tracked: boolean
   variant: number
-  /** true if this one is actually on line with the tanks */
   onLine: boolean
 }
 
@@ -58,12 +64,21 @@ const _m4 = new Matrix4()
 const _q = new Quaternion()
 const _s = new Vector3()
 const _v = new Vector3()
+const _w = new Vector3()
 const _dummy = new Object3D()
 
-/** seconds until the next pass, from the wall clock */
-function nextPassIn(): number {
-  const t = Date.now() / 1000
-  return PERIOD_S - (t % PERIOD_S)
+/** MEASURED, not rolled: does this rock's straight path pass through
+ *  the crib sphere? The one honest definition of "on line". */
+function measureOnLine(rock: Rock): boolean {
+  _v.copy(CRIB_POS).sub(rock.position)
+  const speed = rock.velocity.length()
+  if (speed < 1) return false
+  _w.copy(rock.velocity).divideScalar(speed)
+  const along = _v.dot(_w)
+  if (along < 0) return false // already past her
+  const closest2 = _v.lengthSq() - along * along
+  const r = CRIB_RADIUS + rock.size
+  return closest2 < r * r
 }
 
 export function KhioneSleet() {
@@ -90,55 +105,59 @@ export function KhioneSleet() {
     [],
   )
   const slots = useMemo(() => rocks.map((r) => ({ position: r.position })), [rocks])
-  const onLine = useMemo<Rock[]>(() => [], [])
+  const onLineList = useMemo<Rock[]>(() => [], [])
 
   const g = useRef({
-    phase: 'idle' as 'idle' | 'warn' | 'storm' | 'over',
-    until: 0,
+    running: false,
     nextSpawnAt: 0,
     stopped: 0,
     holed: 0,
-    announced: false,
-    overUntil: 0,
+    warned: false,
+    hull: 3,
+    hullCoached: false,
+    endAt: 0,
   })
 
-  /** one rock, aimed from the radiant across the colony */
-  const launch = (rock: Rock, now: number, onLine: boolean) => {
-    // birth out along the radiant, scattered across the stream's width
-    const perpA = _v.set(-SLEET_RADIANT.z, 0, SLEET_RADIANT.x).normalize().clone()
-    const perpB = new Vector3().crossVectors(SLEET_RADIANT, perpA).normalize()
-    const spreadA = (Math.random() - 0.5) * (onLine ? 90 : 900)
-    const spreadB = (Math.random() - 0.5) * (onLine ? 70 : 520)
+  /** one fragment of the stream. All velocities parallel (± a hair of
+   *  orbital dispersion); ABOUT A THIRD are seeded to pass through the
+   *  crib sphere — the rest cross the sky wide. onLine is then
+   *  measured off the actual line either way. */
+  const launch = (rock: Rock) => {
+    const threat = Math.random() < 0.34
+    // perpendicular basis of the stream
+    _v.set(-STREAM_DIR.z, 0, STREAM_DIR.x).normalize()
+    const perpA = _w.copy(_v)
+    const perpB = _v.crossVectors(STREAM_DIR, perpA).normalize()
+    // where its parallel track crosses the colony's plane
+    const a = threat ? (Math.random() - 0.5) * CRIB_RADIUS * 1.5 : (Math.random() - 0.5) * 1900
+    const b = threat ? (Math.random() - 0.5) * CRIB_RADIUS * 1.5 : (Math.random() - 0.5) * 1100
     rock.position
-      .copy(onLine ? CRIB_POS : new Vector3(...DRIFT_POI.position))
-      .addScaledVector(SLEET_RADIANT, SPAWN_DIST)
-      .addScaledVector(perpA, spreadA)
-      .addScaledVector(perpB, spreadB)
-
-    // aim: the on-line ones are the handful that will actually hole a tank
-    const aim = onLine
-      ? _v.copy(CRIB_POS).sub(rock.position)
-      : _v
-          .copy(new Vector3(...DRIFT_POI.position))
-          .add(new Vector3((Math.random() - 0.5) * 1500, (Math.random() - 0.5) * 900, (Math.random() - 0.5) * 1500))
-          .sub(rock.position)
-    const speed = 150 + Math.random() * 90 + (onLine ? 30 : 0)
-    rock.velocity.copy(aim).normalize().multiplyScalar(speed)
-
-    rock.metal = onLine ? Math.random() < 0.55 : Math.random() < 0.12
-    rock.size = (onLine ? 9 + Math.random() * 9 : 3 + Math.random() * 6) * (rock.metal ? 0.85 : 1)
+      .copy(threat ? CRIB_POS : DRIFT)
+      .addScaledVector(STREAM_DIR, -SPAWN_DIST)
+      .addScaledVector(perpA, a)
+      .addScaledVector(perpB, b)
+    // one stream, one direction — a breath of dispersion, never a turn
+    rock.velocity
+      .copy(STREAM_DIR)
+      .addScaledVector(perpA, (Math.random() - 0.5) * 0.012)
+      .addScaledVector(perpB, (Math.random() - 0.5) * 0.012)
+      .normalize()
+      .multiplyScalar(140 + Math.random() * 80)
+    rock.metal = threat ? Math.random() < 0.5 : Math.random() < 0.1
+    rock.size = (threat ? 8 + Math.random() * 9 : 3 + Math.random() * 6) * (rock.metal ? 0.85 : 1)
     rock.spin.set((Math.random() - 0.5) * 1.4, (Math.random() - 0.5) * 1.2, (Math.random() - 0.5) * 1)
     rock.angle.set(Math.random() * 6, Math.random() * 6, Math.random() * 6)
     rock.variant = Math.floor(Math.random() * Math.max(1, variants.length))
     rock.alive = true
     rock.launched = true
     rock.tracked = false
-    rock.onLine = onLine
-    void now
+    rock.onLine = measureOnLine(rock)
   }
 
-  /** FRACTURE, never fireworks: a broken rock becomes smaller rocks that
-   *  keep going. Break it late and the spray still carries through. */
+  /** fracture: children keep most of the parent's momentum plus a
+   *  radial kick, and each child's threat status is RE-MEASURED —
+   *  break her early and the pieces scatter clean, break her late and
+   *  the spray still carries in. Physics, not a label. */
   const fracture = (rock: Rock) => {
     if (rock.size < 5) return
     const kids = rock.metal ? 2 : 2 + Math.floor(Math.random() * 2)
@@ -149,13 +168,9 @@ export function KhioneSleet() {
       child.position.copy(rock.position)
       child.velocity
         .copy(rock.velocity)
-        .multiplyScalar(0.82)
+        .multiplyScalar(0.9)
         .add(
-          new Vector3(
-            (Math.random() - 0.5) * 46,
-            (Math.random() - 0.5) * 46,
-            (Math.random() - 0.5) * 46,
-          ),
+          _v.set(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).multiplyScalar(34),
         )
       child.size = rock.size * (0.42 + Math.random() * 0.16)
       child.metal = rock.metal
@@ -165,7 +180,7 @@ export function KhioneSleet() {
       child.alive = true
       child.launched = true
       child.tracked = false
-      child.onLine = rock.onLine
+      child.onLine = measureOnLine(child)
       made++
     }
   }
@@ -177,7 +192,8 @@ export function KhioneSleet() {
       if (!rock || !rock.alive) return
       rock.alive = false
       g.current.stopped++
-      spawnExplosion(position, rock.metal ? 0.5 : 0.32)
+      bumpRocksStopped()
+      spawnRockBurst(position, Math.max(0.6, rock.size * 0.1), !rock.metal)
       fracture(rock)
     }
     const off = registerHudLabel({
@@ -188,67 +204,68 @@ export function KhioneSleet() {
       position: CRIB_POS,
       yOffset: 96,
       el: null,
-      detail: 'CHARTED STREAM — STAND THE PICKET',
+      detail: 'CHARTED STREAM — FIRST CHARTS SCHEDULE',
       jumpStandoff: 700,
     })
     return () => {
       off()
       pdcFire.onKill = null
     }
-  }, [pdcFire, rocks, slots])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdcFire, rocks])
 
   useFrame((_, dt) => {
     const st = g.current
     const now = performance.now() / 1000
+    const clock = sleetPhase()
     const nearPicket = shipRig.position.distanceTo(CRIB_POS) < PICKET_R
-    const owner = activityState.owner
-    const free = !activityState.contractLive && (owner === '' || owner === 'sleet' || owner === 'iceroute')
+    const free = !activityState.contractLive
+    // the pass exists on the clock; the ROCKS fly only for a present
+    // picket — the world stays kind to whoever is elsewhere
+    const active = clock.phase === 'storm' && nearPicket && free
 
-    // ---- the clock: the pass comes whether you are here or not ----
-    const till = nextPassIn()
-    if (st.phase === 'idle') {
-      if (till < WARN_S && nearPicket && free) {
-        st.phase = 'warn'
-        st.until = now + till
-        activityState.owner = 'sleet'
-        triggerKlaxon()
-        say(1, 'KHIONE PASS INBOUND — STAND THE PICKET', 'info', 5)
-      }
-    } else if (st.phase === 'warn') {
-      if (now >= st.until) {
-        st.phase = 'storm'
-        st.until = now + STORM_S
-        st.nextSpawnAt = now
-        st.stopped = 0
-        st.holed = 0
-      }
-    } else if (st.phase === 'storm') {
-      if (now >= st.until) {
-        st.phase = 'over'
-        st.overUntil = now + 6
+    if (active && !st.running) {
+      st.running = true
+      st.stopped = 0
+      st.holed = 0
+      st.hull = 3
+      st.nextSpawnAt = now
+      st.endAt = now + clock.left
+      triggerKlaxon()
+      say(1, 'KHIONE PASS OVERHEAD — STAND THE PICKET', 'info', 5)
+    } else if (clock.phase === 'warn' && nearPicket && free && !st.warned) {
+      st.warned = true
+      triggerKlaxon()
+      say(1, `KHIONE PASS INBOUND — T-${Math.ceil(clock.toPass)}S`, 'info', 5)
+    }
+    if (clock.phase !== 'warn') st.warned = false
+
+    if (st.running && (!active || clock.left < 0.2)) {
+      // the pass ends (or the picket left it)
+      st.running = false
+      if (clock.phase !== 'storm') {
         const line =
           st.holed === 0
-            ? `PASS CLEAR — ${st.stopped} STOPPED, THE CRIB IS WHOLE`
-            : `PASS OVER — ${st.stopped} STOPPED · ${st.holed} HOLD${st.holed > 1 ? 'S' : ''} OPEN`
+            ? `PASS CLEAR — ${st.stopped} STOPPED · THE CRIB IS WHOLE`
+            : `PASS OVER — ${st.stopped} STOPPED · ${st.holed} HOLD${st.holed > 1 ? 'S' : ''} OPEN — SKIFFS MUSTERING`
         say(1, line, st.holed === 0 ? 'win' : 'fail', 6)
-      } else {
-        // the stream: mostly gravel, a handful genuinely on line
-        if (now >= st.nextSpawnAt) {
-          const t = 1 - (st.until - now) / STORM_S
-          // it builds, peaks in the middle, thins out
-          const density = 0.35 + Math.sin(Math.min(1, t) * Math.PI) * 0.9
-          st.nextSpawnAt = now + (0.24 + Math.random() * 0.3) / density
-          const rock = rocks.find((r) => !r.alive)
-          if (rock) launch(rock, now, Math.random() < 0.16)
-        }
       }
-    } else if (st.phase === 'over' && now >= st.overUntil) {
-      st.phase = 'idle'
-      if (activityState.owner === 'sleet') activityState.owner = ''
     }
 
-    const running = st.phase === 'warn' || st.phase === 'storm' || st.phase === 'over'
-    activityState.sleetLive = running
+    // ---- spawn while the storm runs ----
+    if (st.running) {
+      if (now >= st.nextSpawnAt) {
+        const density = 0.35 + Math.sin(Math.min(1, clock.t) * Math.PI) * 0.9
+        st.nextSpawnAt = now + (0.26 + Math.random() * 0.3) / density
+        // keep headroom so fractures always have somewhere to be born
+        let freeSlots = 0
+        for (const r of rocks) if (!r.alive) freeSlots++
+        if (freeSlots > 14) {
+          const rock = rocks.find((r) => !r.alive)
+          if (rock) launch(rock)
+        }
+      }
+    }
 
     // ---- fly the rocks ----
     let live = 0
@@ -259,44 +276,61 @@ export function KhioneSleet() {
       rock.angle.y += rock.spin.y * dt
       rock.angle.z += rock.spin.z * dt
       live++
-      // a tank holed: the Dry Weeks, happening again
+      // the crib: a strike is the Dry Weeks knocking
       if (rock.position.distanceTo(CRIB_POS) < CRIB_RADIUS + rock.size) {
         rock.alive = false
+        spawnRockBurst(rock.position, Math.max(0.8, rock.size * 0.12), true)
         if (rock.size > 4.5) {
           st.holed++
           holeHold()
+          holdRepairsUntil(Date.now() + clock.left * 1000)
           triggerImpact()
-          spawnExplosion(rock.position, 0.9)
           say(2, 'HOLD OPEN — SHE IS VENTING ICE', 'fail', 4)
         }
         continue
       }
-      // past the colony and gone
-      if (rock.position.distanceTo(new Vector3(...DRIFT_POI.position)) > SPAWN_DIST * 1.25) {
+      // the colony is rock too: strikes flash on the dark side, and
+      // nothing flies THROUGH the asteroid
+      if (rock.position.distanceTo(DRIFT) < COLONY_R) {
         rock.alive = false
+        spawnRockBurst(rock.position, Math.max(0.5, rock.size * 0.08), false)
+        continue
       }
+      // the picket stands IN the lane: a rock can find your hull too
+      if (rock.position.distanceTo(shipRig.position) < rock.size + 7) {
+        rock.alive = false
+        spawnRockBurst(rock.position, Math.max(0.5, rock.size * 0.1), !rock.metal)
+        triggerImpact()
+        if (st.hull > 0) st.hull--
+        if (!st.hullCoached) {
+          st.hullCoached = true
+          say(2, 'ROCK STRIKE — YOU ARE STANDING IN THE STREAM', 'fail', 4)
+        }
+        continue
+      }
+      if (rock.position.distanceTo(DRIFT) > SPAWN_DIST * 1.3) rock.alive = false
     }
 
     // ---- hand the picture to the guns, the scope and the HUD ----
-    if (running && free) {
+    const owner = activityState.owner
+    const wantOwn = st.running || (clock.phase === 'warn' && nearPicket && free)
+    activityState.sleetLive = wantOwn
+    if (wantOwn && (owner === '' || owner === 'sleet' || owner === 'iceroute')) {
       activityState.owner = 'sleet'
-      activityState.battle = st.phase === 'storm' && live > 0
-      // gravel is scenery, not a threat: the scope and the warning strip
-      // only ever speak about the handful actually on line with the crib
-      onLine.length = 0
-      if (st.phase !== 'idle') {
-        for (const rock of rocks) if (rock.alive && rock.onLine) onLine.push(rock)
-      }
-      activityState.threats = onLine as unknown as typeof activityState.threats
+      activityState.battle = st.running && live > 0
       activityState.threatNoun = 'ROCK'
-      pdcFire.firing = st.phase === 'storm'
-      if (st.phase === 'storm') {
+      activityState.hull = st.hull
+      activityState.hullMax = 3
+      onLineList.length = 0
+      for (const rock of rocks) if (rock.alive && rock.onLine) onLineList.push(rock)
+      activityState.threats = onLineList as unknown as typeof activityState.threats
+      pdcFire.firing = st.running
+      if (st.running) {
         const targets: { position: Vector3 }[] = []
         pdcFire.slotSource.length = 0
         for (let i = 0; i < rocks.length; i++) {
-          // the guns spend themselves on what is actually coming for the
-          // tanks — gravel is left to pass, which is also why the ice
-          // that rides this stream is never shot at
+          // the guns spend themselves ONLY on what is measured to be
+          // coming for the tanks — gravel passes, and so does the ice
           if (!rocks[i].alive || !rocks[i].onLine) continue
           targets.push(slots[i])
           pdcFire.slotSource.push(i)
@@ -304,12 +338,8 @@ export function KhioneSleet() {
         turretControl.targets = targets
         turretControl.firing = true
         turretControl.heatEnabled = true
-      } else if (turretControl.targets.length > 0) {
-        turretControl.targets = []
-        turretControl.firing = false
-        turretControl.heatEnabled = false
       }
-    } else if (owner === 'sleet' && !running) {
+    } else if (owner === 'sleet' && !wantOwn) {
       activityState.owner = ''
       activityState.battle = false
       activityState.threats = []
@@ -356,6 +386,7 @@ export function KhioneSleet() {
         ))}
       </group>
       <PdcRounds fire={pdcFire} />
+      <RockDust />
     </>
   )
 }

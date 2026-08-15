@@ -22,6 +22,7 @@ import {
 import { shipRig } from '../../state/shipRig'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
+import { sleetBoardRow } from '../../systems/sleetClock'
 import { activityState, say } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
@@ -2267,7 +2268,10 @@ export function IceRoute() {
       rows.push(`${ship.name} · ${ship.cargo} · ${status}`)
     }
     while (rows.length < 3) rows.push('')
-    for (let r = 0; r < 3; r++) {
+    // the pass is CHARTED: the dockmaster posts it whether or not anyone
+    // will stand it — the First Charts schedule, always on the board
+    rows.push(sleetBoardRow())
+    for (let r = 0; r < 4; r++) {
       const el = boardRows.current[r]
       if (el && el.text !== rows[r]) {
         el.text = rows[r]
@@ -2370,7 +2374,7 @@ export function IceRoute() {
       {/* AMNIA DOCKS — the dockmaster's board. There is always work on it. */}
       <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210]}>
         <mesh>
-          <boxGeometry args={[104, 36, 2]} />
+          <boxGeometry args={[104, 44, 2]} />
           <meshStandardMaterial color="#161d27" metalness={0.55} roughness={0.6} flatShading />
         </mesh>
         <Text
@@ -2380,12 +2384,12 @@ export function IceRoute() {
           color="#9fd8ef"
           anchorX="center"
           anchorY="middle"
-          position={[0, 12, 1.3]}
+          position={[0, 15, 1.3]}
           material-toneMapped={false}
         >
           AMNIA DOCKS
         </Text>
-        {[0, 1, 2].map((r) => (
+        {[0, 1, 2, 3].map((r) => (
           <Text
             key={r}
             ref={((el: { text: string; sync?: () => void } | null) => {
@@ -2394,10 +2398,10 @@ export function IceRoute() {
             font={FONT_BOLD}
             fontSize={4}
             letterSpacing={0.18}
-            color={r === 0 ? '#ffc06e' : '#8fb8d8'}
+            color={r === 0 ? '#ffc06e' : r === 3 ? '#9fdcff' : '#8fb8d8'}
             anchorX="center"
             anchorY="middle"
-            position={[0, 1 - r * 7.5, 1.3]}
+            position={[0, 4.5 - r * 7.5, 1.3]}
             material-toneMapped={false}
           >
             {''}

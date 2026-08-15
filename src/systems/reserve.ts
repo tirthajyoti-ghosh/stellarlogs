@@ -3,43 +3,42 @@ import { DRIFT_POI } from '../config/pois'
 import { ALL_SYSTEMS } from '../config/systems'
 
 /**
- * THE CRIB (docs/the-storm.md pass 3) — the Drift's working water stock.
+ * THE CRIB (docs/the-storm.md passes 3-4) — the Drift's working water
+ * stock: ICE, in the MV NILAK'S OWN CARGO HOLDS, cut from her hull and
+ * bolted into a cradle on the rim under a sunshade. "HER TANKS ARE OUR
+ * WATER" — literally. The deep reserve is buried in the rock and safe;
+ * this is the MARGIN, and after the Dry Weeks margin is what the
+ * colony cannot afford to lose.
  *
- * Not tanks of liquid: NOBODY keeps liquid water outside in the Belt (it
- * would freeze, and a breach would flash it away). It is ICE, held in the
- * MV NILAK'S OWN SALVAGED CARGO HOLDS — she was an ice hauler, her holds
- * were built for exactly this — bolted into a cradle on the rim under a
- * sunshade. "HER TANKS ARE OUR WATER" is literally true; a Belter calls
- * a hold a tank.
- *
- * The deep reserve is buried in the rock and safe. THIS is the working
- * margin, and after the Dry Weeks margin is what these people cannot
- * afford to lose. A holed hold loses ice at the impact AND keeps
- * sublimating while it is open — so damage BLEEDS until the colony's
- * skiffs patch it.
+ * Economics (audit-corrected): an open hold BLEEDS — visibly and
+ * meaningfully — until it is patched, and the patch boats do not fly
+ * into falling rock: repairs hold until the pass is over (the sleet
+ * calls holdRepairsUntil), then the skiffs muster and close wounds one
+ * at a time. Whole crib refills slowly. All wall-clock: the colony
+ * keeps living whether or not anyone is watching.
  */
 
 const KEY = 'stellarlogs-reserve'
 const KEY_AT = 'stellarlogs-reserve-at'
 const KEY_WOUNDS = 'stellarlogs-crib-wounds'
 const KEY_WOUND_AT = 'stellarlogs-crib-wound-at'
+const KEY_HOLDOFF = 'stellarlogs-crib-holdoff'
 
-/** the reclaimers win this back per real hour when the crib is whole */
+/** refill per real hour when whole */
 const REFILL_PER_HOUR = 6
-/** an open hold sublimates this much per real hour, per wound */
-const BLEED_PER_HOUR = 9
-/** the shattered ice lost in the strike itself */
+/** an OPEN hold vents this much per MINUTE — real stakes while the
+ *  pass runs and the boats wait. ~0.13%/s across a whole pass ≈ lose
+ *  the strike cost again if you let it bleed. */
+const BLEED_PER_MIN = 2.2
+/** ice shattered by the strike itself */
 const STRIKE_COST = 3
-/** how many holds the cradle carries */
 export const HOLDS = 4
-/** the colony's boats take this long to close one wound */
 export const REPAIR_S = 45
-/** they muster this long after the pass before the skiffs fly */
-export const MUSTER_S = 14
+export const MUSTER_S = 10
 
 const KHIONE = ALL_SYSTEMS.find((s) => s.id === 'khione')
-/** THE RADIANT — the real direction of the real star the Surveyor named
- *  for snow. The fiction and the geometry are the same fact. */
+/** THE RADIANT — the real direction of the real star the Surveyor
+ *  named for snow. The fiction and the geometry are the same fact. */
 export const SLEET_RADIANT = (() => {
   const v = KHIONE
     ? new Vector3(...KHIONE.position).sub(new Vector3(...DRIFT_POI.position))
@@ -61,65 +60,85 @@ let level = (() => {
 })()
 let stampAt = Number(localStorage.getItem(KEY_AT)) || Date.now()
 let wounds = Math.max(0, Math.min(HOLDS, Number(localStorage.getItem(KEY_WOUNDS)) || 0))
-/** when the last wound was opened — repair is timed off this */
 let woundAt = Number(localStorage.getItem(KEY_WOUND_AT)) || 0
+/** repairs may not begin before this (the sleet is still falling) */
+let holdOffUntil = Number(localStorage.getItem(KEY_HOLDOFF)) || 0
 
 function save(): void {
   localStorage.setItem(KEY, String(level))
   localStorage.setItem(KEY_AT, String(stampAt))
   localStorage.setItem(KEY_WOUNDS, String(wounds))
   localStorage.setItem(KEY_WOUND_AT, String(woundAt))
+  localStorage.setItem(KEY_HOLDOFF, String(holdOffUntil))
 }
 
-/** How many wounds the boats have already closed since the pass. */
+/** when the repair crew could first go to work */
+function workStart(): number {
+  return Math.max(woundAt, holdOffUntil) + MUSTER_S * 1000
+}
+
 function closedSince(now: number): number {
   if (!wounds || !woundAt) return 0
-  const working = (now - woundAt) / 1000 - MUSTER_S
+  const working = (now - workStart()) / 1000
   if (working <= 0) return 0
   return Math.min(wounds, Math.floor(working / REPAIR_S))
 }
 
-/** Wounds still open right now (what the crib shows, what bleeds). */
+/** wounds still open right now — what vents, what the skiffs owe */
 export function openWounds(): number {
   return Math.max(0, wounds - closedSince(Date.now()))
 }
 
-/** Are the boats out working? (mustered, and something still open) */
+/** the boats are out and welding */
 export function skiffsWorking(): boolean {
   if (!wounds || !woundAt) return false
-  const since = (Date.now() - woundAt) / 1000
-  return since > MUSTER_S && openWounds() > 0
+  return Date.now() > workStart() && openWounds() > 0
 }
 
-/** Seconds until the boats launch (>0 only during the muster). */
+/** seconds until the boats launch (0 unless mustering) */
 export function musterIn(): number {
-  if (!wounds || !woundAt) return 0
-  return Math.max(0, MUSTER_S - (Date.now() - woundAt) / 1000)
+  if (!wounds || !woundAt || openWounds() === 0) return 0
+  return Math.max(0, (workStart() - Date.now()) / 1000)
 }
 
-/**
- * The level, settled to now: open holds bleed, a whole crib refills.
- * Runs whether or not anyone is watching — the colony keeps living.
- */
+/** which hold index a given open wound occupies (stable: 0..wounds-1) */
+export function woundHolds(): number[] {
+  const open = openWounds()
+  const closed = wounds - open
+  const out: number[] = []
+  for (let i = closed; i < wounds; i++) out.push(i % HOLDS)
+  return out
+}
+
+/** the sleet is still falling: no boats until it stops */
+export function holdRepairsUntil(untilMs: number): void {
+  if (untilMs > holdOffUntil) {
+    holdOffUntil = untilMs
+    save()
+  }
+}
+
+/** level settled to now: open holds bleed by the minute, a whole crib
+ *  refills by the hour — the colony lives without an audience */
 export function getReserve(): number {
   const now = Date.now()
-  const hours = (now - stampAt) / 3_600_000
-  if (hours > 0.002) {
+  const mins = (now - stampAt) / 60_000
+  if (mins > 0.02) {
     const open = openWounds()
-    const rate = open > 0 ? -BLEED_PER_HOUR * open : REFILL_PER_HOUR
-    level = Math.max(0, Math.min(100, level + hours * rate))
+    const rate = open > 0 ? -BLEED_PER_MIN * open : REFILL_PER_HOUR / 60
+    level = Math.max(0, Math.min(100, level + mins * rate))
     stampAt = now
     if (open === 0 && wounds > 0) {
-      // the boats finished: the crib is whole again
       wounds = 0
       woundAt = 0
+      holdOffUntil = 0
     }
     save()
   }
   return level
 }
 
-/** A rock through a hold. Returns the level after the strike. */
+/** a rock through a hold */
 export function holeHold(): number {
   getReserve()
   if (wounds < HOLDS) wounds++
