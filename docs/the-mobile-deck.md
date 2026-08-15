@@ -117,3 +117,102 @@ coach lines.
 3. Nav chip with tap-to-expand — or keep the always-open small MFD?
 4. Throttle model stays BURN-hold (arcade grammar) — or does anyone
    actually want the sim-style right-edge slider?
+
+---
+
+# PASS 2 — the four surfaces I under-specified (2026-08-15, his push)
+
+His question: what about the jump list, battle mode, the scope/3D
+radar, and the voice? Thought through properly, still no code.
+
+## A. THE JUMP LIST → THE CHART DRAWER
+
+Fact on the ground: desktop jumps live in the console's sectioned list
+(N key) and the radar's clickable blips — BOTH hidden on phones today.
+A phone literally cannot leave the neighborhood. This is the single
+worst mobile gap and it earns first-class treatment:
+
+- The top-left NAV CHIP (system name · distance) tap-opens **THE
+  CHART**: a left-edge drawer, full height, thumb-column width
+  (~300 px), carrying the same sectioned list the console has — AMNIA
+  DOCKS / PORTFOLIO SYSTEMS / UNSURVEYED — as BIG rows (52 px, name +
+  distance + the marker glyph in its category colour, straight from
+  MarkerIcon).
+- Tap a row → the drawer closes and the jump ARMS: the ◇ warp diamond
+  appears in the right-thumb arc, amber, pulsing once.
+- Tap ◇ → warp. Two taps, both thumb-sized, zero precision needed.
+- The drawer greys rows while in combat (the desktop law: no jumping
+  out of a fight) and shows UNSURVEYED rows ashed, unjumpable, exactly
+  like the chart language everywhere else.
+- In-fiction name: THE CHART. It IS the First Charts, handed to a
+  thumb.
+
+## B. BATTLE MODE, phone anatomy
+
+The desktop battle keeps the genre law — center reticle cluster — and
+the phone TIGHTENS it instead of replacing it:
+
+- Warning strip: top-center, unchanged (it is already the loudest
+  thing and already short).
+- VEL and HULL become two short BARS flanking the reticle (numbers on
+  the bars, no panels); PDC pips sit in a single row under the
+  reticle. Nothing else within thumb reach.
+- Accept chips hide during battle (no decisions mid-fight — the board
+  already stops offering).
+- The arc stays exactly where it is: the fight IS flying, and the
+  thumbs never move house.
+- Coach lines: see D — one line, top-center, under the warning strip.
+
+## C. THE SCOPE / 3D RADAR on the phone
+
+The scope is the most information-dense instrument we own and the
+desktop version assumes hover-free reading at 200+ px. On a phone:
+
+- **Battle: the scope disc returns, 112 px, top-right, display-only.**
+  The COLLAPSE morph still runs (it is one canvas, cheap) so the
+  instrument is the SAME instrument — disc to cylinder, stems, ring,
+  proximity strip. No tap-jump on the disc (fat fingers, small blips
+  — the CHART drawer owns jumping now).
+- **Nav: the disc stays hidden.** Out of combat the scope's nav job
+  (where is everything, click to jump) is fully covered by the CHART
+  drawer + world markers; a second tiny map would be ink, not
+  information.
+- The proximity strip renders at full width under the disc (it is the
+  one battle read a small screen needs MOST — one line, no reading).
+
+## D. THE VOICE on a small screen
+
+Inventory: tiered center banners (alarm/event/outcome via say()), the
+coach line (activityState.hint), the panel readout lines
+(label·value), flash text, and board/kill-board text in-world.
+
+Phone rules:
+1. **One voice at a time.** Banner OR coach line, never both: banners
+   already carry tiers; while a banner is live the coach line yields.
+2. **Banners stay center** but drop to 15-16 px with a darker backing
+   plate (phone contrast in sunlight is real), and hold ~1 s longer
+   than desktop — thumbs are busy, eyes arrive late.
+3. **The coach line moves to top-center** (under the warning strip),
+   NEVER bottom — the bottom belongs to thumbs and chips. 12.5 px,
+   single line, ellipsis rather than wrap: a coach who cannot say it
+   in one phone line should not be talking mid-flight.
+4. **Panel readout lines (label·value) do not exist on phones.** Their
+   load-bearing values migrate: escort range/closing lives on the
+   escortee's world marker chip (already in-world); hunt gap/closing
+   the same on THE REVENANT's chip. World text over panel text —
+   the house billboard principle applied to the HUD.
+5. **Keyboard grammar is banned from touch copy.** Everything already
+   branches on IS_TOUCH; the audit item is a sweep for stragglers
+   ("PRESS N", "A / D") — the deck build includes that sweep.
+6. In-world text (boards, kill-board, stencils) is untouched — it is
+   scenery, distance handles it.
+
+## E. Build order for the deck (after his ruling)
+
+1. THE CHART drawer + armed-◇ jump flow (closes the cannot-jump hole)
+2. The arc rebuild with MarkerIcon-style glyph buttons
+3. Floating stick + right-half camera drag
+4. Battle tightening (bars, pips, strip) + mini-scope disc
+5. The voice pass (one-voice rule, coach relocation, touch-copy sweep)
+6. Telemetry: the black box tags every deck interaction with zone +
+   orientation, so the playtest can see thumbs, not guesses.
