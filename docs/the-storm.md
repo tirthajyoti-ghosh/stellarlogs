@@ -374,3 +374,147 @@ crib with whatever gets through.
    first correction, but the honest verdict needs a human at the
    controls — this goes into the playtest (roadmap 3.7) rather than
    being tuned blind.
+
+---
+
+# PASS 4 — THE AUDIT (2026-08-15, at his order: independent, no code)
+
+His ask: audit the shipped first pass across assets, colour reading,
+mechanics, physics, story and player delight — as if fresh eyes.
+Evidence: full re-read of KhioneSleet.tsx / DriftCrib.tsx / reserve.ts,
+geometry checks, and live screenshots of the whole crib (clean and
+wounded, picket range ~380 u). Verdict first: **the instrument layer
+and the fiction are sound; the physics model, the failure feedback and
+the crib's own asset quality are not.** Ranked findings follow.
+
+## A. MECHANICS/PHYSICS — the barrage problem (worst finding)
+
+The rocks are AIMED. `launch()` picks a spawn point out along the
+radiant and steers every rock at the crib or at scattered points around
+the colony — the stream CONVERGES on the station like artillery. A real
+stream is PARALLEL: fragments on near-identical orbits sweeping through
+a volume, with the colony simply standing in the lane. Consequences:
+
+1. It feels like being shelled, not like weather crossing.
+2. **"On line with the tanks" is a spawn-time coin flip (16%), not a
+   measurement.** The design's core honesty claim — the guns spend
+   themselves only on what is actually coming for the tanks — is
+   implemented as a random label. Fracture children INHERIT the label:
+   a fragment knocked physically wide still counts (and is shot at) as
+   a threat; gravel fragments can never become one.
+
+The honest model is also the simpler one: one shared stream velocity
+(radiant direction ± small dispersion), spawn across a wide upstream
+disc, and DERIVE on-line by intersecting each rock's straight path
+with the crib sphere. Then "shot early scatters wide, shot late
+carries through" becomes literally true, and the scope's threat set is
+a computed fact instead of a die roll.
+
+Also in this class:
+- **Rocks ignore all solids but the crib** — they fly through the
+  colony asteroid, the docks, the boards, the player. They should at
+  least die against the colony body (kill + dust puff).
+- **The player cannot be harmed.** No hull exposure, hull/hullMax not
+  even set during the event. An event pitched as civil DEFENCE has no
+  danger to the defender — standing the picket is spectating.
+- **Pool saturation:** ~100 s at up to ~4 spawns/s into a pool of 90
+  with 20–30 s lifetimes saturates at peak; spawns AND fractures then
+  fail silently (rocks die with no fragments, density flattens).
+- **The bleed is cosmetic:** 9%/hr per wound, but skiffs close wounds
+  in ≤45 s — real loss ≈ 0.1%. The "she keeps bleeding while open"
+  stake is numerically nothing. Bleed per-second during the pass, or
+  drop the claim.
+- Heat lockout enabled here is the right call — a stream is exactly
+  where it should finally bite. Untested by a human (playtest 3.7).
+
+## B. COLOUR / READING — two violations of our own rulings
+
+1. **Fracture is FIREWORKS.** `spawnExplosion` is the orange torpedo
+   fireball sprite. Rock and ice breaking in vacuum must not burn —
+   and "fracture, never fireworks" is OUR OWN written ruling. Needs a
+   cold variant: grey-white dust puff, brief ice glitter, no bloom.
+2. **The vents are invisible.** Live shot with THREE wounds open at
+   picket range: zero visible plumes (opacity 0.05/0.12 cones vanish).
+   The design's central failure-feedback beat — "a glittering plume
+   you can see from anywhere on the picket" — does not exist on
+   screen. Needs actual particles (instanced sparkle points), not a
+   translucent cone.
+3. The ice end-caps still bloom white at some star angles — the lamp
+   bug in a third place. Ice must never read as a light source.
+4. What DOES read: ROCK INBOUND noun, on-line-only threats, scope
+   stems, gauge red-when-wounded. The instrument layer is correct.
+5. Gauge/painted-line text collides with cradle geometry at several
+   angles; needs a backing plate or forward offset.
+
+## C. ASSETS — the weakest dimension
+
+1. **The crib is programmer art.** Four identical clean capped
+   cylinders, even spacing, floating text — next to the textured
+   colony asteroid it reads as blockout. Nothing says salvage, cut
+   hull, ice or age. The fiction hands us the fix: **cut the holds
+   from nilak.glb itself** — we own her model (the vigil hologram).
+   Real sections of HER plating = "her tanks" made literal, and the
+   vigil and the crib become the same body seen twice.
+2. **The skiffs are the right idea presented wrongly.** In-world they
+   read as washed-out white pills — the CRAB's manipulator-arm
+   silhouette doesn't survive the distance/simplify/512px-webp, and
+   nothing says "repair boat". Scale is wrong by ~2×: they render
+   ~19 u long vs the militia tug's 10 u — the "small workman's boat"
+   is the biggest small craft in the game.
+3. Skiffs **clip through the sunshade** (screenshot), weld at the
+   shade line rather than at the wound points, **pop** in and out of
+   existence (visible-toggle — the no-pop law), and never fly home.
+4. The sunshade is a 0.6 u slab: good colour instinct (Kapton gold),
+   no structure, vanishes edge-on, gets clipped through.
+5. The one honest asset: the rocks — real asteroid-pack geometry,
+   instanced, tumbling, varied. Keep.
+
+## D. STORY / FICTION — strong on paper, not delivered in-world
+
+1. The Khione radiant is real geometry (verified: stream arrives from
+   the actual star's bearing, ~39° above the plane). Genuinely good.
+2. **But the player never meets the story.** No board line, no
+   countdown, no First Charts reference, no "something died out
+   there" — the entire pass-2 fiction lives in docs/ only. In-game it
+   is a klaxon and rocks.
+3. **A 240 s period is a subway schedule**, not a charted crossing
+   known for generations. It should be RARE and POSTED — the docks
+   board carrying "KHIONE PASS — 18:40" is both the fiction delivered
+   and the cheapest anticipation mechanic we could own. (Also the
+   liveness "storm hour" hook, ready-made.)
+4. **Docs contradict code:** the design says the pass comes whether
+   you are here or not; the implementation gates the entire event on
+   the player standing within 900 u. Choose: make absence real (the
+   board records passes the militia stood alone) or amend the doc.
+5. **Skiffs launch mid-storm** — patch boats fly INTO falling rock
+   14 s after the first wound. No dockmaster would order that. Muster
+   after PASS CLEAR; let the wound bleed until then (which also fixes
+   the cosmetic-bleed finding above).
+
+## E. PLAYER DELIGHT — the honest verdict
+
+Genuinely delightful now: the colony healing itself (the best beat in
+the event — community, not UI); the real radiant; fracture-as-
+consequence; the wall-clock world that lives while you're away.
+
+Missing, in order of cheapness: anticipation (a posted countdown);
+aftermath (PASS CLEAR is one toast — no ROCKS STOPPED on the militia
+board, no logbook, nothing the Drift remembers you by); danger (see
+A); the peak visual moment (a boulder bursting under your tracers
+overhead) currently plays as a FIRE explosion — wrong material, wrong
+feeling; and the exhale (watching the skiffs work) only earns its
+place if the skiffs and vents actually read, which today they do not.
+
+## The ranked fix list (awaiting his ruling — nothing built)
+
+- **P0 — breaks our own rules:** parallel-stream physics + measured
+  on-line; fire→dust/glitter fracture; visible vent particles; skiff
+  scale/position/no-pop; ice never blooms.
+- **P1 — the fiction reaching the player:** board countdown + rare
+  period; muster after PASS CLEAR + real bleed while open; rocks die
+  against the colony; ROCKS STOPPED tally on the militia board.
+- **P2 — the deep asset fix:** crib rebuilt from nilak.glb hull
+  sections; skiff readability pass (or better asset); sunshade with
+  structure.
+- **P3 — stakes:** player hull exposure during the pass; pool
+  headroom scaling.
