@@ -97,3 +97,29 @@ escort attacks that respond to what the player does, a second torpedo
 class in escort, and whatever the eye-tracking answers say about the
 scope. **No fixes get built until the runs are done and the findings
 are his, not mine.**
+
+---
+
+## THE BLACK BOX — SHIPPED 2026-08-15 (supersedes part 5's sketch)
+
+His upgrade order: not just browser storage — a real pipeline, every
+possible datum, mobile-ready, "a treasure trove by the playtest."
+
+Built as roadmap 3.9 (see docs/roadmap.md for the full entry):
+- **src/systems/flightRecorder.ts** — per-battle 1 Hz black-box rows +
+  console debrief (unchanged core);
+- **src/systems/blackbox.ts** — the session recorder around it:
+  anonymous pilot id, device/GPU/touch/orientation/viewport/network
+  snapshot, activity transitions, battle boundaries, debriefs WITH
+  rows, tally bumps (torpedoes/candles/rocks), fps every 30 s, errors,
+  session lifecycle with sendBeacon;
+- **api/blackbox.ts** — Vercel function on our own deploy; Upstash
+  Redis storage when attached, structured logs always;
+- **store-and-forward**: batches clear only on stored:true — with no
+  database attached nothing is lost, backlogs upload when storage
+  appears.
+
+ONE CLICK OUTSTANDING (his, dashboard-only): Vercel → Storage →
+Marketplace → Upstash Redis → connect to the project. Env vars inject
+automatically; no code change; every buffered event from every visitor
+uploads on their next session.

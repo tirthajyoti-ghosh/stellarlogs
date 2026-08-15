@@ -1,6 +1,7 @@
 import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { turretControl } from '../state/turretControl'
+import { bbEvent } from './blackbox'
 
 /**
  * THE FLIGHT RECORDER (docs/the-playtest.md part 5 — approved 2026-08-15).
@@ -92,6 +93,7 @@ function debrief(): void {
       'hull lost': hullLost,
     },
   }
+  bbEvent('debrief', { noun: d.noun, seconds: d.seconds, ...d.summary, rows: rows.slice(0, 240) })
   const w = window as unknown as { __debriefs?: Debrief[] }
   w.__debriefs = [d, ...(w.__debriefs ?? [])].slice(0, 10)
   try {

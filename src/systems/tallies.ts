@@ -5,6 +5,8 @@
  * frames stay and the numbers become everyone's.
  */
 
+import { bbEvent } from './blackbox'
+
 const TORPS_KEY = 'stellarlogs-torps-downed'
 const ROCKS_KEY = 'stellarlogs-rocks-stopped'
 const CANDLES_KEY = 'stellarlogs-candles-lit'
@@ -21,6 +23,7 @@ export function getTorpsDowned(): number {
   return torps
 }
 export function lightCandle(): number {
+  bbEvent('candle-lit', { total: candles + 1 })
   candles++
   localStorage.setItem(CANDLES_KEY, String(candles))
   return candles
@@ -34,6 +37,7 @@ export function getCandles(): number {
 export const gClaims = { vigil: false }
 
 export function bumpRocksStopped(n = 1): void {
+  if (rocks % 25 === 0) bbEvent('rocks-stopped', { total: rocks + n })
   rocks += n
   localStorage.setItem(ROCKS_KEY, String(rocks))
 }

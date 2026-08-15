@@ -509,7 +509,32 @@ the way (Tirtha). Deep exploration passes continue between builds
    class, and scope readability under pressure. Optional session
    recorder available on request.
 
+3.8. **THE TRACK RETHINK** (Tirtha, 2026-08-15): "way too hard for a
+   newbie who comes to our site… rethink the entire track thing, the
+   whole race thing." Full exploration pass owed BEFORE any build —
+   what a first-time visitor can actually fly, what the race is FOR
+   (the Water Run heritage), difficulty ramp, forgiveness, and whether
+   the current gates/checkpoints survive at all. Think first.
+
+3.9. **THE BLACK BOX — SHIPPED 2026-08-15** (his order: "any and every
+   data must be collected… a treasure trove by the playtest"). The
+   prelude to the liveness backend, riding the same Vercel deploy:
+   - client (src/systems/blackbox.ts): anonymous pilot id + session
+     id, device/GPU/touch/orientation metadata, FPS sampling, activity
+     transitions watched off activityState, flight-recorder debriefs,
+     tally bumps, errors, session lifecycle (sendBeacon on pagehide);
+   - STORE-AND-FORWARD: batches buffer in localStorage and only clear
+     when the backend confirms storage — nothing is lost even with no
+     database attached; backlogs upload whenever storage appears;
+   - server (api/blackbox.ts, Vercel function): accepts batches,
+     writes to Upstash/KV when env vars exist, structured-logs a
+     summary always. Attaching storage is ONE dashboard click
+     (Vercel Marketplace → Upstash Redis) and needs no code change.
+   - mobile-ready by design: touch/orientation/viewport recorded now,
+     so 3.5's landscape build lands pre-instrumented.
+
 4. Liveness backend (hails, counters, daily boards) — procgen-compatible
+   — the Black Box's endpoint pattern and pilot identity carry over
 5. Achievements verdict → implement chosen shape
 5.9. **THE PLAYTEST runs here** (see 3.7) — the last gate before the Deep.
 6. The Deep (HORIZON)
