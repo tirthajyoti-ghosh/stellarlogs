@@ -252,3 +252,44 @@ the same IS_TOUCH the components use) instead of pointer-coarse media
 queries — dev-forceable via localStorage 'stellarlogs-force-touch',
 and immune to hybrid devices lying to media queries. setPointerCapture
 is guarded (synthetic/exotic pointers may refuse capture).
+
+---
+
+# PASS 3 — THE DRIVE GESTURE (2026-08-15, his ruling)
+
+His ask: the PUBG sprint-lock grammar on the drive — hold for thrust,
+swipe up to LOCK max burn (survives lifting the thumb, tap releases) —
+plus a real answer for reverse, plus proper icons.
+
+## The brainstorm's answer: ONE drive control
+
+The whole drive is now a single gesture button, and the arc gets
+SIMPLER, not busier:
+
+- **HOLD** — plain thrust.
+- **SWIPE UP while holding** — MAX BURN LOCKS: thrust + boost persist
+  after the thumb leaves; the button fills amber, glows, the up-chevron
+  lights, and the phone gives one short haptic tick.
+- **TAP while locked** — releases the lock (holding through that tap
+  still burns plain: the PUBG cancel behavior).
+- **SWIPE DOWN and hold** — REVERSE while held; button tints teal,
+  down-chevron lights. Release = stop. (Reverse as a LOCK was
+  rejected on purpose: nobody backs a boat blind and walks away.)
+
+BOOST and REV buttons are DELETED. The arc is now: the drive flame,
+FLIP, and the ◇ when armed — two permanent buttons where four were.
+Discoverability: dim chevron hints live above and below the flame
+glyph on the button itself, and light when their gesture is active.
+
+## Icons
+
+Lucide (ISC) replaces my hand-rolled strokes: the FLAME for the drive
+(the same fire the plume burns), rotate-ccw for FLIP, chevrons for the
+gesture hints. The warp ◇ stays ours — it is the house marker.
+
+## Verified (forced-touch emulation)
+
+The full cycle, machine-checked: hold→thrust · swipe-up→lock ·
+release→STILL BURNING (screenshot: plume lit, no touch down) ·
+tap→released · swipe-down-hold→reverse. Every gesture logs to the
+black box (max-lock / unlock / reverse events).

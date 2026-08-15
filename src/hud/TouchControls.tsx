@@ -10,43 +10,49 @@ import { bbEvent } from '../systems/blackbox'
 
 const STICK_RADIUS = 60
 
-/** icon glyphs in the house line style — thin strokes, no text */
-function Glyph({ kind }: { kind: 'burn' | 'boost' | 'rev' | 'flip' | 'jump' }) {
-  const stroke = 'currentColor'
-  const common = { fill: 'none', stroke, strokeWidth: 2.2, strokeLinecap: 'round' as const }
+/** Icons from Lucide (ISC) drawn in our stroke weight, plus the house
+ *  warp diamond. The drive flame is the same fire the plume burns. */
+function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' }) {
+  const common = {
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round' as const,
+    strokeLinejoin: 'round' as const,
+  }
   switch (kind) {
     case 'burn':
       return (
-        <svg viewBox="0 0 32 32" aria-hidden>
-          <path d="M16 6 L24 20 L16 16.5 L8 20 Z" fill={stroke} stroke="none" />
-          <path d="M11 24 L16 21 L21 24" {...common} />
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" />
         </svg>
       )
-    case 'boost':
+    case 'up':
       return (
-        <svg viewBox="0 0 32 32" aria-hidden>
-          <path d="M8 17 L16 9 L24 17" {...common} />
-          <path d="M8 24 L16 16 L24 24" {...common} />
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="m17 11-5-5-5 5" />
+          <path d="m17 18-5-5-5 5" />
         </svg>
       )
-    case 'rev':
+    case 'down':
       return (
-        <svg viewBox="0 0 32 32" aria-hidden>
-          <path d="M8 13 L16 21 L24 13" {...common} />
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="m7 6 5 5 5-5" />
+          <path d="m7 13 5 5 5-5" />
         </svg>
       )
     case 'flip':
       return (
-        <svg viewBox="0 0 32 32" aria-hidden>
-          <path d="M9 12 A9 9 0 1 1 8 19" {...common} />
-          <path d="M5 11 L9 12 L8 16" {...common} />
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
         </svg>
       )
     case 'jump':
       return (
-        <svg viewBox="0 0 32 32" aria-hidden>
-          <path d="M16 5 L27 16 L16 27 L5 16 Z" {...common} />
-          <path d="M16 11 L21 16 L16 21 L11 16 Z" fill={stroke} stroke="none" />
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="M12 3 L21 12 L12 21 L3 12 Z" />
+          <path d="M12 8 L16 12 L12 16 L8 12 Z" fill="currentColor" stroke="none" />
         </svg>
       )
   }
@@ -74,6 +80,9 @@ export function TouchControls() {
   const [hasHunt, setHasHunt] = useState(false)
   const [battle, setBattle] = useState(false)
   const [armed, setArmed] = useState<string | null>(null)
+  const [burnLock, setBurnLock] = useState(false)
+  const [reversing, setReversing] = useState(false)
+  const burnRef = useRef<HTMLButtonElement>(null)
   const used = useRef(new Set<string>())
 
   useEffect(() => {
@@ -155,35 +164,98 @@ export function TouchControls() {
     }
   }, [])
 
-  if (!IS_TOUCH) return null
+  // ---- THE DRIVE GESTURE (PUBG sprint-lock grammar, made a throttle) ----
+  useEffect(() => {
+    const btn = burnRef.current
+    if (!btn) return
+    const SWIPE = 42
+    let pid: number | null = null
+    let y0 = 0
+    let mode: 'hold' | 'locked-tap' | 'rev' = 'hold'
+    let locked = false
 
-  const hold = (field: 'thrust' | 'reverse' | 'boost', name: string) => ({
-    onPointerDown: (e: React.PointerEvent) => {
+    const apply = () => {
+      if (locked) {
+        shipInput.thrust = 1
+        shipInput.boost = true
+        shipInput.reverse = 0
+      }
+    }
+    const onDown = (e: PointerEvent) => {
+      e.preventDefault()
+      pid = e.pointerId
+      y0 = e.clientY
       try {
-        e.currentTarget.setPointerCapture(e.pointerId)
+        btn.setPointerCapture(e.pointerId)
       } catch {
-        /* same guard as the stick */
+        /* synthetic pointers may refuse capture */
       }
-      if (field === 'boost') shipInput.boost = true
-      else shipInput[field] = 1
-      if (!used.current.has(name)) {
-        used.current.add(name)
-        bbEvent('deck', { first: name })
+      if (locked) {
+        // the tap that releases the lock; holding still burns plain
+        locked = false
+        setBurnLock(false)
+        shipInput.boost = false
+        mode = 'locked-tap'
+        bbEvent('deck', { drive: 'unlock' })
+      } else {
+        mode = 'hold'
       }
-    },
-    onPointerUp: () => {
-      if (field === 'boost') shipInput.boost = false
-      else shipInput[field] = 0
-    },
-    onPointerCancel: () => {
-      if (field === 'boost') shipInput.boost = false
-      else shipInput[field] = 0
-    },
-    onLostPointerCapture: () => {
-      if (field === 'boost') shipInput.boost = false
-      else shipInput[field] = 0
-    },
-  })
+      shipInput.thrust = 1
+      shipInput.reverse = 0
+      if (!used.current.has('burn')) {
+        used.current.add('burn')
+        bbEvent('deck', { first: 'burn' })
+      }
+    }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerId !== pid) return
+      const dy = y0 - e.clientY
+      if ((mode === 'hold' || mode === 'locked-tap') && dy > SWIPE && !locked) {
+        // swipe UP: lock the max burn — it survives the thumb leaving
+        locked = true
+        setBurnLock(true)
+        setReversing(false)
+        mode = 'hold'
+        shipInput.thrust = 1
+        shipInput.boost = true
+        shipInput.reverse = 0
+        navigator.vibrate?.(18)
+        bbEvent('deck', { drive: 'max-lock' })
+      } else if (mode !== 'rev' && dy < -SWIPE && !locked) {
+        // swipe DOWN and hold: back her off
+        mode = 'rev'
+        setReversing(true)
+        shipInput.thrust = 0
+        shipInput.reverse = 1
+        bbEvent('deck', { drive: 'reverse' })
+      }
+    }
+    const onUp = (e: PointerEvent) => {
+      if (e.pointerId !== pid) return
+      pid = null
+      setReversing(false)
+      if (locked) {
+        apply() // the lock holds the burn; the thumb is free
+      } else {
+        shipInput.thrust = 0
+        shipInput.reverse = 0
+        shipInput.boost = false
+      }
+    }
+    btn.addEventListener('pointerdown', onDown)
+    btn.addEventListener('pointermove', onMove)
+    btn.addEventListener('pointerup', onUp)
+    btn.addEventListener('pointercancel', onUp)
+    return () => {
+      btn.removeEventListener('pointerdown', onDown)
+      btn.removeEventListener('pointermove', onMove)
+      btn.removeEventListener('pointerup', onUp)
+      btn.removeEventListener('pointercancel', onUp)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  if (!IS_TOUCH) return null
 
   return (
     <div className="hud-touch" data-ui>
@@ -230,7 +302,10 @@ export function TouchControls() {
         </div>
       )}
 
-      {/* THE ARC — BURN at the thumb's rest, satellites curved around */}
+      {/* THE ARC — one gesture drive at the thumb's rest, FLIP, and the
+          armed ◇. The drive is the PUBG sprint-lock grammar translated:
+          HOLD to burn · SWIPE UP to lock MAX BURN (survives lifting the
+          thumb; tap to release) · SWIPE DOWN and hold to back her off. */}
       <div className="hud-arc">
         {armed && (
           <button
@@ -260,14 +335,19 @@ export function TouchControls() {
         >
           <Glyph kind="flip" />
         </button>
-        <button className="hud-arc-btn hud-arc-boost" {...hold('boost', 'boost')}>
-          <Glyph kind="boost" />
-        </button>
-        <button className="hud-arc-btn hud-arc-rev" {...hold('reverse', 'rev')}>
-          <Glyph kind="rev" />
-        </button>
-        <button className="hud-arc-btn hud-arc-burn" {...hold('thrust', 'burn')}>
+        <button
+          className="hud-arc-btn hud-arc-burn"
+          ref={burnRef}
+          data-lock={burnLock ? '1' : ''}
+          data-rev={reversing ? '1' : ''}
+        >
+          <span className="hud-arc-burn-up">
+            <Glyph kind="up" />
+          </span>
           <Glyph kind="burn" />
+          <span className="hud-arc-burn-down">
+            <Glyph kind="down" />
+          </span>
         </button>
       </div>
     </div>

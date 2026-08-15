@@ -1779,42 +1779,53 @@ body[data-focus='1'] .hud-target {
 .hud-arc-btn svg { width: 58%; height: 58%; }
 .hud-arc-btn:active { background: rgba(111, 211, 232, 0.28); }
 .hud-arc-burn {
-  width: 92px;
-  height: 92px;
+  width: 96px;
+  height: 96px;
   right: max(16px, env(safe-area-inset-right));
   bottom: max(18px, env(safe-area-inset-bottom));
   border-color: rgba(255, 180, 94, 0.65);
   color: #ffb45e;
+  flex-direction: column;
+  gap: 0;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
 }
-.hud-arc-boost {
-  width: 62px;
-  height: 62px;
-  right: max(30px, env(safe-area-inset-right));
-  bottom: 128px;
-  border-color: rgba(255, 180, 94, 0.5);
-  color: #f2c98a;
+.hud-arc-burn svg { width: 44%; height: 44%; }
+.hud-arc-burn-up,
+.hud-arc-burn-down {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+  opacity: 0.35;
 }
-.hud-arc-rev {
-  width: 62px;
-  height: 62px;
-  right: 126px;
-  bottom: max(24px, env(safe-area-inset-bottom));
+.hud-arc-burn-up svg,
+.hud-arc-burn-down svg { width: 18px; height: 14px; }
+/* MAX BURN LOCKED: the button holds the fire for you */
+.hud-arc-burn[data-lock='1'] {
+  background: rgba(255, 150, 60, 0.3);
+  border-color: #ffb45e;
+  box-shadow: 0 0 18px 2px rgba(255, 160, 70, 0.4);
+}
+.hud-arc-burn[data-lock='1'] .hud-arc-burn-up { opacity: 1; }
+/* backing off: swipe down held */
+.hud-arc-burn[data-rev='1'] {
+  background: rgba(95, 208, 192, 0.22);
+  border-color: rgba(95, 208, 192, 0.8);
   color: #8fd8c8;
-  border-color: rgba(95, 208, 192, 0.5);
 }
+.hud-arc-burn[data-rev='1'] .hud-arc-burn-down { opacity: 1; }
 .hud-arc-flip {
-  width: 54px;
-  height: 54px;
-  right: 118px;
-  bottom: 112px;
+  width: 58px;
+  height: 58px;
+  right: 126px;
+  bottom: 96px;
   color: #8fd8c8;
   border-color: rgba(95, 208, 192, 0.5);
 }
 .hud-arc-jump {
-  width: 64px;
-  height: 64px;
-  right: 186px;
-  bottom: 62px;
+  width: 66px;
+  height: 66px;
+  right: 154px;
+  bottom: max(22px, env(safe-area-inset-bottom));
   color: #ffb45e;
   border-color: rgba(255, 180, 94, 0.8);
   animation: arc-armed 1.6s ease-in-out infinite;
