@@ -155,3 +155,31 @@ listed as the fallback if the stick fails his thumb test.)
    school?
 3. Detent count: is COAST-between-THRUST-and-REVERSE right, or
    should REVERSE need a firmer commitment (e.g. hold-only)?
+
+---
+
+# BUILT — THE THROTTLE (2026-08-16, his "you're the expert" call)
+
+The detent column shipped, replacing every previous drive control:
+
+- A vertical LEVER on the right edge: MAX BURN (double chevron) /
+  THRUST (chevron) / COAST (dot) / REVERSE (down chevron), with a
+  glowing puck that rides to the set detent — amber when burning,
+  teal in reverse.
+- Tap a detent or drag through them; each detent change gives one
+  haptic tick and the state PERSISTS — max burn with the thumb at
+  home, honest coast (Newton keeps the speed and the column says so),
+  reverse that stays only as long as it is set.
+- Window blur resyncs the lever to COAST (matching the input clear).
+- FLIP sits above the lever; the armed ◇ beside it; the floating
+  stick, chart, accepts unchanged. The gesture drive (swipe-lock) and
+  its hidden grammar are DELETED — every state is visible on the
+  column, nothing to discover by accident.
+- Machine-verified: tap and drag reach all four detents; MAX held
+  through thumb release (screenshot: plume lit, no touch down);
+  every detent change logs to the black box as {throttle: state}.
+
+Why this is the delight answer: the control looks like what it does
+(everyone has moved a lever through notches), the ship answers it
+instantly (drive sound, plume, velocity), and it hands the thumb
+back. Verdict now belongs to his phone.

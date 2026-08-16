@@ -12,7 +12,7 @@ const STICK_RADIUS = 60
 
 /** Icons from Lucide (ISC) drawn in our stroke weight, plus the house
  *  warp diamond. The drive flame is the same fire the plume burns. */
-function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' }) {
+function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' | 'thrust' }) {
   const common = {
     fill: 'none',
     stroke: 'currentColor',
@@ -25,6 +25,12 @@ function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' }) {
       return (
         <svg viewBox="0 0 24 24" aria-hidden {...common}>
           <path d="M12 3q1 4 4 6.5t3 5.5a1 1 0 0 1-14 0 5 5 0 0 1 1-3 1 1 0 0 0 5 0c0-2-1.5-3-1.5-5q0-2 2.5-4" />
+        </svg>
+      )
+    case 'thrust':
+      return (
+        <svg viewBox="0 0 24 24" aria-hidden {...common}>
+          <path d="m17 14-5-5-5 5" />
         </svg>
       )
     case 'up':
@@ -80,9 +86,8 @@ export function TouchControls() {
   const [hasHunt, setHasHunt] = useState(false)
   const [battle, setBattle] = useState(false)
   const [armed, setArmed] = useState<string | null>(null)
-  const [burnLock, setBurnLock] = useState(false)
-  const [reversing, setReversing] = useState(false)
-  const burnRef = useRef<HTMLButtonElement>(null)
+  const [detent, setDetent] = useState<'max' | 'thrust' | 'coast' | 'rev'>('coast')
+  const columnRef = useRef<HTMLDivElement>(null)
   const used = useRef(new Set<string>())
 
   useEffect(() => {
@@ -164,96 +169,72 @@ export function TouchControls() {
     }
   }, [])
 
-  // ---- THE DRIVE GESTURE (PUBG sprint-lock grammar, made a throttle) ----
+  // ---- THE THROTTLE: four detents, one thumb, a state that stays ----
   useEffect(() => {
-    const btn = burnRef.current
-    if (!btn) return
-    const SWIPE = 42
+    const col = columnRef.current
+    if (!col) return
+    const DETENTS = ['max', 'thrust', 'coast', 'rev'] as const
     let pid: number | null = null
-    let y0 = 0
-    let mode: 'hold' | 'locked-tap' | 'rev' = 'hold'
-    let locked = false
 
-    const apply = () => {
-      if (locked) {
-        shipInput.thrust = 1
-        shipInput.boost = true
-        shipInput.reverse = 0
-      }
+    const applyDetent = (d: (typeof DETENTS)[number]) => {
+      shipInput.thrust = d === 'max' || d === 'thrust' ? 1 : 0
+      shipInput.boost = d === 'max'
+      shipInput.reverse = d === 'rev' ? 1 : 0
+      setDetent(d)
+      navigator.vibrate?.(12)
+      bbEvent('deck', { throttle: d })
+    }
+    const fromY = (clientY: number) => {
+      const r = col.getBoundingClientRect()
+      const t = Math.max(0, Math.min(1, (clientY - r.top) / r.height))
+      return DETENTS[Math.min(3, Math.floor(t * 4))]
     }
     const onDown = (e: PointerEvent) => {
       e.preventDefault()
       pid = e.pointerId
-      y0 = e.clientY
       try {
-        btn.setPointerCapture(e.pointerId)
+        col.setPointerCapture(e.pointerId)
       } catch {
         /* synthetic pointers may refuse capture */
       }
-      if (locked) {
-        // the tap that releases the lock; holding still burns plain
-        locked = false
-        setBurnLock(false)
-        shipInput.boost = false
-        mode = 'locked-tap'
-        bbEvent('deck', { drive: 'unlock' })
-      } else {
-        mode = 'hold'
-      }
-      shipInput.thrust = 1
-      shipInput.reverse = 0
-      if (!used.current.has('burn')) {
-        used.current.add('burn')
-        bbEvent('deck', { first: 'burn' })
+      const d = fromY(e.clientY)
+      if (d !== detentRef.current) applyDetent(d)
+      if (!used.current.has('throttle')) {
+        used.current.add('throttle')
+        bbEvent('deck', { first: 'throttle' })
       }
     }
     const onMove = (e: PointerEvent) => {
       if (e.pointerId !== pid) return
-      const dy = y0 - e.clientY
-      if ((mode === 'hold' || mode === 'locked-tap') && dy > SWIPE && !locked) {
-        // swipe UP: lock the max burn — it survives the thumb leaving
-        locked = true
-        setBurnLock(true)
-        setReversing(false)
-        mode = 'hold'
-        shipInput.thrust = 1
-        shipInput.boost = true
-        shipInput.reverse = 0
-        navigator.vibrate?.(18)
-        bbEvent('deck', { drive: 'max-lock' })
-      } else if (mode !== 'rev' && dy < -SWIPE && !locked) {
-        // swipe DOWN and hold: back her off
-        mode = 'rev'
-        setReversing(true)
-        shipInput.thrust = 0
-        shipInput.reverse = 1
-        bbEvent('deck', { drive: 'reverse' })
-      }
+      const d = fromY(e.clientY)
+      if (d !== detentRef.current) applyDetent(d)
     }
     const onUp = (e: PointerEvent) => {
-      if (e.pointerId !== pid) return
-      pid = null
-      setReversing(false)
-      if (locked) {
-        apply() // the lock holds the burn; the thumb is free
-      } else {
-        shipInput.thrust = 0
-        shipInput.reverse = 0
-        shipInput.boost = false
-      }
+      if (e.pointerId === pid) pid = null
     }
-    btn.addEventListener('pointerdown', onDown)
-    btn.addEventListener('pointermove', onMove)
-    btn.addEventListener('pointerup', onUp)
-    btn.addEventListener('pointercancel', onUp)
+    col.addEventListener('pointerdown', onDown)
+    col.addEventListener('pointermove', onMove)
+    col.addEventListener('pointerup', onUp)
+    col.addEventListener('pointercancel', onUp)
+    // window blur zeroes shipInput (useShipControls clearAll): resync the lever
+    const onBlur = () => {
+      detentRef.current = 'coast'
+      setDetent('coast')
+    }
+    window.addEventListener('blur', onBlur)
     return () => {
-      btn.removeEventListener('pointerdown', onDown)
-      btn.removeEventListener('pointermove', onMove)
-      btn.removeEventListener('pointerup', onUp)
-      btn.removeEventListener('pointercancel', onUp)
+      col.removeEventListener('pointerdown', onDown)
+      col.removeEventListener('pointermove', onMove)
+      col.removeEventListener('pointerup', onUp)
+      col.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('blur', onBlur)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  const detentRef = useRef<'max' | 'thrust' | 'coast' | 'rev'>('coast')
+  useEffect(() => {
+    detentRef.current = detent
+  }, [detent])
 
   if (!IS_TOUCH) return null
 
@@ -302,10 +283,9 @@ export function TouchControls() {
         </div>
       )}
 
-      {/* THE ARC — one gesture drive at the thumb's rest, FLIP, and the
-          armed ◇. The drive is the PUBG sprint-lock grammar translated:
-          HOLD to burn · SWIPE UP to lock MAX BURN (survives lifting the
-          thumb; tap to release) · SWIPE DOWN and hold to back her off. */}
+      {/* THE THROTTLE (docs/the-mobile-controls.md): speed is a STATE.
+          A lever with four detents — set it and your thumb goes home.
+          The nose is the stick's job; the drive is this lever's. */}
       <div className="hud-arc">
         {armed && (
           <button
@@ -335,20 +315,15 @@ export function TouchControls() {
         >
           <Glyph kind="flip" />
         </button>
-        <button
-          className="hud-arc-btn hud-arc-burn"
-          ref={burnRef}
-          data-lock={burnLock ? '1' : ''}
-          data-rev={reversing ? '1' : ''}
-        >
-          <span className="hud-arc-burn-up">
-            <Glyph kind="up" />
-          </span>
-          <Glyph kind="burn" />
-          <span className="hud-arc-burn-down">
-            <Glyph kind="down" />
-          </span>
-        </button>
+        <div className="hud-throttle" ref={columnRef} data-detent={detent}>
+          <div className="hud-throttle-track" />
+          {(['max', 'thrust', 'coast', 'rev'] as const).map((d) => (
+            <div key={d} className={`hud-throttle-detent hud-throttle-${d}`} data-live={detent === d ? '1' : ''}>
+              {d === 'max' ? <Glyph kind="up" /> : d === 'thrust' ? <Glyph kind="thrust" /> : d === 'rev' ? <Glyph kind="down" /> : <span className="hud-throttle-dot" />}
+            </div>
+          ))}
+          <div className="hud-throttle-puck" />
+        </div>
       </div>
     </div>
   )
