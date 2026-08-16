@@ -207,3 +207,29 @@ link; next attempt should start from HIS sketch, or from real captured
 frames of the show's gunnery glass, not from my generative iterations.
 
 The debris storm reverts to its original PDC-only civil-defense design.
+
+---
+
+## REFERENCE FRAMES SAVED (2026-08-16, from Tirtha — for the revisit)
+
+Four frames of the Rocinante's keel railgun firing (docs/ref/):
+
+1. **expanse-railgun-1-charge-arcs.png** — THE CHARGE: the ventral
+   rail's capacitor bank ripples with blue-white electric arcs along
+   the whole keel — the gun is a spine of lightning before a shot.
+2. **expanse-railgun-2-muzzle-flash.png** — THE SHOT: a violet-white
+   cruciform muzzle flash at the rail's tip; the arcs still crawling
+   behind it.
+3. **expanse-railgun-3-discharge-wash.png** — THE WASH: a huge soft
+   violet plume floods back along the hull for a beat after firing —
+   the discharge has VOLUME, not just a flash.
+4. **expanse-railgun-4-projectile-trail.png** — THE TRAIL: the round
+   departs on a long ribbed violet streak; the rail glows residually.
+
+Read for later: the show's railgun grammar is CHARGE (arcs crawl) →
+CRACK (cruciform flash) → WASH (violet volume) → TRAIL (ribbed
+streak). Any future SPINE build should be staged exactly like the
+drive plume was: the four beats as four effects, arcs as the tell
+that a shot is coming. Colour family: blue-white arcs, violet
+discharge — NOT our amber; the railgun would be the one violet
+instrument in the game.
