@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
-import { requestFlip } from '../physics/flip'
 import { activityState } from '../state/activityState'
 import { startWarp, warp } from '../physics/warp'
 import { shipRig } from '../state/shipRig'
@@ -12,7 +11,7 @@ const STICK_RADIUS = 60
 
 /** Icons from Lucide (ISC) drawn in our stroke weight, plus the house
  *  warp diamond. The drive flame is the same fire the plume burns. */
-function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' | 'thrust' }) {
+function Glyph({ kind }: { kind: 'burn' | 'jump' | 'up' | 'down' | 'thrust' }) {
   const common = {
     fill: 'none',
     stroke: 'currentColor',
@@ -45,13 +44,6 @@ function Glyph({ kind }: { kind: 'burn' | 'flip' | 'jump' | 'up' | 'down' | 'thr
         <svg viewBox="0 0 24 24" aria-hidden {...common}>
           <path d="m7 6 5 5 5-5" />
           <path d="m7 13 5 5 5-5" />
-        </svg>
-      )
-    case 'flip':
-      return (
-        <svg viewBox="0 0 24 24" aria-hidden {...common}>
-          <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-          <path d="M3 3v5h5" />
         </svg>
       )
     case 'jump':
@@ -156,6 +148,9 @@ export function TouchControls() {
       shipInput.pitch = 0
       knob.style.transform = 'translate(0,0)'
       stick.dataset.on = ''
+      // back to the parked ghost spot — visible, waiting for the thumb
+      stick.style.left = ''
+      stick.style.top = ''
     }
     zone.addEventListener('pointerdown', onDown)
     zone.addEventListener('pointermove', onMove)
@@ -240,43 +235,56 @@ export function TouchControls() {
 
   return (
     <div className="hud-touch" data-ui>
-      {/* the left zone: the stick lives wherever the thumb lands */}
+      {/* the left zone: a parked translucent stick shows WHERE to touch;
+          it relocates under the thumb on grab and fades back when released */}
       <div className="hud-stick-zone" ref={zoneRef}>
         <div className="hud-stick hud-stick-floating" ref={stickRef}>
           <div className="hud-stick-knob" ref={knobRef} />
         </div>
       </div>
 
-      {/* job accepts between the thumbs; decisions deserve words */}
+      {/* CONTEXT PILLS (the genre's "the world asks" pattern): icon +
+          at most two words, pop in only when the world offers something,
+          gone in battle. Decisions still get words — short ones. */}
       {!battle && (
-        <div className="hud-touch-accepts">
+        <div className="hud-pills">
           {canRestart && (
             <button
-              className="hud-touch-btn hud-touch-fire"
-              onPointerDown={() => {
+              className="hud-pill"
+              onClick={() => {
                 activityState.restartRequest = true
               }}
             >
-              RE-RUN
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <path d="M7 5 L19 12 L7 19 Z" fill="currentColor" />
+              </svg>
+              RUN DRILL
             </button>
           )}
           {hasOffer && (
             <button
-              className="hud-touch-btn hud-touch-fire"
-              onPointerDown={() => {
+              className="hud-pill"
+              onClick={() => {
                 activityState.acceptRequest = true
               }}
             >
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <path d="M12 3 L20 7 V12 C20 17 16.5 20 12 21 C7.5 20 4 17 4 12 V7 Z" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+              </svg>
               ESCORT
             </button>
           )}
           {hasHunt && (
             <button
-              className="hud-touch-btn hud-touch-fire"
-              onPointerDown={() => {
+              className="hud-pill"
+              onClick={() => {
                 activityState.acceptHuntRequest = true
               }}
             >
+              <svg viewBox="0 0 24 24" aria-hidden>
+                <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" strokeWidth="2" />
+                <path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
               MANHUNT
             </button>
           )}
@@ -303,18 +311,6 @@ export function TouchControls() {
             <Glyph kind="jump" />
           </button>
         )}
-        <button
-          className="hud-arc-btn hud-arc-flip"
-          onPointerDown={() => {
-            requestFlip()
-            if (!used.current.has('flip')) {
-              used.current.add('flip')
-              bbEvent('deck', { first: 'flip' })
-            }
-          }}
-        >
-          <Glyph kind="flip" />
-        </button>
         <div className="hud-throttle" ref={columnRef} data-detent={detent}>
           <div className="hud-throttle-track" />
           {(['max', 'thrust', 'coast', 'rev'] as const).map((d) => (

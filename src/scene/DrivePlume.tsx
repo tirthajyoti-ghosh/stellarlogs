@@ -46,6 +46,9 @@ const LOG_VERT_PARS = /* glsl */ `
   #include <logdepthbuf_pars_vertex>
 `
 const LOG_FRAG_PARS = /* glsl */ `
+  #ifdef GL_FRAGMENT_PRECISION_HIGH
+    precision highp float;
+  #endif
   #include <common>
   #include <logdepthbuf_pars_fragment>
 `
@@ -201,7 +204,7 @@ export function DrivePlume() {
             }
             float alpha = 1.0 - T;
             if (alpha < 0.003) discard;
-            gl_FragColor = vec4(acc, alpha);
+            gl_FragColor = vec4(clamp(acc, 0.0, 4.0), clamp(alpha, 0.0, 1.0));
           }`,
         transparent: true,
         blending: NormalBlending,
@@ -291,7 +294,7 @@ export function DrivePlume() {
         _camLocal.copy(camera.position)
         vol.worldToLocal(_camLocal)
         volMat.uniforms.uCamLocal.value.copy(_camLocal)
-        volMat.uniforms.uTime.value = now
+        volMat.uniforms.uTime.value = now % 300
         volMat.uniforms.uStage.value = stage
         volMat.uniforms.uFlicker.value = flicker
         // keep noise features world-constant as the box stretches
@@ -300,7 +303,7 @@ export function DrivePlume() {
       }
     }
 
-    mouthMat.uniforms.uTime.value = now
+    mouthMat.uniforms.uTime.value = now % 300
     mouthMat.uniforms.uStage.value = stage
     mouthMat.uniforms.uFlicker.value = flicker
 

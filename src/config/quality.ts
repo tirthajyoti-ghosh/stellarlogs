@@ -58,8 +58,14 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
   },
   medium: {
     tier: 'medium',
-    dpr: [1, 1.5],
-    postprocessing: true,
+    // Phones: shed the bloom pass and spend the headroom on PIXELS —
+    // dense small screens live and die by dpr (his read: "resolution is
+    // not doing well in mobile at all"). Desktop-medium keeps postfx at
+    // the classic 1.5 ceiling.
+    dpr: IS_TOUCH
+      ? [1.25, Math.min(2.5, typeof window !== 'undefined' ? window.devicePixelRatio : 2)]
+      : [1, 1.5],
+    postprocessing: !IS_TOUCH,
     planetSegments: 48,
     bakeWidth: 1024,
     starScale: 0.6,
@@ -67,7 +73,7 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
   },
   low: {
     tier: 'low',
-    dpr: [1, 1.15],
+    dpr: [1, 1.3],
     postprocessing: false,
     planetSegments: 32,
     bakeWidth: 512,

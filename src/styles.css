@@ -1344,14 +1344,36 @@ body[data-focus='1'] .hud-target {
   background: radial-gradient(circle at 35% 35%, rgba(140, 220, 240, 0.5), rgba(60, 120, 150, 0.55));
   border: 1px solid rgba(140, 220, 240, 0.6);
 }
-.hud-touch-accepts {
+.hud-pills {
   position: absolute;
   left: 50%;
-  bottom: 24px;
+  bottom: max(22px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   display: flex;
-  gap: 14px;
+  gap: 12px;
   pointer-events: auto;
+}
+.hud-pill {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 20px;
+  border-radius: 24px;
+  border: 1.5px solid rgba(255, 180, 94, 0.7);
+  background: rgba(10, 18, 30, 0.7);
+  color: #ffce93;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  -webkit-tap-highlight-color: transparent;
+  animation: pill-pop 0.28s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+.hud-pill svg { width: 17px; height: 17px; }
+.hud-pill:active { background: rgba(255, 180, 94, 0.25); }
+@keyframes pill-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
 }
 .hud-touch-cluster {
   position: absolute;
@@ -1745,14 +1767,20 @@ body[data-focus='1'] .hud-target {
 }
 .hud-stick-floating {
   position: fixed;
-  left: -999px;
-  top: -999px;
-  transform: translate(-50%, -50%);
-  opacity: 0;
+  /* parked ghost spot — visible, waiting for the thumb */
+  left: 110px;
+  top: auto;
+  bottom: 40px;
+  transform: translate(-50%, 50%);
+  opacity: 0.22;
   transition: opacity 0.18s ease;
   pointer-events: none;
 }
-.hud-stick-floating[data-on='1'] { opacity: 1; }
+.hud-stick-floating[data-on='1'] {
+  opacity: 1;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+}
 
 /* THE ARC — BURN at the resting thumb, satellites curved around */
 .hud-arc {
@@ -1778,92 +1806,125 @@ body[data-focus='1'] .hud-target {
 }
 .hud-arc-btn svg { width: 58%; height: 58%; }
 .hud-arc-btn:active { background: rgba(111, 211, 232, 0.28); }
-/* THE THROTTLE — a lever with four detents; speed is a state */
+/* THE THROTTLE v2 — a quadrant lever: wide painted track, chunky
+   gripped handle, labeled detents. It should look GRABBABLE. */
 .hud-throttle {
   position: absolute;
   right: max(14px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));
-  width: 64px;
-  height: 232px;
+  width: 86px;
+  height: 244px;
   pointer-events: auto;
   touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 .hud-throttle-track {
   position: absolute;
-  left: 50%;
-  top: 10px;
-  bottom: 10px;
-  width: 3px;
-  transform: translateX(-50%);
-  background: rgba(111, 211, 232, 0.25);
-  border-radius: 2px;
+  right: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 28px;
+  border-radius: 14px;
+  border: 1px solid rgba(111, 211, 232, 0.35);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 150, 60, 0.28) 0%,
+    rgba(255, 180, 94, 0.16) 40%,
+    rgba(60, 80, 100, 0.18) 55%,
+    rgba(60, 80, 100, 0.14) 72%,
+    rgba(95, 208, 192, 0.2) 100%
+  );
 }
 .hud-throttle-detent {
   position: absolute;
-  left: 0;
-  width: 100%;
+  right: 0;
+  width: 48px;
   height: 25%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(159, 216, 239, 0.45);
+  color: rgba(159, 216, 239, 0.5);
 }
-.hud-throttle-detent svg { width: 22px; height: 22px; }
-.hud-throttle-max { top: 0; color: rgba(255, 180, 94, 0.55); }
-.hud-throttle-thrust { top: 25%; color: rgba(255, 180, 94, 0.45); }
+.hud-throttle-detent svg { width: 18px; height: 18px; }
+.hud-throttle-detent::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  width: 8px;
+  height: 2px;
+  background: rgba(159, 216, 239, 0.4);
+}
+/* microtext labels on the inner side */
+.hud-throttle-detent::after {
+  position: absolute;
+  right: 52px;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: rgba(159, 216, 239, 0.55);
+}
+.hud-throttle-max::after { content: 'MAX'; color: rgba(255, 180, 94, 0.75); }
+.hud-throttle-thrust::after { content: 'BURN'; color: rgba(255, 180, 94, 0.6); }
+.hud-throttle-coast::after { content: 'COAST'; }
+.hud-throttle-rev::after { content: 'REV'; color: rgba(143, 216, 200, 0.7); }
+.hud-throttle-max { top: 0; color: rgba(255, 180, 94, 0.6); }
+.hud-throttle-thrust { top: 25%; color: rgba(255, 180, 94, 0.5); }
 .hud-throttle-coast { top: 50%; }
-.hud-throttle-rev { top: 75%; color: rgba(143, 216, 200, 0.5); }
+.hud-throttle-rev { top: 75%; color: rgba(143, 216, 200, 0.55); }
 .hud-throttle-dot {
-  width: 9px;
-  height: 9px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   border: 1.5px solid currentColor;
 }
 .hud-throttle-detent[data-live='1'] { color: #ffd9a8; }
 .hud-throttle-rev[data-live='1'] { color: #8fd8c8; }
-/* the puck rides the lever to the set detent */
+/* THE HANDLE: a gripped slab riding the track */
 .hud-throttle-puck {
   position: absolute;
-  left: 50%;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  border: 2px solid rgba(255, 180, 94, 0.8);
-  background: rgba(8, 16, 28, 0.55);
+  right: 2px;
+  width: 44px;
+  height: 34px;
+  border-radius: 9px;
+  transform: translateY(-50%);
+  border: 1.5px solid rgba(255, 200, 130, 0.9);
+  background: linear-gradient(to bottom, rgba(50, 62, 80, 0.95), rgba(24, 32, 44, 0.95));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   transition: top 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
   pointer-events: none;
   top: 62.5%;
 }
+/* grip ridges */
+.hud-throttle-puck::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 9px;
+  height: 2px;
+  background: rgba(200, 225, 240, 0.5);
+  box-shadow: 0 7px 0 rgba(200, 225, 240, 0.5), 0 14px 0 rgba(200, 225, 240, 0.5);
+}
 .hud-throttle[data-detent='max'] .hud-throttle-puck {
   top: 12.5%;
   border-color: #ffb45e;
-  box-shadow: 0 0 16px 2px rgba(255, 160, 70, 0.45);
-  background: rgba(255, 150, 60, 0.3);
+  box-shadow: 0 0 18px 3px rgba(255, 160, 70, 0.5);
 }
 .hud-throttle[data-detent='thrust'] .hud-throttle-puck {
   top: 37.5%;
-  border-color: rgba(255, 180, 94, 0.9);
-  background: rgba(255, 150, 60, 0.16);
+  border-color: rgba(255, 180, 94, 0.95);
+  box-shadow: 0 0 10px 1px rgba(255, 160, 70, 0.3);
 }
 .hud-throttle[data-detent='coast'] .hud-throttle-puck { top: 62.5%; }
 .hud-throttle[data-detent='rev'] .hud-throttle-puck {
   top: 87.5%;
   border-color: #8fd8c8;
-  background: rgba(95, 208, 192, 0.2);
-}
-.hud-arc-flip {
-  width: 58px;
-  height: 58px;
-  right: 17px;
-  bottom: 262px;
-  color: #8fd8c8;
-  border-color: rgba(95, 208, 192, 0.5);
+  box-shadow: 0 0 10px 1px rgba(95, 208, 192, 0.35);
 }
 .hud-arc-jump {
   width: 66px;
   height: 66px;
-  right: 96px;
+  right: 112px;
   bottom: max(22px, env(safe-area-inset-bottom));
   color: #ffb45e;
   border-color: rgba(255, 180, 94, 0.8);
@@ -1893,7 +1954,14 @@ body[data-focus='1'] .hud-target {
   letter-spacing: 0.16em;
   z-index: 40;
 }
-.hud-chart-chip-glyph { color: #ffb45e; font-size: 13px; }
+.hud-chart-chip-icon { width: 17px; height: 17px; color: #ffb45e; flex-shrink: 0; }
+.hud-chart-chip { -webkit-tap-highlight-color: transparent; }
+.hud-chart-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  background: rgba(2, 6, 12, 0.45);
+}
 .hud-chart {
   position: fixed;
   left: 0;
@@ -1939,6 +2007,7 @@ body[data-focus='1'] .hud-target {
   letter-spacing: 0.1em;
 }
 .hud-chart-row:active { background: rgba(111, 211, 232, 0.12); }
+.hud-chart-row { -webkit-tap-highlight-color: transparent; }
 .hud-chart-row:disabled { opacity: 0.4; }
 .hud-chart-row[data-frontier='1'] { color: #6c7a86; }
 .hud-chart-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
@@ -1991,3 +2060,64 @@ body[data-touch='1'][data-battle='1'] .hud-mfd-right canvas {
 body[data-touch='1'] .hud-bh-vel-num { font-size: 20px; }
 body[data-touch='1'] .hud-bh-warning-text { font-size: 10.5px; letter-spacing: 0.2em; }
 body[data-touch='1'] .hud-bh-center { transform: scale(0.82); }
+
+
+/* FIRST FLIGHT — the touch tutorial (once, tap-through) */
+.hud-tut {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(2, 6, 12, 0.55);
+  pointer-events: auto;
+}
+.hud-tut-ring {
+  position: absolute;
+  border: 2px solid #ffb45e;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2000px rgba(2, 6, 12, 0.35), 0 0 22px 4px rgba(255, 180, 94, 0.4);
+  animation: tut-breathe 1.6s ease-in-out infinite;
+}
+@keyframes tut-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+.hud-tut-at-stick { left: 40px; bottom: 20px; width: 160px; height: 160px; }
+.hud-tut-at-throttle { right: 10px; bottom: 12px; width: 100px; height: 252px; border-radius: 50px; }
+.hud-tut-at-chart { left: 6px; top: 4px; width: 210px; height: 52px; border-radius: 26px; }
+.hud-tut-at-center { left: 50%; top: 50%; width: 120px; height: 120px; transform: translate(-50%, -50%); border-color: transparent; box-shadow: none; }
+.hud-tut-line {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  transform: translateX(-50%);
+  max-width: 82vw;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  color: #dce8f4;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+.hud-tut-tap {
+  position: absolute;
+  left: 50%;
+  top: 44%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  color: #5f7c92;
+}
+.hud-tut-skip {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(111, 211, 232, 0.4);
+  background: rgba(10, 18, 30, 0.6);
+  color: #9fb6c9;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}

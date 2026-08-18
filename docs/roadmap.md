@@ -496,7 +496,10 @@ the way (Tirtha). Deep exploration passes continue between builds
    cover. The black box logs gate shows/taps and orientation changes.
    Dev override for desktop testing: localStorage
    'stellarlogs-force-touch' = '1'.
-   DECK V2 SHIPPED same day (docs/the-mobile-deck.md BUILT): the CHART
+   POLISH PASS SHIPPED 2026-08-18 (docs/the-mobile-controls.md): black-box
+   shader fix, closer camera, pitch flip, no-bloom/high-dpr phone trade,
+   RCS gate, ghost stick, throttle-as-lever, map chip + scrim, context
+   pills, first-flight tutorial. DECK V2 (same doc): the CHART
    drawer (phones can finally jump), the icon arc, the floating stick,
    right-half camera drag, the battle mini-scope (gap closed), the
    voice rules, and full deck telemetry.

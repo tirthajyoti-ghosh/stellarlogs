@@ -183,3 +183,52 @@ Why this is the delight answer: the control looks like what it does
 (everyone has moved a lever through notches), the ship answers it
 instantly (drive sound, plume, velocity), and it hands the thumb
 back. Verdict now belongs to his phone.
+
+---
+
+# THE MOBILE POLISH PASS — BUILT (2026-08-18, his eleven-item verdict)
+
+All eleven items from his first real phone flight, shipped:
+
+1. **THE BLACK BOX, killed at the root.** The plume raymarch fed
+   `uTime × flow` (≤68) and `uTime × 60` into its noise — unbounded,
+   crossing 65,504 (half-float ceiling on mobile fragment shaders)
+   after ~16 minutes → NaN → the volume BOX painting black, flickering.
+   Fixed: uTime wraps at 300 s on upload, `precision highp float`
+   requested where the GPU has it, final color/alpha clamped.
+2. **Camera closer on phones**: OFFSET (0,3.1,10.2) vs desktop 13,
+   BOOST_FOV 68 vs 76, speed pullback halved — verified at max burn:
+   the ship holds size, the full plume stays in frame.
+3. **Camera pitch flipped globally** (his ruling): swipe/drag DOWN →
+   camera moves UP, both platforms. Verified in emulation.
+4. **Right-half camera drag on touch: verified working** with the new
+   sign (the old inverted feel likely read as broken).
+5. **Phone rendering trade**: touch-medium tier drops the bloom pass
+   and spends the headroom on pixels — dpr ceiling
+   min(2.5, devicePixelRatio) (was 1.5), floor 1.25. Low tier 1.3.
+6. **RCS hiss**: on touch, audible only under ~25 speed — the stick no
+   longer buries the drive. Desktop unchanged.
+7. **The stick is a parked translucent ghost** (opacity 0.22) at the
+   default spot; grabs relocate it under the thumb at full opacity;
+   release returns it to the ghost. Never invisible.
+8. **FLIP button deleted** from the deck (action lives on: desktop X,
+   warp autopilot).
+9. **THE CHART, discoverable**: the chip wears a real MAP icon
+   (Lucide, ISC), all taps are onClick, a scrim backdrop closes the
+   drawer, tap-highlight suppressed. Verified: open → scrim-close →
+   reopen → arm ◇.
+10. **CONTEXT PILLS** replace the text chips: icon + ≤2 words
+    (▶ RUN DRILL · ⛨ ESCORT · ⌖ MANHUNT), pop-in animation,
+    bottom-center, hidden in battle. Verified with a forced offer.
+11. **THROTTLE v2 — a lever that looks like a lever**: 28 px painted
+    track (amber top, teal bottom), chunky ridged grip handle, detent
+    ticks with microtext labels MAX · BURN · COAST · REV, state glow.
+    Same 4-detent persistent driver.
+12. **FIRST FLIGHT tutorial** (touch, once): four tap-through
+    spotlight steps — stick, throttle, chart, and "YOUR GUNS AIM
+    THEMSELVES. FLY." Skippable; every step logs to the black box.
+    (Gate rides the preflight's display state — it hides, not
+    unmounts.)
+
+Desktop regression-checked: no touch furniture, MFDs intact, only the
+pitch flip is shared. His phone is the final gate.

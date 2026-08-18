@@ -11,6 +11,7 @@ import { warp, warpBurning, timeToFlip, timeToArrival } from '../physics/warp'
 import { driveLock } from '../physics/driveLock'
 import { getGravityBodies } from '../physics/gravity'
 import { updateAudio } from '../audio/engine'
+import { IS_TOUCH } from '../config/quality'
 import { ALL_SYSTEMS } from '../config/systems'
 import { GUNNERY_POI } from '../config/pois'
 
@@ -76,12 +77,16 @@ export function HudBridge() {
           : hudReadouts.driveEl.textContent.toLowerCase()
     }
 
-    const rcsFiring =
+    const rcsPuffing =
       shipInput.yaw !== 0 ||
       shipInput.pitch !== 0 ||
       shipInput.strafeX !== 0 ||
       shipInput.reverse > 0 ||
       shipRig.flipping
+    // On phones the stick makes attitude puffs near-constant and the
+    // hiss buries the drive (his rule): RCS is only audible when the
+    // ship is close to stationary. Desktop keeps the full soundscape.
+    const rcsFiring = rcsPuffing && (!IS_TOUCH || shipRig.speed < 25)
     // Brachistochrone audio: powered legs sound like a hard afterburner run,
     // align + flip are pure RCS work — the old FTL whoosh is retired
     const burning = warpBurning()

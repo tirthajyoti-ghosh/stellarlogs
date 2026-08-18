@@ -70,7 +70,9 @@ export function useShipControls(): void {
     const onPointerMove = (e: PointerEvent) => {
       if (e.pointerId !== dragId) return
       cameraLook.orbitYaw -= (e.clientX - lastX) * DRAG_SENSITIVITY
-      cameraLook.orbitPitch += (e.clientY - lastY) * DRAG_SENSITIVITY
+      // drag DOWN moves the camera UP (his ruling, both platforms —
+      // the old sign sank the camera with the hand)
+      cameraLook.orbitPitch -= (e.clientY - lastY) * DRAG_SENSITIVITY
       cameraLook.orbitPitch = Math.max(-PITCH_CLAMP, Math.min(PITCH_CLAMP, cameraLook.orbitPitch))
       lastX = e.clientX
       lastY = e.clientY

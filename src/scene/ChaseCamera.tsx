@@ -5,13 +5,17 @@ import { shipRig } from '../state/shipRig'
 import { cameraLook } from '../state/cameraLook'
 import { warp, warpBurning } from '../physics/warp'
 import { shipQuaternion } from '../physics/integrator'
+import { IS_TOUCH } from '../config/quality'
 
-const OFFSET = new Vector3(0, 3.6, 13) // behind and above, in ship space
+// Phones ride closer (his phone read: the burn shrank the ship to a
+// speck): tighter offset, gentler FOV kick, half the speed pullback —
+// tuned so the full 3.2 u burn plume still holds the frame.
+const OFFSET = IS_TOUCH ? new Vector3(0, 3.1, 10.2) : new Vector3(0, 3.6, 13)
 const LOOK_AHEAD = new Vector3(0, 1.2, -14)
 const BASE_FOV = 62
-const BOOST_FOV = 76
+const BOOST_FOV = IS_TOUCH ? 68 : 76
 // Extra camera pull-back per unit of ship speed (sense of velocity)
-const SPEED_PULLBACK = 0.012
+const SPEED_PULLBACK = IS_TOUCH ? 0.006 : 0.012
 
 const _desiredOffset = new Vector3()
 const _look = new Vector3()
