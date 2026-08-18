@@ -23,9 +23,7 @@ export function WarpPanel() {
 
   return (
     <div className="hud-warp-panel" data-ui>
-      <span className="hud-warp-phase" ref={phaseRef}>
-        ALIGNING
-      </span>
+      <span className="hud-warp-phase" ref={phaseRef} />
       <span className="hud-warp-dest" ref={destRef}>
         —
       </span>

@@ -232,3 +232,28 @@ All eleven items from his first real phone flight, shipped:
 
 Desktop regression-checked: no touch furniture, MFDs intact, only the
 pitch flip is shared. His phone is the final gate.
+
+---
+
+# ROUND 2 (2026-08-19, his phone verdict on the polish pass)
+
+1. **THE CAMERA ZONE, owned.** His phone still had no camera drag —
+   the window-level handler works in emulation but not under a real
+   thumb. Rebuilt as a dedicated invisible surface (.hud-cam-zone,
+   right 56% of the screen, touch-action none, pointer-captured,
+   rendered FIRST inside the deck so every button still wins
+   hit-testing). No visual indication, per his ruling: it simply
+   works. Drag down → camera up (ship stays the center of the orbit).
+   Same sign as desktop's flipped pitch.
+2. **BRIGHTNESS +30% GLOBAL**: gl.toneMappingExposure 1.0 → 1.3 (his
+   "three to four notches", desktop included).
+3. **SHOW, DON'T TELL on the jump drive**: ALIGNING / BURN / FLIP /
+   BRAKE BURN / COMING ABOUT narration DELETED from the warp panel —
+   the ship visibly does all of it. The panel keeps destination,
+   distance, and the arrival countdown only.
+4. **THE VOICE, phone-sized**: banners 26 → 15 px on touch, tighter
+   tracking; warp panel scaled 0.85; coach 11.5 px.
+
+Verified in emulation: cam-zone swipe-down orbits the camera to
+top-down over the hull (buttons unaffected), warp panel reads
+"BLOG · 5.2k M" with no phase words, exposure visibly lifted.

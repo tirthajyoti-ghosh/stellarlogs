@@ -113,6 +113,9 @@ export default function App() {
          * instead, and sets the tier ceiling itself on its first frame.
          */
         onCreated={({ gl }) => {
+          // his brightness notches (2026-08-19): the whole game lifts ~30%
+          // — a phone in daylight was reading dark, and desktop takes it too
+          gl.toneMappingExposure = 1.3
           /**
            * three asks the driver for the shader info log straight after
            * linking, and that question cannot be answered until linking has

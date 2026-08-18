@@ -7,7 +7,7 @@ import { pursuit } from '../physics/pursuit'
 import { shipRig } from '../state/shipRig'
 import { activityState } from '../state/activityState'
 import { shipInput } from '../physics/shipInput'
-import { warp, warpBurning, timeToFlip, timeToArrival } from '../physics/warp'
+import { warp, warpBurning, timeToArrival } from '../physics/warp'
 import { driveLock } from '../physics/driveLock'
 import { getGravityBodies } from '../physics/gravity'
 import { updateAudio } from '../audio/engine'
@@ -443,24 +443,14 @@ export function HudBridge() {
       }
       const remaining = warp.arrival.distanceTo(shipRig.position)
       hudReadouts.warpDestEl.textContent = destName
-      hudReadouts.warpPhaseEl.textContent =
-        warp.phase === 'align'
-          ? 'ALIGNING'
-          : warp.phase === 'burn'
-            ? 'BURN'
-            : warp.phase === 'flip'
-              ? 'FLIP'
-              : warp.phase === 'brake'
-                ? 'BRAKE BURN'
-                : 'COMING ABOUT'
-      const flipEta = timeToFlip()
+      // show, don't tell (his ruling): the ship VISIBLY aligns, burns,
+      // flips — the panel keeps only navigational fact, no narration
+      hudReadouts.warpPhaseEl.textContent = ''
       const arriveEta = timeToArrival()
       hudReadouts.warpDistEl.textContent =
-        warp.phase === 'burn'
-          ? `${formatDistance(remaining)} M · FLIP IN ${flipEta.toFixed(1)}S`
-          : warp.phase === 'brake'
-            ? `${formatDistance(remaining)} M · ARRIVAL ${arriveEta.toFixed(1)}S`
-            : `${formatDistance(remaining)} M`
+        warp.phase === 'brake'
+          ? `${formatDistance(remaining)} M · ${arriveEta.toFixed(0)}S`
+          : `${formatDistance(remaining)} M`
     }
 
     // Greedy overlap culling: nearer labels claim screen space first

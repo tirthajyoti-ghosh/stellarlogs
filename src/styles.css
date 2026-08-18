@@ -1755,6 +1755,17 @@ body[data-focus='1'] .hud-target {
    battle tightening, the voice rules.
    ============================================================ */
 
+/* the right half: the invisible camera surface */
+.hud-cam-zone {
+  position: fixed;
+  left: 44%;
+  right: 0;
+  top: 60px;
+  bottom: 0;
+  pointer-events: auto;
+  touch-action: none;
+}
+
 /* the left zone: the stick materialises under the thumb */
 .hud-stick-zone {
   position: fixed;
@@ -2030,11 +2041,19 @@ body[data-touch='1'] .hud-mute {
   right: max(12px, env(safe-area-inset-right));
   bottom: auto;
 }
+/* the voice, phone-sized: smaller words, fewer of them */
+body[data-touch='1'] .hud-banner {
+  font-size: 15px;
+  letter-spacing: 0.3em;
+  padding: 6px 24px 6px calc(24px + 0.3em);
+}
+body[data-touch='1'] .hud-warp-panel { transform: scale(0.85); }
+
 /* the coach speaks from the top; the bottom belongs to thumbs */
 body[data-touch='1'] .hud-coach {
   top: 46px;
   bottom: auto;
-  font-size: 12.5px;
+  font-size: 11.5px;
   max-width: 78vw;
   white-space: nowrap;
   overflow: hidden;

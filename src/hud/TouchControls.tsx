@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { shipInput } from '../physics/shipInput'
+import { cameraLook } from '../state/cameraLook'
 import { activityState } from '../state/activityState'
 import { startWarp, warp } from '../physics/warp'
 import { shipRig } from '../state/shipRig'
@@ -71,6 +72,7 @@ function Glyph({ kind }: { kind: 'burn' | 'jump' | 'up' | 'down' | 'thrust' }) {
  */
 export function TouchControls() {
   const zoneRef = useRef<HTMLDivElement>(null)
+  const camZoneRef = useRef<HTMLDivElement>(null)
   const stickRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const [canRestart, setCanRestart] = useState(false)
@@ -164,6 +166,53 @@ export function TouchControls() {
     }
   }, [])
 
+  // ---- THE CAMERA ZONE: the right half orbits the eye around the ship.
+  // Owned directly (not via the window handler) so a real thumb on a real
+  // phone cannot be eaten by whatever sits over the canvas. No visual —
+  // his ruling: no indication, it simply works. Drag down = camera up. ----
+  useEffect(() => {
+    const zone = camZoneRef.current
+    if (!zone) return
+    const SENS = 0.0085
+    let pid: number | null = null
+    let lx = 0
+    let ly = 0
+    const onDown = (e: PointerEvent) => {
+      if (pid !== null) return
+      pid = e.pointerId
+      try {
+        zone.setPointerCapture(e.pointerId)
+      } catch {
+        /* synthetic pointers may refuse capture */
+      }
+      lx = e.clientX
+      ly = e.clientY
+      cameraLook.dragging = true
+    }
+    const onMove = (e: PointerEvent) => {
+      if (e.pointerId !== pid) return
+      cameraLook.orbitYaw -= (e.clientX - lx) * SENS
+      cameraLook.orbitPitch -= (e.clientY - ly) * SENS
+      lx = e.clientX
+      ly = e.clientY
+    }
+    const onUp = (e: PointerEvent) => {
+      if (e.pointerId !== pid) return
+      pid = null
+      cameraLook.dragging = false
+    }
+    zone.addEventListener('pointerdown', onDown)
+    zone.addEventListener('pointermove', onMove)
+    zone.addEventListener('pointerup', onUp)
+    zone.addEventListener('pointercancel', onUp)
+    return () => {
+      zone.removeEventListener('pointerdown', onDown)
+      zone.removeEventListener('pointermove', onMove)
+      zone.removeEventListener('pointerup', onUp)
+      zone.removeEventListener('pointercancel', onUp)
+    }
+  }, [])
+
   // ---- THE THROTTLE: four detents, one thumb, a state that stays ----
   useEffect(() => {
     const col = columnRef.current
@@ -235,6 +284,10 @@ export function TouchControls() {
 
   return (
     <div className="hud-touch" data-ui>
+      {/* the right half: an invisible camera surface — thumb orbits the
+          eye around the ship; buttons rendered after it take precedence */}
+      <div className="hud-cam-zone" ref={camZoneRef} />
+
       {/* the left zone: a parked translucent stick shows WHERE to touch;
           it relocates under the thumb on grab and fades back when released */}
       <div className="hud-stick-zone" ref={zoneRef}>
