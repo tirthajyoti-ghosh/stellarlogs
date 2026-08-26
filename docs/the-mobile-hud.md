@@ -183,3 +183,23 @@ per-frame label sort+layout DOM writes, troika text updates.
    the in-world board — confirm?
 5. **Perf program:** approve the A/B kit + B1-B3 execution order?
 6. Scanline/glass overlays on mobile: keep (cosmetic) or kill?
+
+---
+
+## RULINGS (Tirtha, 2026-08-26)
+
+1. **Throttle: APPROVED** — hold BURN (thrust) / release (coast) /
+   swipe-up MAX lock (tap kills) / small hold-only REVERSE button.
+   The 4-detent lever dies.
+2. **Battle set: one top strip, BUT hull stays its own element** near
+   the reticle — more prominent under fire. Warning strip + PDC pips
+   fold together; hull separate; scope disc as is.
+3. **World anchors: REDESIGN FROM ZERO** — overruling the tuned-shared
+   recommendation. Mobile gets its own label/arrow system; nothing
+   shared with desktop, same law as the chrome.
+4. **Activity panel: KILLED on mobile** — its data lives on the
+   in-world docks board only.
+5. **Perf program: APPROVED as ordered** (jank metric → A/B kit →
+   B1-B3 CPU wins → data-set dpr ceiling).
+6. **Glass FX: HE SEES FIRST** — produce a with/without comparison on
+   the phone layout before ruling.
