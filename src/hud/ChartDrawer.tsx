@@ -21,6 +21,7 @@ export function ChartDrawer() {
   const [open, setOpen] = useState(false)
   const [, force] = useState(0)
   const systemRef = useRef<HTMLDivElement>(null)
+  const warpLineRef = useRef<HTMLDivElement>(null)
 
   // the chip mirrors the nav computer's system line at 1 Hz
   useEffect(() => {
@@ -29,6 +30,20 @@ export function ChartDrawer() {
       const src = document.querySelector('.hud-system')
       const el = systemRef.current
       if (src && el && el.textContent !== src.textContent) el.textContent = src.textContent
+      // M6: the transit micro-line — dest + distance while jumping, else gone
+      const wl = warpLineRef.current
+      if (wl) {
+        if (warp.phase !== 'idle') {
+          const dest = document.querySelector('.hud-warp-dest')?.textContent ?? ''
+          const dist = document.querySelector('.hud-warp-dist')?.textContent ?? ''
+          const line = `${dest} · ${dist}`.replace(/\s+/g, ' ')
+          if (wl.textContent !== line) wl.textContent = line
+          wl.dataset.on = '1'
+        } else if (wl.dataset.on) {
+          wl.dataset.on = ''
+          wl.textContent = ''
+        }
+      }
       if (open) force((n) => n + 1) // live distances while the chart is out
     }, 1000)
     return () => clearInterval(id)
@@ -56,6 +71,7 @@ export function ChartDrawer() {
         </svg>
         <span ref={systemRef}>DEEP SPACE</span>
       </button>
+      <div className="hud-chart-warpline" ref={warpLineRef} />
       {open && (
         <>
           <div className="hud-chart-scrim" data-ui onClick={() => setOpen(false)} />

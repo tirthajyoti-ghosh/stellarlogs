@@ -21,6 +21,7 @@ import { getGlowDot, getMetalMap } from './panelTexture'
 import { createPanelMaterial, lampLayout } from './panelMaterial'
 import { shipRig } from '../../state/shipRig'
 import { perfFlags } from '../../config/perfFlags'
+import { PERF_ARMS } from '../../config/quality'
 
 interface BillboardProps {
   spec: BoardSpec
@@ -386,6 +387,9 @@ const _boardWorld = new Vector3()
  * couple while it slews. Its front face is +Z.
  */
 export function Billboard({ spec, accentColor, position, planetWorldPos }: BillboardProps) {
+  // measurement arm: boards vanish so their cost can be weighed
+  if (PERF_ARMS.has('noboards')) return null
+
   const rootRef = useRef<Group>(null)
   const spinRef = useRef<Group>(null)
   // Deterministic per-board start angle so they don't all begin aligned

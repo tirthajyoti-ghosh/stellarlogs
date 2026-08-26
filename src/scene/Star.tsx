@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import {
   AdditiveBlending,
@@ -9,6 +9,12 @@ import {
   SpriteMaterial,
 } from 'three'
 import { starVertex, starFragment, coronaVertex, coronaFragment } from './shaders/starShader'
+import type { PointLight } from 'three'
+import { Vector3 } from 'three'
+import { shipRig } from '../state/shipRig'
+import { PERF_ARMS } from '../config/quality'
+
+const _lp = new Vector3()
 
 function makeGlowTexture(): CanvasTexture {
   const size = 256
@@ -37,6 +43,8 @@ interface StarProps {
 
 /** Animated star: fbm surface (HDR for bloom), corona shell, halo sprite, light. */
 export function Star({ color, radius, seed = 1, lit = true }: StarProps) {
+  const lightRef = useRef<PointLight>(null)
+  const gate = useRef(0)
   const surfaceMaterial = useMemo(
     () =>
       new ShaderMaterial({
@@ -79,6 +87,18 @@ export function Star({ color, radius, seed = 1, lit = true }: StarProps) {
   )
 
   useFrame(({ clock }) => {
+    // FAR-LIGHT GATING (perf B3): a decay-lit point light 4k away
+    // contributes nothing but still runs in every material's loop —
+    // gate it by real distance, rechecked twice a second
+    const light = lightRef.current
+    if (light) {
+      gate.current -= 1
+      if (gate.current <= 0) {
+        gate.current = 30
+        light.getWorldPosition(_lp)
+        light.visible = !PERF_ARMS.has('nolights') && _lp.distanceTo(shipRig.position) < 3500
+      }
+    }
     surfaceMaterial.uniforms.uTime.value = clock.elapsedTime
   })
 
@@ -92,7 +112,7 @@ export function Star({ color, radius, seed = 1, lit = true }: StarProps) {
       </mesh>
       <sprite material={spriteMaterial} scale={[radius * 7, radius * 7, 1]} />
       {/* One light per star — light count matters, so inert stars skip it */}
-      {lit && <pointLight color="#fff0dd" intensity={6.5} distance={0} decay={0.35} />}
+      {lit && <pointLight ref={lightRef} color="#fff0dd" intensity={6.5} distance={0} decay={0.35} />}
     </group>
   )
 }

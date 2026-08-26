@@ -16,6 +16,17 @@ export const IS_TOUCH =
     // dev override for desktop testing of the touch deck
     localStorage.getItem('stellarlogs-force-touch') === '1')
 
+/** ?perf=dpr17,steps26,nolights,noboards — the phone A/B kit
+ *  (docs/the-mobile-hud.md part F). Arms log themselves to the black
+ *  box; the data decides the permanent settings. */
+export const PERF_ARMS = new Set(
+  typeof window !== 'undefined'
+    ? (new URLSearchParams(window.location.search).get('perf') ?? '')
+        .split(',')
+        .filter(Boolean)
+    : [],
+)
+
 function detectTier(): QualityTier {
   if (typeof navigator === 'undefined') return 'high'
   const cores = navigator.hardwareConcurrency ?? 8
@@ -63,7 +74,14 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
     // not doing well in mobile at all"). Desktop-medium keeps postfx at
     // the classic 1.5 ceiling.
     dpr: IS_TOUCH
-      ? [1.25, Math.min(2.5, typeof window !== 'undefined' ? window.devicePixelRatio : 2)]
+      ? [
+          1.25,
+          PERF_ARMS.has('dpr17')
+            ? 1.7
+            : PERF_ARMS.has('dpr2')
+              ? 2.0
+              : Math.min(2.5, typeof window !== 'undefined' ? window.devicePixelRatio : 2),
+        ]
       : [1, 1.5],
     postprocessing: !IS_TOUCH,
     planetSegments: 48,

@@ -203,3 +203,37 @@ per-frame label sort+layout DOM writes, troika text updates.
    B1-B3 CPU wins → data-set dpr ceiling).
 6. **Glass FX: HE SEES FIRST** — produce a with/without comparison on
    the phone layout before ruling.
+
+---
+
+## BUILT (2026-08-26) — the charter, executed on his GO
+
+All rulings shipped and verified in forced-touch emulation:
+
+1. **Chrome ban live**: activity panel, warp panel, desktop battle
+   cluster, scanline and always-on tint are display:none on touch.
+   Event glass (warp flash, damage vignette) kept per the glass
+   ruling. Desktop regression-checked: everything back on a mouse.
+2. **THROTTLE THREE**: hold burns (verified 210 m/s), swipe-up locks
+   MAX (climbed to 520 with the thumb lifted), tap releases, REVERSE
+   is its own hold-button (speed bug chevron went teal-down). Lever
+   deleted, CSS and all.
+3. **THE SPEED BUG**: live digits + accel chevron beside the drive
+   column (repositioned once — it collided with the battle scope).
+4. **STICK**: edge-clamped (corner touch at y=385 produced a fully
+   on-screen ring), parked ghost lifted above the safe area.
+5. **MOBILE BATTLE SET**: pips fold into the warning strip, hull is
+   its own three-segment bar at the reticle (his ruling), scope disc
+   as was. The desktop cluster never renders.
+6. **WARP MICRO-LINE** under the chip during transit (M6).
+7. **MOBILE ANCHORS**: pill-styled labels, distances dropped, 60%
+   name ranges, bigger threat arrows (v1 of the from-zero system).
+8. **BRIGHTNESS**: exposure 1.55 (cumulative +55%), global.
+9. **PERF PROGRAM phase 1**: black box now reports jankPct + real
+   canvas dpr every 30 s and tags sessions with their ?perf arm;
+   ?perf= kit live (dpr17 / dpr2 / steps26 / nolights / noboards);
+   plume raymarch 16 steps on touch (26 desktop); far-light gating
+   (star lights sleep beyond 3500 u); powerPreference
+   high-performance. Billboard material sharing was ALREADY done
+   (audit item stale). Next: read his phone's jank telemetry, then
+   set the permanent dpr ceiling and decide B2 matrix freezing.

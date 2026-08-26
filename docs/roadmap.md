@@ -499,7 +499,11 @@ the way (Tirtha). Deep exploration passes continue between builds
    POLISH PASS SHIPPED 2026-08-18 (docs/the-mobile-controls.md): black-box
    shader fix, closer camera, pitch flip, no-bloom/high-dpr phone trade,
    RCS gate, ghost stick, throttle-as-lever, map chip + scrim, context
-   pills, first-flight tutorial. DECK V2 (same doc): the CHART
+   pills, first-flight tutorial. THE CHARTER SHIPPED 2026-08-26
+   (docs/the-mobile-hud.md): desktop chrome banned from touch, throttle
+   three (hold/lock/REV), speed bug, mobile battle strip, stick clamp,
+   anchors v1, exposure 1.55, perf phase 1 (jank telemetry + ?perf kit +
+   light gating + 16-step phone plume). DECK V2 (same doc): the CHART
    drawer (phones can finally jump), the icon arc, the floating stick,
    right-half camera drag, the battle mini-scope (gap closed), the
    voice rules, and full deck telemetry.

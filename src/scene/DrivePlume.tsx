@@ -13,6 +13,7 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../state/shipRig'
+import { IS_TOUCH, PERF_ARMS } from '../config/quality'
 import { warpBurning } from '../physics/warp'
 
 /**
@@ -185,7 +186,7 @@ export function DrivePlume() {
             float t1 = min(min(hi.x, hi.y), hi.z);
             if (t1 <= t0) discard;
 
-            const int STEPS = 26;
+            const int STEPS = ${IS_TOUCH && !PERF_ARMS.has('steps26') ? 16 : 26};
             float stepLen = (t1 - t0) / float(STEPS);
             float dith = hash(vec3(gl_FragCoord.xy, uTime * 60.0));
             vec3 p = ro + rd * (t0 + stepLen * dith);

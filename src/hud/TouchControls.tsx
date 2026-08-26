@@ -80,8 +80,10 @@ export function TouchControls() {
   const [hasHunt, setHasHunt] = useState(false)
   const [battle, setBattle] = useState(false)
   const [armed, setArmed] = useState<string | null>(null)
-  const [detent, setDetent] = useState<'max' | 'thrust' | 'coast' | 'rev'>('coast')
-  const columnRef = useRef<HTMLDivElement>(null)
+  const [burnLock, setBurnLock] = useState(false)
+  const burnRef = useRef<HTMLButtonElement>(null)
+  const speedRef = useRef<HTMLDivElement>(null)
+  const accelRef = useRef<HTMLSpanElement>(null)
   const used = useRef(new Set<string>())
 
   useEffect(() => {
@@ -128,9 +130,11 @@ export function TouchControls() {
       } catch {
         /* synthetic or exotic pointers may refuse capture; the stick works anyway */
       }
-      cx = e.clientX
-      cy = e.clientY
-      // the stick materialises under the thumb
+      // the ring clamps fully on-screen (his fix: it was sinking off the
+      // bottom edge); input still tracks the true thumb position
+      const M = STICK_RADIUS + 14
+      cx = Math.min(Math.max(e.clientX, M), innerWidth * 0.44)
+      cy = Math.min(Math.max(e.clientY, M), innerHeight - M)
       stick.style.left = `${cx}px`
       stick.style.top = `${cy}px`
       stick.dataset.on = '1'
@@ -213,72 +217,94 @@ export function TouchControls() {
     }
   }, [])
 
-  // ---- THE THROTTLE: four detents, one thumb, a state that stays ----
+  // ---- THROTTLE THREE (docs/the-mobile-hud.md part C, his ruling):
+  // HOLD = thrust · release = coast · SWIPE UP while holding = MAX BURN
+  // LOCK (tap kills it) · REVERSE is its own small hold-only button.
+  // Eyes-free: position, not aiming. ----
   useEffect(() => {
-    const col = columnRef.current
-    if (!col) return
-    const DETENTS = ['max', 'thrust', 'coast', 'rev'] as const
+    const btn = burnRef.current
+    if (!btn) return
+    const SWIPE = 42
     let pid: number | null = null
-
-    const applyDetent = (d: (typeof DETENTS)[number]) => {
-      shipInput.thrust = d === 'max' || d === 'thrust' ? 1 : 0
-      shipInput.boost = d === 'max'
-      shipInput.reverse = d === 'rev' ? 1 : 0
-      setDetent(d)
-      navigator.vibrate?.(12)
-      bbEvent('deck', { throttle: d })
-    }
-    const fromY = (clientY: number) => {
-      const r = col.getBoundingClientRect()
-      const t = Math.max(0, Math.min(1, (clientY - r.top) / r.height))
-      return DETENTS[Math.min(3, Math.floor(t * 4))]
-    }
+    let y0 = 0
+    let locked = false
     const onDown = (e: PointerEvent) => {
       e.preventDefault()
       pid = e.pointerId
+      y0 = e.clientY
       try {
-        col.setPointerCapture(e.pointerId)
+        btn.setPointerCapture(e.pointerId)
       } catch {
         /* synthetic pointers may refuse capture */
       }
-      const d = fromY(e.clientY)
-      if (d !== detentRef.current) applyDetent(d)
-      if (!used.current.has('throttle')) {
-        used.current.add('throttle')
-        bbEvent('deck', { first: 'throttle' })
+      if (locked) {
+        // the tap that releases the lock; holding through it burns plain
+        locked = false
+        setBurnLock(false)
+        shipInput.boost = false
+        bbEvent('deck', { drive: 'unlock' })
+      }
+      shipInput.thrust = 1
+      shipInput.reverse = 0
+      if (!used.current.has('burn')) {
+        used.current.add('burn')
+        bbEvent('deck', { first: 'burn' })
       }
     }
     const onMove = (e: PointerEvent) => {
-      if (e.pointerId !== pid) return
-      const d = fromY(e.clientY)
-      if (d !== detentRef.current) applyDetent(d)
+      if (e.pointerId !== pid || locked) return
+      if (y0 - e.clientY > SWIPE) {
+        locked = true
+        setBurnLock(true)
+        shipInput.thrust = 1
+        shipInput.boost = true
+        navigator.vibrate?.(18)
+        bbEvent('deck', { drive: 'max-lock' })
+      }
     }
     const onUp = (e: PointerEvent) => {
-      if (e.pointerId === pid) pid = null
+      if (e.pointerId !== pid) return
+      pid = null
+      if (!locked) {
+        shipInput.thrust = 0
+        shipInput.boost = false
+      }
     }
-    col.addEventListener('pointerdown', onDown)
-    col.addEventListener('pointermove', onMove)
-    col.addEventListener('pointerup', onUp)
-    col.addEventListener('pointercancel', onUp)
-    // window blur zeroes shipInput (useShipControls clearAll): resync the lever
+    btn.addEventListener('pointerdown', onDown)
+    btn.addEventListener('pointermove', onMove)
+    btn.addEventListener('pointerup', onUp)
+    btn.addEventListener('pointercancel', onUp)
     const onBlur = () => {
-      detentRef.current = 'coast'
-      setDetent('coast')
+      locked = false
+      setBurnLock(false)
     }
     window.addEventListener('blur', onBlur)
     return () => {
-      col.removeEventListener('pointerdown', onDown)
-      col.removeEventListener('pointermove', onMove)
-      col.removeEventListener('pointerup', onUp)
-      col.removeEventListener('pointercancel', onUp)
+      btn.removeEventListener('pointerdown', onDown)
+      btn.removeEventListener('pointermove', onMove)
+      btn.removeEventListener('pointerup', onUp)
+      btn.removeEventListener('pointercancel', onUp)
       window.removeEventListener('blur', onBlur)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const detentRef = useRef<'max' | 'thrust' | 'coast' | 'rev'>('coast')
+
+  // ---- THE SPEED BUG (M2): the drive fact beside the drive control ----
   useEffect(() => {
-    detentRef.current = detent
-  }, [detent])
+    if (!IS_TOUCH) return
+    let last = 0
+    const id = setInterval(() => {
+      const el = speedRef.current
+      const ac = accelRef.current
+      if (!el || !ac) return
+      const v = Math.round(shipRig.speed)
+      el.textContent = String(v)
+      ac.textContent = v > last + 1 ? '\u25b2' : v < last - 1 ? '\u25bc' : '\u00b7'
+      ac.dataset.dir = v > last + 1 ? 'up' : v < last - 1 ? 'down' : ''
+      last = v
+    }, 250)
+    return () => clearInterval(id)
+  }, [])
 
   if (!IS_TOUCH) return null
 
@@ -344,9 +370,9 @@ export function TouchControls() {
         </div>
       )}
 
-      {/* THE THROTTLE (docs/the-mobile-controls.md): speed is a STATE.
-          A lever with four detents — set it and your thumb goes home.
-          The nose is the stick's job; the drive is this lever's. */}
+      {/* THROTTLE THREE: the speed bug above, REVERSE small and
+          deliberate, BURN big at the thumb's rest. Hold to burn, let go
+          to coast, flick up to lock the max — tap to let it go. */}
       <div className="hud-arc">
         {armed && (
           <button
@@ -364,15 +390,49 @@ export function TouchControls() {
             <Glyph kind="jump" />
           </button>
         )}
-        <div className="hud-throttle" ref={columnRef} data-detent={detent}>
-          <div className="hud-throttle-track" />
-          {(['max', 'thrust', 'coast', 'rev'] as const).map((d) => (
-            <div key={d} className={`hud-throttle-detent hud-throttle-${d}`} data-live={detent === d ? '1' : ''}>
-              {d === 'max' ? <Glyph kind="up" /> : d === 'thrust' ? <Glyph kind="thrust" /> : d === 'rev' ? <Glyph kind="down" /> : <span className="hud-throttle-dot" />}
-            </div>
-          ))}
-          <div className="hud-throttle-puck" />
+        <div className="hud-speedbug">
+          <div className="hud-speedbug-num" ref={speedRef}>0</div>
+          <div className="hud-speedbug-sub">
+            <span className="hud-speedbug-accel" ref={accelRef}>·</span> M/S
+          </div>
         </div>
+        <button
+          className="hud-arc-btn hud-arc-rev"
+          onPointerDown={(e) => {
+            try {
+              e.currentTarget.setPointerCapture(e.pointerId)
+            } catch {
+              /* capture is best-effort */
+            }
+            shipInput.reverse = 1
+            shipInput.thrust = 0
+            if (!used.current.has('rev')) {
+              used.current.add('rev')
+              bbEvent('deck', { first: 'rev' })
+            }
+          }}
+          onPointerUp={() => {
+            shipInput.reverse = 0
+          }}
+          onPointerCancel={() => {
+            shipInput.reverse = 0
+          }}
+          onLostPointerCapture={() => {
+            shipInput.reverse = 0
+          }}
+        >
+          <Glyph kind="down" />
+        </button>
+        <button
+          className="hud-arc-btn hud-arc-burn"
+          ref={burnRef}
+          data-lock={burnLock ? '1' : ''}
+        >
+          <span className="hud-arc-burn-up">
+            <Glyph kind="up" />
+          </span>
+          <Glyph kind="burn" />
+        </button>
       </div>
     </div>
   )

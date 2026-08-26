@@ -145,6 +145,8 @@ let lastOwner = ''
 let lastBattle = false
 let lastTitle = ''
 let frames = 0
+let jankFrames = 0
+let lastFrameAt = 0
 let fpsWindowStart = 0
 let lastFpsReport = 0
 
@@ -152,6 +154,9 @@ let lastFpsReport = 0
 export function updateBlackbox(now: number): void {
   if (!enabled) return
   frames++
+  // frame pacing: a frame gap over 25 ms means at least one missed vsync
+  if (lastFrameAt > 0 && (now - lastFrameAt) * 1000 > 25) jankFrames++
+  lastFrameAt = now
   if (fpsWindowStart === 0) fpsWindowStart = now
   // 1 Hz watcher
   if (now - lastFpsReport < 1) return
@@ -177,8 +182,14 @@ export function updateBlackbox(now: number): void {
   }
   // fps every 30 s: the mobile build will live or die by this number
   if (now - fpsWindowStart >= 30) {
-    bbEvent('fps', { avg: Math.round(frames / (now - fpsWindowStart)) })
+    const canvas = document.querySelector('canvas')
+    bbEvent('fps', {
+      avg: Math.round(frames / (now - fpsWindowStart)),
+      jankPct: Math.round((jankFrames / Math.max(1, frames)) * 100),
+      dpr: canvas ? +(canvas.width / Math.max(1, canvas.clientWidth)).toFixed(2) : 0,
+    })
     frames = 0
+    jankFrames = 0
     fpsWindowStart = now
   }
   if (Date.now() - lastFlushAt > FLUSH_EVERY_MS) {
@@ -191,7 +202,11 @@ let lastFlushAt = Date.now()
 /** boot: session metadata, error hooks, lifecycle hooks */
 export function installBlackbox(): void {
   if (!enabled) return
-  bbEvent('session-start', { ...deviceSnapshot(), buffered: queue.length })
+  bbEvent('session-start', {
+    ...deviceSnapshot(),
+    buffered: queue.length,
+    perf: new URLSearchParams(location.search).get('perf') ?? '',
+  })
   addEventListener('error', (e) => bbEvent('error', { msg: String(e.message).slice(0, 300) }))
   addEventListener('unhandledrejection', (e) =>
     bbEvent('error', { msg: ('reason' in e ? String(e.reason) : 'rejection').slice(0, 300) }),

@@ -104,7 +104,7 @@ export default function App() {
     <div id="app">
       <GlFaultBoundary>
       <Canvas
-        gl={{ logarithmicDepthBuffer: true, antialias: true }}
+        gl={{ logarithmicDepthBuffer: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ fov: 62, near: 0.5, far: 60000 }}
         /**
          * No `dpr` prop on purpose. R3F re-applies that prop from `configure()`
@@ -113,9 +113,9 @@ export default function App() {
          * instead, and sets the tier ceiling itself on its first frame.
          */
         onCreated={({ gl }) => {
-          // his brightness notches (2026-08-19): the whole game lifts ~30%
+          // his brightness notches (round 2, 2026-08-26): cumulative +55%
           // — a phone in daylight was reading dark, and desktop takes it too
-          gl.toneMappingExposure = 1.3
+          gl.toneMappingExposure = 1.55
           /**
            * three asks the driver for the shader info log straight after
            * linking, and that question cannot be answered until linking has

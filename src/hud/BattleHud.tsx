@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { activityState } from '../state/activityState'
+import { IS_TOUCH } from '../config/quality'
 import { turretControl } from '../state/turretControl'
 import { shipRig } from '../state/shipRig'
 import { hudReadouts } from './hudState'
@@ -23,6 +24,8 @@ export function BattleHud() {
   const velRef = useRef<HTMLDivElement>(null)
   const pdcCountRef = useRef<HTMLDivElement>(null)
   const pipRefs = useRef<(HTMLElement | null)[]>([])
+  const mPipRefs = useRef<(HTMLElement | null)[]>([])
+  const mHullRefs = useRef<(HTMLElement | null)[]>([])
   const hullSegRefs = useRef<(HTMLElement | null)[]>([])
   const hullPctRef = useRef<HTMLElement>(null)
   const coachRef = useRef<HTMLDivElement>(null)
@@ -100,6 +103,12 @@ export function BattleHud() {
         pip.dataset.on = engaged ? '1' : ''
         pip.dataset.hot = engaged && firing ? '1' : ''
         pip.dataset.ovr = ovr ? '1' : ''
+        const mp = mPipRefs.current[i]
+        if (mp) {
+          mp.dataset.on = engaged ? '1' : ''
+          mp.dataset.hot = engaged && firing ? '1' : ''
+          mp.dataset.ovr = ovr ? '1' : ''
+        }
       }
       const locksNow = turretControl.locks - overheatedCount * 1000 // force refresh on ovr change
       if (locksNow !== lastLocks && pdcCountRef.current) {
@@ -118,6 +127,8 @@ export function BattleHud() {
         for (let i = 0; i < 3; i++) {
           const seg = hullSegRefs.current[i]
           if (seg) seg.dataset.lost = i >= activityState.hull ? '1' : ''
+          const ms = mHullRefs.current[i]
+          if (ms) ms.dataset.lost = i >= activityState.hull ? '1' : ''
         }
         if (hullPctRef.current) {
           const pct = Math.round((activityState.hull / activityState.hullMax) * 100)
@@ -139,7 +150,31 @@ export function BattleHud() {
       <div className="hud-bh-warning">
         <div className="hud-bh-warning-text" ref={warnTextRef} />
         <div className="hud-bh-warning-sub" ref={warnSubRef} />
+        {IS_TOUCH && (
+          <div className="hud-mb-pips">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <i
+                key={i}
+                ref={(el) => {
+                  mPipRefs.current[i] = el
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
+      {IS_TOUCH && (
+        <div className="hud-mb-hull">
+          {[0, 1, 2].map((i) => (
+            <i
+              key={i}
+              ref={(el) => {
+                mHullRefs.current[i] = el
+              }}
+            />
+          ))}
+        </div>
+      )}
       <div className="hud-bh-wave" ref={waveRef} />
 
       {/* Drift marker: projected at the TRUE velocity vector by HudBridge */}

@@ -534,7 +534,10 @@ export function HudBridge() {
       // Planets hold their names even tighter: the system's STAR earns
       // its name at the sphere; the planets introduce themselves only
       // once you're properly in among them.
-      const nameRange = label.kind === 'planet' ? 1000 : NAME_SPHERE_R
+      // phone anchors (his ruling: mobile's own system): names earn the
+      // screen at 60% of the desktop range — fewer, calmer, bigger
+      const touchScale = IS_TOUCH ? 0.6 : 1
+      const nameRange = (label.kind === 'planet' ? 1000 : NAME_SPHERE_R) * touchScale
       const far = dist > nameRange && !label.mission
       if ((el.dataset.far === '1') !== far) {
         if (far) el.dataset.far = '1'
