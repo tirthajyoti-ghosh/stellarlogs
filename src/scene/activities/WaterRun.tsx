@@ -469,7 +469,7 @@ export function WaterRun() {
       activityState.hint = running
         ? ''
         : g.phase === 'idle'
-          ? 'ROLL THE START RING — THE LAP ENDS WHERE IT BEGINS'
+          ? 'ROLL THE START RING'
           : ''
       const tierTarget = g.best === 0 ? KIDS : g.best > CLUB ? CLUB : SURVEYOR
       activityState.lines = [
@@ -705,39 +705,39 @@ export function WaterRun() {
           material-transparent
           fillOpacity={0.85}
         >
-          THE CLUB RUNS SO SHE IS NEVER DRY · EIGHT RINGS · THE LAP ENDS WHERE IT BEGINS
+          EIGHT RINGS · THE LAP ENDS WHERE IT BEGINS
         </Text>
       </group>
 
-      {/* THE BOARD — live record wall at staging */}
+      {/* THE BOARD — a record wall says two numbers, nothing else */}
       <group ref={boardRef} position={[staging.x + 260, staging.y + 70, staging.z + 180]}>
         <mesh>
-          <boxGeometry args={[150, 74, 2]} />
+          <boxGeometry args={[120, 54, 2]} />
           <meshStandardMaterial color="#161d27" metalness={0.55} roughness={0.6} flatShading />
         </mesh>
         <Text
           font={FONT_BOLD}
-          fontSize={9}
+          fontSize={8}
           letterSpacing={0.24}
           color="#9fd8ef"
           anchorX="center"
           anchorY="middle"
-          position={[0, 26, 1.4]}
+          position={[0, 18, 1.4]}
           material-toneMapped={false}
         >
-          THE BOARD — DRIFT RACING CLUB
+          THE BOARD
         </Text>
         <Text
           ref={((el: { text: string; sync?: () => void } | null) => {
             boardBestRef.current = el
           }) as never}
           font={FONT_BOLD}
-          fontSize={14}
-          letterSpacing={0.14}
+          fontSize={15}
+          letterSpacing={0.12}
           color="#ffc06e"
           anchorX="center"
           anchorY="middle"
-          position={[0, 10, 1.4]}
+          position={[0, 2, 1.4]}
           material-toneMapped={false}
         >
           {''}
@@ -747,41 +747,15 @@ export function WaterRun() {
             boardLastRef.current = el
           }) as never}
           font={FONT_BOLD}
-          fontSize={9}
+          fontSize={8.5}
           letterSpacing={0.16}
           color="#8fb8d8"
           anchorX="center"
           anchorY="middle"
-          position={[0, -4, 1.4]}
+          position={[0, -15, 1.4]}
           material-toneMapped={false}
         >
           {''}
-        </Text>
-        <Text
-          font={FONT_BOLD}
-          fontSize={7.5}
-          letterSpacing={0.18}
-          color="#5f7c92"
-          anchorX="center"
-          anchorY="middle"
-          position={[0, -16, 1.4]}
-          material-toneMapped={false}
-        >
-          {`KIDS ${KIDS}S · CLUB ${CLUB}S · SURVEYOR ${SURVEYOR}S`}
-        </Text>
-        <Text
-          font={FONT_BOLD}
-          fontSize={6}
-          letterSpacing={0.14}
-          color="#4d6478"
-          anchorX="center"
-          anchorY="middle"
-          position={[0, -28, 1.4]}
-          material-toneMapped={false}
-          maxWidth={140}
-          textAlign="center"
-        >
-          IN THE DRY WEEKS THE CLUB RAN ICE, LAP AFTER LAP. NOW THEY RUN FOR TIME.
         </Text>
       </group>
     </group>
