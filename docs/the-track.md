@@ -133,3 +133,128 @@ actually does: re-running the water route as sport.
    (~45–60s, TrackMania-style density) with the long course as lap 2?
 4. Miss penalty: turn-back-or-+5s (recommended) or pure turn-back?
 5. Multi-lap: keep one lap, or 2–3 laps with per-lap splits?
+
+---
+
+# PASS 2 — THE COURSE, DESIGNED FROM THE PHYSICS (2026-08-27)
+
+The drive-on cornering envelope (computed, not vibes):
+
+| speed | R sustained burn | R under boost | R boost + Jovian dive |
+|---|---|---|---|
+| 200 | 286 u | 89 u | 79 u |
+| 300 | 643 u | 201 u | 179 u |
+| 400 | 1,143 u | 357 u | 317 u |
+| 520 | 1,931 u | 604 u | 537 u |
+
+Yaw rate never binds (worst case 1.5 rad/s vs the ship's 1.7). So:
+corners of R 300–700 are honest racing corners — hard enough to
+punish greed, soft enough that a newbie at 180 u/s clears everything
+on the sustained burn alone.
+
+**The tier miracle:** one loop of ~16,500–17,000 u gives 90 s at a
+newbie's 180 u/s average, 65 s at a club 260, 50 s at a surveyor's
+340. Three named times, one course, zero artificial handicaps —
+difficulty IS average speed, which is exactly what racing is.
+
+## The loop (8 gates, closed circuit — laps become possible)
+
+All gates PARENTED TO LIVE BODIES (an offset in the body's frame —
+nothing can ever sink into a planet again; moon gates LEAD their moon
+by a fixed orbital angle so the ring is always in clean space beside
+the rock, never centered on it):
+
+1. **START/FINISH** — a straight near the staging corridor, corridor
+   and buoys re-aimed AT the first leg (the 21° lie dies). Rolling
+   start: the clock starts at the ring, full burn legal and correct.
+2. **G1 — KAAT FLYBY**: ring offset ~150 u ahead of Kaat on its
+   orbit, angled tangent — you sweep past the rock, never through
+   its bullseye. Corner ≈ 70°, R ≈ 500: sustained-burn friendly.
+3. **G2 — THE HIGH BOARD**: 500 u above the Jovian, the dive's entry
+   gate. Long approach sweeper — the breathing leg.
+4. **G3 — THE DIVE**: low over the cloud tops (~250 u alt, generous
+   ring). Here the giant's 56 u/s² does free cornering: the low line
+   holds boost through the turn (R 537 at full 520!) while the
+   cautious high line survives at sustained speeds. THE advanced
+   line, physically honest — you steal TURNING, not speed.
+5. **G4 — VEYU FLYBY**: mirror of G1 on the far moon.
+6. **G5 — THE OSO NEEDLE**: the ring sits close beside Oso ("hazard
+   and free boost for the brave" finally cashes in): the tight line
+   shaves ~600 u past the rock, the wide line is safe and slower.
+   Ring 80 u — the one deliberately snug gate, still bigger than
+   anything the old course honestly offered.
+7. **G6 — THE RETURN SWEEP**: a wide 120° banking corner (R ~700)
+   lining you back up the home straight.
+8. **FINISH = START ring** — the loop closes; lap 2 is one ruling
+   away.
+
+Ring sizes: START/FINISH 120, standard gates 95 (generous at proper
+approach speeds), the Needle 80. The visual ring and the hit test
+stay identical (the one thing the old build got right).
+
+## What dies with the old course
+Drive-lock and its RCS-only trim; the DEAD DRIFT rule; the baked
+static gates; the fixed 2,600 abandon radius (replaced per-leg:
+max-midline-distance + 600 margin); the aim-wrong buoys; the
+"slingshot" copy.
+
+---
+
+# PASS 3 — THE CEREMONY, THE BOARD, THE PULL (2026-08-27)
+
+Racing needs a reason, a ritual, and a record. The fiction supplies
+all three; the build just has to say them.
+
+## The name and the dressing
+- The venue stays **THE TRACK**; the event is **THE WATER RUN**.
+- Marquee: `THE WATER RUN · THE CLUB RUNS SO SHE'S NEVER DRY`.
+- Race Control board keeps its operational tone; **THE BOARD** on the
+  Jovian becomes a LIVE record wall: BEST, LAST RUN, and the three
+  named times — local numbers now, everyone's when the backend lands
+  (the same kill-board pattern, third instance).
+- The Nilak line, at last, where it belongs — on the board:
+  `IN THE DRY WEEKS THE CLUB RAN ICE, LAP AFTER LAP. NOW THEY RUN
+  FOR TIME. NO SHIP LEAVES THE DRIFT DRY.`
+
+## The three named times (finish beats)
+- Finish at all → `YOU RAN THE ROUTE` (and it is written: the board's
+  LAST RUN line updates — every finisher marks the wall).
+- Under 90 → **THE KIDS' TIME** ("kids from the Amnia run this in 90
+  flat" stops being a taunt and becomes a rung).
+- Under 65 → **THE CLUB TIME** (fanfare).
+- Under 50 → **THE SURVEYOR'S TIME** (the record beat: full fanfare,
+  the board headline). Tuned after the build against real laps —
+  the tiers ship provisional and the black box calibrates them.
+
+## The forgiveness grammar (from pass 1, made concrete)
+- Miss a gate → the ring flashes amber, one line: `MISSED — CIRCLE
+  BACK, OR TAKE +5S`; five seconds later it auto-yields and the +5
+  lands on the clock. The run NEVER dies from a miss.
+- `RESTART` — R on desktop, a pill on touch — any time, instant,
+  back at staging with the clock armed. The TrackMania loop.
+- DNF only by leaving (per-leg corridor) or warping out; both say so
+  plainly and neither shames.
+
+## The teaching (first visit only)
+Three coach lines, once: `FOLLOW THE RINGS`, `MISSES COST TIME — NOT
+RUNS`, `THE LOW LINE PAST THE GIANT IS FASTER. AND MEANER.` Then the
+course teaches itself (next-gate ghost marker + breadcrumb line).
+
+## The pull (fixing ZERO plays)
+- A standing docks-board row: `THE WATER RUN · POST A TIME · THE
+  TRACK`, same grammar as the Khione row.
+- The chart row for The Track gains the sub-line `THE WATER RUN`.
+- Post-finish, one toast: `THE BOARD REMEMBERS — RUN IT AGAIN?`
+
+## Telemetry from birth (the black box schema)
+`race-start` · `race-gate {i, split}` · `race-miss {i}` ·
+`race-dnf {reason, gate}` · `race-finish {time, tier}` — the next
+tuning pass reads splits, not guesses. (Also fixes the trove's
+blindness: today a race leaves no trace at all.)
+
+## Later, explicitly parked
+- **THE GHOST** — record the best run's path locally, replay it as a
+  faint marker to chase. The single biggest solo-racing multiplier;
+  v1.5 after the playtest rules on the base loop.
+- Multi-lap ruling (open question 5), backend times, the Water Run
+  ice-catching tie-in from the Sleet exploration.
