@@ -113,9 +113,9 @@ export default function App() {
          * instead, and sets the tier ceiling itself on its first frame.
          */
         onCreated={({ gl }) => {
-          // his brightness notches (round 2, 2026-08-26): cumulative +55%
+          // his brightness notches (round 3, 2026-08-27): cumulative +85%
           // — a phone in daylight was reading dark, and desktop takes it too
-          gl.toneMappingExposure = 1.55
+          gl.toneMappingExposure = 1.85
           /**
            * three asks the driver for the shader info log straight after
            * linking, and that question cannot be answered until linking has
@@ -151,8 +151,10 @@ export default function App() {
         }}
       >
         <color attach="background" args={['#020814']} />
-        <ambientLight intensity={0.12} />
-        <hemisphereLight args={['#4a6b9a', '#0a0e1a', 0.35]} />
+        {/* fill lifted with the round-3 brightness push: exposure cannot
+            brighten unlit faces — only fill can reach the shadow side */}
+        <ambientLight intensity={0.22} />
+        <hemisphereLight args={['#4a6b9a', '#141b2b', 0.5]} />
         {/* Offline studio-space environment for metallic reflections */}
         <Environment resolution={64}>
           <Lightformer intensity={1.4} color="#8fb8e8" position={[0, 6, -9]} scale={[12, 6, 1]} />
