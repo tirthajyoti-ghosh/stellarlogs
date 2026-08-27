@@ -481,7 +481,8 @@ the way (Tirtha). Deep exploration passes continue between builds
    a small box); threat-grouping and the torpedo board REJECTED as not
    fitting our auto-PDC, no-player-torpedo design; faction skinning
    PARKED for the Deep.
-3.5. **MOBILE — the bridge flies landscape — SHIPPED 2026-08-15.**
+3.5. **MOBILE — DONE, his sign-off 2026-08-27** ("the mobile version is
+   shipped, it's working, I'm happy"). History: SHIPPED 2026-08-15.
    THE LANDSCAPE GATE (LandscapeGate.tsx): portrait touch gets one
    full-screen card above everything including the preflight — animated
    rotating-phone glyph, "THIS BRIDGE FLIES LANDSCAPE", tap =
