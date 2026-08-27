@@ -17,8 +17,9 @@ export const GUNNERY_POI = {
  * arrival lands short of the gate; the clock starts at the line.
  */
 export const TRACK_POI = {
-  /** The STAGING mouth of the launch corridor — arrive here, then burn */
-  position: [5700, -1170, -11000] as [number, number, number],
+  /** The STAGING mouth of the corridor — re-aimed down the first leg
+   *  (the Water Run rebuild, 2026-08-27) */
+  position: [5812, -1170, -10768] as [number, number, number],
   standoff: 420,
 }
 

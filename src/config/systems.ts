@@ -142,15 +142,15 @@ function buildSystem({ content, position, seedBase }: SystemPlacement): SystemCo
  */
 const RACE_CONTROL: ContentItem = {
   title: 'Race Control — The Track',
-  subtitle: 'Drift Racing Club · slingshot circuit · drive-dark racing',
+  subtitle: 'Drift Racing Club · THE WATER RUN · eight rings, one lap',
   overview:
-    'Build speed in the launch corridor — the main drive LOCKS at the start line. After that it is gravity and attitude thrusters only: dive the wells, sling the moons, steal your speed from the giants. Kids from the Amnia run this in 90 flat.',
+    'In the Dry Weeks the club ran raw ice through this system, lap after lap, so the Drift never went dry. Now they run the route for time. Eight rings, the lap ends where it begins. A miss costs seconds, never the run. Kids from the Amnia run this in 90 flat.',
 }
 const THE_BOARD: ContentItem = {
   title: 'The Board',
   subtitle: 'Fast times · Drift Racing Club',
   overview:
-    'The club keeps the times. The line between a fast lap and a long cold drift is how deep you dare the wells with your drive dark. Fly sasa, beratna.',
+    "The club keeps the times: the Kids' Time, the Club Time, and the Surveyor's Time, which nobody holds for long. The fast line dives the giant — gravity turns you for free, if you dare fly low. Fly sasa, beratna.",
 }
 const moonItem = (name: string): ContentItem => ({ title: name })
 
@@ -160,7 +160,7 @@ const TRACK_SYSTEM: SystemConfig = {
   starColor: '#ff6a50',
   starRadius: 120,
   position: [10100, -1170, -10100],
-  overview: "The Drift Racing Club's slingshot venue — an outer system flown drive-dark.",
+  overview: "The Drift Racing Club's home circuit — THE WATER RUN, eight rings around the giants.",
   planets: [
     {
       // 0 — the Saturn-class: first sling of the run

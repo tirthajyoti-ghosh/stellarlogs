@@ -17,7 +17,7 @@ import { DriftCrib } from './scene/DriftCrib'
 import { KhioneSleet } from './scene/activities/KhioneSleet'
 import { GunneryRange } from './scene/activities/GunneryRange'
 import { IceRoute } from './scene/activities/IceRoute'
-import { BeltRun } from './scene/activities/BeltRun'
+import { WaterRun } from './scene/activities/WaterRun'
 import { DraugrSighting } from './scene/DraugrSighting'
 import { InteramniaDrift } from './scene/InteramniaDrift'
 import { Explosions } from './scene/fx/Explosions'
@@ -178,7 +178,7 @@ export default function App() {
           <GunneryRange />
           <IceRoute />
           <KhioneSleet />
-          <BeltRun />
+          <WaterRun />
           <DraugrSighting />
           <InteramniaDrift />
           <Explosions />

@@ -258,3 +258,48 @@ blindness: today a race leaves no trace at all.)
   v1.5 after the playtest rules on the base loop.
 - Multi-lap ruling (open question 5), backend times, the Water Run
   ice-catching tie-in from the Sleet exploration.
+
+---
+
+# BUILT — THE WATER RUN (2026-08-27, his GO on all recommendations)
+
+BeltRun.tsx is dead; `src/scene/activities/WaterRun.tsx` replaces it.
+Everything from the three passes, machine-verified live:
+
+- **The drive stays lit.** driveLock/flightAssist untouched by racing.
+- **Eight-gate closed loop**, every gate computed from live orbits with
+  the same angle formula StarSystem uses (nothing can desync or sink):
+  START → Kaat flyby (the ring LEADS the moon by 200 u along its
+  motion) → the High Board → THE DIVE (low past the Jovian) → Veyu
+  flyby → the Oso Needle (aperture 80) → the return sweep → FINISH at
+  the start ring.
+- **The corridor re-aimed down the first leg** (staging moved;
+  TRACK_POI updated) — the 21° lie is dead.
+- **Misses forgive**: off-aperture plane crossing → MISSED — CIRCLE
+  BACK, OR TAKE +5S; clean re-cross clears it; after 5 s the penalty
+  lands and the race moves on. Verified: "11.8S (+5)" with the target
+  advanced. The run NEVER dies from a miss.
+- **Per-leg corridor** max(2600, legLen×1.15): the racing line cannot
+  DNF. DEAD DRIFT deleted.
+- **Instant restart**: R on desktop, the RESTART pill on touch (pill
+  label now comes from activityState.restartLabel).
+- **Three named times**: KIDS 90 · CLUB 65 · SURVEYOR 50
+  (provisional — the black box calibrates them from real laps).
+  Every finisher writes THE BOARD — a live record wall at staging
+  (BEST / LAST RUN / the tiers / the Dry Weeks line), kill-board
+  pattern.
+- **Guidance**: next-gate marker as before, plus a faint GHOST ring on
+  the gate after next and a dashed breadcrumb line between them.
+- **Telemetry from birth**: race-start / race-gate splits / race-miss /
+  race-dnf / race-finish{time, tier} into the black box.
+- **The pull**: a standing docks-board row — THE WATER RUN · POST A
+  TIME · THE TRACK (board grew to five rows); all venue copy sheds
+  drive-dark and wears the Dry Weeks fiction.
+- **Coach**: three lines, once ever — FOLLOW THE RINGS / MISSES COST
+  TIME, NOT RUNS / THE LOW LINE PAST THE GIANT IS FASTER. AND MEANER.
+
+Verified end-to-end in the harness: a full programmatic lap (start →
+gates 1-6 → FINISH → "THE SURVEYOR'S TIME · NEW BEST" stored), the
+miss-and-yield flow, restart, the staging venue with THE BOARD.
+Test-record keys cleared after verification. Real lap times are HIS
+to set — the tiers await his flying.

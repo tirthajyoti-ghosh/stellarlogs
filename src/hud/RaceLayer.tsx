@@ -5,7 +5,10 @@
  * activityState.raceTarget (same pattern as the threat layer).
  */
 
-export const raceEls: { root: HTMLDivElement | null } = { root: null }
+export const raceEls: { root: HTMLDivElement | null; next: HTMLDivElement | null } = {
+  root: null,
+  next: null,
+}
 
 /** THE HUNT's capture ring — the pursuit-assist disc projected around the
  *  quarry (fixed world radius: demanding at range, forgiving up close).
@@ -27,6 +30,17 @@ export function RaceLayer() {
         <span className="hud-race-ring" />
         <span className="hud-race-label" />
         <span className="hud-race-dist" />
+      </div>
+      {/* the gate AFTER next: a faint ghost so the line reads ahead */}
+      <div
+        className="hud-race hud-race-ghost"
+        style={{ opacity: 0 }}
+        aria-hidden
+        ref={(el) => {
+          raceEls.next = el
+        }}
+      >
+        <span className="hud-race-ring" />
       </div>
       <div
         className="hud-capture"

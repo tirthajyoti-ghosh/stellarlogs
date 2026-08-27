@@ -1429,6 +1429,11 @@ body[data-focus='1'] .hud-target {
   .hud-welcome-card p { font-size: 13px; margin-top: 8px; }
 }
 
+.hud-race-ghost .hud-race-ring {
+  border-style: dashed;
+  transform: scale(0.7);
+}
+
 /* THE LANDSCAPE GATE — this bridge flies landscape */
 .hud-lgate {
   position: fixed;

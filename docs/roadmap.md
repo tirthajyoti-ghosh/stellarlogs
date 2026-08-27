@@ -529,12 +529,15 @@ the way (Tirtha). Deep exploration passes continue between builds
    class, and scope readability under pressure. Optional session
    recorder available on request.
 
-3.8. **THE TRACK RETHINK** (Tirtha, 2026-08-15): "way too hard for a
-   newbie who comes to our site… rethink the entire track thing, the
-   whole race thing." Full exploration pass owed BEFORE any build —
-   what a first-time visitor can actually fly, what the race is FOR
-   (the Water Run heritage), difficulty ramp, forgiveness, and whether
-   the current gates/checkpoints survive at all. Think first.
+3.8. **THE TRACK RETHINK — SHIPPED as THE WATER RUN, 2026-08-27**
+   (docs/the-track.md, three exploration passes + build on his GO).
+   The old drive-dark course was impossible as taught and had ZERO
+   plays in the trove. Now: drive lit, an eight-gate loop parented to
+   live orbits, misses cost +5s never the run, instant restart, three
+   named times (Kids 90 / Club 65 / Surveyor 50, black-box
+   calibrated), THE BOARD live at staging, the Dry Weeks fiction on
+   the venue, a standing docks-board posting, and full race telemetry.
+   Awaiting his first real laps to calibrate the tiers.
 
 3.9. **THE BLACK BOX — SHIPPED 2026-08-15** (his order: "any and every
    data must be collected… a treasure trove by the playtest"). The

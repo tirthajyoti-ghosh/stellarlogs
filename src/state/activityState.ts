@@ -99,6 +99,10 @@ export const activityState = {
   /** An escort/hunt contract is actually running (not merely standing at
    *  the board) — the Sleet must not take the picture from real work */
   contractLive: false,
+  /** Touch pill label for canRestart (empty = the gunnery default) */
+  restartLabel: '',
+  /** Race guidance: the gate AFTER the target (ghost marker; null = none) */
+  raceNext: null as { x: number; y: number; z: number } | null,
   /** Race guidance: world position of the next gate (null = no marker) */
   raceTarget: null as { x: number; y: number; z: number } | null,
   /** Label shown on the race marker ("START", "GATE 4", "FINISH") */

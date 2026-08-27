@@ -76,6 +76,7 @@ export function TouchControls() {
   const stickRef = useRef<HTMLDivElement>(null)
   const knobRef = useRef<HTMLDivElement>(null)
   const [canRestart, setCanRestart] = useState(false)
+  const [restartLabel, setRestartLabel] = useState('')
   const [hasOffer, setHasOffer] = useState(false)
   const [hasHunt, setHasHunt] = useState(false)
   const [battle, setBattle] = useState(false)
@@ -90,6 +91,7 @@ export function TouchControls() {
     if (!IS_TOUCH) return
     const id = setInterval(() => {
       setCanRestart(activityState.canRestart)
+      setRestartLabel(activityState.restartLabel)
       setHasOffer(activityState.offer !== '')
       setHasHunt(activityState.offerHunt !== '')
       setBattle(activityState.battle)
@@ -337,7 +339,7 @@ export function TouchControls() {
               <svg viewBox="0 0 24 24" aria-hidden>
                 <path d="M7 5 L19 12 L7 19 Z" fill="currentColor" />
               </svg>
-              RUN DRILL
+              {restartLabel || 'RUN DRILL'}
             </button>
           )}
           {hasOffer && (

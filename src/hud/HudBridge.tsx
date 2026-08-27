@@ -130,6 +130,24 @@ export function HudBridge() {
           el.style.opacity = '0'
         }
       }
+      // the ghost: gate-after-next, on-screen only, faint
+      const ghost = raceEls.next
+      if (ghost) {
+        const nxt = activityState.raceNext
+        if (nxt && !activityState.battle) {
+          _p.set(nxt.x, nxt.y, nxt.z)
+          _p.project(camera)
+          const behind = _p.z > 1
+          const x = (_p.x * 0.5 + 0.5) * size.width
+          const y = (-_p.y * 0.5 + 0.5) * size.height
+          const on = !behind && x > EDGE && x < size.width - EDGE && y > EDGE && y < size.height - 235
+          ghost.style.opacity = on ? '0.45' : '0'
+          if (on)
+            ghost.style.transform = `translate(-50%, -50%) translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`
+        } else {
+          ghost.style.opacity = '0'
+        }
+      }
     }
 
     // Battle mode: project live threats into the pooled marker layer
