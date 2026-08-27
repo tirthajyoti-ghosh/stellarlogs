@@ -80,7 +80,9 @@ const SETTINGS: Record<QualityTier, QualitySettings> = {
             ? 1.7
             : PERF_ARMS.has('dpr2')
               ? 2.0
-              : Math.min(2.5, typeof window !== 'undefined' ? window.devicePixelRatio : 2),
+              // 1.9 by telemetry: at 2.15-2.5 his Adreno 650 ran ~37 fps
+              // with ~48% janked frames and adaptive barely stepped down
+              : Math.min(1.9, typeof window !== 'undefined' ? window.devicePixelRatio : 1.9),
         ]
       : [1, 1.5],
     postprocessing: !IS_TOUCH,

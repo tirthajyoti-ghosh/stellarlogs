@@ -13,3 +13,4 @@ dist-probe/
 
 # texture candidates for the board picker (dev only until one is chosen)
 public/_textures/
+.env*

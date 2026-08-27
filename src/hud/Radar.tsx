@@ -37,7 +37,10 @@ export function Radar() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-    const ctx = canvas.getContext('2d')!
+    // iOS caps live canvas contexts: getContext can return null, and a
+    // bang here threw ONCE PER FRAME for those visitors (1,178 error
+    // events in the black box). Retry until the context exists.
+    let ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     let raf = 0
     let morphV = 0
     let lastNow = 0
@@ -65,6 +68,10 @@ export function Radar() {
 
     const draw = (now: number) => {
       raf = requestAnimationFrame(draw)
+      if (!ctx) {
+        ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+        if (!ctx) return
+      }
       const dtMs = lastNow ? Math.min(50, now - lastNow) : 16
       lastNow = now
 
