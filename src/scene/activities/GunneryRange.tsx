@@ -325,7 +325,10 @@ export function GunneryRange() {
         e.preventDefault()
         ;(document.activeElement as HTMLElement | null)?.blur?.()
       }
-      if (activityState.canRestart) activityState.restartRequest = true
+      // Scoped to THIS drill: on the race course Space is the railgun
+      // trigger, and a global listener here was ending runs mid-burn.
+      if (activityState.owner === 'gunnery' && activityState.canRestart)
+        activityState.restartRequest = true
     }
     window.addEventListener('keydown', down)
     return () => window.removeEventListener('keydown', down)

@@ -17,6 +17,7 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
+import { IS_TOUCH } from '../../config/quality'
 import { activityState, say } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
@@ -238,9 +239,11 @@ export function WaterRun() {
       jumpStandoff: TRACK_POI.standoff,
     })
     labelsChanged()
-    // R restarts, any time on the course
+    // Backspace restarts, any time on the course. NOT R — R is pitch-up
+    // (useShipControls), and racing pitch inputs were killing runs.
     const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'KeyR' && !e.repeat && activityState.owner === 'track') {
+      if (e.code === 'Backspace' && !e.repeat && activityState.owner === 'track') {
+        e.preventDefault()
         activityState.restartRequest = true
       }
     }
@@ -470,7 +473,9 @@ export function WaterRun() {
         ? ''
         : g.phase === 'idle'
           ? 'ROLL THE START RING'
-          : ''
+          : g.phase === 'over' && !IS_TOUCH
+            ? '⌫ RESTART'
+            : ''
       const tierTarget = g.best === 0 ? KIDS : g.best > CLUB ? CLUB : SURVEYOR
       activityState.lines = [
         {

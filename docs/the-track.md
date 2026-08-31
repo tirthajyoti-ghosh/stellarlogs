@@ -303,3 +303,20 @@ gates 1-6 → FINISH → "THE SURVEYOR'S TIME · NEW BEST" stored), the
 miss-and-yield flow, restart, the staging venue with THE BOARD.
 Test-record keys cleared after verification. Real lap times are HIS
 to set — the tiers await his flying.
+
+## Post-ship fix (2026-08-31): the restart keys were flight keys
+
+Tirtha's first real laps all died seconds in — "the timer ends and I'm
+asked to restart before the first ring." Telemetry showed every DNF was
+`reason: restart` at gate 1. Two key collisions:
+
+- **R restarted the run — but R is pitch-up** (useShipControls). Racing
+  pitch inputs were killing runs.
+- **GunneryRange's global Space listener** fired `restartRequest` for ANY
+  activity with `canRestart` — and Space is the railgun trigger.
+
+Fix: restart is **Backspace** (TrackMania's key, collides with nothing);
+the gunnery listener is scoped to `owner === 'gunnery'`; a `⌫ RESTART`
+hint shows in the panel after a finished run (desktop only — touch has
+the pill). Lesson recorded: any new activity keybinding must be checked
+against the flight map (W/A/S/D/R/F/Q/E/X/N/G/H/Space/Shift are taken).
