@@ -143,3 +143,9 @@ export function say(
   activityState.banner = { text, kind, until: now + seconds }
   activityState.bannerTier = tier
 }
+
+// Inspection handle for scripted acceptance runs (dev + probe builds)
+import { PROBES } from '../config/probes'
+if (PROBES && typeof window !== 'undefined') {
+  ;(window as unknown as Record<string, unknown>).__activityState = activityState
+}

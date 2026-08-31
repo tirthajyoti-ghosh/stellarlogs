@@ -144,7 +144,7 @@ const RACE_CONTROL: ContentItem = {
   title: 'Race Control — The Track',
   subtitle: 'Drift Racing Club · THE WATER RUN · eight rings, one lap',
   overview:
-    'In the Dry Weeks the club ran raw ice through this system, lap after lap, so the Drift never went dry. Now they run the route for time. Eight rings, the lap ends where it begins. A miss costs seconds, never the run. Kids from the Amnia run this in 90 flat.',
+    'In the Dry Weeks the club ran raw ice through this system, lap after lap, so the Drift never went dry. Now they run the route for time. Eight rings, the lap ends where it begins. Miss a ring? Circle back and roll it — only the clock keeps score. Kids from the Amnia run this in 90 flat.',
 }
 const THE_BOARD: ContentItem = {
   title: 'The Board',

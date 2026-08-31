@@ -40,8 +40,11 @@ import { FONT_BOLD } from '../boards/font'
  * - THE DRIVE STAYS LIT — you race the ship you already fly.
  * - Eight gates, a closed loop, every gate parented to LIVE bodies
  *   (moon gates LEAD their moon; nothing can ever sink into a planet).
- * - A miss NEVER ends the run: circle back, or eat +5s.
- * - Instant restart (R / the pill).
+ * - A miss NEVER ends the run — and never advances it either: the gate
+ *   stays the target until you roll it. The clock is the only judge
+ *   (his ruling 2026-08-31). Only Backspace/the pill or warping out
+ *   ends a run early.
+ * - Instant restart (Backspace / the pill).
  * - Three named times: THE KIDS' TIME, THE CLUB TIME, THE SURVEYOR'S
  *   TIME. Every finisher writes the board.
  * - The dive past the giant steals TURNING, not speed — gravity as a
@@ -55,9 +58,6 @@ const KIDS = 90
 const CLUB = 65
 const SURVEYOR = 50
 const PANEL_RANGE = 1300
-const GRACE_SECONDS = 10
-const MISS_WINDOW = 5
-const MISS_PENALTY = 5
 const BEST_KEY = 'stellarlogs-waterrun-best'
 const LAST_KEY = 'stellarlogs-waterrun-last'
 const TAUGHT_KEY = 'stellarlogs-waterrun-taught'
@@ -210,13 +210,10 @@ export function WaterRun() {
     phase: 'idle' as Phase,
     next: 1,
     startAt: 0,
-    penalty: 0,
     phaseUntil: 0,
-    graceUntil: 0,
     flashUntil: 0,
     flashText: '',
     missGate: -1,
-    missUntil: 0,
     best: Number(localStorage.getItem(BEST_KEY) ?? 0),
     last: Number(localStorage.getItem(LAST_KEY) ?? 0),
     taught: !!localStorage.getItem(TAUGHT_KEY),
@@ -327,7 +324,6 @@ export function WaterRun() {
     function endRun(banner: string, kind: 'info' | 'fail', reason: string) {
       if (g.phase === 'running') bbEvent('race-dnf', { reason, gate: g.next })
       g.phase = 'idle'
-      g.graceUntil = 0
       g.missGate = -1
       say(2, banner, kind, 2.4)
     }
@@ -336,8 +332,6 @@ export function WaterRun() {
       g.phase = 'running'
       g.next = 1
       g.startAt = now
-      g.penalty = 0
-      g.graceUntil = 0
       g.missGate = -1
       triggerGatePing(0)
       bbEvent('race-start', { restart })
@@ -347,7 +341,7 @@ export function WaterRun() {
     }
 
     function finishRun() {
-      const time = now - g.startAt + g.penalty
+      const time = now - g.startAt
       const tier =
         time <= SURVEYOR ? 'surveyor' : time <= CLUB ? 'club' : time <= KIDS ? 'kids' : 'ran'
       let text = `${time.toFixed(1)}S`
@@ -364,7 +358,7 @@ export function WaterRun() {
       }
       g.flashText = text
       g.flashUntil = now + 4.5
-      bbEvent('race-finish', { time: +time.toFixed(1), tier, penalty: g.penalty })
+      bbEvent('race-finish', { time: +time.toFixed(1), tier })
       if (tier === 'surveyor' || tier === 'club') triggerFanfare()
       say(2, `THE BOARD REMEMBERS — ${time.toFixed(1)}S`, 'win', 3.2)
       g.phase = 'over'
@@ -393,7 +387,7 @@ export function WaterRun() {
           // clean pass (also clears a pending miss on this gate)
           g.missGate = -1
           triggerGatePing(g.next)
-          bbEvent('race-gate', { i: g.next, split: +(now - g.startAt + g.penalty).toFixed(1) })
+          bbEvent('race-gate', { i: g.next, split: +(now - g.startAt).toFixed(1) })
           if (g.next === LAST) {
             finishRun()
           } else {
@@ -401,24 +395,13 @@ export function WaterRun() {
             g.flashText = `GATE ${g.next - 1} / ${LAST - 1}`
             g.flashUntil = now + 1.1
           }
-        } else if (r >= 0 && r < 800 && g.missGate !== g.next) {
-          // THE MISS: never fatal — circle back, or eat +5s
+        } else if (r >= 0 && r < 1400 && g.missGate !== g.next) {
+          // THE MISS: the gate stays the target — circling back IS the cost
           g.missGate = g.next
-          g.missUntil = now + MISS_WINDOW
           bbEvent('race-miss', { i: g.next })
-          say(0, `MISSED — CIRCLE BACK, OR TAKE +${MISS_PENALTY}S`, 'fail', 2.2)
+          say(0, 'MISSED — CIRCLE BACK AND ROLL IT', 'fail', 2.2)
         }
       }
-    }
-    // miss auto-yield: the penalty lands, the race moves on
-    if (running && g.missGate === g.next && now >= g.missUntil) {
-      g.penalty += MISS_PENALTY
-      g.missGate = -1
-      triggerGatePing(g.next)
-      g.flashText = `+${MISS_PENALTY}S`
-      g.flashUntil = now + 1.4
-      if (g.next === LAST) finishRun()
-      else g.next++
     }
     if (g.phase === 'over' && now >= g.phaseUntil) g.phase = 'idle'
 
@@ -426,19 +409,13 @@ export function WaterRun() {
       if (shipRig.warping) {
         endRun('RUN VOID — LEFT THE COURSE', 'info', 'warped')
       } else {
-        // per-leg corridor: the racing line can NEVER trip it
+        // far off the leg: a reminder, never an ending — the clock is the
+        // only judge, and Backspace/warp are the only ways out of a run
         const prevGate = gates[g.next - 1]
         const legLen = prevGate.position.distanceTo(gates[g.next].position)
         const corridor = Math.max(2600, legLen * 1.15)
         const gateDist = shipRig.position.distanceTo(gates[g.next].position)
-        if (gateDist > corridor) {
-          if (g.graceUntil === 0) g.graceUntil = now + GRACE_SECONDS
-          const left = Math.max(0, g.graceUntil - now)
-          say(0, `RETURN TO COURSE — ${Math.ceil(left)}S`, 'fail', 0.4)
-          if (now >= g.graceUntil) endRun('RUN ABANDONED', 'info', 'corridor')
-        } else if (g.graceUntil !== 0 && gateDist < corridor - 200) {
-          g.graceUntil = 0
-        }
+        if (gateDist > corridor) say(0, 'THE COURSE IS BEHIND YOU', 'fail', 0.4)
       }
     }
 
@@ -481,7 +458,7 @@ export function WaterRun() {
         {
           label: 'TIME',
           value: running
-            ? `${(now - g.startAt + g.penalty).toFixed(1)}S${g.penalty > 0 ? ` (+${g.penalty})` : ''}`
+            ? `${(now - g.startAt).toFixed(1)}S`
             : '—',
         },
         { label: 'GATE', value: running ? `${g.next}/${LAST}` : '—' },

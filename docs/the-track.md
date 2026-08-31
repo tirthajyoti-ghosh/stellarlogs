@@ -320,3 +320,17 @@ the gunnery listener is scoped to `owner === 'gunnery'`; a `⌫ RESTART`
 hint shows in the panel after a finished run (desktop only — touch has
 the pill). Lesson recorded: any new activity keybinding must be checked
 against the flight map (W/A/S/D/R/F/Q/E/X/N/G/H/Space/Shift are taken).
+
+## Post-ship ruling (2026-08-31): a miss only moves the clock
+
+His first flyable laps: gates come fast, misses are easy, and the +5s
+auto-yield plus the corridor abandon still felt like being sent back to
+the start. Ruling: **"if I miss a ring, I can come back and complete
+it. Nothing changes — only the timer."**
+
+So the punishment apparatus is gone: no +5s penalty, no miss window, no
+RUN ABANDONED. A missed gate stays the target until rolled (amber ring,
+one callout, wider 1400u detection); far off the leg you get THE COURSE
+IS BEHIND YOU as a reminder, never an ending. A run now ends three ways
+only: the finish ring, Backspace/the pill, or warping out. The clock is
+the only judge.
