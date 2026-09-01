@@ -20,6 +20,7 @@ import { shipRig } from '../state/shipRig'
 import { registerHudLabel } from '../hud/hudState'
 import { setVigilDuck, triggerBell } from '../audio/engine'
 import { lightCandle, getCandles, gClaims } from '../systems/tallies'
+import { lvTotals } from '../systems/liveness'
 import { WRECK_POI } from '../config/pois'
 import { FONT_BOLD } from './boards/font'
 import { Billboard } from './boards/Billboard'
@@ -146,7 +147,16 @@ const MAG_NEAR = 280
 
 export function NilakVigil() {
   const nilak = useGLTF(NILAK_URL)
+  // display count: every pilot's candles once the relay answers, your
+  // own until then (docs/the-liveness.md L1 — local-first honesty)
   const [candles, setCandles] = useState(getCandles())
+  useEffect(() => {
+    const id = setInterval(() => {
+      const total = lvTotals()?.candles
+      if (total != null) setCandles((cur) => (total > cur ? total : cur))
+    }, 5000)
+    return () => clearInterval(id)
+  }, [])
   const rootRef = useRef<Group>(null)
   const detailRef = useRef<Group>(null)
   const nameRingRef = useRef<Group>(null)
@@ -386,7 +396,8 @@ export function NilakVigil() {
       if (!st.near || st.addedThisApproach || st.join >= 0) return
       st.addedThisApproach = true
       const n = lightCandle()
-      st.joinSlot = Math.min(SEED_CANDLES + n - 1, MAX_FLAMES - 1)
+      const shownTotal = Math.max(lvTotals()?.candles ?? 0, n)
+      st.joinSlot = Math.min(SEED_CANDLES + shownTotal - 1, MAX_FLAMES - 1)
       st.join = 0
       // your candle appears low on the deck, on your side of the ring
       const ring = candleRingRef.current
@@ -399,7 +410,7 @@ export function NilakVigil() {
         // into ring-local space (the ring has rotated)
         st.joinFrom.copy(_p).applyAxisAngle(_yAxis, -ring.rotation.y)
       }
-      setCandles(n)
+      setCandles(Math.max(lvTotals()?.candles ?? 0, n))
       triggerBell() // one soft toll, heard inside your own hull
     }
     window.addEventListener('keydown', down)

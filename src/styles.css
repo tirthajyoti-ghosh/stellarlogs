@@ -2172,3 +2172,133 @@ body[data-touch='1'] .hud-label {
 body[data-touch='1'] .hud-label-dist { display: none; }
 body[data-touch='1'] .hud-label-system { font-size: 13px; }
 body[data-touch='1'] .hud-threat-arrow { font-size: 17px; }
+
+/* THE TRANSMITTER — the hail composer at the Comms Station
+   (docs/the-liveness.md L3). Phrasebook only; three columns. */
+.hud-hail-chip {
+  position: fixed;
+  bottom: calc(18px + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  pointer-events: auto;
+  padding: 10px 22px;
+  border: 1px solid rgba(120, 220, 240, 0.5);
+  border-radius: 999px;
+  background: rgba(6, 16, 26, 0.82);
+  color: #9fe8f0;
+  font: 600 12px/1 'Rajdhani', sans-serif;
+  letter-spacing: 0.22em;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hud-hail-chip:active { background: rgba(20, 44, 62, 0.9); }
+body[data-touch='1'] .hud-hail-chip-key { display: none; }
+.hud-hail-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 44;
+  background: rgba(2, 6, 12, 0.55);
+  pointer-events: auto;
+}
+.hud-hail {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 45;
+  pointer-events: auto;
+  width: min(720px, 94vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px calc(14px + env(safe-area-inset-bottom, 0px));
+  border: 1px solid rgba(120, 220, 240, 0.35);
+  background: rgba(5, 12, 20, 0.94);
+  color: #cfe6f2;
+  font-family: 'Rajdhani', sans-serif;
+}
+.hud-hail-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  color: #7fc6de;
+}
+.hud-hail-cols {
+  display: flex;
+  gap: 10px;
+  overflow: hidden;
+  min-height: 0;
+}
+.hud-hail-col {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  max-height: 46vh;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.hud-hail-col-name {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: #5f7c92;
+  padding: 2px 0 4px;
+  position: sticky;
+  top: 0;
+  background: rgba(5, 12, 20, 0.94);
+}
+.hud-hail-col button {
+  appearance: none;
+  border: 1px solid rgba(95, 124, 146, 0.28);
+  background: rgba(12, 24, 36, 0.6);
+  color: #b8d2e2;
+  font: 600 11px/1.35 'Rajdhani', sans-serif;
+  letter-spacing: 0.12em;
+  text-align: left;
+  padding: 9px 10px;
+  min-height: 40px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hud-hail-col button[data-on='1'] {
+  border-color: rgba(120, 220, 240, 0.75);
+  background: rgba(24, 52, 70, 0.85);
+  color: #cff4fa;
+}
+.hud-hail-preview {
+  border: 1px dashed rgba(120, 220, 240, 0.35);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: #ffe2b0;
+  text-align: center;
+}
+.hud-hail-flag { color: #7fc6de; font-size: 12px; }
+.hud-hail-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+.hud-hail-actions button {
+  appearance: none;
+  font: 700 12px/1 'Rajdhani', sans-serif;
+  letter-spacing: 0.24em;
+  padding: 11px 26px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hud-hail-send {
+  border: 1px solid rgba(255, 192, 110, 0.7);
+  background: rgba(64, 42, 14, 0.8);
+  color: #ffd9a0;
+}
+.hud-hail-send:disabled { opacity: 0.5; cursor: default; }
+.hud-hail-close {
+  border: 1px solid rgba(95, 124, 146, 0.4);
+  background: rgba(12, 24, 36, 0.7);
+  color: #9db8c8;
+}
