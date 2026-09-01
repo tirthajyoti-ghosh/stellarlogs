@@ -334,3 +334,14 @@ one callout, wider 1400u detection); far off the leg you get THE COURSE
 IS BEHIND YOU as a reminder, never an ending. A run now ends three ways
 only: the finish ring, Backspace/the pill, or warping out. The clock is
 the only judge.
+
+## TABLED — 2026-09-01
+
+He took the fixed race for a spin: *"working as expected, but I'm not
+really happy with the entire concept of it. The entire fiction and the
+story… and also the execution. We just try two rings, and it's
+forgiving. But then what's the point?"* Tabled for a future re-review —
+the Water Run stays live exactly as it is (no removal, no more tuning),
+and the next roadmap item proceeds. Whoever reopens this: the objection
+is fundamental, not mechanical — the question to answer first is what
+makes rolling rings WORTH DOING, before any more polish on how.

@@ -529,7 +529,14 @@ the way (Tirtha). Deep exploration passes continue between builds
    class, and scope readability under pressure. Optional session
    recorder available on request.
 
-3.8. **THE TRACK RETHINK — SHIPPED as THE WATER RUN, 2026-08-27**
+3.8. **THE TRACK RETHINK — TABLED 2026-09-01** (shipped as THE WATER
+   RUN 2026-08-27; stays live as-is). After his first real laps his
+   verdict was on the CONCEPT, not the bugs: the fiction/story and the
+   execution don't land — "we just try two rings, and it's forgiving.
+   But then what's the point?" Both post-ship fixes stand (restart is
+   Backspace, the clock is the only judge). No further work without a
+   re-review; the race, the venue, and its telemetry keep running.
+   History: SHIPPED as THE WATER RUN, 2026-08-27
    (docs/the-track.md, three exploration passes + build on his GO).
    The old drive-dark course was impossible as taught and had ZERO
    plays in the trove. Now: drive lit, an eight-gate loop parented to
