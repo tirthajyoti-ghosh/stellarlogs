@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>THE LOGBOOK — ink bench</title>
+<style>
+  :root {
+    --room: #0a0f16;
+    --paper: #d8cfae;
+    --paper-edge: #b8ab84;
+    --paper-shadow: #8f8560;
+    --pen: #2a2d3a;
+    --ink-blue: #23406e;
+    --ink-red: #7a2e26;
+    --ink-black: #23262b;
+    --ink-green: #2e5940;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  body {
+    background: radial-gradient(1200px 700px at 50% 30%, #101823, var(--room) 70%);
+    color: #9db8c8;
+    font-family: "Space Mono", ui-monospace, Menlo, monospace;
+    min-height: 100vh;
+    padding: 34px 20px 80px;
+  }
+  h1 { font-size: 14px; letter-spacing: .34em; color: #9fd8ef; text-align: center; font-weight: 400; }
+  .sub { text-align: center; font-size: 11px; margin: 8px 0 34px; color: #5f7c92; letter-spacing: .12em; }
+  .benchrow { display: flex; flex-wrap: wrap; gap: 42px; justify-content: center; }
+  .option { width: 640px; max-width: 96vw; }
+  .optlabel { font-size: 11px; letter-spacing: .3em; color: #ffc06e; margin: 0 0 12px 6px; }
+  .optnote { font-size: 10.5px; color: #5f7c92; margin: 10px 6px 0; line-height: 1.6; letter-spacing: .04em; }
+
+  /* ---------- the book ---------- */
+  .book {
+    display: flex;
+    background: linear-gradient(90deg, var(--paper-edge), var(--paper) 8%, var(--paper) 46%, #c9bf98 50%, var(--paper) 54%, var(--paper) 92%, var(--paper-edge));
+    border-radius: 6px;
+    box-shadow: 0 18px 50px rgba(0,0,0,.55), inset 0 0 60px rgba(120,100,60,.18);
+    min-height: 420px;
+    position: relative;
+    color: var(--pen);
+  }
+  .book::after { /* staple line */
+    content: '';
+    position: absolute; left: 50%; top: 4%; bottom: 4%;
+    width: 1px; border-left: 1px dashed rgba(60,50,30,.35);
+  }
+  .page { flex: 1; padding: 26px 26px 22px; position: relative; }
+  .page.grain, .book { background-blend-mode: multiply; }
+
+  /* left page — the plate */
+  .plate-head { font-size: 11px; letter-spacing: .26em; color: #4a4436; }
+  .plate-title { font-size: 17px; letter-spacing: .2em; margin-top: 6px; color: #33302a; font-weight: 700; }
+  .rule { border: none; border-top: 1px solid rgba(60,50,30,.35); margin: 14px 0; }
+  .field { font-size: 11px; margin: 10px 0; letter-spacing: .08em; color: #4a4436; }
+  .field b { color: #23262b; letter-spacing: .12em; }
+  .withheld { text-decoration: line-through; text-decoration-color: rgba(35,38,43,.7); }
+  .fine { font-size: 9px; color: #6d654e; margin-top: 26px; line-height: 1.7; letter-spacing: .06em; }
+
+  /* ---------- stamps, shared bones ---------- */
+  .stamp { position: absolute; mix-blend-mode: multiply; }
+  .tallies { font-size: 15px; letter-spacing: 2px; font-weight: 700; }
+
+  /* A — round seals */
+  .seal {
+    width: 128px; height: 128px; border-radius: 50%;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; gap: 2px;
+    border: 3px double currentColor;
+    box-shadow: inset 0 0 0 8px transparent;
+    opacity: .82;
+  }
+  .seal .who { font-size: 8px; letter-spacing: .22em; font-weight: 700; }
+  .seal .what { font-size: 10px; letter-spacing: .14em; font-weight: 700; margin-top: 2px; }
+  .seal .when { font-size: 8px; letter-spacing: .1em; margin-top: 3px; }
+  .seal::before { content: '✦ ✦ ✦'; font-size: 7px; letter-spacing: 6px; }
+  .seal::after  { content: '✦ ✦ ✦'; font-size: 7px; letter-spacing: 6px; }
+
+  /* B — customs bars */
+  .bar {
+    border: 2.5px solid currentColor;
+    padding: 8px 14px 7px;
+    opacity: .85;
+    text-align: left;
+  }
+  .bar .who { font-size: 8px; letter-spacing: .26em; font-weight: 700; }
+  .bar .what { font-size: 14px; letter-spacing: .12em; font-weight: 700; margin-top: 2px; }
+  .bar .when { font-size: 8.5px; letter-spacing: .14em; margin-top: 3px; border-top: 1.5px solid currentColor; padding-top: 3px; }
+
+  /* pending — pencil outline (a deed already done, ink owed) */
+  .pending { opacity: .38; border-style: dashed !important; filter: saturate(0); }
+  .pending .owed { font-size: 8px; letter-spacing: .18em; margin-top: 4px; font-weight: 700; }
+
+  .ghost { opacity: .16 !important; transform: translate(3px, 2px) rotate(-1deg); }
+</style>
+</head>
+<body>
+  <h1>THE PILOT'S LOGBOOK — INK BENCH</h1>
+  <div class="sub">three stamp languages · same spread · judge in place (docs/the-logbook.md §6)</div>
+
+  <div class="benchrow">
+
+    <!-- ================= OPTION A ================= -->
+    <div class="option">
+      <div class="optlabel">A — ROUND SEALS (port-authority classic)</div>
+      <div class="book">
+        <div class="page">
+          <div class="plate-head">AMNIA PORT AUTHORITY · ISSUE 11-C</div>
+          <div class="plate-title">PILOT'S LOG</div>
+          <hr class="rule" />
+          <div class="field">HULL — <b>BLT-1129 · ROCINANTE-CLASS</b></div>
+          <div class="field">PILOT — <b class="withheld">NAME</b> WITHHELD · BELTER CUSTOM</div>
+          <div class="field">ISSUED — <b>SEP 1 2026 · INTERAMNIA DRIFT</b></div>
+          <div class="fine">
+            THIS BOOK IS THE PILOT'S OWN RECORD. AUTHORITIES STAMP ONLY WHAT
+            THEY WITNESS. THE BELT KEEPS NO COPIES.<br /><br />
+            LOST BOOK, NEW BOOK. FLY SAFE.
+          </div>
+        </div>
+        <div class="page">
+          <div class="stamp seal" style="color: var(--ink-blue); top: 22px; left: 30px; transform: rotate(-7deg);">
+            <span class="who">AMNIA DOCKMASTER</span>
+            <span class="what">PORT OF ENTRY</span>
+            <span class="when">AUG 02 2026</span>
+          </div>
+          <div class="stamp seal" style="color: var(--ink-red); top: 48px; right: 18px; transform: rotate(4deg);">
+            <span class="who">AMNIA MILITIA</span>
+            <span class="what">PDC CERTIFIED</span>
+            <span class="when">AUG 05 2026</span>
+          </div>
+          <div class="stamp seal" style="color: var(--ink-black); bottom: 96px; left: 44px; transform: rotate(2deg);">
+            <span class="who">AMNIA DOCKMASTER</span>
+            <span class="what">ESCORT DUTY</span>
+            <span class="when">AUG 09 2026</span>
+          </div>
+          <div class="stamp tallies" style="color: var(--ink-black); bottom: 78px; left: 86px; transform: rotate(-3deg);">|||&#8202;|</div>
+          <div class="stamp seal pending" style="color: var(--ink-green); bottom: 30px; right: 26px; transform: rotate(-3deg);">
+            <span class="who">CIVIL DEFENSE</span>
+            <span class="what">PICKET STOOD</span>
+            <span class="owed">INK OWED — CALL AT THE DRIFT</span>
+          </div>
+        </div>
+      </div>
+      <div class="optnote">Round rubber seals, one color per authority. Reads "official"
+      instantly; big footprint means ~4 stamps a page.</div>
+    </div>
+
+    <!-- ================= OPTION B ================= -->
+    <div class="option">
+      <div class="optlabel">B — CUSTOMS BARS (harbor paperwork)</div>
+      <div class="book">
+        <div class="page">
+          <div class="plate-head">AMNIA PORT AUTHORITY · ISSUE 11-C</div>
+          <div class="plate-title">PILOT'S LOG</div>
+          <hr class="rule" />
+          <div class="field">HULL — <b>BLT-1129 · ROCINANTE-CLASS</b></div>
+          <div class="field">PILOT — <b class="withheld">NAME</b> WITHHELD · BELTER CUSTOM</div>
+          <div class="field">ISSUED — <b>SEP 1 2026 · INTERAMNIA DRIFT</b></div>
+          <div class="fine">
+            THIS BOOK IS THE PILOT'S OWN RECORD. AUTHORITIES STAMP ONLY WHAT
+            THEY WITNESS. THE BELT KEEPS NO COPIES.<br /><br />
+            LOST BOOK, NEW BOOK. FLY SAFE.
+          </div>
+        </div>
+        <div class="page">
+          <div class="stamp bar" style="color: var(--ink-blue); top: 26px; left: 26px; transform: rotate(-2deg);">
+            <div class="who">AMNIA DOCKMASTER · INTERAMNIA DRIFT</div>
+            <div class="what">PORT OF ENTRY</div>
+            <div class="when">AUG 02 2026 · LANE 1</div>
+          </div>
+          <div class="stamp bar" style="color: var(--ink-red); top: 118px; right: 22px; transform: rotate(3deg);">
+            <div class="who">AMNIA MILITIA · RANGE OFFICE</div>
+            <div class="what">PDC CERTIFICATION</div>
+            <div class="when">AUG 05 2026 · ESCORT DUTY STANDARD</div>
+          </div>
+          <div class="stamp bar" style="color: var(--ink-black); bottom: 128px; left: 38px; transform: rotate(-1deg);">
+            <div class="who">AMNIA DOCKMASTER</div>
+            <div class="what">ESCORT DUTY</div>
+            <div class="when">FIRST: AUG 09 2026</div>
+          </div>
+          <div class="stamp tallies" style="color: var(--ink-black); bottom: 108px; left: 52px;">|||&#8202;|</div>
+          <div class="stamp bar ghost" style="color: var(--ink-black); bottom: 124px; left: 42px; transform: rotate(-1deg);">
+            <div class="who">AMNIA DOCKMASTER</div>
+            <div class="what">ESCORT DUTY</div>
+            <div class="when">FIRST: AUG 09 2026</div>
+          </div>
+          <div class="stamp bar pending" style="color: var(--ink-green); bottom: 34px; right: 30px; transform: rotate(2deg);">
+            <div class="who">COLONY CIVIL DEFENSE</div>
+            <div class="what">PICKET STOOD</div>
+            <div class="owed">INK OWED — CALL AT THE DRIFT</div>
+          </div>
+        </div>
+      </div>
+      <div class="optnote">Rectangular entry stamps with an issuer line and a detail line —
+      the most information per stamp (lane, standard, first-date). Includes a
+      double-strike ghost on ESCORT DUTY: ink is applied by a person.</div>
+    </div>
+
+    <!-- ================= OPTION C ================= -->
+    <div class="option">
+      <div class="optlabel">C — MIXED PASSPORT (authorities round · deeds barred)</div>
+      <div class="book">
+        <div class="page">
+          <div class="plate-head">AMNIA PORT AUTHORITY · ISSUE 11-C</div>
+          <div class="plate-title">PILOT'S LOG</div>
+          <hr class="rule" />
+          <div class="field">HULL — <b>BLT-1129 · ROCINANTE-CLASS</b></div>
+          <div class="field">PILOT — <b class="withheld">NAME</b> WITHHELD · BELTER CUSTOM</div>
+          <div class="field">ISSUED — <b>SEP 1 2026 · INTERAMNIA DRIFT</b></div>
+          <div class="fine">
+            THIS BOOK IS THE PILOT'S OWN RECORD. AUTHORITIES STAMP ONLY WHAT
+            THEY WITNESS. THE BELT KEEPS NO COPIES.<br /><br />
+            LOST BOOK, NEW BOOK. FLY SAFE.
+          </div>
+        </div>
+        <div class="page">
+          <div class="stamp seal" style="color: var(--ink-blue); top: 12px; left: 20px; transform: rotate(-6deg); width: 104px; height: 104px;">
+            <span class="who">AMNIA DOCKMASTER</span>
+            <span class="what">PORT OF ENTRY</span>
+            <span class="when">AUG 02 2026</span>
+          </div>
+          <div class="stamp seal" style="color: var(--ink-black); top: 20px; right: 14px; transform: rotate(5deg); width: 104px; height: 104px;">
+            <span class="who">CONSTABULARY</span>
+            <span class="what">INTERDICTION</span>
+            <span class="when">AUG 12 2026</span>
+          </div>
+          <div class="stamp bar" style="color: var(--ink-red); top: 148px; left: 24px; transform: rotate(-1deg);">
+            <div class="who">AMNIA MILITIA</div>
+            <div class="what">PDC CERTIFICATION</div>
+            <div class="when">AUG 05 2026</div>
+          </div>
+          <div class="stamp bar" style="color: var(--ink-black); top: 232px; left: 46px; transform: rotate(2deg);">
+            <div class="who">AMNIA DOCKMASTER</div>
+            <div class="what">ESCORT DUTY</div>
+            <div class="when">FIRST: AUG 09 2026</div>
+          </div>
+          <div class="stamp tallies" style="color: var(--ink-black); top: 300px; left: 62px; transform: rotate(-1deg);">|||&#8202;|</div>
+          <div class="stamp bar pending" style="color: var(--ink-green); bottom: 10px; right: 14px; transform: rotate(-2deg);">
+            <div class="who">COLONY CIVIL DEFENSE</div>
+            <div class="what">PICKET STOOD</div>
+            <div class="owed">INK OWED — CALL AT THE DRIFT</div>
+          </div>
+        </div>
+      </div>
+      <div class="optnote">The lived-in mix: seals for standing authorities, bars for jobs
+      done, pen tallies beneath. Most texture, needs the most care to stay
+      readable at HUD-drawer size.</div>
+    </div>
+
+  </div>
+</body>
+</html>
