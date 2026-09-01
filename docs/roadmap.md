@@ -328,10 +328,13 @@ hose being swept — the stream leaves in curves that lag the motion. Design:
 - Tracer-every-Nth-round look; spatialized PDC audio already exists.
 Perf: one instanced mesh pool, thousands of rounds are cheap.
 
-### Debris storm over the Drift (event)
-A rock shower where PDCs do **civil defense**: fly picket over the colony,
-guns eat incoming debris, no enemy at all. Later becomes a liveness hook —
-a clock-synced "storm hour" every visitor experiences together.
+### Debris storm over the Drift (event) — BUILT 2026-08-15 as THE SLEET
+(docs/the-storm.md; KhioneSleet.tsx + reserve.ts + sleetClock.ts.) The
+charted rubble stream that crosses the lane on schedule; the stake is
+the Nilak's salvaged tanks — the colony's water. Clock-synced, so the
+"storm hour" liveness hook exists ALREADY. TUNING SUSPECT (his field
+report 2026-09-01): rock disintegration timing vs PDC fire, and the
+unreadable optimal picket distance — now RUN E of THE PLAYTEST.
 
 ### Slag skeet (toy, lore-native test case)
 The range's toy layer: a mass driver hurls smelter slag; you fly to keep the
@@ -444,8 +447,9 @@ the way (Tirtha). Deep exploration passes continue between builds
    spills (5 fields across the neighborhood); the militia kill-board;
    small secrets; THE HEADLIGHT; THE VIGIL v1→v3 (the Gamarra-pattern
    hologram, 42 gravestones, the quiet sphere, the memorial board).
-   RETIRED: slag skeet (borrowed-body law). STILL UNBUILT: **the debris
-   storm** (PDC-only civil defense) — the last piece of this pass.
+   RETIRED: slag skeet (borrowed-body law). The debris storm SHIPPED
+   2026-08-15 as THE SLEET (see above) — this pass is COMPLETE; the
+   Sleet's tuning questions moved into THE PLAYTEST (RUN E).
 3.1. **THE SPINE — the railgun** — TABLED 2026-08-12 as a recorded
    failure (docs/the-spine.md): the HUD element never earned approval
    after many rounds; removed from the game, revisit later. The debris

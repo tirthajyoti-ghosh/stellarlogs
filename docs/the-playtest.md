@@ -65,6 +65,20 @@ looking at the next run** (first impressions decay fast).
   the pattern make it boring, or does mastery feel good?)
 - **RUN C — one escort, start to finish**, ideally a marked hauler.
 - **RUN D — one manhunt** through to the arrest.
+- **RUN E — one SLEET pass, stood as picket** (added 2026-09-01, his
+  call after standing one for real). His field report already names
+  the suspects, so this run has extra questions beyond the six:
+  - **The disintegration beat feels wrong**: PDC rounds don't break
+    rocks "at the correct time" — is the rock HP / round damage tuned
+    so a tracked rock dies at a readable, satisfying moment, or do
+    rocks absorb fire past the point where the stream visibly landed?
+  - **Station-keeping is unreadable**: what IS the optimal picket
+    distance from the tanks, and can a player discover it in-game?
+    (PDC reach is 300u — does anything communicate that the shield
+    envelope, not the gun, is what you position?)
+  - Pull the numbers from KhioneSleet.tsx into PART 1 (rock HP, spawn
+    rate, closing speeds, damage-per-round) before the run, same
+    facts-first law as the others.
 
 ## PART 4 — the six questions, asked the same way every run
 
