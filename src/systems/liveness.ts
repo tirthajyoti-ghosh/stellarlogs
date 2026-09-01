@@ -41,7 +41,7 @@ interface Pending {
 /** null until the relay has answered at least once this session */
 export const livenessState: { facts: WorldFacts | null } = { facts: null }
 
-let pending: Pending = (() => {
+const pending: Pending = (() => {
   try {
     const raw = localStorage.getItem(PENDING_KEY)
     const p = raw ? (JSON.parse(raw) as Pending) : null

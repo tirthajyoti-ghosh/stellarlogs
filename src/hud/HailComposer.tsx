@@ -28,9 +28,11 @@ export function HailComposer() {
   const [s, setS] = useState(0)
   const [busy, setBusy] = useState(false)
   const openRef = useRef(open)
-  openRef.current = open
   const nearRef = useRef(near)
-  nearRef.current = near
+  useEffect(() => {
+    openRef.current = open
+    nearRef.current = near
+  }, [open, near])
 
   useEffect(() => {
     const id = setInterval(() => {
