@@ -26,7 +26,7 @@ const STATION = new Vector3(...STATION_POSITION)
 const SLOTS = 30
 const ARC_R = 240
 const ARC_SPAN = Math.PI * 0.9
-const REVEAL_AT = 130
+const REVEAL_AT = 110
 const _dummy = new Object3D()
 const _color = new Color()
 const _slot = new Vector3()
@@ -68,7 +68,7 @@ export function HailLine() {
       slotPos(i, _slot)
       _dummy.position.copy(_slot)
       _dummy.rotation.set(0, 0, 0)
-      _dummy.scale.setScalar(2.6)
+      _dummy.scale.setScalar(1.7)
       _dummy.updateMatrix()
       mesh.setMatrixAt(i, _dummy.matrix)
     }
@@ -132,12 +132,12 @@ export function HailLine() {
             labelRef.current = el
           }) as never}
           font={FONT_BOLD}
-          fontSize={3.2}
+          fontSize={2.1}
           letterSpacing={0.14}
           color="#9fe8f0"
           anchorX="center"
           anchorY="middle"
-          maxWidth={90}
+          maxWidth={38}
           textAlign="center"
           material-toneMapped={false}
           outlineWidth={0.28}

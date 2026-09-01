@@ -567,8 +567,17 @@ the way (Tirtha). Deep exploration passes continue between builds
    - mobile-ready by design: touch/orientation/viewport recorded now,
      so 3.5's landscape build lands pre-instrumented.
 
-4. Liveness backend (hails, counters, daily boards) — procgen-compatible
-   — the Black Box's endpoint pattern and pilot identity carry over
+4. Liveness backend — SHIPPED 2026-09-01 as THE LIVENESS
+   (docs/the-liveness.md L0-L3): api/liveness relay of approved
+   world-facts only (analytics stay internal, his law); ALL HANDS
+   counters on the kill-board + the vigil's shared flame ring; the
+   PORT REGISTRY pennant cord; phrasebook hails as beacon buoys off
+   the Comms Station (Branch B — no free text, no moderation queue).
+   Daily boards REJECTED (traffic honesty + no-leaderboards law).
+   Deferred by design: dockmaster's log (privacy), sleet-pass residue
+   (L4, needs his ask), free-text hails (Branch A, parked).
+   Procgen-compatible: pilot id + KV + allowlist endpoint is the
+   first-survey-credit architecture for the Deep.
 5. Achievements verdict → implement chosen shape
 5.9. **THE PLAYTEST runs here** (see 3.7) — the last gate before the Deep.
 6. The Deep (HORIZON)

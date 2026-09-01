@@ -20,9 +20,11 @@ import { FONT_BOLD } from './boards/font'
  * an empty cord would be the empty-room lie.
  */
 
+// strung directly under the militia kill-board — the one clear band in
+// the docks signage stack (the flank collides with THE CRIB's cradle)
 const POS = [
   DRIFT_POI.position[0] + 250,
-  DRIFT_POI.position[1] + 84,
+  DRIFT_POI.position[1] + 38,
   DRIFT_POI.position[2] + 210,
 ] as const
 const SHOWN_MAX = 24

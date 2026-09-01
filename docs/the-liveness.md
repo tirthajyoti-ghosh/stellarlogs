@@ -229,3 +229,49 @@ bucket.
    coarse time, or skip?
 4. **Phase order confirm** (L0→L1→L2→L3), and whether L4's sleet
    residue is wanted at all.
+
+---
+
+# BUILT — L0 through L3 in one pass (2026-09-01)
+
+Shipped on his "your recommendations are okay with me, you can start":
+
+- **L0** `api/liveness.ts` — separate from the black box forever; GET
+  edge-cached 60s returns only the approved world-facts; POST clamps
+  every number, fixed-windows every pilot AND ip-hash bucket, gates
+  hails behind a 5-minute server-clock age, accepts each pilot's
+  pre-backend history exactly once (seed), and shadowbans by writing
+  poisoned pilots to nowhere. Verified against production: clamps
+  (999 candles → +4), lowercase flags normalized, XYZ rejected,
+  too-new hail 429, out-of-phrasebook 400, non-plt pilot 400, hail
+  rate limit trips on the third in an hour. Lesson paid for: the
+  api/ boundary is real at runtime — the function can't import
+  src/config/hails.ts, so it validates pinned PHRASE_BOUNDS and a
+  desync degrades to silence, never text.
+- **L0 client** `src/systems/liveness.ts` — local-first; pending
+  deltas persist and clear only on confirmed store; displayed total =
+  global + pending so a candle counts once and immediately; the flag
+  derives from Intl locale (never geo-IP); relay down = boards say
+  what they always said.
+- **L1** — the kill-board's big number is ALL HANDS with YOURS
+  beneath; the rocks line carries both; the vigil's flame ring and
+  CANDLES LIT total follow the world count (your candle still climbs
+  from your side of the ring).
+- **L2** — PORT REGISTRY — SHIPS FROM n PORTS: the pennant cord under
+  the kill-board, 2-letter registry codes on plates, hidden entirely
+  until the relay answers (an empty cord is the empty-room lie).
+- **L3** — THE TRANSMITTER at the Comms Station (T / tap the chip
+  within 460u): three phrasebook columns, live preview, honest relay
+  answers (on the line / needs time / unreachable). THE HAIL LINE:
+  the last 30 hails as strobing buoys on a deterministic arc off the
+  station; fly within 110u and the nearest one speaks — one reused
+  Text, flag code in brackets.
+- Verified in-world on the harness (mocked relay): 312/890 ALL HANDS
+  on the kill-board, five pennants on the cord, buoy reveal reading
+  "TO WHOEVER READS THIS — THE VOID IS KINDER THAN IT LOOKS — KEEP
+  THE LIGHT ON [DE]", composer full flow, relay-down honesty, ESC
+  and scrim close. Production API verified with curl end to end; the
+  Playwright session's own locale flag arrived on the pennant set by
+  itself. All test keys wiped after verification — the world starts
+  at zero, and every returning pilot's real history folds in on
+  their next visit.
