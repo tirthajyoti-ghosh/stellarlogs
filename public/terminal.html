@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SERVICE RECORD — hand terminal mock</title>
+<style>
+  /* Grammar source: The Expanse screen graphics (docs/the-logbook.md pivot;
+     research notes in session). Belter/Amnia dress: white hairlines on dark
+     glass, amber values, Atari-warm accents, green only as a status dash. */
+  :root {
+    --glass-line: rgba(235, 244, 250, 0.85);
+    --glass-dim: rgba(235, 244, 250, 0.38);
+    --amber: #f2c46a;
+    --amber-hot: #ffb43c;
+    --ok-green: #37e06b;
+    --warn: #f0806b;
+    --mono: "Space Mono", ui-monospace, Menlo, monospace;
+    --tech: "Rajdhani", "Bahnschrift", "Arial Narrow", sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 500px at 50% 20%, #131a26 0%, #070b12 55%, #04060b 100%);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 26px 12px 60px;
+    font-family: var(--mono);
+    color: #7d95a8;
+    overflow-x: hidden;
+  }
+  h1 { font-size: 12px; letter-spacing: .34em; color: #9fd8ef; font-weight: 400; }
+  .sub { font-size: 10px; letter-spacing: .12em; color: #51697c; margin: 6px 0 30px; text-align: center; }
+
+  /* ---------- the scene: hand + terminal ---------- */
+  .scene { position: relative; width: 560px; max-width: 100vw; height: 660px; }
+  .scene::before {
+    content: ''; position: absolute; inset: -20px; pointer-events: none;
+    background-image:
+      radial-gradient(1.2px 1.2px at 12% 18%, rgba(230,240,250,.7), transparent 60%),
+      radial-gradient(1px 1px at 38% 9%, rgba(230,240,250,.5), transparent 60%),
+      radial-gradient(1.4px 1.4px at 55% 30%, rgba(255,220,170,.6), transparent 60%),
+      radial-gradient(1px 1px at 71% 14%, rgba(230,240,250,.45), transparent 60%),
+      radial-gradient(1.1px 1.1px at 84% 42%, rgba(230,240,250,.55), transparent 60%),
+      radial-gradient(1px 1px at 29% 55%, rgba(230,240,250,.4), transparent 60%),
+      radial-gradient(1.3px 1.3px at 47% 72%, rgba(230,240,250,.6), transparent 60%),
+      radial-gradient(1px 1px at 66% 60%, rgba(200,225,245,.5), transparent 60%),
+      radial-gradient(1.2px 1.2px at 90% 78%, rgba(230,240,250,.5), transparent 60%),
+      radial-gradient(1px 1px at 18% 84%, rgba(230,240,250,.45), transparent 60%);
+  }
+
+  /* the slab: 74x112 acrylic, scaled. Chamfered corners, no bezel. */
+  .slab {
+    position: absolute; left: 50%; top: 18px; transform: translateX(-50%) rotate(-1.2deg);
+    width: 340px; height: 515px;
+    clip-path: polygon(7% 0, 93% 0, 100% 3.5%, 100% 96.5%, 93% 100%, 7% 100%, 0 96.5%, 0 3.5%);
+    background:
+      linear-gradient(160deg, rgba(150,190,220,0.10), rgba(80,110,140,0.05) 30%, rgba(160,200,230,0.08) 47%, rgba(60,90,120,0.04) 60%, rgba(140,180,210,0.09));
+    border: 1px solid rgba(190, 220, 240, 0.22);
+    box-shadow:
+      inset 0 0 24px rgba(140, 190, 230, 0.10),
+      0 24px 70px rgba(0,0,0,0.6);
+    backdrop-filter: blur(1px);
+  }
+  /* glass sheen sweeping slowly */
+  .slab::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(210,235,250,0.07) 45%, rgba(210,235,250,0.02) 50%, transparent 62%);
+    animation: sheen 9s ease-in-out infinite alternate;
+  }
+  @keyframes sheen { from { transform: translateX(-30px); } to { transform: translateX(40px); } }
+  /* the edge-light module at the bottom — it lights the holder's hand */
+  .edgelight {
+    position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%);
+    width: 60px; height: 14px; border-radius: 3px;
+    background: linear-gradient(#3a3f47, #14171c);
+    border: 1px solid #4a5058;
+  }
+  .edgelight::after {
+    content: ''; position: absolute; left: 50%; top: -510px; transform: translateX(-50%);
+    width: 320px; height: 515px; pointer-events: none;
+    background: linear-gradient(0deg, rgba(255, 180, 60, 0.10), transparent 34%);
+  }
+
+  /* ---------- the on-glass card ---------- */
+  .card {
+    position: absolute; inset: 7% 7% 6.5% 7%;
+    border: 1px solid var(--glass-line);
+    clip-path: polygon(0 3%, 4% 0, 96% 0, 100% 3%, 100% 55%, 98.4% 56.5%, 100% 58%, 100% 100%, 0 100%);
+    padding: 14px 13px 10px;
+    display: flex; flex-direction: column;
+    color: var(--glass-line);
+  }
+  /* micro-text texture behind the header — records, not dashboards */
+  .microtext {
+    position: absolute; top: 8px; right: 10px; width: 36%;
+    font-size: 4.5px; line-height: 1.5; text-align: justify;
+    color: rgba(235,244,250,0.20); pointer-events: none; user-select: none;
+  }
+  .head-name {
+    font-family: var(--tech);
+    font-size: 27px; font-weight: 700; letter-spacing: .14em; color: #f2f7fb;
+    text-shadow: 0 0 14px rgba(160,220,250,0.35);
+  }
+  .head-meta { font-size: 8.5px; letter-spacing: .06em; color: var(--glass-dim); margin-top: 3px; }
+  .head-meta b { color: var(--amber); font-weight: 400; }
+  .headrule {
+    margin: 10px 0 10px; height: 7px; position: relative; border: none;
+  }
+  .headrule::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, var(--glass-line) 0 34%, transparent 34.6%),
+                linear-gradient(90deg, transparent 0 35.6%, rgba(235,244,250,0.5) 36% 100%);
+    background-size: 100% 1px; background-repeat: no-repeat;
+    background-position: 0 3px, 0 5px;
+  }
+
+  /* endorsement rows: status-tab | issuer+deed | value — the forearm-panel grammar */
+  .rows { display: flex; flex-direction: column; gap: 7px; }
+  .row {
+    display: flex; align-items: stretch; gap: 7px; min-height: 40px;
+  }
+  .tab { width: 4px; background: var(--ok-green); opacity: .85; }
+  .cell {
+    flex: 1; border: 1px solid rgba(235,244,250,0.5);
+    clip-path: polygon(0 0, calc(100% - 7px) 0, 100% 7px, 100% 100%, 0 100%);
+    padding: 5px 8px 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .deed { flex: 1; min-width: 0; }
+  .issuer { font-size: 6px; letter-spacing: .2em; color: var(--glass-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .what { font-family: var(--tech); font-size: 12.5px; font-weight: 700; letter-spacing: .1em; color: #eef5fa; margin-top: 1px; white-space: nowrap; }
+  .val { text-align: right; }
+  .val { flex-shrink: 0; }
+  .val .n { font-family: var(--tech); font-size: 12.5px; font-weight: 700; color: var(--amber); letter-spacing: .05em; white-space: nowrap; }
+  .val .d { font-size: 6px; letter-spacing: .08em; color: var(--glass-dim); margin-top: 1px; white-space: nowrap; }
+
+  /* pending: same hue, dropped opacity, amber machine-state — no grey */
+  .row.pending .cell { opacity: .55; border-style: dashed; }
+  .row.pending .tab { background: var(--amber-hot); animation: breathe 2.8s ease-in-out infinite; }
+  .row.pending .n { color: var(--amber-hot); font-size: 8px; letter-spacing: .1em; animation: breathe 2.8s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+
+  /* the attachments register — bounded cells, the dossier's bottom grammar */
+  .register { display: flex; gap: 7px; margin-top: 12px; }
+  .attach {
+    flex: 1; border: 1px solid rgba(235,244,250,0.4); height: 74px;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    position: relative; padding: 5px 7px;
+    font-size: 5.5px; letter-spacing: .18em; color: var(--glass-dim);
+  }
+  .attach .orb { position: absolute; inset: 14px 10px 8px; }
+  .attach .orb i {
+    position: absolute; border: 1px solid rgba(120,200,235,0.45); border-radius: 50%;
+  }
+  .attach .orb i:nth-child(1) { inset: 8% 20% 8% 20%; }
+  .attach .orb i:nth-child(2) { inset: 26% 34% 26% 34%; }
+  .attach .orb b { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--amber); left: 62%; top: 18%; }
+  .attach .orb u { position: absolute; width: 3px; height: 3px; border-radius: 50%; background: rgba(235,244,250,.8); left: 30%; top: 58%; }
+  .attach.avail { display: flex; align-items: center; justify-content: center; opacity: .55; }
+  .waveform { position: absolute; left: 8px; right: 8px; bottom: 8px; height: 16px; display: flex; align-items: flex-end; gap: 2px; }
+  .waveform i { flex: 1; background: rgba(120,200,235,0.5); animation: wf 2.2s ease-in-out infinite; }
+  @keyframes wf { 0%,100% { transform: scaleY(.3);} 50% { transform: scaleY(1);} }
+
+  /* the log terminal strip */
+  .logstrip {
+    margin-top: auto; border-top: 1px solid rgba(235,244,250,0.35);
+    padding-top: 6px; font-size: 7.5px; line-height: 1.75; letter-spacing: .02em;
+    color: rgba(160, 200, 225, 0.55);
+  }
+  .logstrip .k { color: rgba(160, 200, 225, 0.55); }
+  .logstrip .v-ok { color: var(--ok-green); }
+  .logstrip .v-amber { color: var(--amber-hot); }
+  .logstrip .cursor { display: inline-block; width: 5px; height: 8px; background: rgba(160,200,225,0.7); animation: blink 1.1s steps(1) infinite; vertical-align: -1px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ---------- off-glass elements: the UI is bigger than the hardware ---------- */
+  .glyphrail {
+    position: absolute; left: calc(50% - 236px); top: 120px;
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .glyph {
+    width: 40px; height: 40px; border-radius: 50%;
+    border: 1.2px solid rgba(235,244,250,0.75);
+    display: flex; align-items: center; justify-content: center;
+    color: rgba(235,244,250,0.85); font-size: 13px;
+    background: rgba(10, 16, 24, 0.25);
+  }
+  .glyph.primary {
+    background: rgba(255, 180, 60, 0.85); border-color: transparent; color: #1a1206;
+    box-shadow: 0 0 18px rgba(255, 180, 60, 0.35);
+  }
+  .glyph small { position: absolute; right: 48px; font-size: 5.5px; letter-spacing: .2em; color: rgba(235,244,250,0.4); white-space: nowrap; text-align: right; }
+
+  .statuscluster {
+    position: absolute; right: calc(50% - 240px); top: 92px;
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    font-size: 6px; letter-spacing: .18em; color: rgba(235,244,250,0.5);
+  }
+  .dial {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1.2px solid rgba(120, 200, 235, 0.8);
+    border-top-color: transparent;
+    animation: spin 7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--amber-hot); animation: breathe 2.8s ease-in-out infinite; }
+  .chiclet { width: 12px; height: 12px; border: 1px solid rgba(235,244,250,0.6); }
+  .chiclet.red { background: #c22536; border-color: transparent; }
+
+  .caption { margin-top: 26px; max-width: 560px; font-size: 10px; line-height: 1.8; letter-spacing: .05em; color: #51697c; }
+  .caption b { color: #9fd8ef; font-weight: 400; }
+</style>
+</head>
+<body>
+  <h1>THE SERVICE RECORD — HAND TERMINAL</h1>
+  <div class="sub">the logbook, spoken in this universe's native tongue · docs/the-logbook.md (pivot)</div>
+
+  <div class="scene">
+    <!-- off-glass glyph rail (floats beyond the slab's left edge) -->
+    <div class="glyphrail">
+      <div class="glyph" style="position:relative">◈<small>RECORD</small></div>
+      <div class="glyph" style="position:relative">⬡<small>CERTS</small></div>
+      <div class="glyph" style="position:relative">◮<small>HULL</small></div>
+      <div class="glyph primary" style="position:relative">✦<small style="color:rgba(255,180,60,.7); right:48px;">COUNTERSIGN</small></div>
+    </div>
+
+    <!-- off-glass status cluster -->
+    <div class="statuscluster">
+      <div class="dial"></div>
+      <div class="dot"></div>
+      <div class="chiclet"></div>
+      <div class="chiclet red"></div>
+      <div>[STATUS]</div>
+    </div>
+
+    <div class="slab">
+      <div class="card">
+        <div class="microtext">
+          reg.amnia/portauthority record spool 2251-J relay mirror confirmed uplink drift-9 checksum
+          88A2 F0C1 44E9 001B carrier stable endorsement ledger schema v11c sync interval 14400s last
+          relay INTERAMNIA DRIFT lane 1 dockmaster key rotation nominal countersign authority delegated
+          militia range office constabulary civil defense surveyor office racing club suspended record
+          retention indefinite pilot consent on file transponder BLT-1129 squawk normal no liens posted
+          no warrants posted standing clearance CLASS C freight escort interdiction picket certified
+        </div>
+        <div class="head-name">BLT-1129</div>
+        <div class="head-meta">SERVICE RECORD &gt;&gt; ROCINANTE-CLASS / REC 2251-J</div>
+        <div class="head-meta">PILOT <b>NAME WITHHELD</b> / AMNIA PORT AUTHORITY</div>
+        <hr class="headrule" />
+
+        <div class="rows">
+          <div class="row">
+            <div class="tab"></div>
+            <div class="cell">
+              <div class="deed">
+                <div class="issuer">AMNIA DOCKMASTER</div>
+                <div class="what">PORT OF ENTRY</div>
+              </div>
+              <div class="val"><div class="n">LOGGED</div><div class="d">AUG 02 2026 · LANE 1</div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="tab"></div>
+            <div class="cell">
+              <div class="deed">
+                <div class="issuer">MILITIA RANGE OFFICE</div>
+                <div class="what">PDC CERTIFICATION</div>
+              </div>
+              <div class="val"><div class="n">CERTIFIED</div><div class="d">AUG 05 · ESCORT STANDARD</div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="tab"></div>
+            <div class="cell">
+              <div class="deed">
+                <div class="issuer">AMNIA DOCKMASTER</div>
+                <div class="what">ESCORT DUTY</div>
+              </div>
+              <div class="val"><div class="n">×4</div><div class="d">FIRST AUG 09 2026</div></div>
+            </div>
+          </div>
+          <div class="row">
+            <div class="tab"></div>
+            <div class="cell">
+              <div class="deed">
+                <div class="issuer">CONSTABULARY</div>
+                <div class="what">INTERDICTION</div>
+              </div>
+              <div class="val"><div class="n">1 ARREST</div><div class="d">AUG 12 2026 · NO SHOTS</div></div>
+            </div>
+          </div>
+          <div class="row pending">
+            <div class="tab"></div>
+            <div class="cell">
+              <div class="deed">
+                <div class="issuer">CIVIL DEFENSE</div>
+                <div class="what">PICKET STOOD</div>
+              </div>
+              <div class="val"><div class="n">[AWAITING COUNTERSIGN]</div><div class="d">DOCK AT THE DRIFT</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="register">
+          <div class="attach">
+            LAST DOCKING · INTERAMNIA DRIFT
+            <div class="orb"><i></i><i></i><b></b><u></u></div>
+          </div>
+          <div class="attach">
+            COMM TRAFFIC · RELAY 9
+            <div class="waveform"><i></i><i style="animation-delay:.2s"></i><i style="animation-delay:.5s"></i><i style="animation-delay:.1s"></i><i style="animation-delay:.7s"></i><i style="animation-delay:.35s"></i><i style="animation-delay:.55s"></i><i style="animation-delay:.15s"></i></div>
+          </div>
+          <div class="attach avail">[ AVAILABLE ]</div>
+        </div>
+        <div class="logstrip">
+          <div><span class="k">&gt; AMNIA.REG/endorse: picket_stood ::</span> <span class="v-amber">countersign PENDING</span></div>
+          <div><span class="k">&gt; #2251944::Record_Sync[]</span> <span class="v-ok">OK</span> <span class="k">· uplink 14,400s</span></div>
+          <div><span class="k">&gt; call at INTERAMNIA DRIFT to countersign</span> <span class="cursor"></span></div>
+        </div>
+      </div>
+      <div class="edgelight"></div>
+    </div>
+  </div>
+
+  <div class="caption">
+    <b>THE SERVICE RECORD</b> — the achievements verdict, worn as this universe's own
+    hardware. One anchor element (the hull), endorsement rows in the show's
+    label-chip / value-chip grammar (issuer micro-caption, deed in tracked caps,
+    value in amber — color separates label from value, never size), a green
+    status tab per row, machine states in [BRACKETS]. The pending endorsement
+    breathes amber and the log strip says why: field-issued, awaiting the
+    dockmaster's countersign — the return-to-port beat, now network instead of
+    ink. The glyph rail and [STATUS] cluster float <b>off the glass</b> — the
+    show's signature move: the UI is bigger than the hardware. Edge-light at the
+    bottom, faint sheen crawling the acrylic, nothing flashing anywhere.
+  </div>
+</body>
+</html>

@@ -185,6 +185,34 @@ the "Belt keeps no copies" fiction, logbook.html's three inks (bench
 superseded; kept in git history).
 
 The replacement object: the pilot's **SERVICE RECORD** — a screen on
-the pilot's hand terminal. Endorsements as signed digital entries:
-issuer glyph, deed, date, count, countersign status. New bench built
-from researched show-UI grammar.
+the pilot's hand terminal. Bench: **/terminal.html** (supersedes the
+ink bench). Built from the researched show grammar (HUDS+GUIS stills +
+the Rhys Yorke / Timothy Peel interviews; ~140 reference stills pulled):
+
+- The device: a chamfered translucent acrylic slab, no bezel, an
+  edge-light module at the bottom that glows amber into the glass.
+- One anchor element per screen (the hull, BLT-1129, 3-5x everything
+  else); header metadata in mono with `>>` separators; PILOT NAME
+  WITHHELD carried over.
+- Endorsement rows in the show's forearm-panel grammar: green status
+  tab | issuer micro-caption + deed in tracked caps | value in AMBER
+  (label vs value separated by COLOR, never size). Machine states in
+  [BRACKETS].
+- Pending = same hue at dropped opacity + dashed bounds + a slow
+  amber breathe — never grey, never flashing (the showrunner's
+  no-giant-alerts law and ours agree).
+- The countersign fiction on the glass itself: a log-terminal strip
+  (`> AMNIA.REG/endorse: picket_stood :: countersign PENDING`,
+  `> call at INTERAMNIA DRIFT to countersign`).
+- Off-glass elements — the show's signature: a circular glyph rail
+  floating past the left edge (one filled amber = the primary action)
+  and a [STATUS] cluster off the right. The UI is bigger than the
+  hardware.
+- An attachments register of bounded cells (orbital diagram, comm
+  waveform, [ AVAILABLE ]) — records have texture; dashboards don't.
+- Micro-text block behind the header as record-texture.
+
+In-game, this screen becomes the L-key / touch-chip drawer; the same
+row grammar can compress into the existing HUD panel style. All prior
+rulings hold (deed set, vigil silence, no empty slots, countersign at
+the docks).
