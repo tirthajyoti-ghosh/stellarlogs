@@ -27,7 +27,24 @@
  * nowhere.
  */
 
-import { validHail, type HailRecord } from '../src/config/hails'
+// The phrasebook itself lives in src/config/hails.ts (the client
+// renders hail text from indices; the server never needs the words).
+// These BOUNDS are pinned to that file — grow the phrasebook there,
+// bump these here. An index past the client's array renders as
+// silence, never as text, so a desync degrades safely.
+const PHRASE_BOUNDS = { o: 7, l: 16, s: 7 } // openers, lines, sign-offs
+interface HailRecord {
+  o: number
+  l: number
+  s: number
+  f: string
+  at: number
+}
+function validHail(o: unknown, l: unknown, s: unknown): boolean {
+  const ok = (v: unknown, max: number): boolean =>
+    typeof v === 'number' && Number.isInteger(v) && v >= 0 && v < max
+  return ok(o, PHRASE_BOUNDS.o) && ok(l, PHRASE_BOUNDS.l) && ok(s, PHRASE_BOUNDS.s)
+}
 
 const HAILS_KEPT = 30
 /** per-request delta ceilings — generous for real play, absurd for bots */

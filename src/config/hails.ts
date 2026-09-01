@@ -7,9 +7,11 @@
  * completely). Curation law: every phrase must be victimless — no
  * entry can be aimed AT another pilot.
  *
- * This file is PURE DATA, imported by both the client composer and
- * api/liveness.ts — the server validates indices against these same
- * arrays, so the two can never desync.
+ * This file is PURE DATA for the client. The server (api/liveness.ts)
+ * cannot import across the api/ boundary at runtime, so it validates
+ * against pinned PHRASE_BOUNDS = {o:7, l:16, s:7} — if you grow an
+ * array here, bump the bound there. A desync degrades safely: an
+ * index past an array renders as silence, never as text.
  */
 
 export const HAIL_OPENERS = [
