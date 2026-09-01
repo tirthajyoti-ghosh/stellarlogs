@@ -836,3 +836,39 @@ resolution on a cool machine, with ~2.5x pixel headroom and a worst
 combat frame of 18.8 ms. July's 22.9 ms baseline is a locked 16.7. No
 optimization is owed. The next performance conversation should start
 from a new complaint, not from this document.
+
+## 2026-09-01 — the perf frontier (probe build, M3, docks viewpoint)
+
+**The "44 fps CPU ceiling" story is corrected.** Live-visitor telemetry
+(post-hygiene) shows desktop at 55-60 fps / 0-6% jank; the fps=0,
+85%-jank desktop rows in the trove were BACKGROUNDED TABS (rAF
+throttled) plus our own headless harness — the sampler now drops
+hidden/throttled windows and resets on visibilitychange, so they can
+never pollute again. session-start now records `tier` + `dprCeil` so a
+stale-bundle session (the dpr-2.4 phone ghost of 08-27) is
+attributable at a glance.
+
+**The real desktop defect was a p90 stutter at the heaviest viewpoint**
+(the docks): median 16.7 ms but p90 33.3 — every ~10th frame missed
+vsync. CPU profile attribution: ~17% of busy time in
+updateMatrixWorld/updateMatrix across ~6,636 scene objects, ~3,900 of
+them static board signage. Two writers were defeating the existing
+board freeze:
+- Billboard slewed its spin group EVERY frame even at rest — one
+  rotation write marks the group dirty and force-multiplies every
+  frozen descendant's world matrix. Fix: 0.012 rad deadband (a board
+  at rest writes nothing; tracking resumes the moment you move).
+- PlanetBoards rewrote group scale + all ring positions per frame with
+  constant values. Fix: scale writes stop once settled (snaps to
+  target inside 0.0008), ring positions write only when the mounted
+  count changes.
+
+**Measured result, same viewpoint, same dpr 1.5, postfx ON:
+p90 33.3 ms → 17.9 ms; median steady 16.7.** The docks stutter is
+gone. Verified no-pop: boards still reveal, read, and slew to face the
+ship (screenshot pass).
+
+Remaining, deliberately not taken now: the flag-check walk itself
+(~1.1 ms/frame on M3) would need subtree matrixWorldAutoUpdate
+surgery for diminishing desktop returns — reconsider if phone telemetry
+(now trustworthy) still shows a CPU wall at dpr 1.9.

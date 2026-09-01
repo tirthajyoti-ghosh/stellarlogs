@@ -441,11 +441,14 @@ export function Billboard({ spec, accentColor, position, planetWorldPos }: Billb
     const targetYaw = Math.atan2(dx, dz)
     const delta = wrapAngle(targetYaw - spin.rotation.y)
 
-    // Slow, visible slew with a rate cap; RCS couple fires while turning
+    // Slow, visible slew with a rate cap; RCS couple fires while turning.
+    // DEADBAND: an at-rest board must not touch its rotation — one write
+    // marks the spin group dirty and forces a world-matrix multiply through
+    // every frozen descendant (hundreds per board, every frame, for nothing).
     const RATE = 0.7 // rad/s
     const maxStep = RATE * dt
-    const step = MathUtils.clamp(delta, -maxStep, maxStep)
-    spin.rotation.y += step
+    const step = Math.abs(delta) < 0.012 ? 0 : MathUtils.clamp(delta, -maxStep, maxStep)
+    if (step !== 0) spin.rotation.y += step
 
     const effort = Math.abs(delta) > 0.015 ? Math.min(1, Math.abs(step) / Math.max(1e-5, maxStep)) : 0
     // step > 0 (turning one way) fires left-back + right-front, and vice-versa

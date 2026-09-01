@@ -433,8 +433,14 @@ the way (Tirtha). Deep exploration passes continue between builds
 
 ## Build order
 
-0. **Performance passes** (all of them) + the **billboard freeze** —
-   agreed 2026-08-04 as the thing to do next, before any new feature.
+0. **Performance passes** — billboard freeze DONE 2026-08-04; THE PERF
+   FRONTIER DONE 2026-09-01 (performance-audit doc, final section):
+   the 44fps-ceiling myth corrected (backgrounded tabs polluting
+   telemetry — sampler hardened), the real docks p90 stutter
+   (33→18 ms) killed via board matrix deadbands, session-start now
+   records tier+dprCeil so phone dpr regressions are attributable.
+   Awaiting one fresh phone session to confirm the 1.9 ceiling on his
+   Adreno 650.
 1. **The 2026-08-04 corrections**: escort-from-the-board with an intercept
    heading, torpedo/ship pairing, PDC tracer rework, cylindrical radar
    (after the design conversation).

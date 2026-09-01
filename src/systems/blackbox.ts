@@ -1,4 +1,5 @@
 import { activityState } from '../state/activityState'
+import { QUALITY } from '../config/quality'
 import { getReserve } from './reserve'
 
 /**
@@ -137,6 +138,10 @@ function deviceSnapshot(): Record<string, unknown> {
     net: nav.connection?.effectiveType ?? '',
     gpu,
     referrer: document.referrer || '',
+    // which bundle's quality logic this session actually ran — the dpr-2.4
+    // ghost of 2026-08-27 was unattributable without these
+    tier: QUALITY.tier,
+    dprCeil: QUALITY.dpr[1],
   }
 }
 
@@ -180,14 +185,19 @@ export function updateBlackbox(now: number): void {
     lastTitle = activityState.title
     if (lastTitle) bbEvent('title', { title: lastTitle })
   }
-  // fps every 30 s: the mobile build will live or die by this number
+  // fps every 30 s: the mobile build will live or die by this number.
+  // A hidden/throttled tab reports rAF starvation, not rendering — those
+  // windows polluted the trove as fps=0 / jank 85% rows; drop them.
   if (now - fpsWindowStart >= 30) {
-    const canvas = document.querySelector('canvas')
-    bbEvent('fps', {
-      avg: Math.round(frames / (now - fpsWindowStart)),
-      jankPct: Math.round((jankFrames / Math.max(1, frames)) * 100),
-      dpr: canvas ? +(canvas.width / Math.max(1, canvas.clientWidth)).toFixed(2) : 0,
-    })
+    const throttled = document.visibilityState === 'hidden' || frames < (now - fpsWindowStart) * 5
+    if (!throttled) {
+      const canvas = document.querySelector('canvas')
+      bbEvent('fps', {
+        avg: Math.round(frames / (now - fpsWindowStart)),
+        jankPct: Math.round((jankFrames / Math.max(1, frames)) * 100),
+        dpr: canvas ? +(canvas.width / Math.max(1, canvas.clientWidth)).toFixed(2) : 0,
+      })
+    }
     frames = 0
     jankFrames = 0
     fpsWindowStart = now
@@ -221,6 +231,10 @@ export function installBlackbox(): void {
       void flush(true)
     } else {
       bbEvent('session-resume')
+      frames = 0
+      jankFrames = 0
+      fpsWindowStart = 0
+      lastFrameAt = 0
     }
   })
   addEventListener('pagehide', () => {

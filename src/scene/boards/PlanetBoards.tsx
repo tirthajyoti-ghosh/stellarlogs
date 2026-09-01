@@ -34,6 +34,7 @@ export function PlanetBoards({ item, planetRadius, worldPos, accentColor }: Plan
   /** how many boards have been handed to the scene graph so far */
   const [mounted, setMounted] = useState(0)
   const scaleRef = useRef(0)
+  const placedFor = useRef(0)
   const specs = useMemo(
     () => (activated ? buildBoards(item, accentColor) : []),
     [activated, item, accentColor],
@@ -63,24 +64,31 @@ export function PlanetBoards({ item, planetRadius, worldPos, accentColor }: Plan
     }
 
     const target = distance < showDistance && ready ? 1 : 0
-    scaleRef.current = MathUtils.lerp(scaleRef.current, target, 0.08)
-    const s = scaleRef.current
-    group.visible = s > 0.02
+    const next = MathUtils.lerp(scaleRef.current, target, 0.08)
+    // DEADBAND: a settled cluster must not touch its scale — one setScalar
+    // marks the root dirty and force-walks every descendant's world matrix.
+    if (Math.abs(next - scaleRef.current) > 0.0008 || Math.abs(next - target) > 0.0008) {
+      scaleRef.current = Math.abs(next - target) <= 0.0008 ? target : next
+      group.scale.setScalar(scaleRef.current)
+    }
+    group.visible = scaleRef.current > 0.02
     if (!group.visible) return
-    group.scale.setScalar(s)
 
-    // Geostationary: boards hold FIXED positions in a ring over the planet
-    // (they ride the planet's orbit, but never drift around it). Each board
-    // turns to face the ship on its own — see Billboard.
+    // Geostationary ring positions depend only on the child count — write
+    // them when a board mounts, never per frame (constant writes were
+    // force-walking the whole cluster).
     const n = Math.max(1, group.children.length)
-    group.children.forEach((child, i) => {
-      const angle = (i * Math.PI * 2) / n
-      child.position.set(
-        Math.cos(angle) * orbitRadius,
-        (i % 2 === 0 ? 1 : -1) * planetRadius * 0.16,
-        Math.sin(angle) * orbitRadius,
-      )
-    })
+    if (n !== placedFor.current) {
+      placedFor.current = n
+      group.children.forEach((child, i) => {
+        const angle = (i * Math.PI * 2) / n
+        child.position.set(
+          Math.cos(angle) * orbitRadius,
+          (i % 2 === 0 ? 1 : -1) * planetRadius * 0.16,
+          Math.sin(angle) * orbitRadius,
+        )
+      })
+    }
   })
 
   return (
