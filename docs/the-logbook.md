@@ -155,3 +155,36 @@ slot: the deed already happened) and the tally-mark treatment.
 2. Stamp-at-the-docks mechanic (§3) — in, or stamps land instantly?
 3. Ink language from the bench: A round / B bars / C mixed.
 4. Paints at thresholds: stays out (my strong lean), or v2 list?
+
+---
+
+# PIVOT — 2026-09-01, his ruling: PAPER REJECTED
+
+The whole passbook premise fails his design test: our universe mimics
+The Expanse, and The Expanse is DIGITAL — hand terminals, translucent
+slabs, sleek utilitarian UI. Nothing important lives on paper there,
+and my "electronic records die with reactors" rationale was invented,
+not derived. His direction: **"utilitarian UI, but still looks
+futuristic... exactly how we see the hand terminals in the show.
+Research those images, then come up with a mockup."**
+
+What SURVIVES the pivot (the bones were approved in spirit):
+- The deed set (§2 table) — same feats, same issuing authorities,
+  the vigil still never appears.
+- Repeats as accumulating counts, first-date kept.
+- The pending state and the docks beat (§3) — recast: an endorsement
+  is ISSUED in the field but needs the dockmaster's COUNTERSIGN,
+  applied when you call at the Drift. Same return-to-port pull, now
+  reading as network authority instead of ink.
+- Every refusal in §4 (no empty slots, no %, nothing global, no
+  paints).
+- Read anywhere via drawer; L key / touch chip.
+
+What DIES: the paper object, the stamps, the tallies-as-pen-strokes,
+the "Belt keeps no copies" fiction, logbook.html's three inks (bench
+superseded; kept in git history).
+
+The replacement object: the pilot's **SERVICE RECORD** — a screen on
+the pilot's hand terminal. Endorsements as signed digital entries:
+issuer glyph, deed, date, count, countersign status. New bench built
+from researched show-UI grammar.
