@@ -216,3 +216,17 @@ In-game, this screen becomes the L-key / touch-chip drawer; the same
 row grammar can compress into the existing HUD panel style. All prior
 rulings hold (deed set, vigil silence, no empty slots, countersign at
 the docks).
+
+## V2 of the bench (2026-09-09) — matched to his three stills
+
+He supplied three reference frames (Avasarala's comm, the Mao dossier,
+the Marco Inaros OPA bulletin) and asked for a close match. V2 of
+/terminal.html rebuilds the mock accordingly: the screen is a
+COMPOSITION of interlocking stepped-outline panels (double-line outer
+trace, junction squares, tick ruler, connector traces into three
+satellite panels — drive signature, transponder spectral, last
+docking), the record wears the Belter bulletin dress (maroon filled
+header band, olive hairlines, amber values, segmented STANDING block
+meter, teal hex keys), and the lower third of the acrylic is a bare
+GRIP ZONE — etched keypad, dashed boundary, amber edge-light glowing
+under the thumb, exactly as the props do. Awaiting his verdict.
