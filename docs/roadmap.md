@@ -584,6 +584,11 @@ the way (Tirtha). Deep exploration passes continue between builds
    (L4, needs his ask), free-text hails (Branch A, parked).
    Procgen-compatible: pilot id + KV + allowlist endpoint is the
    first-survey-credit architecture for the Deep.
-5. Achievements verdict → implement chosen shape
+5. Achievements — DONE 2026-09-09 as THE SERVICE RECORD
+   (docs/the-logbook.md: exploration → paper REJECTED → hand-terminal
+   pivot → his three stills → /terminal.html v2 LOCKED → built).
+   Six witnessed deeds as digital endorsements, countersigned at the
+   Drift; the vigil never appears; no empty slots, no %, no unlocks;
+   L / RECORD chip drawer in the locked Expanse dress.
 5.9. **THE PLAYTEST runs here** (see 3.7) — the last gate before the Deep.
 6. The Deep (HORIZON)

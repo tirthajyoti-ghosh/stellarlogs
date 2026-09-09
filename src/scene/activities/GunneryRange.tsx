@@ -17,6 +17,7 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
+import { issueEndorsement } from '../../systems/serviceRecord'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
 import { activityState, say } from '../../state/activityState'
@@ -482,6 +483,7 @@ export function GunneryRange() {
         g.nextVeteran = !g.veteran
         triggerFanfare()
         say(2, g.veteran ? 'VETERAN DRILL COMPLETE' : 'DRILL COMPLETE', 'win', 3)
+        issueEndorsement('pdc-certification')
         // celebration: ring of fireballs around the ship
         for (let i = 0; i < 6; i++) {
           const a = (i / 6) * Math.PI * 2

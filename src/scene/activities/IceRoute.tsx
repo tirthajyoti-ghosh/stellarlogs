@@ -20,6 +20,7 @@ import {
   Vector3,
 } from 'three'
 import { shipRig } from '../../state/shipRig'
+import { issueEndorsement } from '../../systems/serviceRecord'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
 import { sleetBoardRow } from '../../systems/sleetClock'
@@ -1299,6 +1300,7 @@ export function IceRoute() {
         s.flashText = text
         triggerFanfare()
         say(2, `${ship.cargo} DELIVERED`, 'win', 3.2)
+        issueEndorsement('escort-duty')
         say(3, CARGO_TOAST[ship.cargo] ?? 'THE AMNIA HOLDS ON', 'win', 5)
         // the raid you just fought refreshes the standing case: real
         // last-contact truth, and a hot window where the chase needs no
@@ -1723,6 +1725,7 @@ export function IceRoute() {
           activityState.hostileYielded = true
           s.huntHarpoonT = 0
           say(1, 'TARGET SQUAWKING SURRENDER — MILITIA TUG INBOUND', 'win', 4)
+          issueEndorsement('interdiction')
           tugPos.copy(DRIFT).add(_v.set(120, 60, 80))
           tugVel.set(0, 0, 0)
         }

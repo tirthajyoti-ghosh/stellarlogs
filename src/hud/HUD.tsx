@@ -11,6 +11,7 @@ import { TouchControls } from './TouchControls'
 import { LandscapeGate } from './LandscapeGate'
 import { ChartDrawer } from './ChartDrawer'
 import { HailComposer } from './HailComposer'
+import { ServiceRecordDrawer } from './ServiceRecordDrawer'
 import { DeckTutorial } from './DeckTutorial'
 import { MuteButton } from './MuteButton'
 
@@ -44,6 +45,7 @@ export function HUD() {
       <LandscapeGate />
       <ChartDrawer />
       <HailComposer />
+      <ServiceRecordDrawer />
       <DeckTutorial />
       <MuteButton />
       <Preflight />

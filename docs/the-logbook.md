@@ -230,3 +230,30 @@ header band, olive hairlines, amber values, segmented STANDING block
 meter, teal hex keys), and the lower third of the acrylic is a bare
 GRIP ZONE — etched keypad, dashed boundary, amber edge-light glowing
 under the thumb, exactly as the props do. Awaiting his verdict.
+
+---
+
+# BUILT — 2026-09-09, on his lock ("this looks really good... start working on this")
+
+- **src/systems/serviceRecord.ts** — the endorsement ledger. Six deeds
+  wired to their real signals: PORT OF ENTRY (first Drift docking,
+  pre-signed — it happens at the desk), PDC CERTIFICATION (drill
+  complete), ESCORT DUTY (cargo delivered; repeats bump ×count),
+  INTERDICTION (the squawk), PICKET STOOD (a pass with rocks stopped),
+  THE FULL CHART (Surveyor's sweep — every non-inert system entered,
+  tracked by proximity). Countersign at the Drift (<480u): all pending
+  endorsements sign at once, one banner, one haptic tick. Grandfather
+  honors only provable history (visited flag, persisted gunnery best).
+  localStorage only — the relay is never involved.
+- **src/hud/ServiceRecordDrawer.tsx** + CSS — the locked v2 dress as a
+  drawer: RECORD chip (top-left desktop with "— L", lower-left rail on
+  touch) wearing an amber ink-owed dot while anything is pending;
+  maroon band, olive rows, amber values, breathing [AWAITING
+  COUNTERSIGN], segmented STANDING meter (CLASS C at 4+), dynamic mono
+  log strip. Battle hides the chip and closes the drawer.
+- Verified with a puppeteer harness (Playwright left the session):
+  lived-in record renders all rows/values; teleport to the Drift signs
+  the pending picket and clears the chip dot; the signed view reads
+  Record_Sync OK · 4 ENDORSED; a truly fresh pilot (isolated browser
+  context) sees zero rows and "no endorsements on file — the lane
+  provides"; landscape-phone drawer fits at 390px height.

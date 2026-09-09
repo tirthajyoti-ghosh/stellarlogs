@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Group, InstancedMesh, Matrix4, Object3D, Quaternion, Vector3 } from 'three'
 import { shipRig } from '../../state/shipRig'
+import { issueEndorsement } from '../../systems/serviceRecord'
 import { activityState, say } from '../../state/activityState'
 import { turretControl } from '../../state/turretControl'
 import { registerHudLabel } from '../../hud/hudState'
@@ -249,6 +250,7 @@ export function KhioneSleet() {
             ? `PASS CLEAR — ${st.stopped} STOPPED · THE CRIB IS WHOLE`
             : `PASS OVER — ${st.stopped} STOPPED · ${st.holed} HOLD${st.holed > 1 ? 'S' : ''} OPEN — SKIFFS MUSTERING`
         say(1, line, st.holed === 0 ? 'win' : 'fail', 6)
+        if (st.stopped > 0) issueEndorsement('picket-stood')
       }
     }
 
