@@ -12,8 +12,6 @@ import { SleepingSpread } from './scene/SleepingSpread'
 import { CargoSpills } from './scene/CargoSpills'
 import { NilakVigil } from './scene/NilakVigil'
 import { SmallSecrets } from './scene/SmallSecrets'
-import { DriftKillBoard } from './scene/DriftKillBoard'
-import { DriftPennants } from './scene/DriftPennants'
 import { HailLine } from './scene/HailLine'
 import { DriftCrib } from './scene/DriftCrib'
 import { KhioneSleet } from './scene/activities/KhioneSleet'
@@ -174,8 +172,6 @@ export default function App() {
         <CargoSpills />
         <NilakVigil />
         <SmallSecrets />
-        <DriftKillBoard />
-        <DriftPennants />
         <HailLine />
         <DriftCrib />
         <Suspense fallback={null}>

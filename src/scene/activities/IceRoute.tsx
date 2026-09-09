@@ -24,6 +24,8 @@ import { issueEndorsement } from '../../systems/serviceRecord'
 import { cameraLook } from '../../state/cameraLook'
 import { turretControl } from '../../state/turretControl'
 import { sleetBoardRow } from '../../systems/sleetClock'
+import { lvTotals, lvCountries } from '../../systems/liveness'
+import { getTorpsDowned, getRocksStopped } from '../../systems/tallies'
 import { activityState, say } from '../../state/activityState'
 import { registerHudLabel } from '../../hud/hudState'
 import { labelsChanged } from '../../hud/LabelLayer'
@@ -545,6 +547,11 @@ export function IceRoute() {
   const torpMeshRef = useRef<InstancedMesh>(null)
   const torpPlumeRef = useRef<InstancedMesh>(null)
   const boardRef = useRef<Group>(null)
+  const milNumRef = useRef<{ text: string; sync?: () => void } | null>(null)
+  const milSubRef = useRef<{ text: string; sync?: () => void } | null>(null)
+  const regTitleRef = useRef<{ text: string; sync?: () => void } | null>(null)
+  const regCodeRefs = useRef<({ text: string; sync?: () => void } | null)[]>([])
+  const regPlateRefs = useRef<(Group | null)[]>([])
   const boardRows = useRef<({ text: string; sync?: () => void } | null)[]>([])
 
   const ships = useMemo<Ship[]>(
@@ -2274,14 +2281,40 @@ export function IceRoute() {
     // the pass is CHARTED: the dockmaster posts it whether or not anyone
     // will stand it — the First Charts schedule, always on the board
     rows.push(sleetBoardRow())
-    // the club's standing invitation — the pull that fixes zero plays
-    rows.push('THE WATER RUN · POST A TIME · THE TRACK')
-    for (let r = 0; r < 5; r++) {
+    for (let r = 0; r < 4; r++) {
       const el = boardRows.current[r]
       if (el && el.text !== rows[r]) {
         el.text = rows[r]
         el.sync?.()
       }
+    }
+    // militia + port registry, folded onto the same plate (his ruling:
+    // one billboard, not a stack of free text)
+    const all = lvTotals()
+    const num = milNumRef.current
+    if (num) {
+      const t = String(all ? all.torps : getTorpsDowned())
+      if (num.text !== t) { num.text = t; num.sync?.() }
+    }
+    const sub = milSubRef.current
+    if (sub) {
+      const t = all
+        ? `TORPEDOES · YOURS ${getTorpsDowned()} — ROCKS ${all.rocks} · YOURS ${getRocksStopped()}`
+        : `TORPEDOES DOWNED — ROCKS STOPPED ${getRocksStopped()}`
+      if (sub.text !== t) { sub.text = t; sub.sync?.() }
+    }
+    const countries = lvCountries() ?? []
+    const reg = regTitleRef.current
+    if (reg) {
+      const t = countries.length > 0 ? `PORT REGISTRY — ${countries.length} PORTS` : ''
+      if (reg.text !== t) { reg.text = t; reg.sync?.() }
+    }
+    for (let i = 0; i < 12; i++) {
+      const code = countries[i] ?? ''
+      const el = regCodeRefs.current[i]
+      const plate = regPlateRefs.current[i]
+      if (plate) plate.visible = code !== ''
+      if (el && el.text !== code) { el.text = code; el.sync?.() }
     }
   })
 
@@ -2376,41 +2409,153 @@ export function IceRoute() {
       <TorpedoTrails sources={torpedoes} />
       <PdcRounds fire={pdcFire} />
 
-      {/* AMNIA DOCKS — the dockmaster's board. There is always work on it. */}
-      <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 100, DRIFT.z + 210]}>
+      {/* AMNIA DOCKS — ONE plated billboard holding the postings, the
+          militia tallies and the port registry (his ruling 2026-09-09:
+          a billboard that CONTAINS its text, never free lines in space) */}
+      <group ref={boardRef} position={[DRIFT.x + 250, DRIFT.y + 84, DRIFT.z + 210]}>
         <mesh>
-          <boxGeometry args={[104, 52, 2]} />
-          <meshStandardMaterial color="#161d27" metalness={0.55} roughness={0.6} flatShading />
+          <boxGeometry args={[150, 104, 2.4]} />
+          <meshStandardMaterial color="#141a24" metalness={0.55} roughness={0.6} flatShading />
+        </mesh>
+        <mesh position={[0, 0, -0.4]}>
+          <boxGeometry args={[156, 110, 1.2]} />
+          <meshStandardMaterial color="#0c1017" metalness={0.7} roughness={0.5} flatShading />
         </mesh>
         <Text
           font={FONT_BOLD}
-          fontSize={9}
-          letterSpacing={0.14}
+          fontSize={8}
+          letterSpacing={0.16}
           color="#9fd8ef"
           anchorX="center"
           anchorY="middle"
-          position={[0, 19, 1.3]}
+          position={[0, 42, 1.5]}
           material-toneMapped={false}
         >
           AMNIA DOCKS
         </Text>
-        {[0, 1, 2, 3, 4].map((r) => (
+        <mesh position={[0, 35, 1.5]}>
+          <boxGeometry args={[134, 0.35, 0.1]} />
+          <meshBasicMaterial color="#3d5266" toneMapped={false} />
+        </mesh>
+        {[0, 1, 2, 3].map((r) => (
           <Text
             key={r}
             ref={((el: { text: string; sync?: () => void } | null) => {
               boardRows.current[r] = el
             }) as never}
             font={FONT_BOLD}
-            fontSize={4}
-            letterSpacing={0.18}
-            color={r === 0 ? '#ffc06e' : r === 3 ? '#9fdcff' : r === 4 ? '#7fe0f0' : '#8fb8d8'}
+            fontSize={3.6}
+            letterSpacing={0.14}
+            maxWidth={136}
+            color={r === 0 ? '#ffc06e' : r === 3 ? '#9fdcff' : '#8fb8d8'}
             anchorX="center"
             anchorY="middle"
-            position={[0, 8.5 - r * 7.5, 1.3]}
+            position={[0, 28.5 - r * 7.2, 1.5]}
             material-toneMapped={false}
           >
             {''}
           </Text>
+        ))}
+        <mesh position={[0, 1, 1.5]}>
+          <boxGeometry args={[134, 0.35, 0.1]} />
+          <meshBasicMaterial color="#3d5266" toneMapped={false} />
+        </mesh>
+        <Text
+          font={FONT_BOLD}
+          fontSize={3}
+          letterSpacing={0.22}
+          color="#9fd8ef"
+          anchorX="center"
+          anchorY="middle"
+          position={[0, -5, 1.5]}
+          material-toneMapped={false}
+        >
+          AMNIA MILITIA — ALL HANDS
+        </Text>
+        <Text
+          ref={((el: { text: string; sync?: () => void } | null) => {
+            milNumRef.current = el
+          }) as never}
+          font={FONT_BOLD}
+          fontSize={9}
+          letterSpacing={0.1}
+          color="#ffc06e"
+          anchorX="center"
+          anchorY="middle"
+          position={[0, -13.5, 1.5]}
+          material-toneMapped={false}
+        >
+          {''}
+        </Text>
+        <Text
+          ref={((el: { text: string; sync?: () => void } | null) => {
+            milSubRef.current = el
+          }) as never}
+          font={FONT_BOLD}
+          fontSize={2.7}
+          letterSpacing={0.16}
+          maxWidth={136}
+          color="#8fb8d8"
+          anchorX="center"
+          anchorY="middle"
+          position={[0, -21.5, 1.5]}
+          material-toneMapped={false}
+        >
+          {''}
+        </Text>
+        <mesh position={[0, -27, 1.5]}>
+          <boxGeometry args={[134, 0.35, 0.1]} />
+          <meshBasicMaterial color="#3d5266" toneMapped={false} />
+        </mesh>
+        <Text
+          ref={((el: { text: string; sync?: () => void } | null) => {
+            regTitleRef.current = el
+          }) as never}
+          font={FONT_BOLD}
+          fontSize={3}
+          letterSpacing={0.22}
+          color="#9fd8ef"
+          anchorX="center"
+          anchorY="middle"
+          position={[0, -33, 1.5]}
+          material-toneMapped={false}
+        >
+          {''}
+        </Text>
+        {Array.from({ length: 12 }, (_, i) => (
+          <group
+            key={`reg-${i}`}
+            visible={false}
+            position={[(i - 5.5) * 9.4, -42, 1.5]}
+            ref={(el) => {
+              regPlateRefs.current[i] = el
+            }}
+          >
+            <mesh>
+              <boxGeometry args={[8, 7, 0.4]} />
+              <meshStandardMaterial
+                color={i % 2 === 0 ? '#1d2836' : '#22303f'}
+                metalness={0.4}
+                roughness={0.65}
+                flatShading
+              />
+            </mesh>
+            <Text
+              ref={((el: { text: string; sync?: () => void } | null) => {
+                regCodeRefs.current[i] = el
+              }) as never}
+              font={FONT_BOLD}
+              fontSize={3}
+              letterSpacing={0.08}
+              color="#ffc06e"
+              anchorX="center"
+              anchorY="middle"
+              position={[0, 0, 0.5]}
+              material-toneMapped={false}
+            >
+              {''}
+            </Text>
+          </group>
         ))}
       </group>
     </group>

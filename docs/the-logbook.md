@@ -257,3 +257,25 @@ under the thumb, exactly as the props do. Awaiting his verdict.
   Record_Sync OK · 4 ENDORSED; a truly fresh pilot (isolated browser
   context) sees zero rows and "no endorsements on file — the lane
   provides"; landscape-phone drawer fits at 390px height.
+
+## Post-ship corrections (2026-09-09, his two screenshots)
+
+1. **The docks stack → one billboard.** The jobs board, militia
+   kill-board and port registry were three separate objects whose text
+   overflowed their plates and overlapped from approach angles — "too
+   much text in one area... we should be having the billboard here,
+   not free text floating in space." Consolidated onto ONE properly
+   sized plate (150×104) with section rules: title, three postings
+   (manhunt · lane ship · Khione timer — the Water Run row dropped
+   with the tabled race), MILITIA — ALL HANDS with the big number and
+   one tally line, PORT REGISTRY with pennant plates. DriftKillBoard
+   and DriftPennants deleted as separate objects. His general law
+   recorded in the playtest doc: text lives on plates that contain it.
+2. **The drawer → the full terminal.** "The hand terminal should be a
+   full size terminal that fills up" — the drawer is now a full-height
+   portrait slab (94vh): uplink bar, maroon band, endorsement rows, a
+   SECTOR CHART pane that fills the middle, the standing meter, and
+   two new sections answering "what goes into it": SHIP LOG (systems
+   entered · torpedoes downed · rocks stopped — the pilot's own
+   numbers) and STANDING RECORDS (drill best, run best — only rows
+   that exist), then the log strip.

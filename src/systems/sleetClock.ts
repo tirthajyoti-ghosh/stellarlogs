@@ -43,5 +43,5 @@ export function sleetBoardRow(): string {
   if (p.phase === 'storm') return 'KHIONE PASS · OVERHEAD'
   const mm = Math.floor(p.toPass / 60)
   const ss = Math.floor(p.toPass % 60)
-  return `KHIONE PASS · T-${mm}:${String(ss).padStart(2, '0')} · FIRST CHARTS SCHEDULE`
+  return `KHIONE PASS · T-${mm}:${String(ss).padStart(2, '0')} · CHARTED`
 }

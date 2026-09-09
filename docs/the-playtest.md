@@ -137,3 +137,13 @@ ONE CLICK OUTSTANDING (his, dashboard-only): Vercel → Storage →
 Marketplace → Upstash Redis → connect to the project. Env vars inject
 automatically; no code change; every buffered event from every visitor
 uploads on their next session.
+
+## SIGNAGE AUDIT (added 2026-09-09, his ruling at the docks)
+
+Standing law from his docks screenshot: **text lives ON a plate that
+CONTAINS it — never free lines floating in space, and never text wider
+than its billboard.** The docks stack violated it (three separate
+floating pieces, rows overflowing their plates) and was consolidated
+into one board. During the playtest, sweep every signage surface for
+the same defect: staging marquees, THE BOARD at the track, the vigil
+board, station boards, kill markers — anything painted in world space.

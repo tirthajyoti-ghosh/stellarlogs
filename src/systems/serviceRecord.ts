@@ -113,6 +113,11 @@ const visitedSystems = new Set<string>(
   })(),
 )
 
+/** how many charted systems this hull has entered (the Surveyor's tally) */
+export function systemsEntered(): number {
+  return [...visitedSystems].filter((id) => CHARTED.some((c) => c.id === id)).length
+}
+
 /** bumped on every mutation so the drawer re-renders cheaply */
 export const recordVersion = { n: 0 }
 

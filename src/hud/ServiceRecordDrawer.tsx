@@ -5,8 +5,10 @@ import {
   getEndorsements,
   pendingEndorsements,
   recordVersion,
+  systemsEntered,
   type Endorsement,
 } from '../systems/serviceRecord'
+import { getTorpsDowned, getRocksStopped } from '../systems/tallies'
 import { bbEvent } from '../systems/blackbox'
 
 /**
@@ -70,6 +72,17 @@ export function ServiceRecordDrawer() {
   const list = getEndorsements()
   const pending = pendingEndorsements().length
   const signed = list.length - pending
+  // the rest of the pilot's file: real numbers the ship already keeps
+  const shipLog: [string, string][] = [
+    ['SYSTEMS ENTERED', String(systemsEntered())],
+    ['TORPEDOES DOWNED', String(getTorpsDowned())],
+    ['ROCKS STOPPED', String(getRocksStopped())],
+  ]
+  const records: [string, string][] = []
+  const drillBest = Number(localStorage.getItem('stellarlogs-defense-best-time-v3') ?? 0)
+  if (drillBest > 0) records.push(['PDC DRILL · BEST', `${drillBest.toFixed(1)}S`])
+  const runBest = Number(localStorage.getItem('stellarlogs-waterrun-best') ?? 0)
+  if (runBest > 0) records.push(['THE WATER RUN · BEST', `${runBest.toFixed(1)}S`])
 
   return (
     <>
@@ -100,6 +113,13 @@ export function ServiceRecordDrawer() {
           <div className="hud-sr" data-ui>
             <i className="hud-sr-jsq tl" /><i className="hud-sr-jsq tr" />
             <i className="hud-sr-jsq bl" /><i className="hud-sr-jsq br" />
+            <div className="hud-sr-uplink">
+              <span>AMNIA.REG UPLINK · RELAY 9</span>
+              <span className="hud-sr-segsm">
+                <i /><i /><i /><i className="c" /><i className="o" /><i className="o" /><i className="o" />
+              </span>
+              <span className="hud-sr-carrier">CARRIER 61%</span>
+            </div>
             <div className="hud-sr-band">
               <div className="hud-sr-hull">BLT-1129</div>
               <div className="hud-sr-under">
@@ -127,6 +147,10 @@ export function ServiceRecordDrawer() {
                 )
               })}
             </div>
+            <div className="hud-sr-chart">
+              SECTOR CHART · AMNIA
+              <div className="hud-sr-chart-grid"><i /><i /><b /><u /></div>
+            </div>
             <div className="hud-sr-standing">
               <span className="hud-sr-slbl">STANDING:</span>
               <span className="hud-sr-segs">
@@ -144,6 +168,27 @@ export function ServiceRecordDrawer() {
               <span className="hud-sr-slbl hud-sr-clr">
                 {signed >= 4 ? 'CLASS C CLEARANCE' : ''}
               </span>
+            </div>
+            <div className="hud-sr-file">
+              <div className="hud-sr-sect">
+                <div className="hud-sr-sect-name">SHIP LOG</div>
+                {shipLog.map(([k, v]) => (
+                  <div className="hud-sr-kv" key={k}>
+                    <span>{k}</span>
+                    <b>{v}</b>
+                  </div>
+                ))}
+              </div>
+              <div className="hud-sr-sect">
+                <div className="hud-sr-sect-name">STANDING RECORDS</div>
+                {records.length === 0 && <div className="hud-sr-kv"><span>NONE POSTED</span><b>—</b></div>}
+                {records.map(([k, v]) => (
+                  <div className="hud-sr-kv" key={k}>
+                    <span>{k}</span>
+                    <b>{v}</b>
+                  </div>
+                ))}
+              </div>
             </div>
             <div className="hud-sr-log">
               {list.length === 0 && (
