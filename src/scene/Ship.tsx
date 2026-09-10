@@ -15,7 +15,7 @@ import {
   Vector3,
 } from 'three'
 import { createShipState, shipQuaternion, stepShip } from '../physics/integrator'
-import { discoverTurrets, updateTurrets, devAimAt } from './shipTurrets'
+import { discoverTurrets, updateTurrets, devAimAt, setPdcDeployed } from './shipTurrets'
 import { turretControl } from '../state/turretControl'
 import { warp, warpTurn, stepWarp, warpBurning } from '../physics/warp'
 import { flip, flipStick, cancelFlip, wrapAngle } from '../physics/flip'
@@ -25,6 +25,7 @@ import { pursuit } from '../physics/pursuit'
 import { shipInput } from '../physics/shipInput'
 import type { ShipInput } from '../physics/shipInput'
 import { shipRig } from '../state/shipRig'
+import { activityState } from '../state/activityState'
 import { updateFlightRecorder } from '../systems/flightRecorder'
 import { updateBlackbox } from '../systems/blackbox'
 import { updateServiceRecord } from '../systems/serviceRecord'
@@ -333,7 +334,8 @@ export function Ship() {
       mat.opacity = MathUtils.lerp(mat.opacity, pod.fire(podInput) * 0.85, 0.3)
     })
 
-    // PDC turrets: acquire/track targets, slew balls, spin barrels
+    // PDC turrets: deploy for battle, stow for cruise, then the usual
+    setPdcDeployed(activityState.battle)
     updateTurrets(dt)
 
     // Publish for camera / HUD / proximity

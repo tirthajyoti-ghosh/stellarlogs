@@ -1,5 +1,6 @@
 import { MathUtils, Object3D, Quaternion, Vector3 } from 'three'
 import { turretControl } from '../state/turretControl'
+import { triggerPdcDeploy } from '../audio/engine'
 
 /**
  * The Roci's six PDC ball turrets. The build script (scripts/build-tachi.mjs)
@@ -21,6 +22,14 @@ const SPIN_DOWN = 1.4
 const HEAT_TIME = 6 // seconds of sustained fire to overheat (when enabled)
 const COOL_TIME = 3.5 // seconds from full heat back to cold
 const OVERHEAT_CLEAR = 0.35 // hysteresis: lockout ends once cooled to here
+/** THE TUCK (his order 2026-09-10): mounts ride stowed inside the hull at
+ *  cruise and deploy for battle — staggered down the spine, with the
+ *  servo-and-latch cue per mount. Raw model units: the ball sinks along
+ *  its own rest axis into the recess. */
+const STOW_DEPTH = 15
+const DEPLOY_TIME = 0.6
+const RETRACT_TIME = 0.95
+const STAGGER = 0.09
 
 interface TurretRig {
   pivot: Object3D
@@ -38,9 +47,33 @@ interface TurretRig {
   targetIndex: number
   heat: number
   overheated: boolean
+  /** 0 = stowed in the hull, 1 = deployed and fighting */
+  deploy: number
+  /** ball rest position (pivot-local), captured at discovery */
+  restPos: Vector3
+  /** stagger bookkeeping: cue fired for the current motion */
+  cued: boolean
 }
 
 let rigs: TurretRig[] = []
+/** commanded state and its master clock (drives the per-rig stagger) */
+let wantDeployed = false
+let motionT = Infinity // seconds since the last command; Infinity = settled
+
+/** battle mode arms the mounts; standing down stows them */
+export function setPdcDeployed(out: boolean): void {
+  if (out === wantDeployed) return
+  wantDeployed = out
+  motionT = 0
+  for (const rig of rigs) rig.cued = false
+}
+
+/** 1 when every mount is seated and fighting */
+export function pdcDeployPhase(): number {
+  let min = 1
+  for (const rig of rigs) min = Math.min(min, rig.deploy)
+  return rigs.length ? min : 1
+}
 
 const _dirLocal = new Vector3()
 const _pivotWorld = new Vector3()
@@ -78,9 +111,15 @@ export function discoverTurrets(model: Object3D): void {
       worldArc: new Vector3(),
       spinAngle: 0,
       targetIndex: -1,
+      deploy: 0,
+      restPos: ball.position.clone(),
+      cued: false,
       heat: 0,
       overheated: false,
     })
+  }
+  for (const rig of rigs) {
+    rig.ball.position.copy(rig.restPos).addScaledVector(rig.restDir, -STOW_DEPTH)
   }
   turretControl.muzzles = rigs.map(() => ({
     position: new Vector3(),
@@ -101,9 +140,28 @@ export function updateTurrets(dt: number): void {
   let locks = 0
   let traverse = 0
   _assignCounts.fill(0, 0, Math.min(targets.length, _assignCounts.length))
+  if (motionT !== Infinity) motionT += dt
 
   for (let i = 0; i < rigs.length; i++) {
     const rig = rigs[i]
+    // THE TUCK: each mount runs the shared clock offset by its stagger;
+    // the servo cue fires the moment its motion begins
+    const goal = wantDeployed ? 1 : 0
+    if (rig.deploy !== goal) {
+      const local = motionT - i * STAGGER
+      if (local > 0) {
+        if (!rig.cued) {
+          rig.cued = true
+          triggerPdcDeploy(wantDeployed)
+        }
+        const rate = dt / (wantDeployed ? DEPLOY_TIME : RETRACT_TIME)
+        rig.deploy = MathUtils.clamp(rig.deploy + (wantDeployed ? rate : -rate), 0, 1)
+      }
+    }
+    // seat the ball: eased sink along the rest axis
+    const k = rig.deploy * rig.deploy * (3 - 2 * rig.deploy)
+    rig.ball.position.copy(rig.restPos).addScaledVector(rig.restDir, -STOW_DEPTH * (1 - k))
+
     rig.pivot.getWorldPosition(_pivotWorld)
     rig.worldPos.copy(_pivotWorld)
     rig.worldArc.copy(rig.arcDir).transformDirection(rig.pivot.matrixWorld)
@@ -113,7 +171,7 @@ export function updateTurrets(dt: number): void {
     // instead of piling every barrel on whichever torpedo leads the pack.
     // An overheated mount is out of the fight until it cools.
     rig.targetIndex = -1
-    if (!rig.overheated) {
+    if (!rig.overheated && rig.deploy >= 0.98) {
       let bestScore = Infinity
       for (let t = 0; t < targets.length; t++) {
         const d = targets[t].position.distanceTo(_pivotWorld)

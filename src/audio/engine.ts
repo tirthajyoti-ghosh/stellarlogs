@@ -336,6 +336,47 @@ export function updateAudio(
 }
 
 /** One-shot: incoming-wave klaxon — two descending two-tone blasts. */
+/** PDC mount deploy/stow: servo rise into a latch clunk (out), or a
+ *  softer descending whir (in). One call per turret, staggered by the
+ *  rig — your own hull, so it carries through the deck (sound law). */
+export function triggerPdcDeploy(out: boolean): void {
+  if (!engine || muted) return
+  const { ctx, master } = engine
+  const t = ctx.currentTime
+  // servo: sine sweep through a bandpass, rising when deploying
+  const osc = ctx.createOscillator()
+  osc.type = 'sawtooth'
+  const dur = out ? 0.5 : 0.7
+  osc.frequency.setValueAtTime(out ? 130 : 300, t)
+  osc.frequency.linearRampToValueAtTime(out ? 320 : 110, t + dur)
+  const bp = ctx.createBiquadFilter()
+  bp.type = 'bandpass'
+  bp.frequency.value = 700
+  bp.Q.value = 2.2
+  const g = ctx.createGain()
+  g.gain.setValueAtTime(0.0001, t)
+  g.gain.exponentialRampToValueAtTime(out ? 0.05 : 0.028, t + 0.06)
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+  osc.connect(bp).connect(g).connect(master)
+  osc.start(t)
+  osc.stop(t + dur + 0.05)
+  // the latch: a short mechanical clunk when the mount seats
+  if (out) {
+    const noise = ctx.createBufferSource()
+    noise.buffer = makeWhiteNoise(ctx)
+    const lp = ctx.createBiquadFilter()
+    lp.type = 'lowpass'
+    lp.frequency.value = 420
+    const ng = ctx.createGain()
+    ng.gain.setValueAtTime(0.0001, t + dur - 0.02)
+    ng.gain.exponentialRampToValueAtTime(0.09, t + dur)
+    ng.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.12)
+    noise.connect(lp).connect(ng).connect(master)
+    noise.start(t + dur - 0.02)
+    noise.stop(t + dur + 0.15)
+  }
+}
+
 export function triggerKlaxon(): void {
   if (!engine) return
   const { ctx, master } = engine

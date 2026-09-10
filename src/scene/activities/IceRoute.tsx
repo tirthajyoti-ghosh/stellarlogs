@@ -35,6 +35,7 @@ import { spawnExplosion } from '../fx/Explosions'
 import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire, createBattery } from '../fx/PdcRounds'
+import { NpcPlume, type NpcPlumeHandle } from '../fx/NpcPlume'
 import {
   armBrain,
   createBrain,
@@ -541,7 +542,8 @@ export function IceRoute() {
   }, [hullA, hullB, hullC])
 
   const slotRefs = useRef<(Group | null)[]>([])
-  const plumeRefs = useRef<(Mesh | null)[]>([])
+  const plumeRefs = useRef<(NpcPlumeHandle | null)[]>([])
+  const plumePosRefs = useRef<(Group | null)[]>([])
   const raiderRef = useRef<Group>(null)
   const raiderDrive = useMemo(() => createDrivePower(), [])
   const torpMeshRef = useRef<InstancedMesh>(null)
@@ -2070,25 +2072,23 @@ export function IceRoute() {
       _q.setFromUnitVectors(_xAxis, _v)
       group.quaternion.copy(_q)
       const plume = plumeRefs.current[i]
-      if (plume) {
+      const plumePos = plumePosRefs.current[i]
+      if (plume && plumePos) {
         const cls = CLASSES[ship.cls]
+        plumePos.position.x = cls.plumeX
+        plumePos.scale.setScalar(cls.plume / 2.6)
         const burning =
           (ship.phase === 'inbound' && ship.flight !== 'stopped') || ship.phase === 'outbound'
-        plume.visible = burning
+        // the player's own flame physics, staged from the ship's real
+        // drive state: trim burns in, the braking blaze, the hard run out
+        let stage = 0
         if (burning) {
-          plume.position.x = cls.plumeX
-          // departure is a hard burn: the plume swells as she runs away
-          const boost = ship.phase === 'outbound' ? 1 + (ship.v / BOOST_MAX) * 3.4 : 1
-          // coasting in = trim burns only; the braking burn is the blaze
-          const power =
-            (ship.phase === 'inbound' ? (ship.flight === 'brake' ? 1.25 : 0.3) : 1) * boost
-          const flicker = power * (0.85 + Math.random() * 0.3)
-          plume.scale.set(
-            (flicker * cls.plume) / 2.6,
-            (flicker * (1 + Math.random() * 0.25) * cls.plume) / 2.6,
-            (flicker * cls.plume) / 2.6,
-          )
+          if (ship.phase === 'outbound') stage = 1.2 + (ship.v / BOOST_MAX) * 0.8
+          else if (ship.flight === 'brake') stage = 1.85
+          else if (ship.flight === 'accel') stage = 1.2
+          else stage = 0.45
         }
+        plume.setStage(stage)
       }
     }
 
@@ -2332,24 +2332,21 @@ export function IceRoute() {
           {models.map((obj, m) => (
             <primitive key={m} object={obj} visible={false} />
           ))}
-          <mesh
-            ref={(el: Mesh | null) => {
-              plumeRefs.current[i] = el
+          <group
+            ref={(el: Group | null) => {
+              plumePosRefs.current[i] = el
             }}
             position={[-38, 0, 0]}
-            rotation={[0, 0, Math.PI / 2]}
-            visible={false}
+            rotation={[0, 0, -Math.PI / 2]}
           >
-            <coneGeometry args={[2.6, 14, 8, 1, true]} />
-            <meshBasicMaterial
-              color={[2.4, 1.7, 0.9]}
-              transparent
-              opacity={0.85}
-              blending={AdditiveBlending}
-              depthWrite={false}
-              toneMapped={false}
+            <NpcPlume
+              ref={(h) => {
+                plumeRefs.current[i] = h
+              }}
+              dia={7}
+              len={32}
             />
-          </mesh>
+          </group>
         </group>
       ))}
 

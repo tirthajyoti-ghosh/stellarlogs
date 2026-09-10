@@ -75,15 +75,11 @@ function makeRadialTexture(): CanvasTexture {
 
 const _camLocal = new Vector3()
 
-export function DrivePlume() {
-  const { camera } = useThree()
-  const stageRef = useRef(0)
-  const volRef = useRef<Mesh>(null)
-  const coronaRef = useRef<Sprite>(null)
-
-  const volMat = useMemo(
-    () =>
-      new ShaderMaterial({
+/** The volumetric flame, as a factory so EVERY drive in the universe can
+ *  burn with the same physics (his order 2026-09-10). steps = raymarch
+ *  budget; tint multiplies the final emission (the Draugr burns violet). */
+export function createPlumeVolumeMaterial(steps: number): ShaderMaterial {
+  return new ShaderMaterial({
         uniforms: {
           uTime: { value: 0 },
           uStage: { value: 0 },
@@ -92,6 +88,7 @@ export function DrivePlume() {
           uAxial: { value: 2.6 },
           uRadial: { value: 6.2 },
           uEmission: { value: 3.6 },
+          uTint: { value: new Vector3(1, 1, 1) },
         },
         vertexShader: /* glsl */ `
           ${LOG_VERT_PARS}
@@ -106,6 +103,7 @@ export function DrivePlume() {
           ${LOG_FRAG_PARS}
           uniform float uTime, uStage, uFlicker, uAxial, uRadial, uEmission;
           uniform vec3 uCamLocal;
+          uniform vec3 uTint;
           varying vec3 vLocal;
 
           float hash(vec3 p){
@@ -186,7 +184,7 @@ export function DrivePlume() {
             float t1 = min(min(hi.x, hi.y), hi.z);
             if (t1 <= t0) discard;
 
-            const int STEPS = ${IS_TOUCH && !PERF_ARMS.has('steps26') ? 16 : 26};
+            const int STEPS = ${steps};
             float stepLen = (t1 - t0) / float(STEPS);
             float dith = hash(vec3(gl_FragCoord.xy, uTime * 60.0));
             vec3 p = ro + rd * (t0 + stepLen * dith);
@@ -205,14 +203,35 @@ export function DrivePlume() {
             }
             float alpha = 1.0 - T;
             if (alpha < 0.003) discard;
-            gl_FragColor = vec4(clamp(acc, 0.0, 4.0), clamp(alpha, 0.0, 1.0));
+            gl_FragColor = vec4(clamp(acc * uTint, 0.0, 4.0), clamp(alpha, 0.0, 1.0));
           }`,
         transparent: true,
         blending: NormalBlending,
         premultipliedAlpha: true,
         depthWrite: false,
         side: BackSide,
-      }),
+      })
+}
+
+export function createPlumeCoronaMaterial(): SpriteMaterial {
+  return new SpriteMaterial({
+    map: makeRadialTexture(),
+    color: '#8fbcff',
+    blending: AdditiveBlending,
+    depthWrite: false,
+    transparent: true,
+    opacity: 0,
+  })
+}
+
+export function DrivePlume() {
+  const { camera } = useThree()
+  const stageRef = useRef(0)
+  const volRef = useRef<Mesh>(null)
+  const coronaRef = useRef<Sprite>(null)
+
+  const volMat = useMemo(
+    () => createPlumeVolumeMaterial(IS_TOUCH && !PERF_ARMS.has('steps26') ? 16 : 26),
     [],
   )
 
@@ -256,18 +275,7 @@ export function DrivePlume() {
     [],
   )
 
-  const coronaMat = useMemo(
-    () =>
-      new SpriteMaterial({
-        map: makeRadialTexture(),
-        color: '#8fbcff',
-        blending: AdditiveBlending,
-        depthWrite: false,
-        transparent: true,
-        opacity: 0,
-      }),
-    [],
-  )
+  const coronaMat = useMemo(() => createPlumeCoronaMaterial(), [])
 
   useFrame((_, dt) => {
     const burning = warpBurning()
