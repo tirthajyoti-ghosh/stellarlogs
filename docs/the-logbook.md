@@ -279,3 +279,18 @@ under the thumb, exactly as the props do. Awaiting his verdict.
    entered · torpedoes downed · rocks stopped — the pilot's own
    numbers) and STANDING RECORDS (drill best, run best — only rows
    that exist), then the log strip.
+
+## v3 BUILT IN-GAME (2026-09-10, his lock: "pretty good. perfect even")
+
+The drawer now IS the v3 composition: a 430x880 stage scaled to the
+viewport (scroll below 0.62 scale), the fixed instrument cluster from
+the mock (verbatim SVG line-work), endorsements as unboxed flank
+annotations in six fixed sockets, register cells, micro-text, grip
+zone with thumb light. THE HERO IS THE REAL HULL: tachi.glb cloned,
+every mesh swapped for LineSegments(EdgesGeometry, 31°) in the
+record's orange at 0.58 opacity — drafting lines, not triangle soup —
+slowly turning in its own low-power canvas that exists only while the
+drawer is open. His amendment understood correctly on the second try:
+"PDC out" meant the turrets VISIBLE on the wireframe (they are — the
+six ball mounts read on the spine); the PDC CERTIFICATION endorsement
+and drill record stay.
