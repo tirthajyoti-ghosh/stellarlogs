@@ -37,6 +37,30 @@ export function ChaseCamera() {
   const driveShake = useRef(0)
 
   useFrame(({ camera }, dt) => {
+    // cinematic probe: a harness-controlled camera for staged shots
+    // (README heroes, judging benches). Follow mode rides the live rig so
+    // a burning ship can't outrun its own portrait. Dev/probe builds only.
+    const cine = (window as unknown as Record<string, unknown>).__cineCam as
+      | { side: number; up: number; back: number; aheadLook?: number }
+      | undefined
+    if (cine) {
+      const v = shipRig.velocityDir
+      const n = Math.hypot(v.x, v.z) || 1
+      const sx = v.z / n
+      const sz = -v.x / n
+      camera.position.set(
+        shipRig.position.x + sx * cine.side - v.x * cine.back,
+        shipRig.position.y + cine.up,
+        shipRig.position.z + sz * cine.side - v.z * cine.back,
+      )
+      const ahead = cine.aheadLook ?? 0
+      camera.lookAt(
+        shipRig.position.x + v.x * ahead,
+        shipRig.position.y,
+        shipRig.position.z + v.z * ahead,
+      )
+      return
+    }
     const cam = camera as PerspectiveCamera
 
     // While dragging, track the accumulated orbit angles tightly; on release
