@@ -42,19 +42,26 @@ function Hull() {
     const box = new Box3().setFromObject(clone)
     const size = box.getSize(new Vector3())
     const center = box.getCenter(new Vector3())
-    const s = 3.1 / Math.max(size.x, size.y, size.z)
+    const s = 3.4 / Math.max(size.x, size.y, size.z)
     clone.scale.setScalar(s)
     clone.position.copy(center).multiplyScalar(-s)
+    // stand her on her drive: rotate the long axis onto Y so the hull
+    // reads nose-up on the portrait glass (his call 2026-09-10)
+    const orient = new Group()
+    orient.add(clone)
+    if (size.x >= size.y && size.x >= size.z) orient.rotation.z = -Math.PI / 2
+    else if (size.z >= size.x && size.z >= size.y) orient.rotation.x = -Math.PI / 2
     const holder = new Group()
-    holder.add(clone)
+    holder.add(orient)
     return holder
   }, [gltf])
 
   useFrame(({ clock }) => {
     const g = groupRef.current
     if (!g) return
+    // roll on her own long axis; a fixed lean gives the 3/4 read
     g.rotation.y = clock.elapsedTime * 0.35
-    g.rotation.x = Math.sin(clock.elapsedTime * 0.21) * 0.14
+    g.rotation.x = 0.16
   })
 
   return (
