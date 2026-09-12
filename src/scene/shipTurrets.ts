@@ -51,6 +51,11 @@ interface TurretRig {
   deploy: number
   /** ball rest position (pivot-local), captured at discovery */
   restPos: Vector3
+  /** pure hull-outward radial (model space) — the recess axis; restDir
+   *  is the parked BARREL axis and points along the hull on some
+   *  mounts, which is how the first stow floated two turrets into
+   *  space (his screenshot, 2026-09-12) */
+  stowDir: Vector3
   /** stagger bookkeeping: cue fired for the current motion */
   cued: boolean
 }
@@ -100,6 +105,7 @@ export function discoverTurrets(model: Object3D): void {
     const outward = new Vector3(p.x, p.y, 0)
     if (outward.lengthSq() < 1) outward.set(0, 1, 0)
     outward.normalize()
+    const stowDir = outward.clone()
     const arcDir = outward.add(restDir).normalize()
     rigs.push({
       pivot,
@@ -113,13 +119,14 @@ export function discoverTurrets(model: Object3D): void {
       targetIndex: -1,
       deploy: 0,
       restPos: ball.position.clone(),
+      stowDir,
       cued: false,
       heat: 0,
       overheated: false,
     })
   }
   for (const rig of rigs) {
-    rig.ball.position.copy(rig.restPos).addScaledVector(rig.restDir, -STOW_DEPTH)
+    rig.ball.position.copy(rig.restPos).addScaledVector(rig.stowDir, -STOW_DEPTH)
   }
   turretControl.muzzles = rigs.map(() => ({
     position: new Vector3(),
@@ -160,7 +167,7 @@ export function updateTurrets(dt: number): void {
     }
     // seat the ball: eased sink along the rest axis
     const k = rig.deploy * rig.deploy * (3 - 2 * rig.deploy)
-    rig.ball.position.copy(rig.restPos).addScaledVector(rig.restDir, -STOW_DEPTH * (1 - k))
+    rig.ball.position.copy(rig.restPos).addScaledVector(rig.stowDir, -STOW_DEPTH * (1 - k))
 
     rig.pivot.getWorldPosition(_pivotWorld)
     rig.worldPos.copy(_pivotWorld)

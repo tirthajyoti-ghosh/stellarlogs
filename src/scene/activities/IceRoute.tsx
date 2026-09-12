@@ -111,14 +111,21 @@ const CRATES_URL = '/models/crates.glb'
 const BUOY_URL = '/models/buoy.glb'
 const TORPEDO_URL = '/models/torpedo.glb'
 
-/** The three classes working these lanes. Bow is +X on all of them. */
+/** The three classes working these lanes. Bow is +X on all of them.
+ *  bells: engine positions [y, z] at the tail — big hulls run multiple
+ *  drives, and each flame is sized to ITS bell, not the whole ship
+ *  (his ruling 2026-09-12: keep it real). */
 const CLASSES = [
-  { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6 },
+  { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6,
+    bells: [[3.0, 0], [-3.0, 0]] as [number, number][], bellDia: 4.6, bellLen: 24 },
   // GS-100 salvage hauler — the battered industrial type
-  { url: '/models/freighter-a.glb', halfLen: 27, radius: 10, collider: 22, plumeX: -34, plume: 2.4 },
+  { url: '/models/freighter-a.glb', halfLen: 27, radius: 10, collider: 22, plumeX: -34, plume: 2.4,
+    bells: [[0, 3.2], [0, -3.2]] as [number, number][], bellDia: 4.2, bellLen: 21 },
   // long-haul star freighter — the big one
-  { url: '/models/freighter-b.glb', halfLen: 37, radius: 12, collider: 27, plumeX: -46, plume: 3.0 },
+  { url: '/models/freighter-b.glb', halfLen: 37, radius: 12, collider: 27, plumeX: -46, plume: 3.0,
+    bells: [[0, -4.6], [0, 0], [0, 4.6]] as [number, number][], bellDia: 4.4, bellLen: 26 },
 ]
+const MAX_BELLS = 3
 /** Ice hulls carry the cold cargo and wear the old ice names. */
 const ICE_NAMES = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
 const FREIGHT_NAMES = ['BREKKA', 'TALVI', 'KOSMO', 'SAMAK', 'VANAJA', 'OYADEH']
@@ -542,8 +549,8 @@ export function IceRoute() {
   }, [hullA, hullB, hullC])
 
   const slotRefs = useRef<(Group | null)[]>([])
-  const plumeRefs = useRef<(NpcPlumeHandle | null)[]>([])
-  const plumePosRefs = useRef<(Group | null)[]>([])
+  const plumeRefs = useRef<(NpcPlumeHandle | null)[][]>([])
+  const plumePosRefs = useRef<(Group | null)[][]>([])
   const raiderRef = useRef<Group>(null)
   const raiderDrive = useMemo(() => createDrivePower(), [])
   const torpMeshRef = useRef<InstancedMesh>(null)
@@ -2071,12 +2078,8 @@ export function IceRoute() {
       if (ship.phase !== 'outbound') _v.negate()
       _q.setFromUnitVectors(_xAxis, _v)
       group.quaternion.copy(_q)
-      const plume = plumeRefs.current[i]
-      const plumePos = plumePosRefs.current[i]
-      if (plume && plumePos) {
+      {
         const cls = CLASSES[ship.cls]
-        plumePos.position.x = cls.plumeX
-        plumePos.scale.setScalar(cls.plume / 2.6)
         const burning =
           (ship.phase === 'inbound' && ship.flight !== 'stopped') || ship.phase === 'outbound'
         // the player's own flame physics, staged from the ship's real
@@ -2088,7 +2091,17 @@ export function IceRoute() {
           else if (ship.flight === 'accel') stage = 1.2
           else stage = 0.45
         }
-        plume.setStage(stage)
+        const handles = plumeRefs.current[i] ?? []
+        const posGroups = plumePosRefs.current[i] ?? []
+        for (let b = 0; b < MAX_BELLS; b++) {
+          const bell = cls.bells[b]
+          const pos = posGroups[b]
+          if (pos && bell) {
+            pos.position.set(cls.plumeX, bell[0], bell[1])
+            pos.scale.setScalar(cls.bellDia / 7)
+          }
+          handles[b]?.setStage(bell ? stage : 0)
+        }
       }
     }
 
@@ -2332,21 +2345,26 @@ export function IceRoute() {
           {models.map((obj, m) => (
             <primitive key={m} object={obj} visible={false} />
           ))}
-          <group
-            ref={(el: Group | null) => {
-              plumePosRefs.current[i] = el
-            }}
-            position={[-38, 0, 0]}
-            rotation={[0, 0, -Math.PI / 2]}
-          >
-            <NpcPlume
-              ref={(h) => {
-                plumeRefs.current[i] = h
+          {[0, 1, 2].map((b) => (
+            <group
+              key={`bell-${b}`}
+              ref={(el: Group | null) => {
+                if (!plumePosRefs.current[i]) plumePosRefs.current[i] = []
+                plumePosRefs.current[i][b] = el
               }}
-              dia={7}
-              len={32}
-            />
-          </group>
+              position={[-38, 0, 0]}
+              rotation={[0, 0, -Math.PI / 2]}
+            >
+              <NpcPlume
+                ref={(h) => {
+                  if (!plumeRefs.current[i]) plumeRefs.current[i] = []
+                  plumeRefs.current[i][b] = h
+                }}
+                dia={7}
+                len={38}
+              />
+            </group>
+          ))}
         </group>
       ))}
 
