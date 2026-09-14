@@ -130,6 +130,11 @@ const CELLS: CellDef[] = [
   { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" /> },
   { name: 'D · HAULER', dist: 95, el: <CandidateShip url="/models/candidates/c17.glb" /> },
   { name: 'E · SPACESHIP-CARGO', dist: 95, el: <CandidateShip url="/models/candidates/c0.glb" /> },
+  { name: 'F · MCRN DONNAGER · EXPANSE CANON', dist: 95, el: <CandidateShip url="/models/candidates/donnager.glb" /> },
+  { name: "G · EPSTEIN'S YACHT · EXPANSE CANON", dist: 95, el: <CandidateShip url="/models/candidates/epstein.glb" /> },
+  { name: 'H · NOSTROMO COMMERCIAL TUG', dist: 95, el: <CandidateShip url="/models/candidates/nostromo.glb" /> },
+  { name: 'I · INDUSTRIAL SHIP (PREUSS CONCEPT)', dist: 95, el: <CandidateShip url="/models/candidates/preuss.glb" /> },
+  { name: 'J · VALLEY FORGE GREENHOUSE FREIGHTER', dist: 95, el: <CandidateShip url="/models/candidates/valleyforge.glb" /> },
 ]
 
 function Cell({ def }: { def: CellDef }) {

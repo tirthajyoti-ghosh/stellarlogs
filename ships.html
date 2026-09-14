@@ -7,11 +7,9 @@
 <title>SHIPS &amp; DRIVES — bench</title>
 <style>
   body { margin: 0; background: #06090f; font-family: "Space Mono", ui-monospace, monospace; }
-  #bench { position: fixed; inset: 0; }
-  .holder { position: fixed; inset: 0; }
   .grid {
-    position: absolute; inset: 64px 8px 8px;
-    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr;
+    padding: 64px 8px 8px;
+    display: grid; grid-template-columns: repeat(5, 1fr); grid-auto-rows: 44vh;
     gap: 8px;
   }
   .cell { position: relative; border: 1px solid rgba(111, 211, 232, 0.25); overflow: hidden; }
@@ -47,7 +45,7 @@
   </div>
   <div class="hint">
     FRONT ROW — the working fleet: BLT-1129 (yours) · ICE HAULER · SALVAGE HAULER · STAR FREIGHTER · THE DRAUGR (true relative scale)<br/>
-    BACK ROW — design candidates, normalized size, no drives yet: A CARGO SPACESHIP · B TRANSPORTER · C BUEY II · D HAULER · E SPACESHIP-CARGO<br/>
+    BACK ROWS — design candidates, normalized size, no drives yet<br/>
     drag to orbit · scroll to zoom · right-drag to pan
   </div>
   <script type="module" src="/src/bench/ships.tsx"></script>
