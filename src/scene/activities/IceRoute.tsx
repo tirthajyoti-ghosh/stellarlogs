@@ -115,7 +115,7 @@ const TORPEDO_URL = '/models/torpedo.glb'
  *  bells: engine positions [y, z] at the tail — big hulls run multiple
  *  drives, and each flame is sized to ITS bell, not the whole ship
  *  (his ruling 2026-09-12: keep it real). */
-const CLASSES = [
+export const CLASSES = [
   { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6,
     bells: [[3.0, 0], [-3.0, 0]] as [number, number][], bellDia: 4.6, bellLen: 24 },
   // GS-100 salvage hauler — the battered industrial type
