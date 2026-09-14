@@ -1,62 +1,69 @@
 # STELLARLOGS
 
-**A playable portfolio.** You don't scroll this résumé — you fly it.
+*a playable portfolio*
 
-![The BLT-1129 at max burn through a MIL-SPEC torpedo salvo, over the galactic core](docs/media/hero.jpg)
+![Stellarlogs — the Belt](docs/media/banner.jpg)
 
-**Fly it now → [tirthajyotighosh.com](https://tirthajyotighosh.com)** *(best on desktop; phones fly landscape)*
+There is a rock out here. It does not look important.
 
-Inspired by *The Expanse*: a hand-built star neighborhood where every system is a
-chapter of my work — experience, projects, writing, travels — and the space
-between them is a living Belter colony with jobs, dangers, and memory. Newtonian
-flight, flip-and-burn jumps, point-defense guns that aim themselves while you fly.
+A long while from now, people went to space and did what people always do: they
+went to work. The great powers kept the good planets and the sunlight. Everyone
+else went farther out, to the rocks — and stayed. Out here, water is rent, air
+is wages, and a sound ship matters more than a good name. The people of the
+rocks call themselves Belters. They are practical, unsentimental, and more
+loyal than they will ever admit to being.
 
-## What's out there
+These systems were charted a lifetime ago by a single surveyor working alone,
+and everything that moves out here still runs on his charts. At the center of
+them, a colony holds to its drifting rock by ice and stubbornness. It has known
+loss. You will find that it remembers, in its own way.
 
-- **The Ice Route** — escort haulers through raider attacks; the world runs its
-  jobs whether you join or not.
-- **The Hunt** — chase the Draugr down her cold trail and force the surrender squawk.
-- **The Khione Pass** — a charted debris storm on a real wall-clock schedule
-  (every visitor on Earth shares it); stand the picket over the colony's water.
-- **The Nilak Vigil** — light a candle. Every candle ever lit by any visitor burns there.
-- **The Service Record** — a hand terminal in the show's own UI language, where
-  port authorities countersign the deeds they witnessed.
-- **The Hail Line** — leave a transmission composed from the Belter phrasebook;
-  it becomes a beacon buoy other visitors fly past and read.
+You're new. That's fine — everyone here was, once. Nobody will ask your name;
+by Belter custom, you are what you do. Your ship obeys real physics, same as
+you, only with a bigger engine: cut the drive and you coast forever; to slow
+down, turn around and burn. You learn fast out here. Everyone does.
 
-![A torpedo slips past the point-defense screen](docs/media/close-call.jpg)
+There is a berth at the docks with no name on it. It doesn't look important
+either.
 
-## Controls
+It's yours.
 
-| | |
-|---|---|
-| `W / S` | burn / retro | 
-| `A / D` | yaw · `R / F` pitch · `Q / E` strafe |
-| `Shift` | max burn |
-| `X` | flip |
-| `N` | the chart (jump between systems) |
-| `L` | your service record |
-| `G / H` | accept the posted job |
+---
 
-## Under the hood
+**From the author:** I built this universe as my portfolio. The star systems
+hold my work — the projects, the experience, the places I've been — each one
+somewhere you can fly. Visit them, or ignore them and just live in the Belt
+for a while. Both are the point.
 
-React Three Fiber + three.js on Vercel. The bits I'm proudest of:
+**→ [tirthajyotighosh.com](https://tirthajyotighosh.com)** · phones fly
+landscape · the ship will teach you the rest
 
-- **One flame for every drive** — a raymarched volumetric plume (Beer–Lambert
-  absorption, shock diamonds, advected noise) shared by the player, the lane
-  traffic, and the Draugr's four violet bells, with distance LOD.
-- **PDC fire control** — TEWA target assignment across six ball turrets that
-  physically stow at cruise and deploy for battle, servo-and-latch sound included.
-- **Torpedo brain** — shared guidance classes (lead pursuit, dogleg spreads,
-  terminal corkscrews, near-miss jukes) instead of per-activity scripts.
-- **Procedural audio** — the drive, RCS, PDCs, klaxons: WebAudio synthesis, no samples.
-- **The black box** — anonymous store-and-forward telemetry that only leaves the
-  buffer once storage confirms; reads are internal-only, forever.
-- **The liveness relay** — one endpoint of approved world-facts (candles,
-  all-hands tallies, port pennants, hails) with clamped, rate-limited anonymous
-  writes; the world stays honest when the relay is down.
-- **Perf discipline** — adaptive resolution, matrix-update deadbands on ~4k
-  static signage objects, probe builds for honest measurement.
+<details>
+<summary><b>For the engineers — mild spoilers</b></summary>
+
+<br/>
+
+Built with React Three Fiber / three.js on Vercel. The parts I'm proudest of:
+
+- **One flame for every drive** — a raymarched volumetric exhaust plume
+  (Beer–Lambert absorption, shock diamonds, advected noise) shared by the
+  player's ship and every NPC hull, with distance LOD.
+- **Point-defense fire control** — TEWA-style target assignment across six
+  ball turrets that physically stow at cruise and deploy for battle.
+- **Shared torpedo guidance** — one brain with behavior classes (lead pursuit,
+  dogleg spreads, terminal corkscrews, near-miss jukes) instead of per-mission
+  scripts.
+- **Procedural audio** — drive, thrusters, guns, klaxons: pure WebAudio
+  synthesis, zero samples.
+- **Honest telemetry** — anonymous store-and-forward black box that only
+  clears its buffer when storage confirms; reads are internal-only, forever.
+- **A tiny multiplayer-feeling backend** — one endpoint of allowlisted
+  world-facts with clamped, rate-limited anonymous writes; the world degrades
+  honestly when it's down.
+- **Perf discipline** — adaptive resolution, matrix-update deadbands across
+  ~4k static objects, dedicated probe builds for real measurement.
+
+</details>
 
 ## Credits
 
@@ -66,5 +73,4 @@ React Three Fiber + three.js on Vercel. The bits I'm proudest of:
 - Nebula imagery courtesy of [ESA/Hubble](https://esahubble.org) (NASA, ESA), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): Orion (heic0601a), Lagoon (heic1808a), Bubble (heic1608a).
 - Milky Way sky: [NASA/Goddard Space Flight Center Scientific Visualization Studio, "Deep Star Maps 2020"](https://svs.gsfc.nasa.gov/4851) (public domain), tone-mapped from the source EXR.
 - Torpedo model: ["Low Poly Missiles and Torpedos"](https://sketchfab.com/3d-models/low-poly-missiles-and-torpedos-99783c90ce904951a3c71e851a527d35) by [sakigakefuruzawa](https://sketchfab.com/sakigakefuruzawa), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
-- Full asset attributions for every hull in the lanes are posted in-game at the
-  Drift's **Port Registry**.
+- Full asset attributions for every hull in the lanes are posted in-game at the Drift's **Port Registry**.
