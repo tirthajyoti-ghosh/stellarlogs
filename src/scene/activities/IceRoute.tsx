@@ -36,6 +36,7 @@ import { TorpedoTrails } from '../fx/TorpedoTrails'
 import { damageFx } from '../fx/HullDamage'
 import { PdcRounds, createPdcFire, createBattery } from '../fx/PdcRounds'
 import { NpcPlume, type NpcPlumeHandle } from '../fx/NpcPlume'
+import { CLASSES, MAX_BELLS } from '../../config/laneClasses'
 import {
   armBrain,
   createBrain,
@@ -111,21 +112,7 @@ const CRATES_URL = '/models/crates.glb'
 const BUOY_URL = '/models/buoy.glb'
 const TORPEDO_URL = '/models/torpedo.glb'
 
-/** The three classes working these lanes. Bow is +X on all of them.
- *  bells: engine positions [y, z] at the tail — big hulls run multiple
- *  drives, and each flame is sized to ITS bell, not the whole ship
- *  (his ruling 2026-09-12: keep it real). */
-export const CLASSES = [
-  { url: '/models/imiq.glb', halfLen: 30, radius: 10.5, collider: 24, plumeX: -38, plume: 2.6,
-    bells: [[3.0, 0], [-3.0, 0]] as [number, number][], bellDia: 4.6, bellLen: 24 },
-  // GS-100 salvage hauler — the battered industrial type
-  { url: '/models/freighter-a.glb', halfLen: 27, radius: 10, collider: 22, plumeX: -34, plume: 2.4,
-    bells: [[0, 3.2], [0, -3.2]] as [number, number][], bellDia: 4.2, bellLen: 21 },
-  // long-haul star freighter — the big one
-  { url: '/models/freighter-b.glb', halfLen: 37, radius: 12, collider: 27, plumeX: -46, plume: 3.0,
-    bells: [[0, -4.6], [0, 0], [0, 4.6]] as [number, number][], bellDia: 4.4, bellLen: 26 },
-]
-const MAX_BELLS = 3
+// hull classes + bell layouts live in config/laneClasses (shared with the ships bench)
 /** Ice hulls carry the cold cargo and wear the old ice names. */
 const ICE_NAMES = ['IMIQ', 'SIKU', 'QINU', 'AUNIQ', 'MASAK']
 const FREIGHT_NAMES = ['BREKKA', 'TALVI', 'KOSMO', 'SAMAK', 'VANAJA', 'OYADEH']

@@ -1,11 +1,11 @@
 import { createRoot } from 'react-dom/client'
 import { useRef, type ReactElement } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Text, useGLTF } from '@react-three/drei'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import { DrivePlume } from '../scene/DrivePlume'
 import { NpcPlume, type NpcPlumeHandle } from '../scene/fx/NpcPlume'
 import { DraugrPlumes, createDrivePower } from '../scene/fx/DraugrPlumes'
-import { CLASSES } from '../scene/activities/IceRoute'
+import { CLASSES } from '../config/laneClasses'
 import { shipRig } from '../state/shipRig'
 
 /**
@@ -97,27 +97,12 @@ function Draugr() {
   )
 }
 
-function Label({ text, y }: { text: string; y: number }) {
-  return (
-    <Text
-      fontSize={4}
-      letterSpacing={0.2}
-      color="#9fd8ef"
-      anchorX="center"
-      position={[0, y, 0]}
-      material-toneMapped={false}
-    >
-      {text}
-    </Text>
-  )
-}
-
-const SHIPS: { name: string; x: number; el: ReactElement; labelY: number }[] = [
-  { name: 'BLT-1129 · YOUR SHIP', x: 0, el: <PlayerShip />, labelY: -8 },
-  { name: 'ICE HAULER · 2 BELLS', x: 70, el: <LaneShip cls={0} />, labelY: -18 },
-  { name: 'SALVAGE HAULER · 2 BELLS', x: 160, el: <LaneShip cls={1} />, labelY: -18 },
-  { name: 'STAR FREIGHTER · 3 BELLS', x: 260, el: <LaneShip cls={2} />, labelY: -20 },
-  { name: 'THE DRAUGR · 4 BELLS', x: 350, el: <Draugr />, labelY: -14 },
+const SHIPS: { name: string; x: number; el: ReactElement }[] = [
+  { name: 'BLT-1129 · YOUR SHIP', x: 0, el: <PlayerShip /> },
+  { name: 'ICE HAULER · 2 BELLS', x: 70, el: <LaneShip cls={0} /> },
+  { name: 'SALVAGE HAULER · 2 BELLS', x: 160, el: <LaneShip cls={1} /> },
+  { name: 'STAR FREIGHTER · 3 BELLS', x: 260, el: <LaneShip cls={2} /> },
+  { name: 'THE DRAUGR · 4 BELLS', x: 350, el: <Draugr /> },
 ]
 
 function Bench() {
@@ -131,7 +116,6 @@ function Bench() {
       {SHIPS.map((s) => (
         <group key={s.name} position={[s.x, 0, 0]}>
           {s.el}
-          <Label text={s.name} y={s.labelY} />
         </group>
       ))}
     </Canvas>
