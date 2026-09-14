@@ -2,6 +2,7 @@ import { createRoot } from 'react-dom/client'
 import { useRef, type ReactElement } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
+import { Box3, Vector3 } from 'three'
 import { DrivePlume } from '../scene/DrivePlume'
 import { NpcPlume, type NpcPlumeHandle } from '../scene/fx/NpcPlume'
 import { DraugrPlumes, createDrivePower } from '../scene/fx/DraugrPlumes'
@@ -105,6 +106,37 @@ const SHIPS: { name: string; x: number; el: ReactElement }[] = [
   { name: 'THE DRAUGR · 4 BELLS', x: 350, el: <Draugr /> },
 ]
 
+/** a design candidate: unknown units, so normalize to a common length
+ *  and let him orbit the stern — no plumes until a hull is chosen and
+ *  its bells are measured */
+const CANDIDATES = [
+  { url: '/models/candidates/c3.glb', name: 'A · CARGO SPACESHIP' },
+  { url: '/models/candidates/c15.glb', name: 'B · TRANSPORTER' },
+  { url: '/models/candidates/c16.glb', name: 'C · BUEY II' },
+  { url: '/models/candidates/c17.glb', name: 'D · HAULER' },
+  { url: '/models/candidates/c0.glb', name: 'E · SPACESHIP-CARGO' },
+]
+
+function CandidateShip({ url }: { url: string }) {
+  const gltf = useGLTF(url)
+  const holder = useRef<{ done: boolean }>({ done: false })
+  useFrame(() => {
+    // normalize once after load: center on origin, longest side = 55
+    if (holder.current.done) return
+    const scene = gltf.scene
+    const box = new Box3().setFromObject(scene)
+    const size = box.getSize(new Vector3())
+    const max = Math.max(size.x, size.y, size.z)
+    if (!isFinite(max) || max <= 0) return
+    const s = 55 / max
+    const center = box.getCenter(new Vector3())
+    scene.scale.setScalar(s)
+    scene.position.copy(center).multiplyScalar(-s)
+    holder.current.done = true
+  })
+  return <primitive object={gltf.scene} />
+}
+
 function Bench() {
   return (
     <Canvas camera={{ fov: 50, near: 0.1, far: 5000, position: [160, 40, 220] }} gl={{ antialias: true }}>
@@ -116,6 +148,12 @@ function Bench() {
       {SHIPS.map((s) => (
         <group key={s.name} position={[s.x, 0, 0]}>
           {s.el}
+        </group>
+      ))}
+      {/* row two: the design candidates, behind the working fleet */}
+      {CANDIDATES.map((c, i) => (
+        <group key={c.name} position={[i * 85, 0, -170]}>
+          <CandidateShip url={c.url} />
         </group>
       ))}
     </Canvas>
