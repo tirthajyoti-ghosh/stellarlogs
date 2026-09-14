@@ -102,3 +102,14 @@ the universe's range of color and activity.)
 1. Preface A (transmission) or B (narrator)?
 2. Engineers' section: collapsed `<details>`, or gone?
 3. The collage shot list — approve/swap slots.
+
+## SHIPPED — 2026-09-14 (his "keep as is, ship it")
+
+The preface went out in the researched blend (Le Guin's weighted
+opener/closer ring, Chambers' second-person warmth, Corey's
+labor-priced world, a Weir aside for the physics) — approved verbatim.
+Engineers' section kept as a collapsed details block. The one image is
+a four-frame banner: the wave-3 max-burn battle as the hero band, and
+beneath it the long-haul freighter braking on three bells, the hull
+crossing the violet gas giant, and gold civil-defense tracers over the
+crib mid-sleet — all live captures via the follow-cam probe.
