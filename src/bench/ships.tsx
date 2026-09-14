@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client'
-import { useRef, type ReactElement } from 'react'
+import { Suspense, useRef, useState, type ReactElement, type ReactNode } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, useGLTF } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera, View, useGLTF } from '@react-three/drei'
 import { Box3, Vector3 } from 'three'
 import { DrivePlume } from '../scene/DrivePlume'
 import { NpcPlume, type NpcPlumeHandle } from '../scene/fx/NpcPlume'
@@ -10,17 +10,16 @@ import { CLASSES } from '../config/laneClasses'
 import { shipRig } from '../state/shipRig'
 
 /**
- * SHIPS & DRIVES — the judging bench (his ask 2026-09-14): every hull
- * in the universe with its drive exhaust EXACTLY as the game runs it —
- * same models, same plume modules, same class config, same offsets —
- * orbitable so the rig can be inspected from any angle. The buttons
- * stage every drive at once (the player's plume is driven through
- * shipRig, the same switch the game uses).
+ * SHIPS & DRIVES — the judging bench, v2 (his ask 2026-09-14): one
+ * WINDOW PER SHIP, each with its own orbit camera, because a shared
+ * scene made inspection miserable. One WebGL context, ten scissored
+ * views (drei View). Every hull carries its exhaust rig exactly as
+ * the game runs it; candidates carry none until a hull is chosen and
+ * its bells are measured.
  */
 
 const stageState = { stage: 1.2 }
 
-// panel wiring (plain DOM, outside React)
 document.querySelectorAll<HTMLButtonElement>('#panel button').forEach((b) => {
   b.addEventListener('click', () => {
     document.querySelectorAll('#panel button').forEach((x) => x.classList.remove('on'))
@@ -29,13 +28,11 @@ document.querySelectorAll<HTMLButtonElement>('#panel button').forEach((b) => {
   })
 })
 
-/** the player's hull, mounted exactly as Ship.tsx mounts it */
 function PlayerShip() {
   const gltf = useGLTF('/models/tachi.glb')
   const MODEL_SCALE = 0.0135
   const MODEL_CENTER = 57.65 * MODEL_SCALE
   useFrame(() => {
-    // stage the game's own throttle flags; DrivePlume reads these
     shipRig.thrusting = stageState.stage > 0.05
     shipRig.boosting = stageState.stage > 1.4
   })
@@ -53,7 +50,6 @@ function PlayerShip() {
   )
 }
 
-/** one lane hull with its class's real bell layout */
 function LaneShip({ cls }: { cls: number }) {
   const def = CLASSES[cls]
   const gltf = useGLTF(def.url)
@@ -98,30 +94,10 @@ function Draugr() {
   )
 }
 
-const SHIPS: { name: string; x: number; el: ReactElement }[] = [
-  { name: 'BLT-1129 · YOUR SHIP', x: 0, el: <PlayerShip /> },
-  { name: 'ICE HAULER · 2 BELLS', x: 70, el: <LaneShip cls={0} /> },
-  { name: 'SALVAGE HAULER · 2 BELLS', x: 160, el: <LaneShip cls={1} /> },
-  { name: 'STAR FREIGHTER · 3 BELLS', x: 260, el: <LaneShip cls={2} /> },
-  { name: 'THE DRAUGR · 4 BELLS', x: 350, el: <Draugr /> },
-]
-
-/** a design candidate: unknown units, so normalize to a common length
- *  and let him orbit the stern — no plumes until a hull is chosen and
- *  its bells are measured */
-const CANDIDATES = [
-  { url: '/models/candidates/c3.glb', name: 'A · CARGO SPACESHIP' },
-  { url: '/models/candidates/c15.glb', name: 'B · TRANSPORTER' },
-  { url: '/models/candidates/c16.glb', name: 'C · BUEY II' },
-  { url: '/models/candidates/c17.glb', name: 'D · HAULER' },
-  { url: '/models/candidates/c0.glb', name: 'E · SPACESHIP-CARGO' },
-]
-
 function CandidateShip({ url }: { url: string }) {
   const gltf = useGLTF(url)
-  const holder = useRef<{ done: boolean }>({ done: false })
+  const holder = useRef({ done: false })
   useFrame(() => {
-    // normalize once after load: center on origin, longest side = 55
     if (holder.current.done) return
     const scene = gltf.scene
     const box = new Box3().setFromObject(scene)
@@ -137,27 +113,69 @@ function CandidateShip({ url }: { url: string }) {
   return <primitive object={gltf.scene} />
 }
 
-function Bench() {
+interface CellDef {
+  name: string
+  dist: number
+  el: ReactElement
+}
+
+const CELLS: CellDef[] = [
+  { name: 'BLT-1129 · YOUR SHIP', dist: 14, el: <PlayerShip /> },
+  { name: 'ICE HAULER', dist: 110, el: <LaneShip cls={0} /> },
+  { name: 'SALVAGE HAULER', dist: 100, el: <LaneShip cls={1} /> },
+  { name: 'STAR FREIGHTER', dist: 130, el: <LaneShip cls={2} /> },
+  { name: 'THE DRAUGR', dist: 80, el: <Draugr /> },
+  { name: 'A · CARGO SPACESHIP', dist: 95, el: <CandidateShip url="/models/candidates/c3.glb" /> },
+  { name: 'B · TRANSPORTER', dist: 95, el: <CandidateShip url="/models/candidates/c15.glb" /> },
+  { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" /> },
+  { name: 'D · HAULER', dist: 95, el: <CandidateShip url="/models/candidates/c17.glb" /> },
+  { name: 'E · SPACESHIP-CARGO', dist: 95, el: <CandidateShip url="/models/candidates/c0.glb" /> },
+]
+
+function Cell({ def }: { def: CellDef }) {
   return (
-    <Canvas camera={{ fov: 50, near: 0.1, far: 5000, position: [160, 40, 220] }} gl={{ antialias: true }}>
-      <color attach="background" args={['#06090f']} />
-      <ambientLight intensity={0.5} />
-      <hemisphereLight args={['#7c95b5', '#1a2230', 0.8]} />
-      <directionalLight position={[200, 300, 200]} intensity={1.6} />
-      <OrbitControls target={[160, 0, 0]} enableDamping />
-      {SHIPS.map((s) => (
-        <group key={s.name} position={[s.x, 0, 0]}>
-          {s.el}
-        </group>
-      ))}
-      {/* row two: the design candidates, behind the working fleet */}
-      {CANDIDATES.map((c, i) => (
-        <group key={c.name} position={[i * 85, 0, -170]}>
-          <CandidateShip url={c.url} />
-        </group>
-      ))}
-    </Canvas>
+    <div className="cell">
+      <div className="cell-label">{def.name}</div>
+      <View className="cell-view">
+        <color attach="background" args={['#070a10']} />
+        <ambientLight intensity={0.55} />
+        <hemisphereLight args={['#7c95b5', '#1a2230', 0.85]} />
+        <directionalLight position={[1, 2, 1.4]} intensity={1.7} />
+        <PerspectiveCamera
+          makeDefault
+          fov={45}
+          near={0.1}
+          far={5000}
+          position={[def.dist * 0.75, def.dist * 0.3, def.dist * 0.75]}
+        />
+        <OrbitControls makeDefault enableDamping target={[0, 0, 0]} />
+        <Suspense fallback={null}>{def.el}</Suspense>
+      </View>
+    </div>
   )
 }
 
-createRoot(document.getElementById('bench')!).render(<Bench />)
+function App(): ReactNode {
+  const [container, setContainer] = useState<HTMLDivElement | null>(null)
+  return (
+    <div ref={setContainer} className="holder">
+      <div className="grid">
+        {CELLS.map((c) => (
+          <Cell key={c.name} def={c} />
+        ))}
+      </div>
+      {container && (
+        <Canvas
+          eventSource={container}
+          className="view-canvas"
+          gl={{ antialias: true }}
+          style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}
+        >
+          <View.Port />
+        </Canvas>
+      )}
+    </div>
+  )
+}
+
+createRoot(document.getElementById('bench')!).render(<App />)

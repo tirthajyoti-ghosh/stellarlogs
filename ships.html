@@ -6,8 +6,22 @@
 <link rel="icon" href="data:," />
 <title>SHIPS &amp; DRIVES — bench</title>
 <style>
-  body { margin: 0; background: #06090f; overflow: hidden; font-family: "Space Mono", ui-monospace, monospace; }
+  body { margin: 0; background: #06090f; font-family: "Space Mono", ui-monospace, monospace; }
   #bench { position: fixed; inset: 0; }
+  .holder { position: fixed; inset: 0; }
+  .grid {
+    position: absolute; inset: 64px 8px 8px;
+    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: 1fr 1fr;
+    gap: 8px;
+  }
+  .cell { position: relative; border: 1px solid rgba(111, 211, 232, 0.25); overflow: hidden; }
+  .cell-label {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    padding: 6px 9px; font-size: 9px; letter-spacing: .22em; color: #9fd8ef;
+    background: rgba(6, 10, 16, 0.7); pointer-events: none;
+  }
+  .cell-view { position: absolute; inset: 0; }
+  .view-canvas { z-index: 2; }
   .panel {
     position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
     display: flex; gap: 8px; z-index: 10; align-items: center;
@@ -18,7 +32,7 @@
     font: 600 11px/1 "Rajdhani", sans-serif; letter-spacing: .2em; padding: 9px 16px; cursor: pointer;
   }
   .panel button.on { background: rgba(64,42,14,.9); border-color: rgba(255,192,110,.7); color: #ffd9a0; }
-  .hint { position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%); color: #51697c; font-size: 10px; letter-spacing: .15em; z-index: 10; }
+  .hint { display: none; }
 </style>
 </head>
 <body>
