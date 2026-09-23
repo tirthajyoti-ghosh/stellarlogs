@@ -12,10 +12,10 @@ import { shipRig } from '../state/shipRig'
 /**
  * SHIPS & DRIVES — the judging bench, v2 (his ask 2026-09-14): one
  * WINDOW PER SHIP, each with its own orbit camera, because a shared
- * scene made inspection miserable. One WebGL context, ten scissored
- * views (drei View). Every hull carries its exhaust rig exactly as
- * the game runs it; candidates carry none until a hull is chosen and
- * its bells are measured.
+ * scene made inspection miserable. One WebGL context, scissored views
+ * (drei View). Every hull burns the game's own drive plume from its
+ * REAL bells — positions and diameters measured off each mesh with the
+ * cluster tool (2026-09-23), flames aligned to the true aft axis.
  */
 
 const stageState = { stage: 1.2 }
@@ -94,10 +94,31 @@ function Draugr() {
   )
 }
 
-function CandidateShip({ url }: { url: string }) {
+/**
+ * A measured drive rig: bell exit positions and diameters in the MODEL's
+ * own coordinate space (read off the mesh with the cluster tool), plus a
+ * rotation that points the plume's local -Y down the ship's real aft
+ * axis. Bells: [x, y, z, dia].
+ */
+interface CandidateRig {
+  rot: [number, number, number]
+  bells: [number, number, number, number][]
+}
+
+/** local -Y → given aft axis */
+const AFT = {
+  negX: [0, 0, -Math.PI / 2] as [number, number, number],
+  posX: [0, 0, Math.PI / 2] as [number, number, number],
+  negZ: [Math.PI / 2, 0, 0] as [number, number, number],
+  posZ: [-Math.PI / 2, 0, 0] as [number, number, number],
+}
+
+function CandidateShip({ url, rig }: { url: string; rig?: CandidateRig }) {
   const gltf = useGLTF(url)
   const holder = useRef({ done: false })
+  const handles = useRef<(NpcPlumeHandle | null)[]>([])
   useFrame(() => {
+    for (let b = 0; b < (rig?.bells.length ?? 0); b++) handles.current[b]?.setStage(stageState.stage)
     if (holder.current.done) return
     const scene = gltf.scene
     const box = new Box3().setFromObject(scene)
@@ -110,7 +131,44 @@ function CandidateShip({ url }: { url: string }) {
     scene.position.copy(center).multiplyScalar(-s)
     holder.current.done = true
   })
-  return <primitive object={gltf.scene} />
+  return (
+    <primitive object={gltf.scene}>
+      {rig?.bells.map(([x, y, z, d], i) => (
+        <group key={i} position={[x, y, z]} rotation={rig.rot} scale={d / 7}>
+          <NpcPlume
+            ref={(h) => {
+              handles.current[i] = h
+            }}
+            dia={7}
+            len={38}
+          />
+        </group>
+      ))}
+    </primitive>
+  )
+}
+
+/** Bell maps measured from the hulls (cluster.mjs, 2026-09-23). */
+const RIGS: Record<string, CandidateRig> = {
+  c3: { rot: AFT.posZ, bells: [[-3500, -1200, 14100, 1500], [3500, -1200, 14100, 1500]] },
+  c15: { rot: AFT.negZ, bells: [[-35, -5.8, -15.2, 5.2], [35, -5.8, -15.2, 5.2]] },
+  c16: { rot: AFT.negZ, bells: [[-23.3, -47, -240, 17], [0, -47, -240, 17], [23.3, -47, -240, 17]] },
+  donnager: { rot: AFT.negZ, bells: [
+    [-110.8, 153.3, -305, 88], [110.8, 153.3, -305, 88], [-110.8, -68.5, -305, 88], [110.8, -68.5, -305, 88] ] },
+  epstein: { rot: AFT.posX, bells: [[199, -0.2, -353.5, 70]] },
+  nostromo: { rot: AFT.negZ, bells: [[-233.7, 541.5, -640, 95], [233.7, 541.5, -640, 95]] },
+  preuss: { rot: AFT.negZ, bells: [[0, 0, -1.62, 0.38]] },
+  virgon: { rot: AFT.negX, bells: [
+    [-73, -28.3, 0, 11], [-70, 4, -13.2, 5.5], [-70, 4, 4, 5.5], [-70, 4.7, 21.8, 5.5] ] },
+  perseus: { rot: AFT.negZ, bells: [
+    [-4.6, -5.2, -85, 5.5], [-7.4, -7.8, -85, 5.5], [-10.2, -10.4, -85, 5.5], [-13, -13, -85, 5.5], [-4.8, -12, -85, 5.5],
+    [4.6, -5.2, -85, 5.5], [7.4, -7.8, -85, 5.5], [10.2, -10.4, -85, 5.5], [13, -13, -85, 5.5], [4.8, -12, -85, 5.5] ] },
+  spacecraft03: { rot: AFT.negZ, bells: [
+    [-0.9, -67.9, -118, 11], [10.3, -67.9, -118, 11], [-0.9, -47.1, -118, 11], [10.3, -47.1, -118, 11] ] },
+  rusty: { rot: AFT.negZ, bells: [[7.4, -0.6, -5.8, 2.6]] },
+  zanzibus: { rot: AFT.negZ, bells: [
+    [-2.5, 0.4, -6.3, 0.55], [-1.6, 0.4, -6.3, 0.55], [1.8, 0.4, -6.3, 0.55], [2.8, 0.4, -6.3, 0.55],
+    [-2.5, 1.3, -6.3, 0.55], [-1.6, 1.3, -6.3, 0.55], [1.8, 1.3, -6.3, 0.55], [2.8, 1.3, -6.3, 0.55] ] },
 }
 
 interface CellDef {
@@ -123,18 +181,18 @@ const CELLS: CellDef[] = [
   { name: 'BLT-1129 · YOUR SHIP', dist: 14, el: <PlayerShip /> },
   { name: 'ICE HAULER · KEPT', dist: 110, el: <LaneShip cls={0} /> },
   { name: 'THE DRAUGR', dist: 80, el: <Draugr /> },
-  { name: 'A · CARGO SPACESHIP', dist: 95, el: <CandidateShip url="/models/candidates/c3.glb" /> },
-  { name: 'B · TRANSPORTER', dist: 95, el: <CandidateShip url="/models/candidates/c15.glb" /> },
-  { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" /> },
-  { name: 'F · MCRN DONNAGER · EXPANSE CANON', dist: 95, el: <CandidateShip url="/models/candidates/donnager.glb" /> },
-  { name: "G · EPSTEIN'S YACHT · EXPANSE CANON", dist: 95, el: <CandidateShip url="/models/candidates/epstein.glb" /> },
-  { name: 'H · NOSTROMO COMMERCIAL TUG', dist: 95, el: <CandidateShip url="/models/candidates/nostromo.glb" /> },
-  { name: 'I · INDUSTRIAL SHIP (PREUSS CONCEPT)', dist: 95, el: <CandidateShip url="/models/candidates/preuss.glb" /> },
-  { name: 'K · VIRGON EXPRESS · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/virgon.glb" /> },
-  { name: 'L · PERSEUS POD FREIGHTER · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/perseus.glb" /> },
-  { name: 'M · SPACECRAFT-03 · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/spacecraft03.glb" /> },
-  { name: 'N · RUSTY HAULER · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/rusty.glb" /> },
-  { name: 'O · ZANZIBUS EXPRESS · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/zanzibus.glb" /> },
+  { name: 'A · CARGO SPACESHIP', dist: 95, el: <CandidateShip url="/models/candidates/c3.glb" rig={RIGS.c3} /> },
+  { name: 'B · TRANSPORTER', dist: 95, el: <CandidateShip url="/models/candidates/c15.glb" rig={RIGS.c15} /> },
+  { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" rig={RIGS.c16} /> },
+  { name: 'F · MCRN DONNAGER · EXPANSE CANON', dist: 95, el: <CandidateShip url="/models/candidates/donnager.glb" rig={RIGS.donnager} /> },
+  { name: "G · EPSTEIN'S YACHT · EXPANSE CANON", dist: 95, el: <CandidateShip url="/models/candidates/epstein.glb" rig={RIGS.epstein} /> },
+  { name: 'H · NOSTROMO COMMERCIAL TUG', dist: 95, el: <CandidateShip url="/models/candidates/nostromo.glb" rig={RIGS.nostromo} /> },
+  { name: 'I · INDUSTRIAL SHIP (PREUSS CONCEPT)', dist: 95, el: <CandidateShip url="/models/candidates/preuss.glb" rig={RIGS.preuss} /> },
+  { name: 'K · VIRGON EXPRESS · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/virgon.glb" rig={RIGS.virgon} /> },
+  { name: 'L · PERSEUS POD FREIGHTER · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/perseus.glb" rig={RIGS.perseus} /> },
+  { name: 'M · SPACECRAFT-03 · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/spacecraft03.glb" rig={RIGS.spacecraft03} /> },
+  { name: 'N · RUSTY HAULER · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/rusty.glb" rig={RIGS.rusty} /> },
+  { name: 'O · ZANZIBUS EXPRESS · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/zanzibus.glb" rig={RIGS.zanzibus} /> },
 ]
 
 function Cell({ def }: { def: CellDef }) {
