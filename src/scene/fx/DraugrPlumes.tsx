@@ -16,12 +16,13 @@ import { NpcPlume, type NpcPlumeHandle } from './NpcPlume'
  * drive chemistry runs dirty.
  */
 
-/** local offsets of the four bells (bow = +X) */
+/** local offsets of the four bells (bow = +X) — re-measured 2026-09-23:
+ *  barrel rows at y 2.75 / -1.75, columns z ±1.25, mouths at x≈-19.9 */
 export const NOZZLES: [number, number, number][] = [
-  [-22, 1.4, 1.5],
-  [-22, 1.4, -1.5],
-  [-22, -1.4, 1.5],
-  [-22, -1.4, -1.5],
+  [-20.1, 2.75, 1.25],
+  [-20.1, 2.75, -1.25],
+  [-20.1, -1.75, 1.25],
+  [-20.1, -1.75, -1.25],
 ]
 
 /** Mutable per-instance drive state; the owner writes it each frame. */
@@ -54,18 +55,18 @@ export function DraugrPlumes({ drive }: { drive: DrivePower }) {
   return (
     <group ref={groupRef} visible={false}>
       {NOZZLES.map(([x, y, z], i) => (
-        <group key={i} position={[x - 1.5, y, z]} rotation={[0, 0, -Math.PI / 2]}>
+        <group key={i} position={[x, y, z]} rotation={[0, 0, -Math.PI / 2]}>
           <NpcPlume
             ref={(h) => {
               plumeRefs.current[i] = h
             }}
-            dia={1.8}
-            len={9}
+            dia={2.6}
+            len={12}
             tint={VIOLET}
           />
         </group>
       ))}
-      <pointLight position={[-26, 0, 0]} color="#c07adf" intensity={2.4} distance={70} decay={1.8} />
+      <pointLight position={[-24, 0.5, 0]} color="#c07adf" intensity={2.4} distance={70} decay={1.8} />
     </group>
   )
 }

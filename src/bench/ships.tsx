@@ -150,25 +150,24 @@ function CandidateShip({ url, rig }: { url: string; rig?: CandidateRig }) {
 
 /** Bell maps measured from the hulls (cluster.mjs, 2026-09-23). */
 const RIGS: Record<string, CandidateRig> = {
-  c3: { rot: AFT.posZ, bells: [[-3500, -1200, 14100, 1500], [3500, -1200, 14100, 1500]] },
-  c15: { rot: AFT.negZ, bells: [[-35, -5.8, -15.2, 5.2], [35, -5.8, -15.2, 5.2]] },
-  c16: { rot: AFT.negZ, bells: [[-23.3, -47, -240, 17], [0, -47, -240, 17], [23.3, -47, -240, 17]] },
+  c3: { rot: AFT.posZ, bells: [[-3620, -1155, 14250, 620], [3620, -1155, 14250, 620]] },
+  c16: { rot: [Math.PI / 4, 0, 0], bells: [
+    [-24.2, -49.2, -221.8, 13], [0, -49.2, -221.8, 13], [24.2, -49.2, -221.8, 13],
+    [-20.4, -41.9, -229.2, 13], [20.4, -41.9, -229.2, 13],
+    [-46.4, -33.4, -239, 13], [46.4, -33.4, -239, 13] ] },
   donnager: { rot: AFT.negZ, bells: [
-    [-110.8, 153.3, -305, 88], [110.8, 153.3, -305, 88], [-110.8, -68.5, -305, 88], [110.8, -68.5, -305, 88] ] },
-  epstein: { rot: AFT.posX, bells: [[199, -0.2, -353.5, 70]] },
-  nostromo: { rot: AFT.negZ, bells: [[-233.7, 541.5, -640, 95], [233.7, 541.5, -640, 95]] },
+    [-110.8, 153.3, -305, 52], [110.8, 153.3, -305, 52], [-110.8, -68.5, -305, 52], [110.8, -68.5, -305, 52] ] },
+  epstein: { rot: AFT.posX, bells: [[199, -0.2, -353.5, 26]] },
+  nostromo: { rot: AFT.negZ, bells: [[-233.7, 541.5, -640, 135], [233.7, 541.5, -640, 135]] },
   preuss: { rot: AFT.negZ, bells: [[0, 0, -1.62, 0.38]] },
-  virgon: { rot: AFT.negX, bells: [
-    [-73, -28.3, 0, 11], [-70, 4, -13.2, 5.5], [-70, 4, 4, 5.5], [-70, 4.7, 21.8, 5.5] ] },
-  perseus: { rot: AFT.negZ, bells: [
-    [-4.6, -5.2, -85, 5.5], [-7.4, -7.8, -85, 5.5], [-10.2, -10.4, -85, 5.5], [-13, -13, -85, 5.5], [-4.8, -12, -85, 5.5],
-    [4.6, -5.2, -85, 5.5], [7.4, -7.8, -85, 5.5], [10.2, -10.4, -85, 5.5], [13, -13, -85, 5.5], [4.8, -12, -85, 5.5] ] },
-  spacecraft03: { rot: AFT.negZ, bells: [
-    [-0.9, -67.9, -118, 11], [10.3, -67.9, -118, 11], [-0.9, -47.1, -118, 11], [10.3, -47.1, -118, 11] ] },
+  virgon: { rot: AFT.negX, bells: [[-69.5, 4.7, 11.4, 6.5], [-69.5, 4.7, 21.8, 6.5]] },
+  perseus: { rot: AFT.posZ, bells: [
+    [-4.6, -5.2, -84, 4], [-7.4, -7.8, -84, 4], [-10.2, -10.4, -84, 4], [-13, -13, -84, 4], [-4.8, -12, -84, 4],
+    [4.6, -5.2, -84, 4], [7.4, -7.8, -84, 4], [10.2, -10.4, -84, 4], [13, -13, -84, 4], [4.8, -12, -84, 4] ] },
+  spacecraft03: { rot: [0, 0, 0], bells: [
+    [-11.2, -84.5, -16.7, 16], [19.7, -84.5, -16.7, 16], [-11.2, -84.5, -66.1, 16], [19.7, -84.5, -66.1, 16] ] },
   rusty: { rot: AFT.negZ, bells: [[7.4, -0.6, -5.8, 2.6]] },
-  zanzibus: { rot: AFT.negZ, bells: [
-    [-2.5, 0.4, -6.3, 0.55], [-1.6, 0.4, -6.3, 0.55], [1.8, 0.4, -6.3, 0.55], [2.8, 0.4, -6.3, 0.55],
-    [-2.5, 1.3, -6.3, 0.55], [-1.6, 1.3, -6.3, 0.55], [1.8, 1.3, -6.3, 0.55], [2.8, 1.3, -6.3, 0.55] ] },
+  zanzibus: { rot: AFT.negZ, bells: [[-2.1, 0.7, -5.4, 1.8], [2.4, 0.7, -5.4, 1.8]] },
 }
 
 interface CellDef {
@@ -182,7 +181,6 @@ const CELLS: CellDef[] = [
   { name: 'ICE HAULER · KEPT', dist: 110, el: <LaneShip cls={0} /> },
   { name: 'THE DRAUGR', dist: 80, el: <Draugr /> },
   { name: 'A · CARGO SPACESHIP', dist: 95, el: <CandidateShip url="/models/candidates/c3.glb" rig={RIGS.c3} /> },
-  { name: 'B · TRANSPORTER', dist: 95, el: <CandidateShip url="/models/candidates/c15.glb" rig={RIGS.c15} /> },
   { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" rig={RIGS.c16} /> },
   { name: 'F · MCRN DONNAGER · EXPANSE CANON', dist: 95, el: <CandidateShip url="/models/candidates/donnager.glb" rig={RIGS.donnager} /> },
   { name: "G · EPSTEIN'S YACHT · EXPANSE CANON", dist: 95, el: <CandidateShip url="/models/candidates/epstein.glb" rig={RIGS.epstein} /> },
