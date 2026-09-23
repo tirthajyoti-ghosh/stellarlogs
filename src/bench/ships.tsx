@@ -121,20 +121,20 @@ interface CellDef {
 
 const CELLS: CellDef[] = [
   { name: 'BLT-1129 · YOUR SHIP', dist: 14, el: <PlayerShip /> },
-  { name: 'ICE HAULER', dist: 110, el: <LaneShip cls={0} /> },
-  { name: 'SALVAGE HAULER', dist: 100, el: <LaneShip cls={1} /> },
-  { name: 'STAR FREIGHTER', dist: 130, el: <LaneShip cls={2} /> },
+  { name: 'ICE HAULER · KEPT', dist: 110, el: <LaneShip cls={0} /> },
   { name: 'THE DRAUGR', dist: 80, el: <Draugr /> },
   { name: 'A · CARGO SPACESHIP', dist: 95, el: <CandidateShip url="/models/candidates/c3.glb" /> },
   { name: 'B · TRANSPORTER', dist: 95, el: <CandidateShip url="/models/candidates/c15.glb" /> },
   { name: 'C · BUEY II', dist: 95, el: <CandidateShip url="/models/candidates/c16.glb" /> },
-  { name: 'D · HAULER', dist: 95, el: <CandidateShip url="/models/candidates/c17.glb" /> },
-  { name: 'E · SPACESHIP-CARGO', dist: 95, el: <CandidateShip url="/models/candidates/c0.glb" /> },
   { name: 'F · MCRN DONNAGER · EXPANSE CANON', dist: 95, el: <CandidateShip url="/models/candidates/donnager.glb" /> },
   { name: "G · EPSTEIN'S YACHT · EXPANSE CANON", dist: 95, el: <CandidateShip url="/models/candidates/epstein.glb" /> },
   { name: 'H · NOSTROMO COMMERCIAL TUG', dist: 95, el: <CandidateShip url="/models/candidates/nostromo.glb" /> },
   { name: 'I · INDUSTRIAL SHIP (PREUSS CONCEPT)', dist: 95, el: <CandidateShip url="/models/candidates/preuss.glb" /> },
-  { name: 'J · VALLEY FORGE GREENHOUSE FREIGHTER', dist: 95, el: <CandidateShip url="/models/candidates/valleyforge.glb" /> },
+  { name: 'K · VIRGON EXPRESS · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/virgon.glb" /> },
+  { name: 'L · PERSEUS POD FREIGHTER · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/perseus.glb" /> },
+  { name: 'M · SPACECRAFT-03 · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/spacecraft03.glb" /> },
+  { name: 'N · RUSTY HAULER · SALVAGE TYPE', dist: 95, el: <CandidateShip url="/models/candidates/rusty.glb" /> },
+  { name: 'O · ZANZIBUS EXPRESS · STAR TYPE', dist: 95, el: <CandidateShip url="/models/candidates/zanzibus.glb" /> },
 ]
 
 function Cell({ def }: { def: CellDef }) {
