@@ -527,11 +527,23 @@ export function IceRoute() {
   const batteries = useMemo(() => [] as ReturnType<typeof createBattery>[], [])
   const gunnerVels = useMemo(() => Array.from({ length: MAX_SHIPS }, () => new Vector3()), [])
 
-  /** One clone of every class per slot — geometry and materials are shared. */
+  /** One clone of every class per slot — geometry and materials are shared.
+   *  Prepared hulls carry a 'hull' node (bow +X, lane scale baked in); raw
+   *  Sketchfab hulls get the class's mount wrap instead. */
   const slotModels = useMemo(() => {
-    const sources = [hullA, hullB, hullC].map(
-      (g) => g.scene.getObjectByName('hull') as Object3D,
-    )
+    const sources = [hullA, hullB, hullC].map((g, i) => {
+      const named = g.scene.getObjectByName('hull') as Object3D | null
+      if (named) return named
+      const m = CLASSES[i].mount!
+      const inner = g.scene
+      inner.rotation.set(0, m.rotY, 0)
+      inner.scale.setScalar(m.scale)
+      inner.position.set(...m.offset)
+      const wrap = new Object3D()
+      wrap.name = 'hull'
+      wrap.add(inner)
+      return wrap
+    })
     return Array.from({ length: MAX_SHIPS }, () => sources.map((o) => o.clone()))
   }, [hullA, hullB, hullC])
 
@@ -2332,7 +2344,7 @@ export function IceRoute() {
           {models.map((obj, m) => (
             <primitive key={m} object={obj} visible={false} />
           ))}
-          {[0, 1, 2].map((b) => (
+          {Array.from({ length: MAX_BELLS }, (_, b) => b).map((b) => (
             <group
               key={`bell-${b}`}
               ref={(el: Group | null) => {

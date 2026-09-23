@@ -35,8 +35,8 @@ interface Candidate {
 const CANDIDATES: Candidate[] = [
   { key: 'd', url: '/models/draugr.glb', name: 'DRAUGR', note: 'raider · Omega class · 597 KB' },
   { key: 'i', url: '/models/imiq.glb', name: 'IMIQ', note: 'ice hauler · 1567 KB' },
-  { key: 'a', url: '/models/freighter-a.glb', name: 'GS-100', note: 'salvage hauler · 2200 KB' },
-  { key: 'b', url: '/models/freighter-b.glb', name: 'STAR FREIGHTER', note: 'long-haul · 1016 KB' },
+  { key: 'a', url: '/models/candidates/virgon.glb', name: 'VIRGON EXPRESS', note: 'salvage hauler · 1691 KB' },
+  { key: 'b', url: '/models/candidates/perseus.glb', name: 'PERSEUS', note: 'long-haul puller · 4385 KB' },
   { key: 'n', url: '/models/nilak.glb', name: 'NILAK', note: 'the wreck · 1224 KB' },
   { key: 't', url: '/models/tachi.glb', name: 'YOUR SHIP', note: 'the player · 2282 KB' },
 ]

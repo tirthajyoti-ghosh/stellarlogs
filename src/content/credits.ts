@@ -24,6 +24,15 @@ export const REGISTRY: ContentItem[] = [
     ],
   },
   {
+    title: 'Registry · The Lanes',
+    overview:
+      'The working traffic on the ice run. The Virgon Express salvage hauler and the Perseus pod freighter — a puller, her drives forward, dragging the pods — both by 3D_Sci-Fi (CC BY 4.0).',
+    links: [
+      { label: 'Virgon Express — 3D_Sci-Fi', url: 'https://sketchfab.com/3d-models/x-817a1b2fc1574c6e9ec883df17fb5781' },
+      { label: 'Perseus freighter — 3D_Sci-Fi', url: 'https://sketchfab.com/3d-models/x-f2f00bb854a74e338ab2d6dabb7e3bd9' },
+    ],
+  },
+  {
     title: 'Registry · Ordnance',
     overview:
       'Torpedoes from "Low Poly Missiles and Torpedos" by sakigakefuruzawa (CC BY 4.0). Nav buoys marking the range and the race gates: "Sci-Fi Beacon/Way Point Marker" by AMMediaGames (CC BY 4.0). Belt rocks: "Asteroids Pack (metallic version)" by SebastianSosnowski (CC BY 4.0).',
