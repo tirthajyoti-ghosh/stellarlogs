@@ -70,6 +70,8 @@ export function DraugrSighting() {
     <group ref={groupRef} position={POSITION.toArray()}>
       <primitive object={hull} />
       <DraugrPlumes drive={drive} />
+      {/* permanently mounted — never toggle a light's visibility (freeze class) */}
+      <pointLight position={[-24, 0.5, 0]} color="#c07adf" intensity={2.4} distance={70} decay={1.8} />
     </group>
   )
 }

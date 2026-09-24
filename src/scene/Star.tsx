@@ -87,16 +87,19 @@ export function Star({ color, radius, seed = 1, lit = true }: StarProps) {
   )
 
   useFrame(({ clock }) => {
-    // FAR-LIGHT GATING (perf B3): a decay-lit point light 4k away
-    // contributes nothing but still runs in every material's loop —
-    // gate it by real distance, rechecked twice a second
+    // FAR-LIGHT GATING (perf B3, corrected 2026-09-24): gate by INTENSITY,
+    // never by visibility — three counts visible lights into every material's
+    // program cache key, so a light toggling visible forces a whole-scene
+    // shader relink (the freeze class). A zero-intensity light costs one
+    // uniform; a visibility flip costs seconds.
     const light = lightRef.current
     if (light) {
       gate.current -= 1
       if (gate.current <= 0) {
         gate.current = 30
         light.getWorldPosition(_lp)
-        light.visible = !PERF_ARMS.has('nolights') && _lp.distanceTo(shipRig.position) < 3500
+        const on = !PERF_ARMS.has('nolights') && _lp.distanceTo(shipRig.position) < 3500
+        light.intensity = on ? 6.5 : 0
       }
     }
     surfaceMaterial.uniforms.uTime.value = clock.elapsedTime

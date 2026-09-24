@@ -14,11 +14,13 @@ import {
   Mesh,
   MeshStandardMaterial,
   Object3D,
+  PointLight,
   Points,
   PointsMaterial,
   Quaternion,
   Vector3,
 } from 'three'
+import { useShaderWarmup } from '../boards/useShaderWarmup'
 import { shipRig } from '../../state/shipRig'
 import { issueEndorsement } from '../../systems/serviceRecord'
 import { cameraLook } from '../../state/cameraLook'
@@ -551,7 +553,11 @@ export function IceRoute() {
   const plumeRefs = useRef<(NpcPlumeHandle | null)[][]>([])
   const plumePosRefs = useRef<(Group | null)[][]>([])
   const raiderRef = useRef<Group>(null)
+  const raiderLightRef = useRef<PointLight>(null)
   const raiderDrive = useMemo(() => createDrivePower(), [])
+  // compile her materials while she is still hidden — with the light count
+  // now stable, these programs stay valid through the reveal (2026-09-24)
+  useShaderWarmup(raiderRef, true)
   const torpMeshRef = useRef<InstancedMesh>(null)
   const torpPlumeRef = useRef<InstancedMesh>(null)
   const boardRef = useRef<Group>(null)
@@ -2131,6 +2137,16 @@ export function IceRoute() {
       } else {
         raiderDrive.power = 0
       }
+      // her violet drive light lives OUTSIDE the visibility-gated group and
+      // is driven by INTENSITY only — mounting/unmounting a light changes the
+      // scene's light count and relinks every lit shader in one frame (the
+      // 3-4 s escort-finale freeze, root-caused 2026-09-24)
+      const rl = raiderLightRef.current
+      if (rl) {
+        rl.intensity = showing && raiderDrive.power > 0.02 ? 2.4 : 0
+        if (showing)
+          rl.position.copy(raider.position).add(_v.set(-24, 0.5, 0).applyQuaternion(raider.quaternion))
+      }
     }
 
     // ---------- render: the militia tug + the harpoon cable ----------
@@ -2366,6 +2382,9 @@ export function IceRoute() {
           ))}
         </group>
       ))}
+
+      {/* her drive light: permanently mounted, intensity-driven (see loop) */}
+      <pointLight ref={raiderLightRef} color="#c07adf" intensity={0} distance={70} decay={1.8} />
 
       {/* THE DRAUGR — the braking-burn reveal, and the hunt's quarry */}
       <group ref={raiderRef} visible={false}>

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { activityState } from '../state/activityState'
 import {
   ENDORSEMENT_DEFS,
@@ -10,7 +10,7 @@ import {
 } from '../systems/serviceRecord'
 import { getTorpsDowned, getRocksStopped } from '../systems/tallies'
 import { bbEvent } from '../systems/blackbox'
-import { RecordHull } from './RecordHull'
+import { HullPrewarm, RecordHull } from './RecordHull'
 
 /**
  * THE SERVICE RECORD drawer — terminal v3, LOCKED 2026-09-10.
@@ -50,7 +50,15 @@ export function ServiceRecordDrawer() {
   const [battle, setBattle] = useState(false)
   const [scale, setScale] = useState(1)
   const [, setTick] = useState(0)
+  const [warm, setWarm] = useState(false)
   const openRef = useRef(open)
+
+  // start the hull prewarm 12 s after boot — past the loading rush,
+  // almost always before anyone reaches for the L key
+  useEffect(() => {
+    const id = setTimeout(() => setWarm(true), 12000)
+    return () => clearTimeout(id)
+  }, [])
 
   useEffect(() => {
     openRef.current = open
@@ -94,6 +102,13 @@ export function ServiceRecordDrawer() {
 
   return (
     <>
+      {/* pre-build the wireframe hull one mesh per idle slice, well after
+          boot, so opening the record never stalls the frame (2026-09-24) */}
+      {warm && (
+        <Suspense fallback={null}>
+          <HullPrewarm />
+        </Suspense>
+      )}
       <button
         className="hud-sr-chip"
         data-ui

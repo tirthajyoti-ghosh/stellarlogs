@@ -66,7 +66,11 @@ export function DraugrPlumes({ drive }: { drive: DrivePower }) {
           />
         </group>
       ))}
-      <pointLight position={[-24, 0.5, 0]} color="#c07adf" intensity={2.4} distance={70} decay={1.8} />
+      {/* NOTE (2026-09-24): the violet drive light moved OUT of this
+          visibility-gated group — a light appearing mid-session changes the
+          scene's light count and relinks every lit shader (the 3-4 s escort
+          finale freeze). Owners mount their own permanently-visible light and
+          drive its INTENSITY from drive.power instead. */}
     </group>
   )
 }

@@ -18,16 +18,66 @@ const MODEL_URL = '/models/tachi.glb'
 const EDGE_ANGLE = 31
 const WIRE = new LineBasicMaterial({ color: '#ff9a3c', toneMapped: false, transparent: true, opacity: 0.58 })
 
+/** EdgesGeometry over the tachi's ~140k triangles costs SECONDS of
+ *  synchronous main thread. It used to run inside the component's
+ *  useMemo — i.e. on EVERY drawer open, a keypress-triggered freeze
+ *  (root-caused 2026-09-24). Now: one module-level cache per geometry,
+ *  filled one mesh per idle slice by prewarmRecordHull() soon after
+ *  boot, so by the time anyone presses L the lines already exist. */
+const edgeCache = new Map<string, EdgesGeometry>()
+
+function edgesFor(mesh: Mesh): EdgesGeometry {
+  let e = edgeCache.get(mesh.geometry.uuid)
+  if (!e) {
+    e = new EdgesGeometry(mesh.geometry, EDGE_ANGLE)
+    edgeCache.set(mesh.geometry.uuid, e)
+  }
+  return e
+}
+
+const idle: (cb: () => void) => void =
+  typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? (cb) => (window as Window & { requestIdleCallback: (cb: () => void, o?: { timeout: number }) => void }).requestIdleCallback(cb, { timeout: 4000 })
+    : (cb) => setTimeout(cb, 350)
+
+/** Mounted (behind Suspense) by the drawer shortly after boot: walks the
+ *  hull one mesh per idle slice so every EdgesGeometry already exists in
+ *  the cache before the first L-press. Renders nothing. */
+export function HullPrewarm() {
+  const gltf = useGLTF(MODEL_URL)
+  const started = useRef(false)
+  useMemo(() => {
+    if (started.current) return
+    started.current = true
+    const meshes: Mesh[] = []
+    gltf.scene.traverse((o) => {
+      if ((o as Mesh).isMesh) meshes.push(o as Mesh)
+    })
+    const step = (i: number) => {
+      if (i >= meshes.length) return
+      edgesFor(meshes[i])
+      idle(() => step(i + 1))
+    }
+    idle(() => step(0))
+  }, [gltf])
+  return null
+}
+
+/** built once, reused across every drawer open */
+let cachedModel: Group | null = null
+
 function Hull() {
   const groupRef = useRef<Group>(null)
   const gltf = useGLTF(MODEL_URL)
   const model = useMemo(() => {
+    if (cachedModel) return cachedModel
     const clone = gltf.scene.clone(true)
     const swaps: { mesh: Mesh; line: LineSegments }[] = []
     clone.traverse((obj) => {
       const mesh = obj as Mesh
       if (mesh.isMesh) {
-        const line = new LineSegments(new EdgesGeometry(mesh.geometry, EDGE_ANGLE), WIRE)
+        // clone() shares geometry objects, so the cache hits by uuid
+        const line = new LineSegments(edgesFor(mesh), WIRE)
         line.position.copy(mesh.position)
         line.quaternion.copy(mesh.quaternion)
         line.scale.copy(mesh.scale)
@@ -53,6 +103,7 @@ function Hull() {
     else if (size.z >= size.x && size.z >= size.y) orient.rotation.x = -Math.PI / 2
     const holder = new Group()
     holder.add(orient)
+    cachedModel = holder
     return holder
   }, [gltf])
 

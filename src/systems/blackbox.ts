@@ -151,16 +151,52 @@ let lastBattle = false
 let lastTitle = ''
 let frames = 0
 let jankFrames = 0
+let maxGapMs = 0
 let lastFrameAt = 0
 let fpsWindowStart = 0
 let lastFpsReport = 0
 
+/** Long-task capture (added 2026-09-24, the freeze forensics): a 3-4 s
+ *  stall used to be recorded as one jank frame — invisible. The observer's
+ *  entries queue DURING a stall and deliver after it, so even a hard freeze
+ *  names itself in the trove. Anything over 200 ms becomes an event. */
+let longtaskArmed = false
+function armLongtaskObserver(): void {
+  if (longtaskArmed || typeof PerformanceObserver === 'undefined') return
+  longtaskArmed = true
+  try {
+    const obs = new PerformanceObserver((list) => {
+      for (const entry of list.getEntries()) {
+        if (entry.duration < 200) continue
+        const attr = (entry as PerformanceEntry & { attribution?: { name?: string; containerType?: string }[] })
+          .attribution?.[0]
+        bbEvent('longtask', {
+          ms: Math.round(entry.duration),
+          at: Math.round(entry.startTime),
+          owner: activityState.owner ?? '',
+          battle: activityState.battle,
+          src: attr ? `${attr.containerType ?? ''}:${attr.name ?? ''}` : '',
+        })
+      }
+    })
+    obs.observe({ type: 'longtask', buffered: true })
+  } catch {
+    // longtask unsupported (Safari) — maxGapMs below still records magnitude
+  }
+}
+
 /** call once per rendered frame (cheap; heavy work runs at 1 Hz) */
 export function updateBlackbox(now: number): void {
   if (!enabled) return
+  if (!longtaskArmed) armLongtaskObserver()
   frames++
-  // frame pacing: a frame gap over 25 ms means at least one missed vsync
-  if (lastFrameAt > 0 && (now - lastFrameAt) * 1000 > 25) jankFrames++
+  // frame pacing: a frame gap over 25 ms means at least one missed vsync;
+  // the worst gap in the window is kept as a magnitude, not just a count
+  if (lastFrameAt > 0) {
+    const gap = (now - lastFrameAt) * 1000
+    if (gap > 25) jankFrames++
+    if (gap > maxGapMs) maxGapMs = gap
+  }
   lastFrameAt = now
   if (fpsWindowStart === 0) fpsWindowStart = now
   // 1 Hz watcher
@@ -195,11 +231,13 @@ export function updateBlackbox(now: number): void {
       bbEvent('fps', {
         avg: Math.round(frames / (now - fpsWindowStart)),
         jankPct: Math.round((jankFrames / Math.max(1, frames)) * 100),
+        maxGapMs: Math.round(maxGapMs),
         dpr: canvas ? +(canvas.width / Math.max(1, canvas.clientWidth)).toFixed(2) : 0,
       })
     }
     frames = 0
     jankFrames = 0
+    maxGapMs = 0
     fpsWindowStart = now
   }
   if (Date.now() - lastFlushAt > FLUSH_EVERY_MS) {
