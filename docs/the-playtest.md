@@ -138,6 +138,90 @@ Marketplace → Upstash Redis → connect to the project. Env vars inject
 automatically; no code change; every buffered event from every visitor
 uploads on their next session.
 
+## PASS 2 — the protocol made practical (2026-09-24, his ask)
+
+His situation, honestly stated: when he called for this playtest he had
+every annoyance in his head; he chose not to write them down, and now
+they're gone — partly forgotten, partly *normalized* (the little things
+stopped registering because he got used to them). So the protocol can't
+rely on him remembering what's wrong. It has to make the annoyances
+resurface on their own, and catch them the second they do.
+
+### The three problems this pass solves
+
+1. **Easy to move about.** No hunting for activities, no flying twenty
+   minutes of commute between runs.
+2. **Easy to capture.** Nothing depends on him typing notes mid-flight
+   or remembering afterwards.
+3. **Easy to rediscover.** The forgotten/normalized annoyances must be
+   provoked back into view.
+
+### The FLAG key — the heart of it (small build, needs his GO)
+
+One key (proposal: **F**, long-press, or `~` — decide at build). The
+rule he plays by: **the instant anything annoys, confuses, lags,
+surprises, or delights — tap it. No typing. Keep flying.**
+
+Each tap writes a black-box event with a full context bundle: wall
+time, position, activity + phase, nearest threats and their ranges,
+gun/heat state, fps ring for the last 10 s, camera state, and the last
+10 flight-recorder rows. After the session I walk the flags in order
+and interview him against each one — "flag 7, 0:42 into the escort,
+three torpedoes inside the ring, fps dipped to 31 — what happened
+here?" The flag is the note he doesn't have to write. Normalization
+can't hide from a reflex tap.
+
+### The RUN DECK (small build, needs his GO)
+
+A playtest-only overlay behind `?playtest=1` (or localStorage flag):
+a slim chip row listing RUN A–E. Tapping a run:
+- teleports the ship to that run's honest staging point (range ring,
+  docks board, hunt posting, sleet picket) — commute removed;
+- stamps run-start / run-end brackets into the black box so every
+  flag, debrief and fps sample lands inside a labeled run;
+- shows the run's one-line brief ("W3 twice in a row — does mastery
+  feel good or boring?") so he never has to re-read this doc mid-set.
+Production visitors never see it; free-order law untouched.
+
+### The session shape (one evening, ~45 minutes flying)
+
+0. **RUN 0 — COLD EYES (new, 5 min).** Before anything scripted: land
+   on the live site like a stranger. First 90 seconds untouched, then
+   fly to the Drift and just look. Flag anything that pops, stutters,
+   floats, overflows, or confuses. This run exists precisely because
+   his fresh eyes are gone — it's a deliberate attempt to borrow them
+   back, and it doubles as the signage-audit sweep (law below).
+1. **RUNS A–E as written in PART 3**, in order, six questions after
+   each — answered OUT LOUD into a phone voice memo, not typed
+   (30 seconds per run; I transcribe from whatever he sends). The
+   answer ritual stays per-run because first impressions decay fast.
+2. **The debrief walk (with me, same evening or next).** We open the
+   trove: every flag in order, the six answers per run, the debriefs,
+   the fps record. Findings come out ranked; fixes get built only
+   after the findings are his.
+
+### What to watch for (the reconstructed suspect list)
+
+Everything in PART 2 still stands, plus what the field reports since
+have added:
+- **The freeze class** — the 3–4 s dock-approach freeze (his report
+  2026-09-23, under investigation now, fix lands BEFORE the runs).
+  During the playtest the question is: any OTHER stall moments? Every
+  one gets a flag.
+- **Sleet tuning** (RUN E's extra questions, already written).
+- **Signage audit** (law below) — swept during RUN 0.
+- **The scope under pressure** — PART 2 #3, still never truly tested.
+- **Escort agency** — does the danger feel caused or scheduled?
+- **New hull believability** — the Virgon and the Perseus now fly the
+  lanes; does the puller read as intentional or as a bug?
+- **Anything he flags that fits no list** — that's the point of flags.
+
+### Build order for this pass
+
+1. Freeze fix ships first (separate thread, in progress).
+2. FLAG key + RUN DECK (one small build, on his GO).
+3. He flies the session. 4. Debrief walk. 5. Fix batch. 6. THE DEEP.
+
 ## SIGNAGE AUDIT (added 2026-09-09, his ruling at the docks)
 
 Standing law from his docks screenshot: **text lives ON a plate that
